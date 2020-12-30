@@ -1,0 +1,9 @@
+---
+applications:
+- name: ccs-sso
+  instances: 1
+  memory: 512M
+  buildpack: binary_buildpack
+  random-route: true
+  env:
+    CACHE_NUGET_PACKAGES: false
