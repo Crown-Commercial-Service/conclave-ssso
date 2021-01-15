@@ -1,4 +1,15 @@
-name: ccs-sso
-instances: 1
-memory: 50M
-buildpack: staticfile_buildpack
+---
+applications:
+- name: ccs-sso
+  memory: 50M
+  instances: 2
+  buildpack: staticfile_buildpack
+  random-route: true
+- name: ccs-sso-api
+  instances: 1
+  memory: 512M
+  path: api/SecurityApi/CcsSso.Security.Api/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  random-route: true
+  env:
+    CACHE_NUGET_PACKAGES: false
