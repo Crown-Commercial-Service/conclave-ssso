@@ -1,0 +1,4 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex" [@slide]="(sideNavVisible$ | async) ? 'close' : 'open'">
+  <app-footer></app-footer>
+</div>

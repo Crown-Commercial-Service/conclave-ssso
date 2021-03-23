@@ -1,0 +1,211 @@
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <div class="govuk-breadcrumbs">
+            <ol class="govuk-breadcrumbs__list">
+                <li class="govuk-breadcrumbs__list-item">
+                    <a class="govuk-breadcrumbs__link" routerLink="/home">{{ 'ADMINISTRATOR_DASHBOARD' | translate
+                        }}</a>
+                </li>
+                <li class="govuk-breadcrumbs__list-item">
+                    <a class="govuk-breadcrumbs__link" routerLink="/manage-users">{{ 'MANAGE_YOUR_USER_ACCOUNTS' |
+                        translate
+                        }}</a>
+                </li>
+                <li *ngIf="isEdit != true" class="govuk-breadcrumbs__list-item">
+                    <span class="govuk-breadcrumbs__link"> {{ 'CREATE_NEW_USER_ACCOUNT' | translate }}</span>
+                </li>
+                <li *ngIf="isEdit == true" class="govuk-breadcrumbs__list-item">
+                    <span class="govuk-breadcrumbs__link"> {{ 'EDIT_YOUR_USER_ACCOUNTS' | translate }}</span>
+                </li>
+            </ol>
+        </div>
+
+        <h1 *ngIf="isEdit != true" class="govuk-heading-xl page-title">{{ 'CREATE_NEW_USER_ACCOUNT' | translate }}</h1>
+        <h1 *ngIf="isEdit == true" class="govuk-heading-xl page-title">{{ 'EDIT_YOUR_USER_ACCOUNTS' | translate }}</h1>
+
+        <h2 *ngIf="isEdit == true" class="govuk-heading-m page-title">{{ 'RESET_PASSWORD_OR_DELETE_USER_ACCOUNTS' |
+            translate }}</h2>
+
+        <div class="govuk-error-summary user-profile-form-error" aria-labelledby="error-summary-title" role="alert"
+            tabindex="-1" id="error-summary" data-module="govuk-error-summary"
+            *ngIf="(formValid(userProfileForm) == false && submitted) || userProfileForm.controls.userName.hasError('alreadyExists')">
+            <h2 class="govuk-error-summary__title" id="error-summary-title">
+                {{ 'ERROR_SUMMARY' | translate }}
+            </h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list">
+                    <li *ngIf="submitted && userProfileForm.controls.userTitle.invalid">
+                        <a href="#" onClick="return false;" (click)="scrollToAnchor('user-title-form-group')">
+                            {{'ERROR_SELECT_TITLE' | translate }} </a>
+                    </li>
+                    <li *ngIf="submitted && userProfileForm.controls.firstName.invalid">
+                        <a href="#" onClick="return false;" (click)="scrollToAnchor('first-name-form-group')">
+                            {{'ERROR_FIRST_NAME' | translate }} </a>
+                    </li>
+                    <li *ngIf="submitted && userProfileForm.controls.lastName.invalid">
+                        <a href="#" onClick="return false;" (click)="scrollToAnchor('last-name-form-group')">
+                            {{'ERROR_LAST_NAME' | translate }}</a>
+                    </li>
+                    <li *ngIf="submitted && userProfileForm.controls.userName.hasError('required')">
+                        <a href="#" onClick="return false;" (click)="scrollToAnchor('user-name-form-group')">
+                            {{'ERROR_EMAIL_REQUIRED' | translate }}</a>
+                    </li>
+                    <li *ngIf="userProfileForm.controls.userName.hasError('alreadyExists')">
+                        <a href="#" onClick="return false;" (click)="scrollToAnchor('user-name-form-group')">
+                            {{'ERROR_USER_ALREADY_EXISTS' | translate }}</a>
+                    </li>
+                    <li *ngIf="submitted && userProfileForm.controls.userName.hasError('email')">
+                        <a href="#" onClick="return false;" (click)="scrollToAnchor('user-name-form-group')">
+                            {{ 'ERROR_INVALID_EMAIL'| translate }}</a>
+                    </li>
+                    <li *ngIf="submitted && userProfileForm.hasError('groupRequired')">
+                        <a href="#" onClick="return false;" (click)="scrollToAnchor('group-form-group')">
+                            {{ 'ERROR_GROUP_REQUIRED'| translate }}</a>
+                    </li>
+                    <li *ngIf="submitted && userProfileForm.controls.signInProviderControl.hasError('required')">
+                        <a href="#" onClick="return false;" (click)="scrollToAnchor('signin-provider-form-group')">
+                            {{ 'ERROR_SIGN_IN_PROVIDER_REQUIRED'| translate }}</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="form">
+            <form class="ui form profile mb-two" [formGroup]="userProfileForm" (submit)="onSubmit(userProfileForm)">
+                <div class="ui segment">
+                    <div class="govuk-form-group" id="user-title-form-group"
+                        [class.govuk-form-group--error]="submitted && userProfileForm.controls.userTitle.invalid">
+                        <label class="govuk-label" for="userTitle">{{ 'TITLE' | translate }}</label>
+                        <span id="userTitle-error" class="govuk-error-message"
+                            *ngIf="submitted && userProfileForm.controls.userTitle.invalid">
+                            <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span>{{ 'ERROR_SELECT_TITLE' | translate }}
+                        </span>
+                        <select class="govuk-select" id="userTitle" name="userTitle"
+                            formControlName="userTitle"
+                            [class.govuk-select--error]="submitted && userProfileForm.controls.userTitle.invalid">
+                            <option *ngFor="let item of userTitleEnum | enumToArray" [ngValue]="item">{{ userTitleEnum[item] }}</option>
+                        </select>
+                    </div>
+                    <div class="govuk-form-group" id="first-name-form-group"
+                        [class.govuk-form-group--error]="submitted && userProfileForm.controls.firstName.invalid">
+                        <label class="govuk-label" for="first-name"> {{ 'FIRSTNAME' | translate }} </label>
+                        <span id="first-name-error" class="govuk-error-message"
+                            *ngIf="submitted && userProfileForm.controls.firstName.invalid">
+                            <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span> {{
+                            'ERROR_FIRST_NAME' | translate }}
+                        </span>
+                        <input formControlName="firstName" class="govuk-input" id="first-name" name="first-name"
+                            type="text"
+                            [class.govuk-input--error]="submitted && userProfileForm.controls.firstName.invalid">
+                    </div>
+                    <div class="govuk-form-group" id="last-name-form-group"
+                        [class.govuk-form-group--error]="submitted && userProfileForm.controls.lastName.invalid">
+                        <label class="govuk-label" for="last-name"> {{ 'LASTNAME' | translate }} </label>
+                        <span id="last-name-error" class="govuk-error-message"
+                            *ngIf="submitted && userProfileForm.controls.lastName.invalid">
+                            <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span> {{
+                            'ERROR_LAST_NAME'
+                            | translate }}
+                        </span>
+                        <input formControlName="lastName" class="govuk-input" id="last-name" name="last-name"
+                            type="text"
+                            [class.govuk-input--error]="submitted && userProfileForm.controls.lastName.invalid">
+                    </div>
+                    <div class="govuk-form-group" id="user-name-form-group" [class.govuk-form-group--error]="(submitted && userProfileForm.controls.userName.invalid)
+                        || userProfileForm.controls.userName.hasError('alreadyExists')">
+                        <label class="govuk-label" for="email">{{ 'EMAIL' | translate }}</label>
+                        <span id="user-name-error" class="govuk-error-message"
+                            *ngIf="submitted && userProfileForm.controls.userName.hasError('required')">
+                            <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span>
+                            {{'ERROR_EMAIL_REQUIRED' | translate }}
+                        </span>
+                        <span id="user-name-error" class="govuk-error-message"
+                            *ngIf="submitted && userProfileForm.controls.userName.hasError('email')">
+                            <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span>
+                            {{ 'ERROR_INVALID_EMAIL'| translate }}
+                        </span>
+                        <span id="user-name-error" class="govuk-error-message"
+                            *ngIf="userProfileForm.controls.userName.hasError('alreadyExists')">
+                            <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span>
+                            {{ 'ERROR_USER_ALREADY_EXISTS'| translate }}
+                        </span>
+                        <input [readonly]="isEdit == true" [class.disabled]="isEdit == true" formControlName="userName"
+                            class="govuk-input" id="email" name="email" type="email" [class.govuk-input--error]="(submitted && userProfileForm.controls.userName.invalid)
+                            || userProfileForm.controls.userName.hasError('alreadyExists')">
+                    </div>
+
+                    <div class="govuk-form-group" id="group-form-group"
+                        [class.govuk-form-group--error]="submitted && userProfileForm.hasError('groupRequired')">
+                        <fieldset class="govuk-fieldset">
+                            <legend class="govuk-fieldset__legend">
+                                {{ 'GROUPS'| translate }}
+                            </legend>
+                            <span id="group-error" class="govuk-error-message"
+                                *ngIf="submitted && userProfileForm.hasError('groupRequired')">
+                                <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span>
+                                {{'ERROR_GROUP_REQUIRED' | translate }}
+                            </span>
+                            <div class="govuk-checkboxes">
+                                <div class="govuk-checkboxes__item" *ngFor="let orgGroup of orgGroups; let i=index">
+                                    <input class="govuk-checkboxes__input"
+                                        id="{{'orgGroupControl_' + orgGroup.groupId}}"
+                                        [formControlName]="'orgGroupControl_' + orgGroup.groupId" type="checkbox"
+                                        value="hmrc">
+                                    <label class="govuk-label govuk-checkboxes__label"
+                                        for="{{'orgGroupControl_' + orgGroup.groupId}}">
+                                        {{orgGroup.groupName}}
+                                    </label>
+                                </div>
+                            </div>
+
+                        </fieldset>
+                    </div>
+
+                    <div class="govuk-form-group" id="signin-provider-form-group"
+                        [class.govuk-form-group--error]="submitted && userProfileForm.controls.signInProviderControl.hasError('required')">
+                        <fieldset class="govuk-fieldset">
+                            <legend class="govuk-fieldset__legend">
+                                {{ 'SIGN_IN_PROVIDER'| translate }}
+                            </legend>
+                            <span id="group-error" class="govuk-error-message"
+                                *ngIf="submitted && userProfileForm.controls.signInProviderControl.hasError('required')">
+                                <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span>
+                                {{'ERROR_SIGN_IN_PROVIDER_REQUIRED' | translate }}
+                            </span>
+
+                            <div class="govuk-radios">
+                                <div class="govuk-radios__item"
+                                    *ngFor="let identityProvider of identityProviders; let i=index">
+                                    <input class="govuk-radios__input"
+                                        id="{{'signInProviderControl' + identityProvider.id}}"
+                                        formControlName="signInProviderControl" type="radio"
+                                        [value]="identityProvider.id">
+                                    <label class="govuk-label govuk-radios__label"
+                                        for="{{'signInProviderControl' + identityProvider.id}}">
+                                        {{identityProvider.name}}
+                                    </label>
+                                </div>
+                            </div>
+
+                        </fieldset>
+                    </div>
+
+                    <div class="govuk-button-group save-cancel-button-group">
+                        <button type="submit" class="govuk-button" data-module="govuk-button">
+                            {{ 'SAVE_BTN' | translate }}
+                        </button>
+                        <button type="button" (click)="onCancelClick()" class="govuk-button govuk-button--secondary"
+                            data-module="govuk-button">
+                            {{ 'CANCEL_BTN' | translate }}
+                        </button>
+                    </div>
+
+                    <button *ngIf="isEdit == true && userProfileResponseInfo.canChangePassword" type="button"
+                        (click)="onResetPasswordClick()" class="govuk-button govuk-button--secondary"
+                        data-module="govuk-button">
+                        {{ 'RESET_USER_PASSWORD_BTN' | translate }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

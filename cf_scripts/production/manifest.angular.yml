@@ -1,0 +1,8 @@
+---
+applications:
+- name: ccs-sso
+  instances: 1
+  memory: 50M
+  buildpack: staticfile_buildpack
+  buildpack: https://github.com/cloudfoundry/staticfile-buildpack
+  random-route: true

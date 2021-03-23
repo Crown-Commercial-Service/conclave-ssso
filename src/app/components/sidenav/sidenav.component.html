@@ -1,0 +1,31 @@
+<div [@slide]="collapsed ? 'close' : 'open'" style="top: -16px;position: relative;left: -32px;">
+    <div class="side-nav">
+        <div class="mlp-sidenav-menu" style="padding:0;">
+            <ul nz-menu nzMode="inline" *ngIf="isAuthenticated() | async">
+                <li nz-submenu nzOpen nzTitle="Admin" nzIcon="dashboard">
+                    <ul>
+                        <li nz-menu-item nzMatchRouter nzOpen="false">
+                            <i nz-icon nzType="minus" nztheme="outline" style="float:left;margin-top:12px;"></i><a routerLink="/login">Manage Organisations</a>
+                        </li>
+                        <li nz-menu-item nzMatchRouter nzOpen="false">
+                            <i nz-icon nzType="minus" nztheme="outline" style="float:left;margin-top:12px;"></i><a routerLink="/login">Manage Users</a>
+                        </li>
+                        <li nz-menu-item nzMatchRouter nzOpen="false">
+                            <i nz-icon nzType="minus" nztheme="outline" style="float:left;margin-top:12px;"></i><a routerLink="/login">Organisations</a>
+                        </li>
+                        <li nz-menu-item nzMatchRouter nzOpen="false">
+                            <i nz-icon nzType="minus" nztheme="outline" style="float:left;margin-top:12px;"></i><a routerLink="/login">Manage Groups</a>
+                        </li>
+                        <li nz-menu-item nzMatchRouter nzOpen="false">
+                            <i nz-icon nzType="minus" nztheme="outline" style="float:left;margin-top:12px;"></i><a routerLink="/login">Manage Account</a>
+                        </li>
+                        <li nz-menu-item nzMatchRouter nzOpen="false">
+                            <i nz-icon nzType="minus" nztheme="outline" style="float:left;margin-top:12px;"></i><a routerLink="/login">Manage Sign In Providers</a>
+                        </li>
+                    </ul>
+                </li>
+                <!-- <li nz-menu nzTitle="Log Out" (click)="logOut()"></li> -->
+            </ul>
+        </div>
+    </div>
+</div>

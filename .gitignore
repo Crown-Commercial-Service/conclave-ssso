@@ -2,10 +2,27 @@
 
 # compiled output
 /dist
+/d
+/s
+/t
 /tmp
 /out-tsc
 # Only exists if Bazel was run
 /bazel-out
+obj
+bin
+d
+s
+t
+
+# Visual Studio Code
+.vscode
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
 
 # dependencies
 /node_modules
@@ -31,6 +48,25 @@ speed-measure-plugin*.json
 !.vscode/extensions.json
 .history/*
 
+# Visual Studio 2015
+.vs/
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
 # misc
 /.sass-cache
 /connect.lock
@@ -44,3 +80,4 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+/api/SecurityApi/CcsSso.Security.Api/CcsSso.Security.Api.xml

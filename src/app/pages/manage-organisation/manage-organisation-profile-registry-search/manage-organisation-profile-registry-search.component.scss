@@ -1,0 +1,22 @@
+app-manage-organisation-profile-registry-search {
+  /*position: absolute;
+  top: 252px;
+  color: #000000;
+  min-height: 1000px;
+  left: 4.4%;
+  right: 5%;
+  font-weight: 300;
+  font-size: 12px;*/
+  // font-family: Poppins;
+  label {
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  input[type=radio] {
+    width: 12px;
+    height: 12px;
+    position: relative;
+    top: 2px;
+  }
+}

@@ -1,0 +1,7 @@
+<div class="content flex" [@slide]="(sideNavVisible$ | async) ? 'close' : 'open'">
+    <a class="back-text" (click)="onBackClick()"> <span > &lt; </span>Back</a>
+    <h1 class="govuk-heading-xl page-title">Confirm you want to delete the contact details?</h1>
+    <div class="info-text">This cannot be undone</div>
+    <button class="danger-button mb-one confirm-button" (click)="onConfirmClick()">Confirm and delete</button>
+    <button class="secondary-button cancel-button" (click)="onCancelClick()">Cancel</button>
+</div>

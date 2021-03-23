@@ -1,0 +1,30 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex" style="height:650px;" *ngIf="item$ | async as i">
+  <div class="govuk-breadcrumbs">
+      <ol class="govuk-breadcrumbs__list">
+          <li class="govuk-breadcrumbs__list-item">
+              <a class="govuk-breadcrumbs__link" routerLink="/home">Administrator dashboard</a>
+          </li>
+          <li class="govuk-breadcrumbs__list-item">
+              <a class="govuk-breadcrumbs__link" routerLink="/manage-org/profile">Manage your organisation</a>
+          </li>
+          <li class="govuk-breadcrumbs__list-item">
+            <a class="govuk-breadcrumbs__link">Add new registry</a>
+          </li>
+      </ol>
+  </div>
+  <h1 class="govuk-heading-xl page-title">We found matching records for your organisation also from the additional registries below</h1>
+  <h2></h2>
+  <div>
+    <div>
+      <h4 *ngIf="i?.additionalIdentifiers.length > 0">We recommend you include all of these in your organisation profile. But if you wish not to then unselect the ones that need to be excluded.</h4>
+      <p *ngFor="let ai of i?.additionalIdentifiers">
+        <strong style="font-weight: 500;">{{ getSchemaName(ai?.scheme) }}</strong><br />
+        <input type="checkbox" checked="checked" style="top: 1px; margin-right: 4px; position: relative; left: 1px;" (change)="onChange($event, ai)">{{ ai?.id }} - {{ ai?.legalName }}
+      </p>
+      <button style="background: rgba(11, 130, 139, 1);" (click)="onSubmit()">Continue</button>
+      <button class="secondary-button" (click)="goBack()" style="margin-left:10px;">Cancel</button>
+    </div>
+  </div>
+  <!--<app-footer></app-footer>-->
+</div>

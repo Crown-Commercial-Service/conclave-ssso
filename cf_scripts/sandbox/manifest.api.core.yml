@@ -1,0 +1,14 @@
+---
+applications:
+- name: sand-api-core
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Core.Api/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: sand-api-core.london.cloudapps.digital
+  services:
+    - san2-sso-pg-service
+    - sand-vault
+  env:
+    CACHE_NUGET_PACKAGES: false

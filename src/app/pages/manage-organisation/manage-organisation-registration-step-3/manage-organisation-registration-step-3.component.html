@@ -1,0 +1,27 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex" style="height:650px;" *ngIf="item$ | async as i">
+  <a href="javascript:window.history.back()" class="govuk-back-link">Back</a>
+  <h1 class="govuk-heading-xl page-title">Confirm your organisation details</h1>
+  <h2></h2>
+  <div>
+    <div>
+      <p><strong style="font-weight: 500;">{{ i?.name }}</strong></p>
+      <p>
+        {{ i?.address?.streetAddress }}<br *ngIf="i?.address?.streetAddress" />
+        {{ i?.address?.locality }}<br *ngIf="i?.address?.locality" />
+        {{ i?.address?.region }}<br *ngIf="i?.address?.region" />
+        {{ i?.address?.postalCode }}<br *ngIf="i?.address?.postalCode" />
+        {{ i?.address?.countryName }}
+      </p>
+      <p><strong style="font-weight: 500;">{{ schemeName }} registration number</strong><br />{{ i?.identifier?.id }}</p>
+      <h4>Is this your organisation?</h4>
+      <div class="brickendon-group">
+        <div><input type="radio" name="orgGroup" value="manage-org/register/user" checked="checked" [(ngModel)]="orgGroup"><label>Yes, and the details are correct</label></div>
+        <div><input type="radio" name="orgGroup" value="manage-org/register/error/wrong-details" [(ngModel)]="orgGroup"><label>Yes, but the details are wrong</label></div>
+        <div><input type="radio" name="orgGroup" value="manage-org/register/error/not-my-details" [(ngModel)]="orgGroup"><label>No, this isn’t my organisation</label></div>
+      </div>
+      <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button" data-module="govuk-button" (click)="onSubmit()">Continue</button>
+    </div>
+  </div>
+  <!--<app-footer></app-footer>-->
+</div>

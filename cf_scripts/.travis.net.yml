@@ -1,0 +1,18 @@
+language: csharp
+dotnet: 5.0.1
+install:
+- dotnet restore ./api/CcsSso.sln
+script:
+- dotnet build ./api/CcsSso.sln
+deploy:
+  - provider: cloudfoundry
+    username: $username
+    password: $password
+    api: $api
+    organization: $organisation
+    space: $space_dev
+    manifest: ./manifest.yml
+    skip-cleanup: true
+    repo: Crown-Commercial-Service/conclave-ssso
+    on:
+      branch: sprint5

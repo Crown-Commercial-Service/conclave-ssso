@@ -1,0 +1,118 @@
+@page "/contact/"
+@page "/contact/{id:int}"
+@using CcsSso.BlazorApp2.Data
+@inject ContactService ContactService
+@inject NavigationManager NavManager
+@inject HttpClient Http
+
+@if (Id == 0)
+{
+  <h1>Add another contact</h1>
+  <EditForm Model="@contactModel" OnValidSubmit="@AddContact">
+    <div class="form contact-form">
+      <div class="ui form login mb-two">
+        <div class="ui segment">
+          <DataAnnotationsValidator />
+          <ValidationSummary />
+          <div>
+            <label>Contact name</label><br>
+            <InputText id="name" type="text" @bind-Value="contactModel.name" />
+          </div>
+          <br>
+          <div>
+            <label>Email address</label><br>
+            <InputText id="email" type="text" @bind-Value="contactModel.email" />
+          </div>
+          <br>
+          <div>
+            <label>Telephone number</label><br>
+            <InputText id="phoneNumber" type="text" @bind-Value="contactModel.phoneNumber" />
+          </div>
+          <div style="margin-top:20px;">
+            <button type="submit" class="secondary-button save-button" style="width: 190px;">Add Contact</button>
+            <button type="button" class="secondary-button cancel-button" style="margin-left: 7px;" @onclick="NavigateTo">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </EditForm>
+}
+@if (Id > 0)
+{
+  <h1>Edit organisation contact details</h1>
+  <EditForm Model="@contactModel" OnValidSubmit="@EditContact">
+    <div class="form contact-form">
+      <div class="ui form login mb-two">
+        <div class="ui segment">
+          <DataAnnotationsValidator />
+          <ValidationSummary />
+          <div>
+            <label>Contact name</label><br>
+            <InputText id="name" type="text" @bind-Value="contactModel.name" />
+          </div>
+          <br>
+          <div>
+            <label>Email address</label><br>
+            <InputText id="email" type="text" @bind-Value="contactModel.email" />
+          </div>
+          <br>
+          <div>
+            <label>Telephone number</label><br>
+            <InputText id="phoneNumber" type="text" @bind-Value="contactModel.phoneNumber" />
+          </div>
+          <div style="margin-top:20px;">
+            <button type="button" class="danger-button">Delete details</button>
+            <button type="submit" class="secondary-button save-button" style="width: 190px;margin-left: 7px;">Save changes</button>
+            <button type="button" class="secondary-button cancel-button" style="margin-left: 7px;" @onclick="NavigateTo">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </EditForm>
+}
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+    private ContactResponse contact;
+    private ContactModel contactModel = new ContactModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+      contactModel.id = Id;
+      contactModel.name = String.Empty;
+      contactModel.email = String.Empty;
+      contactModel.phoneNumber = String.Empty;
+
+      if (Id > 0)
+      {
+        contact = await ContactService.Get(Id);
+        if (contact != null)
+        {
+          contactModel.name = contact.name;
+          contactModel.email = contact.email;
+          contactModel.phoneNumber = contact.phoneNumber;
+          contactModel.partyId = contact.partyId;
+        }
+      }
+    }
+
+    private void NavigateTo()
+    {
+      NavManager.NavigateTo("manage-organisation");
+    }
+
+    private async void EditContact()
+    {
+      await ContactService.Put(contactModel);
+      NavManager.NavigateTo("manage-organisation");
+    }
+
+    private async void AddContact()
+    {
+      await ContactService.Post(contactModel);
+      NavManager.NavigateTo("manage-organisation");
+    }
+
+}

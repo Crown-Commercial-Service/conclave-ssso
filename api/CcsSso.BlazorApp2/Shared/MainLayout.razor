@@ -1,0 +1,98 @@
+@inherits LayoutComponentBase
+
+<div class="top-nav" style="position: absolute; width: 100%;">
+  <div style="position: inherit; width: 100%; height: 190px; left: 0px; top: 0px; background: #9B1A47;">
+    <img src="assets/img/logo/White/CCS_WHITE_SML_AW space-01.png" style="width: 150px; left: 3.5%; top: 11.87%; position: inherit;" />
+    <div style="position: inherit; right: 5%; font-weight: 500; top: 24.87%; color: #FFFFFF; height: 100px; width: 100%;">
+      <div style="position: inherit; bottom: 0; right: 0; font-size: 1.1rem !important;">
+        @*<span><a href="https://dev-ccs-sso.london.cloudapps.digital/login" style="color:#ffffff;">Sign in</a></span>*@
+        <span style="padding-left: 30px;"><a href="#" style="color:#ffffff;">Help and support</a></span>
+      </div>
+    </div>
+  </div>
+  <div style="color: #ffffff; position: inherit; height: 32px; left: 4.4%; top: 199px; border-bottom: 1px solid #BFC1C3; right: 5%;">
+    <span style="height: 19px; background: #055fa0; padding-left: 2px; padding-right: 2px; font-weight: 500; font-size: 12px;">BETA</span>
+    <span style="height: 19px; padding-left: 10px; font-weight: 300; font-size: 12px; color: #000000">This is a new service - your <a href="#" style="text-decoration: underline;">feedback</a> will help us to improve it.</span>
+  </div>
+</div>
+
+<div class="content" style="position: absolute; top: 210px; color: #000000; left: 4.4%; right: 5%; font-weight: 300; font-size: 12px;">
+  <div style="padding-top: 40px;">
+    @Body
+  </div>
+</div>
+
+<div class="footer" style="position: absolute; width: calc(100% + 4.9%); height: 430px; background: #2F2F2F; bottom: -135%; left: -4.9%; right: 35%;">
+  <img src="assets/img/logo/White/CCS_WHITE_SML_AW space-01.png" style="width: 150px; left: 7.5%; top: 11.25%; position: inherit;" />
+  <div style="position: inherit; right: 5%; top: 11.87%; color: #ffffff; width:50%;">
+    <div style="display: flex; font-size: 1.1rem !important; line-height: 1.09091 !important;">
+      <div style="width: 31%; text-decoration: none;margin-right: 20px;">
+        <span style="font-weight: 500;">Sitemap</span>
+        <div style="padding-top:10px; border-bottom: 1px solid #BFC1C3;"></div>
+        <ul style="font-size: 16px; line-height: 25px; text-decoration-line: underline; letter-spacing: -0.07em; font-weight: 300; padding-top: 10px; list-style: none; padding-left: 0;">
+          <li><a href="#" style="color:#ffffff;">Search agreements</a></li>
+          <li><a href="#" style="color:#ffffff;">Search suppliers</a></li>
+          <li><a href="#" style="color:#ffffff;">Upcoming deals</a></li>
+          <li><a href="#" style="color:#ffffff;">Buy through CCS</a></li>
+          <li><a href="#" style="color:#ffffff;">About CCs</a></li>
+          <li><a href="#" style="color:#ffffff;">Contact us</a></li>
+          <li><a href="#" style="color:#ffffff;">News</a></li>
+          <li><a href="#" style="color:#ffffff;">Press Office</a></li>
+        </ul>
+      </div>
+      <div style="width: 33%; text-decoration: none;margin-right: 20px;">
+        <span style="font-weight: 500;">Quick links</span>
+        <div style="padding-top:10px; border-bottom: 1px solid #BFC1C3;"></div>
+        <ul style="font-size: 16px; line-height: 25px; text-decoration-line: underline; letter-spacing: -0.07em; font-weight: 300; padding-top: 10px; list-style: none; padding-left: 0;">
+          <li><a href="#" style="color:#ffffff;">Purchasing platform</a></li>
+          <li><a href="#" style="color:#ffffff;">Digital marketplace</a></li>
+          <li><a href="#" style="color:#ffffff;">eMarketplace</a></li>
+          <li><a href="#" style="color:#ffffff;">Energy</a></li>
+          <li><a href="#" style="color:#ffffff;">Fleet</a></li>
+          <li><a href="#" style="color:#ffffff;">Travel</a></li>
+          <li><a href="#" style="color:#ffffff;">Contracts Finder</a></li>
+          <li><a href="#" style="color:#ffffff;">eSourching</a></li>
+          <li><a href="#" style="color:#ffffff;">Register for eSourching training</a></li>
+          <li><a href="#" style="color:#ffffff;">Tenders Electronic Daily (TED)</a></li>
+          <li><a href="#" style="color:#ffffff;">Submit your MI returns</a></li>
+          <li><a href="#" style="color:#ffffff;">Service Status</a></li>
+        </ul>
+      </div>
+      <div style="width: 36%; text-decoration: none;">
+        <span style="font-weight: 500;">About and contact</span>
+        <div style="padding-top:10px; border-bottom: 1px solid #BFC1C3;"></div>
+        <ul style="font-size: 16px; line-height: 25px; text-decoration-line: underline; letter-spacing: -0.07em; font-weight: 300; padding-top: 10px; list-style: none; padding-left: 0;">
+          <li><a href="#" style="color:#ffffff;">About CCS</a></li>
+          <li><a href="#" style="color:#ffffff;">Contact CCS</a></li>
+          <li><a href="#" style="color:#ffffff;">Make a complaint</a></li>
+          <li><a href="#" style="color:#ffffff;">Careers</a></li>
+          <li><a href="#" style="color:#ffffff;">Terms and conditions</a></li>
+          <li><a href="#" style="color:#ffffff;">Cookie policy</a></li>
+          <li><a href="#" style="color:#ffffff;">Corporate informaiton</a></li>
+          <li><a href="#" style="color:#ffffff;">Privacy notice</a></li>
+          <li><a href="#" style="color:#ffffff;">Accessibility</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .top-nav a {
+    text-decoration: none;
+  }
+</style>
+
+@*<div class="page">
+  <div class="sidebar">
+    <NavMenu />
+  </div>
+  <div class="main">
+    <div class="top-row px-4">
+      <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+    </div>
+    <div class="content px-4">
+      @Body
+    </div>
+  </div>
+</div>*@

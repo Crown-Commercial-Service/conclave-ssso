@@ -1,0 +1,14 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex">
+  <a href="javascript:window.history.back()" class="govuk-back-link">Back</a>
+  <h1 class="govuk-heading-xl page-title">Confirm you want to remove the below from your registries?</h1>
+  <h2></h2>
+  <p *ngIf="item$ | async as i">
+    <strong style="font-weight: 500;">{{ i?.identifier?.scheme }}</strong>
+    <br />{{ i?.identifier?.id }} - {{ i?.identifier?.legalName }}
+  </p>
+  <p style="font-weight: bold;">This cannot be undone</p>
+  <button style="width:220px; background: #B10E1E;color:#ffffff;" (click)="onSubmit()" class="secondary-button">Confirm and delete</button>
+  <button style="margin-left:20px;" (click)="goBack()" class="secondary-button">Cancel</button>
+  <!--<app-footer></app-footer>-->
+</div>

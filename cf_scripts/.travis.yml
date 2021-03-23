@@ -1,0 +1,31 @@
+language: node_js
+node_js:
+- 12.16.1
+addons:
+  chrome: stable
+cache:
+  directories:
+  - "./node_modules"
+install:
+- npm install
+before_script:
+- npm install -g @angular/cli
+script:
+- npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
+- npm run e2e -- --protractor-config=e2e/protractor-ci.conf.js
+before_deploy:
+  - npm run build -- --prod --configuration=$space_dev
+  - cd dist
+  - cp index.html 404.html
+deploy:
+  - provider: cloudfoundry
+    username: $username
+    password: $password
+    api: $api
+    organization: $organisation
+    space: $space_dev
+    manifest: ../manifest.yml
+    skip-cleanup: true
+    repo: Crown-Commercial-Service/conclave-ssso
+    on:
+      branch: sprint6

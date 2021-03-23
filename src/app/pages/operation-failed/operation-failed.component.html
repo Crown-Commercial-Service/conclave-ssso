@@ -1,0 +1,13 @@
+<div class="content flex" [@slide]="(sideNavVisible$ | async) ? 'close' : 'open'">
+    <div *ngIf="operation === operationEnum.PasswordChanged">
+        <h1 class="govuk-heading-xl page-title">{{ 'AUTH_FAILED_FRO_PASSWORD_CHANGE' | translate }}</h1>
+        <a class="navigation-text" (click)="onNavigateToSignInClick()"> {{ 'SING_IN_AGAIN' | translate }} </a>
+    </div>
+    <br>
+    <div *ngIf="operation === operationEnum.UserCreate">
+        <h1 class="govuk-heading-xl">{{ 'THE_USER' | translate }}{{ userName }}{{ messageKey | translate }}</h1>
+        <a class="navigation-text" (click)="onNavigateToManageUserClick()"> {{ 'MANAGE_YOUR_USER_ACCOUNTS' | translate
+        }}</a>
+    </div>
+    <br>
+</div>

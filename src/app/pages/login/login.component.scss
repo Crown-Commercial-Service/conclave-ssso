@@ -1,0 +1,58 @@
+.login-container{
+  margin: 40px 30px;
+  display: block;
+}
+
+.btn-400{
+  width: 400px;
+  margin-bottom: 15px;
+}
+
+// h1{
+// font-family: Source Sans Pro;
+// font-style: normal;
+// font-weight: 300;
+// font-size: 48px;
+// line-height: 50px;
+// color: #0B0C0C;
+// }
+
+// h2{
+//   font-family: Source Sans Pro;
+// font-style: normal;
+// font-weight: normal;
+// font-size: 24px;
+// line-height: 30px;
+// color: #0B0C0C;
+// }
+
+label{
+  font-family: Source Sans Pro;
+font-style: normal;
+font-weight: 600;
+font-size: 24px;
+line-height: 30px;
+color: #0B0C0C
+}
+
+input[type=email], input[type=password]
+{
+  background: #FFFFFF;
+border: 1px solid #222222;
+box-sizing: border-box;
+width: 400px;
+height: 40px;
+}
+
+hr{
+  width: 160px;
+height: 0px;
+left: 30px;
+border: 2px solid #B1B4B6;
+}
+
+.ext-prov-btn{
+  background: #007E8A;
+  box-shadow: inset 0px -3px 0px rgba(0, 0, 0, 0.597401);
+  border-radius: 3px;
+}

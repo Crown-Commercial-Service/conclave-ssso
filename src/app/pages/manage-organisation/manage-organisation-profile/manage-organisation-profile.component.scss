@@ -1,0 +1,78 @@
+app-manage-organisation-profile {
+    // position: absolute;
+    // top: 252px;
+    // color: #000000;
+    // min-height: 1000px;
+    // left: 4.4%;
+    // right: 5%;
+    // font-weight: 300;
+    // font-size: 12px;
+
+    .table-container {
+        max-height: 300px;
+        overflow: auto;
+    }
+
+    .mat-header-row {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    // .table {
+    //     width: 100%;
+    //     max-height: 800px;
+
+    //     th {
+    //         font-family: Source Sans Pro;
+    //         font-style: normal;
+    //         font-weight: 600;
+    //         font-size: 19px;
+    //         line-height: 24px;
+    //         padding: 0.75rem;
+    //     }
+
+    //     td {
+    //         font-family: Source Sans Pro;
+    //         font-style: normal;
+    //         font-weight: normal;
+    //         font-size: 19px;
+    //         line-height: 25px;
+    //         padding: 0.75rem;
+    //     }
+    // }
+
+    .first-column {
+        padding-left: 0px !important;
+    }
+
+    .last-column {
+        padding-right: 2px !important;
+        text-align: end;
+    }
+
+    h2 {
+        margin-top: 50px;
+        // font-family: Source Sans Pro;
+        font-style: normal;
+        font-weight: 600;
+        font-size: 24px;
+        line-height: 30px;
+        margin-bottom: 0px;
+        padding-bottom: 0px;
+    }
+
+    .add-contact-button {
+        margin-top: 20px;
+        width: 180px;
+        height: 40px;
+    }
+
+    .registry-description {
+        // font-family: Source Sans Pro;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 19px;
+        line-height: 25px;
+    }
+}
