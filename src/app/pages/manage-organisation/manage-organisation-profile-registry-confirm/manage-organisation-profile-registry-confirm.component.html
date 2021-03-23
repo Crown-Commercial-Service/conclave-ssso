@@ -1,0 +1,42 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex" style="height:650px;" *ngIf="item$ | async as i">
+    <div class="govuk-breadcrumbs">
+      <ol class="govuk-breadcrumbs__list">
+          <li class="govuk-breadcrumbs__list-item">
+              <a class="govuk-breadcrumbs__link" routerLink="/home">Administrator dashboard</a>
+          </li>
+          <li class="govuk-breadcrumbs__list-item">
+              <a class="govuk-breadcrumbs__link" routerLink="/manage-org/profile">Manage your organisation</a>
+          </li>
+          <li class="govuk-breadcrumbs__list-item">
+            <a class="govuk-breadcrumbs__link">Add new registry</a>
+          </li>
+      </ol>
+  </div>
+  <h1 class="govuk-heading-xl page-title">Confirm your organisation details</h1>
+  <h2></h2>
+  <br>
+  <div>
+    <div>
+      <p><strong style="font-weight: 500;">{{ i?.name }}</strong></p>
+      <p>
+        {{ i?.address?.streetAddress }}<br *ngIf="i?.address?.streetAddress" />
+        {{ i?.address?.locality }}<br *ngIf="i?.address?.locality" />
+        {{ i?.address?.region }}<br *ngIf="i?.address?.region" />
+        {{ i?.address?.postalCode }}<br *ngIf="i?.address?.postalCode" />
+        {{ i?.address?.countryName }}
+      </p>
+      <br>
+      <p><strong style="font-weight: 500;">{{ schemeName }} registration number</strong><br />{{ i?.identifier?.id }}</p>
+      <br>
+      <h4 style="color:black;">Is this your organisation?</h4>
+      <div class="brickendon-group">
+        <div><input type="radio" name="orgGroup" value="manage-org/register/user" checked="checked" [(ngModel)]="orgGroup"><label>Yes, and the details are correct</label></div>
+        <div><input type="radio" name="orgGroup" value="manage-org/profile/{{organisationId}}/registry/search/wrong-details" [(ngModel)]="orgGroup"><label>Yes, but the address are wrong</label></div>
+        <div><input type="radio" name="orgGroup" value="manage-org/profile/{{organisationId}}/registry/search/not-my-org" [(ngModel)]="orgGroup"><label>No, this isn’t my organisation</label></div>
+      </div>
+      <button style="background: rgba(11, 130, 139, 1);" (click)="onSubmit()">Continue</button>
+    </div>
+  </div>
+  <!--<app-footer></app-footer>-->
+</div>

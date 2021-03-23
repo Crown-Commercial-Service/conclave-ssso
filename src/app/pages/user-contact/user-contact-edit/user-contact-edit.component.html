@@ -1,0 +1,111 @@
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <div class="govuk-breadcrumbs">
+            <ol class="govuk-breadcrumbs__list">
+                <li class="govuk-breadcrumbs__list-item">
+                    <a class="govuk-breadcrumbs__link" routerLink="/home">
+                        {{ 'ADMINISTRATOR_DASHBOARD' | translate}}</a>
+                </li>
+                <li class="govuk-breadcrumbs__list-item">
+                    <a class="govuk-breadcrumbs__link" routerLink="/profile">{{ 'MANAGE_MY_ACCOUNT' | translate }}</a>
+                </li>
+                <li class="govuk-breadcrumbs__list-item">
+                    <span *ngIf="isEdit!=true" class="govuk-breadcrumbs__link">{{ 'ADD_ANOTHER_CONTACT' | translate }}</span>
+                    <span *ngIf="isEdit==true" class="govuk-breadcrumbs__link">{{ 'EDIT_CONTACT_DETAILS' | translate }}</span>
+                </li>
+            </ol>
+        </div>
+        <h1 *ngIf="isEdit!=true" class="govuk-heading-xl page-title">{{ 'ADD_ANOTHER_CONTACT' | translate }}</h1>
+        <h1 *ngIf="isEdit==true" class="govuk-heading-xl page-title">{{ 'EDIT_CONTACT_DETAILS' | translate }}</h1>
+        <div class="govuk-error-summary contact-form-error" aria-labelledby="error-summary-title" role="alert"
+            tabindex="-1" id="error-summary" data-module="govuk-error-summary"
+            *ngIf="!formValid(contactForm) && submitted">
+            <h2 class="govuk-error-summary__title" id="error-summary-title">
+                {{ 'ERROR_SUMMARY' | translate }}
+            </h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list">
+                    <li *ngIf="submitted && contactForm.hasError('inSufficient')">
+                        <a href="#" onClick="return false;" (click)="scrollToAnchor('name-form-group')"> {{
+                            'ERROR_INSUFFICIENT_CONTACT_DETAILS' | translate }}</a>
+                    </li>
+                    <li *ngIf="submitted && contactForm.controls.email.hasError('email')">
+                        <a href="#" onClick="return false;" (click)="scrollToAnchor('email-form-group')"> {{
+                            'ERROR_INVALID_EMAIL' | translate }} </a>
+                    </li>
+                    <li *ngIf="submitted && contactForm.controls.phone.hasError('invalid')">
+                        <a href="#" onClick="return false;" (click)="scrollToAnchor('email-form-group')"> {{
+                            'ERROR_INVALID_PHONE_NUMBER' | translate }} </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="form contact-form">
+            <form class="ui form login mb-two" [class.error]="!formValid(contactForm)" (submit)="onSubmit(contactForm)"
+                [formGroup]="contactForm">
+                <div class="ui segment">
+                    <div class="govuk-form-group" id="name-form-group"
+                        [class.govuk-form-group--error]="submitted && contactForm.hasError('inSufficient')">
+                        <label class="govuk-label" for="name"> {{ 'CONTACT_NAME' | translate }} </label>
+                        <span id="name-error" class="govuk-error-message"
+                            *ngIf="submitted && contactForm.hasError('inSufficient')">
+                            <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span> {{
+                            'ERROR_INSUFFICIENT_CONTACT_DETAILS' | translate }}
+                        </span>
+                        <input formControlName="name" class="govuk-input" id="name" name="name" type="text"
+                            [class.govuk-input--error]="submitted && contactForm.hasError('inSufficient')">
+                    </div>
+                    <div class="govuk-form-group" id="email-form-group"
+                        [class.govuk-form-group--error]="submitted && contactForm.controls.email.hasError('email')">
+                        <label class="govuk-label" for="email"> {{ 'EMAIL' | translate }} </label>
+                        <span id="email-error" class="govuk-error-message"
+                            *ngIf="submitted && contactForm.controls.email.hasError('email')">
+                            <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span> {{
+                            'ERROR_INVALID_EMAIL'
+                            | translate }}
+                        </span>
+                        <input formControlName="email" class="govuk-input" id="email" name="email" type="email"
+                            [class.govuk-input--error]="submitted && contactForm.controls.email.hasError('email')">
+                    </div>
+                    <div class="govuk-form-group" id="phone-form-group"
+                        [class.govuk-form-group--error]="submitted && contactForm.controls.phone.hasError('invalid')">
+                        <label class="govuk-label" for="phone"> {{ 'TELEPHONE_NUMBER' | translate }} </label>
+                        <span id="email-error" class="govuk-error-message"
+                            *ngIf="submitted && contactForm.controls.phone.hasError('invalid')">
+                            <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span> {{
+                            'ERROR_INVALID_PHONE_NUMBER'
+                            | translate }}
+                        </span>
+                        <input formControlName="phone" class="govuk-input" id="phone" name="phone" type="text"
+                            [class.govuk-input--error]="submitted && contactForm.controls.phone.hasError('invalid')">
+                    </div>
+                    <div class="govuk-form-group" id="fax-form-group">
+                        <label class="govuk-label" for="fax"> {{ 'FAX' | translate }} </label>
+                        <input formControlName="fax" class="govuk-input" id="fax" name="fax" type="text">
+                    </div>
+                    <div class="govuk-form-group" id="web-form-group">
+                        <label class="govuk-label" for="web"> {{ 'WEB_URL' | translate }} </label>
+                        <input formControlName="webUrl" class="govuk-input" id="web" name="web" type="text">
+                    </div>
+                    <div class="govuk-form-group" id="web-form-group">
+                        <label class="govuk-label" for="contactReason"> {{ 'CONTACT_REASON' | translate }} </label>
+                        <select class="govuk-select" id="contactReason" name="contactReason"
+                            formControlName="contactReason">
+                            <option *ngFor="let c of contactReasons" [ngValue]="c.key">{{ c.key }}</option>
+                        </select>
+                    </div>
+                    <div class="govuk-button-group save-cancel-button-group">
+                        <button type="submit" class="govuk-button" data-module="govuk-button">
+                            {{'SAVE_BTN' | translate }}
+                        </button>
+                        <button type="button" (click)="onCancelClick()" class="govuk-button govuk-button--secondary"
+                            data-module="govuk-button">
+                            {{ 'CANCEL_BTN' | translate }}
+                        </button>
+                    </div>
+                    <a *ngIf="isEdit==true" (click)="onDeleteClick()" class="govuk-link delete-link">{{ 'DELETE_CONTACT' | translate }}</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

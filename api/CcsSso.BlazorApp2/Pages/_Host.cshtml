@@ -1,0 +1,168 @@
+@page "/"
+@namespace CcsSso.BlazorApp2.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crown Commercial Service - CCS</title>
+  <base href="~/" />
+  @*<link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+  <link href="css/site.css" rel="stylesheet" />
+  <link href="CcsSso.BlazorApp2.styles.css" rel="stylesheet" />*@
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,500,600" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+  <environment include="Staging,Production">
+    <component render-mode="ServerPrerendered" type="typeof(App)" />
+  </environment>
+  <environment include="Development">
+    <component render-mode="Server" type="typeof(App)" />
+  </environment>
+
+  @*<div id="blazor-error-ui">
+        <environment include="Staging,Production">
+            An error has occurred. This application may no longer respond until reloaded.
+        </environment>
+        <environment include="Development">
+            An unhandled exception has occurred. See browser dev tools for details.
+        </environment>
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>*@
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Source Sans Pro", "Roboto", "HelveticaNeue", "Helvetica Neue", "Arial", "Helvetica", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      font-style: normal;
+      font-weight: 300;
+      background-color: #ffffff;
+      color: #000000;
+    }
+
+    a, a:hover, a:visited {
+      text-decoration: underline;
+      color: darkblue;
+    }
+
+    h1, h2, h3 {
+      color: #000000;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 400;
+      line-height: 40px;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 400;
+      line-height: 20px;
+      padding-bottom: 8px;
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 24px;
+    }
+
+    ul, ol {
+      padding-left: 12px;
+    }
+
+    button {
+      color: #ffffff;
+      width: 130px;
+      height: 36px;
+      background: #0b828b;
+      border-radius: 5px;
+      border: none;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+      button a, a:hover, a:visited {
+        color: #ffffff;
+        text-decoration: none;
+      }
+
+    input[type="text"], input[type="email"], input[type="password"] {
+      width: 375px;
+      display: block;
+      background: #ffffff;
+      border: 1px solid #a0a0a0;
+      box-sizing: border-box;
+      border-radius: 2px;
+      height: 30px;
+    }
+
+    input[type="radio"] {
+      width: 8px;
+      height: 8px;
+    }
+
+    .brickendon-group {
+      display: block;
+      padding-bottom: 15px;
+    }
+
+      .brickendon-group label {
+        padding-left: 10px;
+        font-weight: 400;
+      }
+
+    .invalid {
+      border-left: red;
+      border-left-style: solid;
+      padding-left: 4px;
+    }
+
+    form label {
+      margin-bottom: 5px;
+      font-size: 19px;
+      line-height: 25px;
+      color: #0B0C0C;
+    }
+
+    .secondary-button {
+      cursor: pointer;
+      background: #dee0e2;
+      box-shadow: inset 0px -3px 0px rgba(0, 0, 0, 0.448864);
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 18px;
+      line-height: 23px;
+      text-align: center;
+      color: #0b0c0c;
+    }
+
+    .danger-button {
+      cursor: pointer;
+      background: #b10e1e;
+      box-shadow: inset 0px -3px 0px rgba(0, 0, 0, 0.448864);
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 18px;
+      line-height: 23px;
+      text-align: center;
+      color: #ffffff;
+    }
+  </style>
+  <script src="_framework/blazor.server.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex" [@slide]="(sideNavVisible$ | async) ? 'close' : 'open'">
+  <h1 class="govuk-heading-xl page-title">Register</h1>
+  <form class="ui form register mb-two" [class.error]="!formValid(registerForm)" (submit)="onSubmit(registerForm)" [formGroup]="registerForm">
+    <div class="ui segment">
+      <div class="ui error message validation-message" *ngIf="!formValid(registerForm) && submitted">
+        <ul style="list-style-type: none; margin-left: -40px;color:red;">
+          <li *ngIf="registerForm.controls['firstName'].hasError('required')">Please enter your first name.</li>
+          <li *ngIf="registerForm.controls['lastName'].hasError('required')">Please enter your last name.</li>
+          <li *ngIf="registerForm.controls['userName'].hasError('required')">Please enter your username.</li>
+          <li *ngIf="registerForm.controls['email'].hasError('required')">Please enter your email address.</li>
+          <li *ngIf="registerForm.controls['email'].hasError('pattern')">Please enter a valid email address.</li>
+        </ul>
+      </div>
+      <div class="field" [class.invalid]="submitted && registerForm.controls.firstName.invalid && registerForm.controls.firstName.touched">
+        <label>{{ 'FIRSTNAME' | translate }}</label><br>
+        <input placeholder="{{ 'FIRSTNAME' | translate }}" name="firstName" type="text" formControlName="firstName" class="mb-half">
+      </div><br>
+      <div class="field" [class.invalid]="submitted && registerForm.controls.lastName.invalid && registerForm.controls.lastName.touched">
+        <label>{{ 'LASTNAME' | translate }}</label><br>
+        <input placeholder="{{ 'LASTNAME' | translate }}" name="lastName" type="text" formControlName="lastName" class="mb-half">
+      </div><br>
+      <div class="field" [class.invalid]="submitted && registerForm.controls.userName.invalid && registerForm.controls.userName.touched">
+        <label>{{ 'USERNAME' | translate }}</label><br>
+        <input placeholder="{{ 'USERNAME' | translate }}" name="userName" type="text" formControlName="userName" class="mb-half">
+      </div><br>
+      <div class="field" [class.invalid]="submitted && registerForm.controls.email.invalid && registerForm.controls.email.touched">
+        <label>{{ 'EMAIL' | translate }}</label><br>
+        <input placeholder="{{ 'EMAIL' | translate }}" name="email" type="email" formControlName="email" class="mb-half">
+      </div><br>
+      <br>
+      <button type="submit" class="mb-one">{{ 'REGISTER_BTN' | translate }}</button>
+      <button type="button" style="margin-left: 10px;"><a routerLink="/login">{{ 'BACK' | translate }}</a></button>
+    </div>
+  </form>
+</div>

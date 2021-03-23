@@ -1,0 +1,57 @@
+input,
+label,
+div,
+h1,
+h2,
+th,
+td,
+a,
+span,
+button {
+  font-family: Source Sans Pro;
+}
+
+h1{
+  margin-top: 38px;
+}
+
+h3 {
+  margin-top: 38px;
+}
+
+input[type="email"] {
+  background: #dfe0e2;
+}
+
+a {
+  text-decoration: underline;
+}
+
+.user-group-table {
+  width: 40%;
+  max-height: 350px;
+  overflow: auto;
+}
+
+.contact-table {
+  width: 100%;
+  max-height: 350px;
+  overflow: auto;
+}
+
+.change-password-button {
+  margin-top: 15px;
+  margin-bottom: 60px;
+}
+
+.role-change-button {
+  margin-top: 35px;
+}
+
+.contact-button-group {
+  margin-top: 30px;
+}
+
+.save-cancel-button-group {
+  margin-top: 80px;
+}

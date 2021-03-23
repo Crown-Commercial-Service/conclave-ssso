@@ -1,0 +1,32 @@
+input,
+label,
+div,
+h1,
+h2,
+th,
+td,
+a,
+span,
+button {
+  font-family: Source Sans Pro;
+}
+
+h1 {
+    margin-top: 10px;
+}
+
+a{
+  text-decoration: underline;
+}
+
+.navigation-text {
+    margin-bottom: 100px;
+    font-size: 19px;
+}
+
+.help-support{
+  margin-top: 30px;
+  a{
+    margin-bottom: 10px !important;
+  }
+}

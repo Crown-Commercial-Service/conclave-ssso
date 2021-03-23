@@ -1,0 +1,125 @@
+@page "/manage-organisation"
+@using CcsSso.BlazorApp2.Data
+@inject ContactService ContactService
+<h1>Manage organisation</h1>
+<p style="font-size:19px;">
+  <span style="font-weight: 500;font-size:19px;">Weblyses Limited</span><br />
+  147 Station Road<br />
+  London<br />
+  United Kingdom<br />
+  E4 6AG<br />
+</p>
+<h2>Contact details</h2>
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Email address</th>
+    <th>Team name</th>
+    <th>Telephone number</th>
+    <th></th>
+  </tr>
+  @if (contacts != null)
+  {
+    @foreach (var contact in contacts)
+    {
+      <tr>
+        <td>@contact.name</td>
+        <td><a href="mailto:@contact.email">@contact.email</a></td>
+        <td></td>
+        <td>@contact.phoneNumber</td>
+        <td><a href="contact/@contact.contactId" style="color: darkblue;text-decoration: underline;">Edit</a></td>
+      </tr>
+    }
+  }
+</table>
+<br />
+<br />
+<br />
+<button class="secondary-button add-contact-button" style="width:175px;font-size: 13px;"><a href="contact/" style="color:#000000;">Add another contact</a></button>
+<h2>Site details</h2>
+<table>
+  <tr>
+    <th>Site name</th>
+    <th>Date created</th>
+  </tr>
+  <tr>
+    <td>London Office</td>
+    <td>29 September 2005</td>
+  </tr>
+  <tr>
+    <td>Surrey Office</td>
+    <td>29 September 2005</td>
+  </tr>
+</table>
+<br />
+<br />
+<br />
+<button class="secondary-button add-contact-button" style="width:140px;font-size: 13px;">Add a site</button>
+<h2>Registries</h2>
+<p style="font-weight: 400;">Below are the Registries currently linked to your organisation.</p>
+<table>
+  <tr>
+    <th>Authority</th>
+    <th>ID</th>
+    <th>Type</th>
+    <th></th>
+  </tr>
+  <tr>
+    <td>Companies House</td>
+    <td>11797696</td>
+    <td>Primary</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Office of The Scottish Charity Regulator (OSCR)</td>
+    <td>11797696</td>
+    <td>Secondary</td>
+    <td><a href="#">Remove</a></td>
+  </tr>
+  <tr>
+    <td>Charity Commission for England and Wales</td>
+    <td>11797696</td>
+    <td>Secondary</td>
+    <td><a href="#">Remove</a></td>
+  </tr>
+</table>
+<br />
+<br />
+<br />
+<button class="secondary-button add-contact-button" style="width:180px;font-size: 13px;">Add new registry</button>
+<p style="margin-top:40px;"><strong>If you have previously tried to signup or register (CII registry) and have made a mistake, <a href="#" style="color:#000000;">click here</a> to submit a claim.</strong></p>
+<style>
+  table {
+    font-family: Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+    table td, table th {
+      border-bottom: 2px solid #BFC1C3;
+      padding: 8px;
+    }
+
+    table th {
+      padding-top: 12px;
+      padding-bottom: 12px;
+      padding-left: 8px;
+      text-align: left;
+    }
+
+    table tr:nth-child(even) {
+      /*background-color: #f2f2f2;*/
+    }
+
+  .footer {
+    bottom: -185% !important;
+  }
+</style>
+@code {
+    private ContactResponse[] contacts;
+
+    protected override async Task OnInitializedAsync()
+    {
+      contacts = await ContactService.GetByOrgId(1);
+    }
+}

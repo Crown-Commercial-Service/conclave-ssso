@@ -1,0 +1,41 @@
+app-manage-organisation-contact-delete {
+    .back-text {
+        font-family: Source Sans Pro;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 16px;
+        line-height: 20px;
+        color: #000000;
+    }
+
+    h1 {
+        margin-top: 37px;
+        font-family: Source Sans Pro;
+        font-style: normal;
+        font-weight: 300;
+        font-size: 48px;
+        line-height: 50px;
+    }
+
+    .info-text {
+        margin-top: 60px;
+        font-family: Source Sans Pro;
+        font-style: normal;
+        font-weight: 600;
+        font-size: 19px;
+        line-height: 24px;
+    }
+
+    .confirm-button {
+        margin-top: 15px;
+        width: 180px;
+        height: 40px;
+    }
+
+    .cancel-button {
+        margin-left: 45px;
+        margin-top: 15px;
+        width: 140px;
+        height: 40px;
+    }
+}

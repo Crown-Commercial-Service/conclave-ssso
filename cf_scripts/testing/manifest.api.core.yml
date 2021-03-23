@@ -1,0 +1,14 @@
+---
+applications:
+- name: test-api-core
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Core.Api/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: test-api-core.london.cloudapps.digital
+  services:
+    - test2-sso-pg-service
+    - test-vault
+  env:
+    CACHE_NUGET_PACKAGES: false

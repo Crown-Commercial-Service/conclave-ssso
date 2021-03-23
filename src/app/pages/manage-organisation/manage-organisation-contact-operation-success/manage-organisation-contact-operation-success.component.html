@@ -1,0 +1,8 @@
+<div class="content flex" [@slide]="(sideNavVisible$ | async) ? 'close' : 'open'">
+    
+    <h1 *ngIf="operation === operationEnum.Create">You have added these changes</h1>
+    <h1 *ngIf="operation === operationEnum.Update">You have successfully updated the organisation contact details</h1>
+    <h1 *ngIf="operation === operationEnum.Delete">You have successfully deleted the Contact details</h1>
+    <a class="navigation-text" (click)="onNavigateToProfileClick()"> Return to Manage organisation </a>
+    <br>
+</div>

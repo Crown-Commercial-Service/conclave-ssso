@@ -1,0 +1,13 @@
+---
+applications:
+- name: dev-blaze-app
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.BlazorApp/Client/bin/Release/net5.0/browser-wasm/publish/wwwroot
+  buildpack: https://github.com/cloudfoundry/staticfile-buildpack
+  random-route: true
+  services:
+    - dev3-sso-pg-service
+    - dev-vault
+  env:
+    CACHE_NUGET_PACKAGES: false

@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="2.0.0" />
+    <PackageReference Include="Auth0.AuthenticationApi" Version="7.5.0" />
+    <PackageReference Include="Auth0.ManagementApi" Version="7.5.0" />
+    <PackageReference Include="IdentityModel" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Notify" Version="3.0.0" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.8.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CcsSso.Security.DbPersistence\CcsSso.Security.DbPersistence.csproj" />
+    <ProjectReference Include="..\CcsSso.Security.Domain\CcsSso.Security.Domain.csproj" />
+    <ProjectReference Include="..\CcsSso.Shared\CcsSso.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

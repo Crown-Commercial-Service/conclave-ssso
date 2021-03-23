@@ -1,0 +1,27 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1"
+  data-module="govuk-error-summary">
+  <h2 class="govuk-error-summary__title" id="error-summary-title">
+    There is a problem
+  </h2>
+  <div class="govuk-error-summary__body">
+    <ul class="govuk-list govuk-error-summary__list">
+      <li *ngIf="errorCode=='CHANGE_PASSWORD'; else elseBlock">
+        <a href="{{this.mainPageUrl}}/forgot-password">Please click here to reset your password</a>
+      </li>
+      <ng-template #elseBlock>
+        <li *ngIf="errorCode=='USER_NOT_FOUND'; else elseBlock2">
+          <a (click)="signoutUser()"> You don't have a valid conclave account. Please navigate to login page </a>
+        </li>
+      </ng-template>
+    <ng-template #elseBlock2>
+      <li *ngIf="errorCode=='INVALID_CONNECTION'; else elseBlock3">
+        <a (click)="signoutUser()"> You are not authorized to login using this authentication provider. Please navigate to login page </a>
+      </li>
+    </ng-template>
+      <ng-template #elseBlock3>
+        <li><a>{{errorCode}}</a></li>
+      </ng-template>
+    </ul>
+  </div>
+</div>

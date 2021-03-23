@@ -1,0 +1,40 @@
+@page "/authsuccess"
+@inject NavigationManager NavManager
+@inject HttpClient Http
+
+@code {
+    private string token = String.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+      NavManager.TryGetQueryString<string>("code", out token);
+      if (!String.IsNullOrEmpty(token)) {
+        try
+        {
+          var body = Newtonsoft.Json.JsonConvert.SerializeObject(new
+          {
+            code = token,
+            grant_type = "authorization_code",
+            redirect_uri = NavManager.BaseUri + "authsuccess"
+          });
+          var response = await Http.PostAsync("https://dev-api-security.london.cloudapps.digital/security/token", new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+          Console.Write(response);
+          if (response.IsSuccessStatusCode)
+          {
+            var responseStream = await response.Content.ReadAsStreamAsync();
+            Console.Write(responseStream);
+            NavManager.NavigateTo("/");
+          } else
+          {
+            Console.Write("Not SuccessFull");
+            var responseStream = await response.Content.ReadAsStreamAsync();
+            Console.Write(responseStream);
+          }
+        }
+        catch(Exception ex)
+        {
+          Console.Write(ex);
+        }
+      }
+    }
+}

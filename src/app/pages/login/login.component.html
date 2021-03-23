@@ -1,0 +1,56 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="login-container">
+  <h1 class="govuk-heading-xl page-title">Sign in</h1>
+  <h2>Sign in to all your CCS Services</h2>
+  <div class="form">
+    <form class="ui form login mb-two" [class.error]="!formValid(loginForm)" (submit)="onSubmit(loginForm)"
+      [formGroup]="loginForm">
+      <div class="form-group">
+        <label>{{ 'EMAIL' | translate }}<br/><span style="font-size: 14px;font-weight: normal;">This is the email address you used to setup your account</span></label>
+        <input type="email" name="email" formControlName="email" class="form-control"
+          [ngClass]="{ 'is-invalid': submitted && f.email.errors }" />
+        <div *ngIf="submitted && f.email.errors" class="invalid-feedback">
+          <div *ngIf="f.email.errors.required">Email is required</div>
+          <div *ngIf="f.email.errors.email">Email must be a valid email address</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>{{ 'PASSWORD' | translate }}</label><br>
+        <input name="password" type="password" formControlName="password" class="mb-one">
+      </div>
+
+      <button [disabled]="loading" type="submit">
+        <span *ngIf="loading" class="spinner-border spinner-border-sm mr-1"></span>
+        {{ 'LOGIN' | translate }}
+      </button>
+      <div class="form-group">
+        <div *ngIf="error" class="alert alert-danger mt-3 mb-0">{{error}}</div>
+      </div>
+    </form>
+    <div class="form-group">
+      <a routerLink="/register">I don't have an account</a>
+    </div>
+    <div class="form-group">
+      <div style="display:inline-block">
+        <hr>
+      </div>
+      <div style="display:inline-block; position: relative; width: 70px;height: 20px;">
+        <span style="position: absolute; left: 25px;top: -12px;font-weight: 500;">Or</span>
+      </div>
+      <div style="display:inline-block">
+        <hr>
+      </div>
+    </div>
+    <label>Log into your account</label>
+    <br />
+    <button class="ext-prov-btn btn-400"><a href="{{externalAuthUrl}}">Log in with Google</a></button><br />
+    <button class="ext-prov-btn btn-400"><a href="{{externalAuthUrl}}">Log in with Facebook</a></button>
+    <div class="align-right" style="margin: 40px 0 50px;">
+      <label>Problem signing in?</label>
+      <br />
+      <a class="not-visited" routerLink="/forgot-password">I have forgotten my password</a>
+      <br />
+      <a class="not-visited" routerLink="/change-password">Help and support for signing in </a>
+    </div>
+  </div>
+</div>

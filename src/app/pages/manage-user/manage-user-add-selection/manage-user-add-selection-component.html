@@ -1,0 +1,73 @@
+<!-- <div class="content flex"> -->
+<div class="user-profile-container">
+    <div class="govuk-breadcrumbs">
+        <ol class="govuk-breadcrumbs__list">
+            <li class="govuk-breadcrumbs__list-item">
+                <a class="govuk-breadcrumbs__link" routerLink="/home">{{ 'ADMINISTRATOR_DASHBOARD' | translate}}</a>
+            </li>
+            <li class="govuk-breadcrumbs__list-item">
+                <a class="govuk-breadcrumbs__link" routerLink="/manage-users">{{ 'MANAGE_YOUR_USER_ACCOUNTS'
+                    |translate}}</a>
+            </li>
+            <li class="govuk-breadcrumbs__list-item">
+                <span class="govuk-breadcrumbs__link"> {{ 'ADD_USERS' | translate }}</span>
+            </li>
+        </ol>
+    </div>
+    <h1 class="govuk-heading-xl page-title"> {{ 'ADD_USERS' | translate }}</h1>
+
+    <div class="govuk-error-summary radio-form-error" aria-labelledby="error-summary-title" role="alert" tabindex="-1"
+        id="error-summary" data-module="govuk-error-summary" *ngIf="formValid(selectionForm) == false && submitted">
+        <h2 class="govuk-error-summary__title" id="error-summary-title">
+            {{ 'ERROR_SUMMARY' | translate }}
+        </h2>
+        <div class="govuk-error-summary__body">
+            <ul class="govuk-list govuk-error-summary__list">
+                <li *ngIf="formValid(selectionForm) == false && submitted">
+                    <a href="#" onClick="return false;" (click)="scrollToAnchor('select-one-error')">
+                        {{ 'ERROR_SELECT_ONE_OPTION' | translate }} </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="form radio-form">
+        <form class="ui form profile mb-two" [formGroup]="selectionForm" (submit)="onSubmit(selectionForm)">
+            <div class="govuk-form-group"
+                [class.govuk-form-group--error]="formValid(selectionForm) == false && submitted">
+                <fieldset class="govuk-fieldset">
+                    <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
+                        {{ 'SELECT_ONE_OPTION_TO_CONTINUE' | translate }}
+                    </legend>
+                    <span *ngIf="formValid(selectionForm) == false && submitted" id="select-one-error"
+                        class="govuk-error-message">
+                        <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span>
+                        {{'ERROR_SELECT_ONE_OPTION' | translate }}
+                    </span>
+                    <div class="govuk-radios">
+                        <div class="govuk-radios__item">
+                            <input class="govuk-radios__input" id="single-user" type="radio" value="singleUser"
+                                formControlName="selection">
+                            <label class="govuk-label govuk-radios__label" for="single-user">
+                                {{ 'ADD_SINGLE_USER' | translate }}
+                            </label>
+                        </div>
+                        <div class="govuk-radios__item">
+                            <input class="govuk-radios__input" id="multiple-users" type="radio" value="multipleUsers"
+                                formControlName="selection">
+                            <label class="govuk-label govuk-radios__label" for="multiple-users">
+                                {{ 'ADD_MULTIPLE_USERS_BY_UPLOADING_CSV' | translate }}
+                            </label>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="govuk-button-group continue-button-group">
+                <button type="submit" class="govuk-button" data-module="govuk-button">
+                    {{ 'CONTINUE_BTN' | translate }}
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+<!-- </div> -->

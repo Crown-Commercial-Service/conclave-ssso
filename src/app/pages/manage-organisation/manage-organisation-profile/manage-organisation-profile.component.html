@@ -1,0 +1,113 @@
+<div class="content flex" [@slide]="(sideNavVisible$ | async) ? 'close' : 'open'">
+    <div class="govuk-breadcrumbs">
+        <ol class="govuk-breadcrumbs__list">
+            <li class="govuk-breadcrumbs__list-item">
+                <a class="govuk-breadcrumbs__link" routerLink="/home">Administrator dashboard</a>
+            </li>
+            <li class="govuk-breadcrumbs__list-item">
+                <span class="govuk-breadcrumbs__link">Manage your organisation</span>
+            </li>
+        </ol>
+    </div>
+    <h1 class="govuk-heading-xl page-title">Manage organisation</h1>
+    <!-- <div *ngIf="organisation$ | async as i">
+        <p style="margin-top:40px;">
+            <span style="font-weight: 500;">{{ i?.legalName }}</span><br />
+            {{ i?.address?.streetAddress }}<br *ngIf="i?.address?.streetAddress" />
+            {{ i?.address?.locality }}<br *ngIf="i?.address?.locality" />
+            {{ i?.address?.region }}<br *ngIf="i?.address?.region" />
+            {{ i?.address?.postalCode }}<br *ngIf="i?.address?.postalCode" />
+            {{ i?.address?.countryCode }}<br *ngIf="i?.address?.countryCode" />
+        </p>
+    </div> -->
+    <div>
+        <p style="margin-top:40px;">
+          <span style="font-weight: 500;">{{ org$?.legalName }}</span><br />
+          {{ organisationAddress?.streetAddress }}<br *ngIf="organisationAddress?.streetAddress" />
+          {{ organisationAddress?.locality }}<br *ngIf="organisationAddress?.locality" />
+          {{ organisationAddress?.region }}<br *ngIf="organisationAddress?.region" />
+          {{ organisationAddress?.postalCode }}<br *ngIf="organisationAddress?.postalCode" />
+          {{ organisationAddress?.countryCode }}<br *ngIf="organisationAddress?.countryCode" />
+        </p>
+    </div>
+    <h2>Contact details</h2>
+    <table class="govuk-table">
+        <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header">Name</th>
+            <th scope="col" class="govuk-table__header">Email address</th>
+            <th scope="col" class="govuk-table__header">Team name</th>
+            <th scope="col" class="govuk-table__header">Telephone number</th>
+            <th scope="col" class="govuk-table__header"></th>
+          </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+          <tr class="govuk-table__row" *ngFor="let row of contactData;">
+            <th scope="row" class="govuk-table__header">{{ row.name }}</th>
+            <td class="govuk-table__cell">{{ row.email }}</td>
+            <td class="govuk-table__cell">{{ row.teamName}}</td>
+            <td class="govuk-table__cell">{{ row.phoneNumber }}</td>
+            <td class="govuk-table__cell"><a (click)="onContactEditClick($event, row.contactId)">Edit</a></td>
+          </tr>
+        </tbody>
+    </table>
+    <div class="govuk-form-group govuk-button-group">
+        <button class="govuk-button govuk-button--secondary" data-module="govuk-button" (click)="onContactAddClick()" style="width: 220px;">Add another contact</button>
+    </div>
+    <h2>Site details</h2>
+    <table class="govuk-table">
+        <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header">Site name</th>
+            <th scope="col" class="govuk-table__header">Data created</th>
+            <th scope="col" class="govuk-table__header"></th>
+          </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+          <tr class="govuk-table__row" *ngFor="let row of siteData;">
+            <th scope="row" class="govuk-table__header">{{ row.siteName }}</th>
+            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell"><a (click)="onSiteEditClick(row)">Edit</a></td>
+          </tr>
+        </tbody>
+    </table>
+    <div class="govuk-form-group govuk-button-group">
+        <button class="govuk-button govuk-button--secondary" data-module="govuk-button" (click)="onSiteAddClick()" style="width: 200px;">Add a site</button>
+    </div>
+    <h2>Registries</h2>
+    <table class="govuk-table">
+        <caption class="govuk-table__caption govuk-table__caption--m">Below are the Registries currently linked to your Organisation</caption>
+        <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="row" class="govuk-table__header">Authority</th>
+            <th scope="col" class="govuk-table__header">ID</th>
+            <th scope="col" class="govuk-table__header">Type</th>
+            <th scope="col" class="govuk-table__header"></th>
+          </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+          <!-- <tr class="govuk-table__row" *ngFor="let row of registries;">
+            <th scope="row" class="govuk-table__header">{{ getSchemaName(row.scheme) }}</th>
+            <td class="govuk-table__cell">{{ row.id}}</td>
+            <td class="govuk-table__cell">{{ isPrimary(row) ? "Primary" : "Secondary" }}</td>
+            <td class="govuk-table__cell"><a (click)="onRegistryRemoveClick(row)" *ngIf="!isPrimary(row)">Remove</a></td>
+          </tr> -->
+          <tr class="govuk-table__row" *ngFor="let row of registries;">
+            <th scope="row" class="govuk-table__header">{{ getSchemaName(row.identifier.scheme) }}</th>
+            <td class="govuk-table__cell">{{ row.identifier.id}}</td>
+            <td class="govuk-table__cell">Primary</td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          <tr class="govuk-table__row" *ngFor="let row of additionalIdentifiers;">
+            <th scope="row" class="govuk-table__header">{{ getSchemaName(row.scheme) }}</th>
+            <td class="govuk-table__cell">{{ row.id }}</td>
+            <td class="govuk-table__cell">Secondary</td>
+            <td class="govuk-table__cell"><a (click)="onRegistryRemoveClick(row)">Remove</a></td>
+          </tr>
+        </tbody>
+    </table>
+    <div class="govuk-form-group govuk-button-group">
+        <button class="govuk-button govuk-button--secondary" data-module="govuk-button" (click)="onRegistryAddClick()" style="width: 200px;">Add new registry</button>
+    </div>
+    <p style="margin-top:40px;"><strong>If you have previously tried to signup or register (CII registry) and have made a mistake, <a href="/">click here</a> to submit a claim.</strong></p>
+</div>

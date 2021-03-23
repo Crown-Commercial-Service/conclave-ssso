@@ -1,0 +1,5 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex" [@slide]="(sideNavVisible$ | async) ? 'close' : 'open'">
+  <h1 class="govuk-heading-xl page-title">Token</h1>
+  {{ sampleData }}
+</div>
