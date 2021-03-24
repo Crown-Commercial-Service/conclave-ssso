@@ -35,7 +35,7 @@
     "ng-zorro-antd": "^11.0.1",
     "ngrx-store-freeze": "^0.2.4",
     "node-vault": "^0.9.21",
-    "rxjs": "~6.6.0",
+    "rxjs": "~6.6.6",
     "rxjs-compat": "^6.6.3",
     "save-dev": "0.0.1-security",
     "tslib": "^2.0.0",
