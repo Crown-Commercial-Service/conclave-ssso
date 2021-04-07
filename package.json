@@ -24,7 +24,7 @@
     "@angular/router": "^11.0.5",
     "@ngx-translate/core": "^13.0.0",
     "@ngx-translate/http-loader": "^6.0.0",
-    "@types/lodash": "^4.14.166",
+    "@types/lodash": "^4.14.168",
     "bootstrap": "^4.6.0",
     "crypto": "^1.0.1",
     "crypto-js": "^4.0.0",
