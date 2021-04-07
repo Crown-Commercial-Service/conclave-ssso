@@ -32,7 +32,7 @@
     "jwt-decode": "^3.1.2",
     "lodash": "^4.17.20",
     "moment": "^2.29.1",
-    "ng-zorro-antd": "^11.0.1",
+    "ng-zorro-antd": "^11.2.0",
     "ngrx-store-freeze": "^0.2.4",
     "node-vault": "^0.9.21",
     "rxjs": "~6.6.0",
