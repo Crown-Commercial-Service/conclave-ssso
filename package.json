@@ -31,7 +31,7 @@
     "govuk-frontend": "^3.11.0",
     "jw-angular-pagination": "^1.2.0",
     "jwt-decode": "^3.1.2",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "ng-zorro-antd": "^11.0.1",
     "ngrx-store-freeze": "^0.2.4",
