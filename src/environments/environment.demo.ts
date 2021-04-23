@@ -11,8 +11,7 @@ export const environment = {
       dashboard: 'https://demo-ccs-sso.london.cloudapps.digital'
     }
   },
-  wrapperApiKey: "",
   securityApiKey:'',
   usedPasswordThreshold: 5, //This value should be changed when Auth0 password history policy changed,
-  userNamePasswordIdentityProviderConnectionName: "Username-Password-Authentication",
+  listPageSize: 10
 };

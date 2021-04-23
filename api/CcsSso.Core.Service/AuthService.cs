@@ -1,10 +1,15 @@
 using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Dtos;
 using CcsSso.Domain.Dtos;
-using Microsoft.IdentityModel.Tokens;
+using CcsSso.Domain.Exceptions;
+using CcsSso.Shared.Contracts;
+using Newtonsoft.Json;
 using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
+using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service
@@ -12,43 +17,45 @@ namespace CcsSso.Core.Service
   public class AuthService : IAuthService
   {
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
+    private readonly ITokenService _tokenService;
     private readonly IHttpClientFactory _httpClientFactory;
-    public AuthService(ApplicationConfigurationInfo applicationConfigurationInfo, IHttpClientFactory httpClientFactory)
+
+    public AuthService(ApplicationConfigurationInfo applicationConfigurationInfo, ITokenService tokenService, IHttpClientFactory httpClientFactory)
     {
       _applicationConfigurationInfo = applicationConfigurationInfo;
+      _tokenService = tokenService;
       _httpClientFactory = httpClientFactory;
     }
 
     public async Task<bool> ValidateBackChannelLogoutTokenAsync(string backChanelLogoutToken)
     {
+      var result = await _tokenService.ValidateTokenAsync(backChanelLogoutToken, _applicationConfigurationInfo.JwtTokenValidationInfo.JwksUrl, _applicationConfigurationInfo.JwtTokenValidationInfo.IdamClienId, _applicationConfigurationInfo.JwtTokenValidationInfo.Issuer);
+      return result.IsValid;
+    }
+
+    public async Task ChangePasswordAsync(ChangePasswordDto changePassword)
+    {
       var client = _httpClientFactory.CreateClient();
-      client.BaseAddress = new Uri(_applicationConfigurationInfo.JwtTokenValidationInfo.JwksUrl);
-      var result = await client.GetAsync(string.Empty);
-      var jsonKeys = await result.Content.ReadAsStringAsync();
-      var jwks = new JsonWebKeySet(jsonKeys);
-      var jwk = jwks.Keys.First();
-      var validationParameters = new TokenValidationParameters
-      {
-        IssuerSigningKey = jwk,
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        RequireExpirationTime = true,
-        ValidateLifetime = true,
-        ValidAudience = _applicationConfigurationInfo.JwtTokenValidationInfo.IdamClienId,
-        ValidIssuer = _applicationConfigurationInfo.JwtTokenValidationInfo.Issuer        
-      };
+      client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
+      client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
+      var url = "/security/changepassword";
 
-      var tokenHandler = new JwtSecurityTokenHandler();
+      Dictionary<string, string> requestData = new Dictionary<string, string>
+          {
+            { "userName", changePassword.UserName},
+            { "newPassword", changePassword.NewPassword},
+            { "oldPassword", changePassword.OldPassword},
+          };
 
-      try
+      HttpContent data = new StringContent(JsonConvert.SerializeObject(requestData, new JsonSerializerSettings
+      { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
+
+      var result = await client.PostAsync(url, data);
+      if (result.StatusCode == HttpStatusCode.BadRequest)
       {
-        tokenHandler.ValidateToken(backChanelLogoutToken, validationParameters, out _);
-      }
-      catch (Exception)
-      {
-        return false;
-      }
-      return true;
+        var errorMessage = await result.Content.ReadAsStringAsync();
+        throw new CcsSsoException(errorMessage);
+      }      
     }
   }
 }

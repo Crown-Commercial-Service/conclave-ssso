@@ -11,6 +11,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from './services/auth/auth.service';
 import { environment } from 'src/environments/environment';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { LoadingIndicatorService } from './services/helper/loading-indicator.service';
 
 @Component({
   selector: 'app-root',
@@ -27,13 +28,16 @@ export class AppComponent implements OnInit {
   rpIFrameURL = this.sanitizer.bypassSecurityTrustResourceUrl(environment.uri.web.dashboard + '/assets/rpIFrame.html');
 
   constructor(private sanitizer: DomSanitizer, private overlay: OverlayContainer, private translate: TranslateService, protected uiStore: Store<UIState>, private router: Router,
-    private route: ActivatedRoute,public authService: AuthService) {
+    private route: ActivatedRoute, public authService: AuthService, public loadingIndicatorService: LoadingIndicatorService ) {
     translate.setDefaultLang('en');
     this.sideNavVisible$ = this.uiStore.pipe(select(getSideNavVisible));
   }
 
   ngOnInit(): void {
     this.isAuthenticated = this.authService.isUserAuthenticated();
+    if (this.isAuthenticated) {
+      this.authService.registerTokenRenewal();
+    }
     this.toggleControl.valueChanges.subscribe((darkMode) => {
       const darkClassName = 'darkMode';
       this.className = darkMode ? darkClassName : '';
@@ -41,47 +45,19 @@ export class AppComponent implements OnInit {
         this.overlay.getContainerElement().classList.add(darkClassName);
       } else {
         this.overlay.getContainerElement().classList.remove(darkClassName);
-      }      
+      }
     });
-    if(!localStorage.getItem('client_id'))
-    {
-      localStorage.setItem('client_id',environment.idam_client_id);
+    if (!localStorage.getItem('client_id')) {
+      localStorage.setItem('client_id', environment.idam_client_id);
     }
 
-    if(!localStorage.getItem('securityapiurl'))
-    {
-      localStorage.setItem('securityapiurl',environment.uri.api.security);
+    if (!localStorage.getItem('securityapiurl')) {
+      localStorage.setItem('securityapiurl', environment.uri.api.security);
     }
 
-    if(!localStorage.getItem('redirect_uri'))
-    {
-      localStorage.setItem('redirect_uri',environment.uri.web.dashboard);
+    if (!localStorage.getItem('redirect_uri')) {
+      localStorage.setItem('redirect_uri', environment.uri.web.dashboard);
     }
-    // this.route.queryParams.subscribe(params => {
-    //   if (params.code) {
-    //       this.authService.token(params.code).toPromise().then((response) => {
-    //           console.log('---------TOKEN RESPONSE START---------');
-    //           console.log(response);
-    //           console.log('---------TOKEN PASSWORD RESPONSE FINISH--------');
-    //           this.router.navigateByUrl('login');
-    //       }, (err) => {
-    //           console.log(err);
-    //       });
-    //   }
-    // });
-    // this.route.queryParams.subscribe(params => {
-    //   if (params['code']) {
-    //     this.authService.token(params['code']).toPromise().then((response) => {
-    //         console.log('---------TOKEN RESPONSE START---------');
-    //         console.log(response);
-    //         console.log('---------TOKEN PASSWORD RESPONSE FINISH--------');
-    //         localStorage.setItem('brickedon_aws_tokens', JSON.stringify(response));
-    //         this.router.navigateByUrl('home');
-    //     }, (err) => {
-    //         console.log(err);
-    //     });
-    //   }
-    // });
   }
 
   navigate(tab: any, subLink = null) {

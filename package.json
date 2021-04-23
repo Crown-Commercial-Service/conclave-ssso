@@ -29,6 +29,7 @@
     "crypto": "^1.0.1",
     "crypto-js": "^4.0.0",
     "govuk-frontend": "^3.11.0",
+    "jw-angular-pagination": "^1.2.0",
     "jwt-decode": "^3.1.2",
     "lodash": "^4.17.20",
     "moment": "^2.29.1",

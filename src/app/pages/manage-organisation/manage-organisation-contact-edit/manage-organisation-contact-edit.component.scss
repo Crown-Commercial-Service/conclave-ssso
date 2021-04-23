@@ -1,42 +1,32 @@
-app-manage-organisation-contact-edit {
-    h1 {
-        font-family: Source Sans Pro;
-        font-style: normal;
-        font-weight: 300;
-        font-size: 48px;
-        line-height: 50px;
-        margin-bottom: 0px;
-        padding-bottom: 0px;
-    }
+input,
+label,
+div,
+h1,
+h2,
+a,
+span,
+select,
+option,
+button {
+    font-family: Source Sans Pro;
+}
 
-    .contact-form{
-        margin-top: 40px;
-    }
+h1 {
+    margin-top: 38px;
+}
 
-    .save-button {
-        margin-top: 50px;
-        width: 180px;
-        height: 40px;
-        background: #007e8a;
-        box-shadow: inset 0px -3px 0px rgba(0, 0, 0, 0.597401);
-        border-radius: 3px;
-        color: #ffffff;
-    }
+a {
+    text-decoration: underline;
+}
 
-    .cancel-button {
-        margin-left: 45px;
-        margin-top: 50px;
-        width: 140px;
-        height: 40px;
-    }
+.delete-link {
+    font-size: 19px;
+}
 
-    .delete-link {
-        margin-top: 60px;
-        font-family: Source Sans Pro;
-        font-style: normal;
-        font-weight: normal;
-        font-size: 19px;
-        line-height: 24px;
-        color: #007194
-    }
+.contact-form-error {
+    margin-bottom: 10px;
+}
+
+.save-cancel-button-group {
+    margin-top: 80px;
 }

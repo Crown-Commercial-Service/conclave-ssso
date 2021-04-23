@@ -62,5 +62,13 @@ namespace CcsSso.Core.ExternalApi.Controllers
     {
       return await _configurationDetailService.GetIdentityProvidersAsync();
     }
+
+    [HttpGet("roles")]
+    [SwaggerOperation(Tags = new[] { "Configuration" })]
+    [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
+    public async Task<List<OrganisationRole>> GetRoles()
+    {
+      return await _configurationDetailService.GetRolesAsync();
+    }
   }
 }

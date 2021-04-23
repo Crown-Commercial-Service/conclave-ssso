@@ -95,11 +95,11 @@ namespace CcsSso.Api.Controllers
       return await _userService.CreateAsync(model);
     }
 
-    [HttpPost("GetPermissions")]
+    [HttpGet("GetPermissions")]
     [SwaggerOperation(Tags = new[] { "user" })]
-    public async Task<List<ServicePermissionDto>> GetPermissions(string token)
+    public async Task<List<ServicePermissionDto>> GetPermissions()
     {
-      return await _userService.GetPermissions(token);
+      return await _userService.GetPermissions();
     }
   }
 }

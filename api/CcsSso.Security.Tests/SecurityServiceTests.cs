@@ -4,6 +4,7 @@ using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
 using CcsSso.Security.Services;
 using CcsSso.Security.Tests.Helpers;
+using CcsSso.Shared.Contracts;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -24,10 +25,10 @@ namespace CcsSso.Security.Tests
       public async Task ReturnsToken_WhenLogin()
       {
         var mockIdentityProviderService = new Mock<IIdentityProviderService>();
-        mockIdentityProviderService.Setup(m => m.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>()))
+        mockIdentityProviderService.Setup(m => m.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
           .ReturnsAsync(new AuthResultDto { IdToken = "idToken" });
         var service = GetSecurityService(mockIdentityProviderService);
-        var result = await service.LoginAsync("username", "userpwd");
+        var result = await service.LoginAsync("clientId", "secret", "username", "userpwd");
         Assert.Equal("idToken", result.IdToken);
       }
     }
@@ -98,17 +99,7 @@ namespace CcsSso.Security.Tests
                     new object[]
                     {
                         DtoHelper.GetChangePasswordDto("", "", ""),
-                        "ACCESS_TOKEN_REQUIRED"
-                    },
-                    new object[]
-                    {
-                        DtoHelper.GetChangePasswordDto("123", "", ""),
-                        "NEW_PASSWORD_REQUIRED"
-                    },
-                    new object[]
-                    {
-                        DtoHelper.GetChangePasswordDto("123", "145", ""),
-                        "OLD_PASSWORD_REQUIRED"
+                        "USER_NAME_REQUIRED"
                     }
               };
 
@@ -249,7 +240,7 @@ namespace CcsSso.Security.Tests
           mockHttpClientFactory.Setup(_ => _.CreateClient(It.IsAny<string>())).Returns(mockHttpClient.Object);
           await SetupTestDataAsync(dataContext);
           var service = GetSecurityService(null, dataContext, mockHttpClientFactory);
-          var list = await service.PerformBackChannelLogoutAsync("123", new List<string>() { "1", "2", "3", "4" });
+          var list = await service.PerformBackChannelLogoutAsync("123","123", new List<string>() { "1", "2", "3", "4" });
           Assert.Equal(2, list.Count());
           Assert.Equal(new List<string>(){ "1", "2"}, list);
         });
@@ -314,7 +305,7 @@ namespace CcsSso.Security.Tests
       {
         var service = GetSecurityService();
         var ex = await Assert.ThrowsAsync<CcsSsoException>(async () => await service.LogoutAsync(string.Empty, string.Empty));
-        Assert.Equal("USERNAME_REQUIRED", ex.Message);
+        Assert.Equal("REDIRECT_URI_REQUIRED", ex.Message);
       }
     }
 
@@ -386,9 +377,10 @@ XfpE78ZNmRoLpF5k61uHRBafBlKloM73jyoZwQtBFfPqptFLwbw=",
       };
 
       var jwtTokenHandler = new JwtTokenHandler(applicationConfigurationInfo);
-
+      Mock<ICcsSsoEmailService> mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
+      var mockLocalCacheService = new Mock<ILocalCacheService>();
       var service = new SecurityService(mockIdentityProviderService.Object, jwtTokenHandler, mockHttpClientFactory.Object,
-        mockIDataContext, applicationConfigurationInfo);
+        mockIDataContext, applicationConfigurationInfo, mockCcsSsoEmailService.Object, mockLocalCacheService.Object);
       return service;
     }
   }

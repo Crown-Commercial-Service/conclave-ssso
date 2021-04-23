@@ -6,7 +6,7 @@ export class TokenService {
   constructor() {
   }
 
-  getDecodedIdToken(token: string): any {
+  getDecodedToken(token: string): any {
     try{
         let jwtToken = jwt_decode(token);
         return jwtToken
@@ -17,8 +17,7 @@ export class TokenService {
   }
 
   getDecodedAccessToken(): any {
-    const tokens = JSON.parse(localStorage.getItem('brickedon_aws_tokens')+'');
-    let accessToken = this.getDecodedIdToken(tokens.accessToken);
+    let accessToken = this.getDecodedToken(localStorage.getItem('access_token') || '');
     return accessToken;
   }
 }

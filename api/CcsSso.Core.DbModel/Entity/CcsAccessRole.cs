@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -18,9 +19,13 @@ namespace CcsSso.DbModel.Entity
 
     public string CcsAccessRoleDescription { get; set; }
 
-    public List<UserAccessRole> UserAccessRoles { get; set; }
+    public RoleEligibleOrgType OrgTypeEligibility { get; set; }
 
-    public List<GroupAccess> GroupAccesses { get; set; }
+    public RoleEligibleSubscriptionType SubscriptionTypeEligibility { get; set; }
+
+    public RoleEligibleTradeType TradeEligibility { get; set; }
+
+    public List<OrganisationEligibleRole> OrganisationEligibleRoles { get; set; }
 
     public List<ServiceRolePermission> ServiceRolePermissions { get; set; }
 

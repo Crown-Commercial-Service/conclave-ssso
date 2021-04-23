@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, map, share, timeout } from 'rxjs/operators';
 
 import { BaseComponent } from 'src/app/components/base/base.component';
@@ -27,13 +27,15 @@ export class ManageOrganisationRegistrySearchComponent extends BaseComponent imp
 
   public items$!: Observable<any>;
   public scheme!: string;
+  public schemeSubject: BehaviorSubject<string> = new BehaviorSubject<string>('GB-COH');
+  public schemeSubjectObs: Observable<string> = this.schemeSubject.asObservable();
   public schemeName!: string;
   public txtValue!: string;
   public organisationId!: number;
   submitted: boolean = false;
   public orgId!: string;
 
-  constructor(private ciiService: ciiService, private router: Router, private route: ActivatedRoute, protected uiStore: Store<UIState>) {
+  constructor(private ref: ChangeDetectorRef, private ciiService: ciiService, private router: Router, private route: ActivatedRoute, protected uiStore: Store<UIState>) {
     super(uiStore);
     this.organisationId = parseInt(this.route.snapshot.paramMap.get('organisationId') || '0');
     this.txtValue = '';
@@ -63,10 +65,18 @@ export class ManageOrganisationRegistrySearchComponent extends BaseComponent imp
   }
 
   public onSelect(item: any) {
-    // this.scheme === item.scheme;
+    this.schemeSubject.next(item.scheme);
+    var el = document.getElementById(item.scheme) as HTMLInputElement;
+    if (el) {
+      el.checked = true;
+    }
+    this.scheme === item.scheme;
     this.submitted = false;
     this.txtValue == '';
     localStorage.setItem('scheme_name', JSON.stringify(item.schemeName));
+    setTimeout(() => {
+      this.ref.detectChanges();
+    }, 5000);
   }
 
   public isValid(): boolean {

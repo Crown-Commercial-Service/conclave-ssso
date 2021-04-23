@@ -6,14 +6,21 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,500" rel="stylesheet">
-  <!--<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=swap" rel="stylesheet">-->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/toolkit.styles.min.css">
 </head>
 <body class="govuk-template__body show-flourishes pillar--none js-enabled">
 <app-root></app-root>
 <style>
+  @import url(//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,500);
+  @font-face {
+    font-family: 'Source Sans Pro';
+    font-style: normal;
+    font-weight: 300;
+    src: url('/assets/fonts/SourceSansPro-Regular.ttf') format('truetype'),
+    url('/assets/fonts/light-94a07e06a1-v2.woff2') format('woff2'),
+    url('/assets/fonts/light-f591b13f7d-v2.woff') format('woff');
+  }
   .footer-global {
     background-color: #2F2F2F;
     color: #fff;
@@ -128,6 +135,14 @@
   }
   .govuk-breadcrumbs__link {
     color: #0b0c0c !important;
+    text-decoration: revert;
+  }
+  .govuk-back-link:before {
+    clip-path: unset !important;
+    -webkit-clip-path: unset !important;
+  }
+  .govuk-back-link:active, .govuk-back-link:focus, .govuk-back-link:hover, .govuk-back-link:link, .govuk-back-link:visited {
+    text-decoration: none !important;
   }
   @media (min-width: 40.0625em) {
     .govuk-width-container {
@@ -157,6 +172,10 @@
         max-width: 1280px;
     }
   }
+  .govuk-heading-xl {
+    font-family: 'Source Sans Pro','HelveticaNeue','Helvetica Neue','Arial','Helvetica',sans-serif;
+    font-weight: 200;
+}
 </style>
 </body>
 </html>

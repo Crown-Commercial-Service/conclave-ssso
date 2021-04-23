@@ -9,6 +9,7 @@ namespace CcsSso.Security.Domain.Dtos
     [JsonPropertyName("code")]
     public string Code { get; set; }
 
+    [JsonPropertyName("refresh_token")]
     public string RefreshToken { get; set; }
 
     [Required]
@@ -25,6 +26,12 @@ namespace CcsSso.Security.Domain.Dtos
 
     [JsonPropertyName("code_verifier")]
     public string CodeVerifier { get; set; }
+
+    [JsonPropertyName("client_secret")]
+    public string ClientSecret { get; set; }
+
+    [JsonPropertyName("state")]
+    public string State { get; set; }
   }
 
   public class TokenResponseInfo

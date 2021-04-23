@@ -5,6 +5,7 @@ namespace CcsSso.Domain.Constants
     public const string InvalidContactType = "INVALID_CONTACT_TYPE";
     public const string DAApiRequestContentType = "application/json";
     public const string ConclaveIdamConnectionName = "Username-Password-Authentication";
+    public const string OrgAdminRoleNameKey = "ORG_ADMINISTRATOR";
   }
 
   public static class ErrorConstant
@@ -21,15 +22,27 @@ namespace CcsSso.Domain.Constants
     public const string ErrorPartyIdRequired = "ERROR_PARTY_ID_REQUIRED";
     public const string ErrorOrganisationIdRequired = "ERROR_ORGANISATION_ID_REQUIRED";
     public const string ErrorInvalidIdentifier = "INVALID_IDENTIFIER";
+    public const string ErrorInvalidDetails = "INVALID_DETAILS";
+    public const string ErrorInvalidCiiOrganisationId = "INVALID_CII_ORGANISATION_ID";
     public const string ErrorInvalidOrganisationName = "INVALID_LEGAL_NAME";
     public const string ErrorInvalidOrganisationUri = "INVALID_URI";
     public const string ErrorInvalidSiteName = "INVALID_SITE_NAME";
+    public const string ErrorInvalidSiteAddress = "INVALID_SITE_ADDRESS";
     public const string ErrorInsufficientDetails = "INSUFFICIENT_DETAILS";
     public const string ErrorInvalidUserId = "INVALID_USER_ID";
     public const string ErrorInvalidFirstName = "INVALID_FIRST_NAME";
     public const string ErrorInvalidLastName = "INVALID_LAST_NAME";
+    public const string ErrorInvalidUserDetail = "INVALID_USER_DETAIL";
+    public const string ErrorInvalidTitle = "INVALID_TITLE";
+    public const string ErrorInvalidUserGroupRole = "INVALID_USER_GROUP_ROLE";
     public const string ErrorInvalidUserGroup = "INVALID_USER_GROUP";
+    public const string ErrorInvalidUserRole = "INVALID_ROLE";
     public const string ErrorInvalidIdentityProvider = "INVALID_IDENTITY_PROVIDER";
+    public const string ErrorCannotDeleteLastOrgAdmin = "ERROR_CANNOT_DELETE_LAST_ADMIN_OF_ORGANISATION";
+    public const string ErrorCannotRemoveAdminRoleGroupLastOrgAdmin = "ERROR_CANNOT_REMOVE_ADMIN_ROLE_OR_GROUP_OF_LAST_ADMIN";
+    public const string ErrorInvalidGroupName = "INVALID_GROUP_NAME"; 
+    public const string ErrorInvalidRoleInfo = "INVALID_ROLE_INFO";
+    public const string ErrorInvalidUserInfo = "INVALID_USER_INFO";
   }
 
   public static class VirtualContactTypeName
@@ -52,6 +65,7 @@ namespace CcsSso.Domain.Constants
   public static class DateTimeFormat
   {
     public const string DateFormat = "dd/MM/yyyy";
+    public const string DateFormatShortMonth = "dd MMM yyyy";
   }
 
   public static class ContactReasonType

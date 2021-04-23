@@ -1,3 +1,4 @@
+using CcsSso.Core.Domain.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,5 +10,7 @@ namespace CcsSso.Core.Domain.Contracts
   public interface IAuthService
   {
     Task<bool> ValidateBackChannelLogoutTokenAsync(string backChanelLogoutToken);
+
+    Task ChangePasswordAsync(ChangePasswordDto changePassword);
   }
 }

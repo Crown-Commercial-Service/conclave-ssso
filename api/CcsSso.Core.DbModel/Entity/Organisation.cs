@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Entity;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -16,7 +17,11 @@ namespace CcsSso.DbModel.Entity
 
     public string OrganisationUri { get; set; }
 
-    public bool RightToBuy { get; set; }
+    public bool? RightToBuy { get; set; }
+
+    public string BusinessType { get; set; }
+
+    public int? SupplierBuyerType { get; set; }
 
     public Party Party { get; set; }
 
@@ -29,6 +34,10 @@ namespace CcsSso.DbModel.Entity
     public List<OrganisationUserGroup> UserGroups { get; set; }
 
     public List<OrganisationAccessRole> OrganisationAccessRoles { get; set; }
+
+    public List<OrganisationEligibleRole> OrganisationEligibleRoles { get; set; }
+
+    public List<OrganisationEligibleIdentityProvider> OrganisationEligibleIdentityProviders { get; set; }
 
     public List<TradingOrganisation> TradingOrganisations { get; set; }
 

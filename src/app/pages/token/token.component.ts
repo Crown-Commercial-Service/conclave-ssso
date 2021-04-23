@@ -39,6 +39,5 @@ export class TokenComponent extends BaseComponent implements OnInit {
         //     },
         //     err => console.log(err)
         // );
-        this.sampleData = localStorage.getItem('brickedon_aws_tokens');
     }
 }

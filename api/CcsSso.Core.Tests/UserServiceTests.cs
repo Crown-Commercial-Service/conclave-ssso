@@ -15,62 +15,7 @@ namespace CcsSso.Tests
   {
     public class Get
     {
-      [Fact]
-      public async Task ReturnsNoFoundException_WhenProvideInValidId()
-      {
-        await DataContextHelper.ScopeAsync(async dataContext =>
-        {
-          await SetupTestDataAsync(dataContext);
-          var userService = GetUserService(dataContext);
-          await Assert.ThrowsAnyAsync<ResourceNotFoundException>(async () => await userService.GetAsync(100));
-        });
-      }
-
-
-      [Fact]
-      public async Task ReturnsUser_WhenProvidesValidId()
-      {
-        await DataContextHelper.ScopeAsync(async dataContext =>
-        {
-          await SetupTestDataAsync(dataContext);
-          var userService = GetUserService(dataContext);
-          var userDetails = await userService.GetAsync("ravi@gmail.com");
-          Assert.NotNull(userDetails);
-          Assert.Single(userDetails.UserGroups);
-          var userGroup = userDetails.UserGroups.FirstOrDefault();
-          Assert.Equal("ADMIN", userGroup.Group);
-          Assert.Equal("SE", userGroup.Role);
-          Assert.Equal("ravi", userDetails.FirstName);
-          Assert.Equal("prasad", userDetails.LastName);
-          Assert.NotNull(userDetails.UserGroups);
-        });
-      }
-
-      [Fact]
-      public async Task ReturnsNoFoundException_WhenProvideInUserName()
-      {
-        await DataContextHelper.ScopeAsync(async dataContext =>
-        {
-          await SetupTestDataAsync(dataContext);
-          var userService = GetUserService(dataContext);
-          await Assert.ThrowsAnyAsync<ResourceNotFoundException>(async () => await userService.GetAsync("ravi123@gmail.com"));
-        });
-      }
-
-
-      [Fact]
-      public async Task ReturnsUser_WhenProvidesValidUserName()
-      {
-        await DataContextHelper.ScopeAsync(async dataContext =>
-        {
-          await SetupTestDataAsync(dataContext);
-          var userService = GetUserService(dataContext);
-          var userDetails = await userService.GetAsync(1);
-          Assert.NotNull(userDetails);
-          Assert.Equal("ravi", userDetails.FirstName);
-          Assert.Equal("prasad", userDetails.LastName);
-        });
-      }
+      
     }
 
     static IUserService GetUserService(IDataContext dataContext)

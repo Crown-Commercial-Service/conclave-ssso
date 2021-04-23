@@ -32,7 +32,6 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import * as reducers from './store/ui.reducers';
 import { HttpJwtAuthInterceptor } from './interceptors/http-jtw-auth.interceptor';
-import { HttpBasicAuthInterceptor } from './interceptors/http-basic-auth.interceptor';
 import { AuthService } from './services/auth/auth.service';
 import { TokenService } from './services/auth/token.service';
 import { ComponentsModule } from './components/index';
@@ -46,6 +45,7 @@ import { AuthSuccessComponent } from './pages/auth-success/auth-success.componen
 import { RegistrationSuccessComponent } from './pages/registration-success/registration-success.component';
 import { ManageOrganisationLoginComponent } from './pages/manage-organisation/manage-organisation-login/manage-organisation-login.component';
 import { ManageOrgRegStep1Component } from './pages/manage-organisation/manage-organisation-registration-step-1/manage-organisation-registration-step-1.component';
+import { ManageOrgRegStep1BComponent } from './pages/manage-organisation/manage-organisation-registration-step-1b/manage-organisation-registration-step-1b.component';
 import { ManageOrgRegStep2Component } from './pages/manage-organisation/manage-organisation-registration-step-2/manage-organisation-registration-step-2.component';
 import { ManageOrgRegStep3Component } from './pages/manage-organisation/manage-organisation-registration-step-3/manage-organisation-registration-step-3.component';
 import { ManageOrgRegAdditionalIdentifiersComponent } from './pages/manage-organisation/manage-organisation-registration-additional-identifiers/manage-organisation-registration-additional-identifiers.component';
@@ -83,13 +83,42 @@ import { ManageUserAddSelectionComponent } from './pages/manage-user/manage-user
 import { ManageUserAddSingleUserDetailComponent } from './pages/manage-user/manage-user-add-single-user-detail/manage-user-add-single-user-detail.component';
 import { ManageUserConfirmResetPasswordComponent } from './pages/manage-user/manage-user-confirm-reset-password/manage-user-confirm-reset-password-component';
 import { EnumToArrayPipe } from './pipes/enumToArrayPipe';
-import { ManageOrganisationSiteEditConfirmationComponent } from './pages/manage-organisation/manage-organisation-profile-site-edit-confirm/manage-organisation-profile-site-edit-confirm.component';
 import { ManageOrganisationSiteEditComponent } from './pages/manage-organisation/manage-organisation-profile-site-edit/manage-organisation-profile-site-edit.component';
-import { ManageOrganisationSiteDeleteConfirmationComponent } from './pages/manage-organisation/manage-organisation-profile-site-delete-confirm/manage-organisation-profile-site-delete-confirm.component';
 import { ManageOrganisationSiteDeleteComponent } from './pages/manage-organisation/manage-organisation-profile-site-delete/manage-organisation-profile-site-delete.component';
-import { ManageOrganisationSiteAddConfirmationComponent } from './pages/manage-organisation/manage-organisation-profile-site-add-confirm/manage-organisation-profile-site-add-confirm.component';
-import { ManageOrganisationSiteAddComponent } from './pages/manage-organisation/manage-organisation-profile-site-add/manage-organisation-profile-site-add.component';
 import { UserContactDeleteConfirmComponent } from './pages/user-contact/user-contact-delete-confirm/user-contact-delete-confirm-component';
+import { NominateComponent } from './pages/nominate/nominate.component';
+import { NominateSuccessComponent } from './pages/nominate-success/nominate-success.component';
+import { ManageUserDeleteConfirmComponent } from './pages/manage-user/manage-user-delete-confirm/manage-user-delete-confirm-component';
+import { ManageOrganisationErrorComponent } from './pages/manage-organisation/manage-organisation-error/manage-organisation-error.component';
+import { ContactUsComponent } from './pages/contactus/contactus.component';
+import { BuyerSearchComponent } from './pages/buyer/search/search.component';
+import { BuyerConfirmComponent } from './pages/buyer/confirm/confirm.component';
+import { BuyerDetailsComponent } from './pages/buyer/details/details.component';
+import { BuyerSuccessComponent } from './pages/buyer/success/success.component';
+import { OrgSupportSearchComponent } from './pages/org-support/search/search.component';
+import { OrgSupportDetailsComponent } from './pages/org-support/details/details.component';
+import { OrgSupportConfirmComponent } from './pages/org-support/confirm/confirm.component';
+import { OrgSupportSuccessComponent } from './pages/org-support/success/success.component';
+import { OrgSupportConfirmResetPasswordComponent } from './pages/org-support/confirm-reset-password/confirm.component';
+import { OrgSupportSuccessResetPasswordComponent } from './pages/org-support/success-reset-password/success.component';
+import { OrgSupportSuccessChangedRoleComponent } from './pages/org-support/success-changed-role/success.component';
+import { JwPaginationComponent } from 'src/app/components/pagination/pagination';
+import { ManageGroupListComponent } from './pages/manage-group/manage-group-list/manage-group-list-component';
+import { ManageGroupEditNameComponent } from './pages/manage-group/manage-group-edit-name/manage-group-edit-name-component';
+import { ManageGroupEditUsersComponent } from './pages/manage-group/manage-group-edit-users/manage-group-edit-users-component';
+import { ManageGroupEditUsersConfirmComponent } from './pages/manage-group/manage-group-edit-users-confirm/manage-group-edit-users-confirm-component';
+import { ManageGroupEditRolesComponent } from './pages/manage-group/manage-group-edit-roles/manage-group-edit-roles-component';
+import { ManageGroupEditRolesConfirmComponent } from './pages/manage-group/manage-group-edit-roles-confirm/manage-group-edit-roles-confirm-component';
+import { ManageGroupViewComponent } from './pages/manage-group/manage-group-view/manage-group-view-component';
+import { ManageGroupOperationSuccessComponent } from './pages/manage-group/manage-group-operation-success/manage-group-operation-success-component';
+import { ManageGroupDeleteConfirmComponent } from './pages/manage-group/manage-group-delete-confirm/manage-group-delete-confirm-component';
+import { ManageOrganisationProfileSuccessComponent } from './pages/manage-organisation/manage-organisation-profile-success/manage-organisation-profile-success.component';
+import { LoadingIndicatorInterceptor } from './interceptors/loading-indicator.interceptor';
+import { LoadingIndicatorService } from './services/helper/loading-indicator.service';
+import { BuyerConfirmChangesComponent } from './pages/buyer/confirm-changes/confirm.component';
+import { ManageOrgRegRightToBuyComponent } from './pages/manage-organisation/manage-organisation-registration-rightToBuy/manage-organisation-registration-type.component';
+import { ManageOrgRegBuyerTypeComponent } from './pages/manage-organisation/manage-organisation-registration-buyer-type/manage-organisation-registration-buyer-type.component';
+// import { JwPaginationComponent } from 'jw-angular-pagination';
 
 export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http);
@@ -103,6 +132,7 @@ export function createTranslateLoader(http: HttpClient) {
   declarations: [
     AppComponent,
     HomeComponent,
+    ContactUsComponent,
     LoginComponent,
     OperationSuccessComponent,
     OperationFailedComponent,
@@ -117,7 +147,11 @@ export function createTranslateLoader(http: HttpClient) {
     RegistrationSuccessComponent,
     ManageOrganisationLoginComponent,
     ManageOrganisationProfileComponent,
+    ManageOrganisationProfileSuccessComponent,
+    NominateComponent,
+    NominateSuccessComponent,
     ManageOrgRegStep1Component,
+    ManageOrgRegStep1BComponent,
     ManageOrgRegStep2Component,
     ManageOrgRegStep3Component,
     ManageOrgRegAdditionalIdentifiersComponent,
@@ -149,13 +183,35 @@ export function createTranslateLoader(http: HttpClient) {
     ManageUserAddSelectionComponent,
     ManageUserAddSingleUserDetailComponent,
     ManageUserConfirmResetPasswordComponent,
+    ManageUserDeleteConfirmComponent,
     EnumToArrayPipe,
-    ManageOrganisationSiteAddComponent,
-    ManageOrganisationSiteAddConfirmationComponent,
     ManageOrganisationSiteDeleteComponent,
-    ManageOrganisationSiteDeleteConfirmationComponent,
     ManageOrganisationSiteEditComponent,
-    ManageOrganisationSiteEditConfirmationComponent
+    ManageOrganisationErrorComponent,
+    BuyerSearchComponent,
+    BuyerDetailsComponent,
+    BuyerConfirmComponent,
+    BuyerSuccessComponent,
+    OrgSupportSearchComponent,
+    OrgSupportDetailsComponent,
+    OrgSupportConfirmComponent,
+    OrgSupportSuccessComponent,
+    OrgSupportConfirmResetPasswordComponent,
+    OrgSupportSuccessResetPasswordComponent,
+    OrgSupportSuccessChangedRoleComponent,
+    JwPaginationComponent,
+    ManageGroupListComponent,
+    ManageGroupEditNameComponent,
+    ManageGroupEditUsersComponent,
+    ManageGroupEditUsersConfirmComponent,
+    ManageGroupEditRolesComponent,
+    ManageGroupEditRolesConfirmComponent,
+    ManageGroupViewComponent,
+    ManageGroupOperationSuccessComponent,
+    ManageGroupDeleteConfirmComponent,
+    BuyerConfirmChangesComponent,
+    ManageOrgRegRightToBuyComponent,
+    ManageOrgRegBuyerTypeComponent
   ],
   imports: [
     // BrowserModule,
@@ -200,7 +256,9 @@ export function createTranslateLoader(http: HttpClient) {
   providers: [
     AuthService,
     TokenService,
+    // LoadingIndicatorService,
     { provide: HTTP_INTERCEPTORS, useClass: HttpJwtAuthInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: LoadingIndicatorInterceptor, multi: true },
     // { provide: HTTP_INTERCEPTORS, useClass: HttpBasicAuthInterceptor, multi: true },
   ],
   bootstrap: [AppComponent]

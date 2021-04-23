@@ -6,12 +6,11 @@ using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Services;
 using CcsSso.Security.Services.Helpers;
-using CcsSso.Security.Services.Providers;
-using CcsSso.Shared.Cache.Contracts;
-using CcsSso.Shared.Cache.Services;
+using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain;
+using CcsSso.Shared.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +20,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -43,7 +41,7 @@ namespace CcsSso.Security.Api
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
-      services.Configure<VaultOptions>(Configuration.GetSection("Vault"));
+      services.Configure<CustomOptions.VaultOptions>(Configuration.GetSection("Vault"));
       services.AddDataProtection();
 
       services.AddControllers(opt =>
@@ -53,6 +51,7 @@ namespace CcsSso.Security.Api
       });
       services.AddSingleton(s =>
       {
+        bool.TryParse(Configuration["Email:SendNotificationsEnabled"], out bool sendNotificationsEnabled);
         int.TryParse(Configuration["SessionConfig:SessionTimeoutInMinutes"], out int sessionTimeOut);
         if (sessionTimeOut <= 0)
         {
@@ -103,12 +102,14 @@ namespace CcsSso.Security.Api
             AWSAccessSecretKey = Configuration["AWSCognito:AccessSecretKey"],
             AWSCognitoURL = Configuration["AWSCognito:AWSCognitoURL"]
           },
-          EmailConfigurationInfo = new EmailConfigurationInfo()
+          CcsEmailConfigurationInfo = new CcsEmailConfigurationInfo()
           {
-            ApiKey = Configuration["Email:ApiKey"],
             UserActivationEmailTemplateId = Configuration["Email:UserActivationEmailTemplateId"],
             UserActivationLinkTTLInMinutes = int.Parse(Configuration["Email:UserActivationLinkTTLInMinutes"]),
-            ResetPasswordEmailTemplateId = Configuration["Email:ResetPasswordEmailTemplateId"]
+            ResetPasswordEmailTemplateId = Configuration["Email:ResetPasswordEmailTemplateId"],
+            NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
+            ChangePasswordNotificationTemplateId = Configuration["Email:ChangePasswordNotificationTemplateId"],
+            SendNotificationsEnabled = sendNotificationsEnabled
           },
           RollBarConfigurationInfo = new RollBarConfigurationInfo()
           {
@@ -147,6 +148,16 @@ namespace CcsSso.Security.Api
         return appConfigInfo;
       });
 
+      services.AddSingleton(s =>
+      {
+        EmailConfigurationInfo emailConfigurationInfo = new EmailConfigurationInfo
+        {
+          ApiKey = Configuration["Email:ApiKey"],
+        };
+
+        return emailConfigurationInfo;
+      });
+
       if (!string.IsNullOrEmpty(Configuration["RollBarLogger:Token"]) && !string.IsNullOrEmpty(Configuration["RollBarLogger:Environment"]))
       {
         RollbarLoggerExtensions.ConfigureRollbarSingleton(Configuration["RollBarLogger:Token"], Configuration["RollBarLogger:Environment"]);
@@ -166,8 +177,10 @@ namespace CcsSso.Security.Api
       }
       services.AddSingleton<TokenHelper>();
       services.AddSingleton<IJwtTokenHandler, JwtTokenHandler>();
-      services.AddSingleton<IEmaillProviderService, CustomEmailProviderService>();
+      services.AddSingleton<IEmailProviderService, EmailProviderService>();
       services.AddSingleton<ICcsSsoEmailService, CcsSsoEmailService>();
+      services.AddSingleton<ILocalCacheService, InMemoryCacheService>();
+      services.AddMemoryCache();
       //services.AddSingleton<IRemoteCacheService, RedisCacheService>();
       //services.AddSingleton<RedisConnectionPoolService>(_ =>
       //  new RedisConnectionPoolService("dd")
@@ -231,7 +244,7 @@ namespace CcsSso.Security.Api
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-     
+
       app.AddLoggerMiddleware();// Registers the logger configured on the core library
       if (!string.IsNullOrEmpty(Configuration["RollBarLogger:Token"]) && !string.IsNullOrEmpty(Configuration["RollBarLogger:Environment"]))
       {

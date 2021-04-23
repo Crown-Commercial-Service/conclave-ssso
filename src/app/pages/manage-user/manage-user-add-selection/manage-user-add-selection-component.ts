@@ -9,7 +9,7 @@ import { slideAnimation } from "src/app/animations/slide.animation";
 import { User, UserGroup, UserListResponse, UserProfileRequestInfo } from "src/app/models/user";
 import { WrapperUserService } from "src/app/services/wrapper/wrapper-user.service";
 import { WrapperUserContactService } from "src/app/services/wrapper/wrapper-user-contact.service";
-import { ContactInfo, UserContactInfoList } from "src/app/models/userContact";
+import { ContactInfo, UserContactInfoList } from "src/app/models/contactInfo";
 import { Router } from "@angular/router";
 import { OperationEnum } from "src/app/constants/enum";
 import { ScrollHelper } from "src/app/services/helper/scroll-helper.services";

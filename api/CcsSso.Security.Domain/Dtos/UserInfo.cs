@@ -28,18 +28,38 @@ namespace CcsSso.Security.Domain.Dtos
     public string ProfilePageUrl { get; set; }
   }
 
+  public class IdamUser
+  {
+    public string FirstName { get; set; }
+
+    public string LastName { get; set; }
+
+    public bool EmailVerified { get; set; }
+  }
+
 
   public class UserProfileInfo
   {
-    public int Id { get; set; }
+    public UserDetail Detail { get; set; }
 
     public string UserName { get; set; }
 
+    public string FirstName { get; set; }
+
+    public string LastName { get; set; }
+
     public string OrganisationId { get; set; }
+  }
+
+  public class UserDetail
+  {
+    public int Id { get; set; }
 
     public string IdentityProvider { get; set; }
 
     public List<GroupAccessRole> UserGroups { get; set; }
+
+    public List<string> RoleNames { get; set; }
   }
 
   public class GroupAccessRole

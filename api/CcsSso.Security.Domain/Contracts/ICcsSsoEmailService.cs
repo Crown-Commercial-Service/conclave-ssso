@@ -10,5 +10,9 @@ namespace CcsSso.Security.Domain.Contracts
     Task SendUserActivationLinkAsync(string email, string verificationLink);
 
     Task SendResetPasswordAsync(string email, string verificationLink);
+
+    Task SendNominateEmailAsync(string email, string link);
+
+    Task SendChangePasswordNotificationAsync(string email);
   }
 }

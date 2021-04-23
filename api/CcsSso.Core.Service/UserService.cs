@@ -1,3 +1,4 @@
+using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
@@ -63,14 +64,15 @@ namespace CcsSso.Service
     /// <returns></returns>
     public async Task<string> CreateAsync(UserDto model)
     {
-      var identifyProvider = _dataContext.IdentityProvider.FirstOrDefault(x => x.IdpConnectionName == "Username-Password-Authentication");
-      var orgGroup = _dataContext.OrganisationUserGroup.FirstOrDefault(x => x.UserGroupNameKey == "ORG_ADMINISTRATOR_GROUP" && x.OrganisationId == model.OrganisationId);
+      // var identifyProvider = _dataContext.IdentityProvider.FirstOrDefault(x => x.IdpConnectionName == "Username-Password-Authentication");
+      var identifyProvider = _dataContext.OrganisationEligibleIdentityProvider.FirstOrDefault(x => x.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
+      // var orgGroup = _dataContext.OrganisationUserGroup.FirstOrDefault(x => x.UserGroupNameKey == "ORG_ADMINISTRATOR_GROUP" && x.OrganisationId == model.OrganisationId);
       //var userExists = await _dataContext.User.SingleOrDefaultAsync(t => t.UserName == model.UserName);
       //if (userExists != null)
       //{
       //  throw new System.Exception("UserName already exists");
       //}
-      // var identityProviderId = (await _dataContext.IdentityProvider.SingleOrDefaultAsync(t => t.IdpName == "AWS Cognito")).Id;
+      //var identityProviderId = (await _dataContext.IdentityProvider.SingleOrDefaultAsync(t => t.IdpName == "AWS Cognito")).Id;
       var partyType = await _dataContext.PartyType.SingleOrDefaultAsync(t => t.PartyTypeName == "USER");
       var party = new CcsSso.DbModel.Entity.Party
       {
@@ -112,7 +114,7 @@ namespace CcsSso.Service
         JobTitle = model.JobTitle,
         UserTitle = 1,
         UserName = model.UserName,
-        IdentityProviderId = identifyProvider.Id,
+        OrganisationEligibleIdentityProviderId = identifyProvider.Id,
         PartyId = party.Id,
         // PersonId = person.Id,
         CreatedPartyId = party.Id,
@@ -122,11 +124,14 @@ namespace CcsSso.Service
         IsDeleted = false,
       };
       _dataContext.User.Add(user);
-      var userGroupMembership = new CcsSso.DbModel.Entity.UserGroupMembership {
+      var role = await _dataContext.OrganisationEligibleRole.FirstOrDefaultAsync(x => x.CcsAccessRole.CcsAccessRoleNameKey == "ORG_ADMINISTRATOR" && x.OrganisationId == model.OrganisationId);
+      var userAccessRole = new CcsSso.DbModel.Entity.UserAccessRole
+      {
         User = user,
-        OrganisationUserGroup = orgGroup
+        OrganisationEligibleRole = role
       };
-      _dataContext.UserGroupMembership.Add(userGroupMembership);
+      _dataContext.UserAccessRole.Add(userAccessRole);
+
       await _dataContext.SaveChangesAsync();
       return user.Id.ToString();
       //var server = new CcsSso.DbModel.Entity.IdentityProvider
@@ -144,7 +149,7 @@ namespace CcsSso.Service
       //return server.Id.ToString();
     }
 
-    public async Task<List<ServicePermissionDto>> GetPermissions(string token)
+    public async Task<List<ServicePermissionDto>> GetPermissions()
     {
       try
       {
@@ -166,6 +171,40 @@ namespace CcsSso.Service
       {
         Console.Write(ex);
         throw;
+      }
+    }
+
+    /// <summary>
+    /// Delete a user by his/her id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public async Task DeleteAsync(int id)
+    {
+      var user = await _dataContext.User
+        .Where(x => x.Id == id)
+        .Include(c => c.Party)
+        .Include(c => c.UserAccessRoles)
+        .SingleOrDefaultAsync();
+      if (user != null)
+      {
+        user.IsDeleted = true;
+        if (user.Party != null)
+        {
+          user.Party.IsDeleted = true;
+        }
+        if (user.UserAccessRoles != null)
+        {
+          if (user.UserAccessRoles != null && user.UserAccessRoles.Any())
+          {
+            user.UserAccessRoles.ForEach((e) =>
+            {
+              e.IsDeleted = true;
+            });
+            await _dataContext.SaveChangesAsync();
+          }
+        }
+        await _dataContext.SaveChangesAsync();
       }
     }
   }

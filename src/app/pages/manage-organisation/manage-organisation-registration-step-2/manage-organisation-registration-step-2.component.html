@@ -1,25 +1,36 @@
 <!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
 <div class="content flex">
-  <a href="javascript:window.history.back()" class="govuk-back-link">Back</a>
+  <a routerLink="/manage-org/register/start" class="govuk-back-link">Back</a>
   <h1 class="govuk-heading-xl page-title">Enter your organisation's details</h1>
-  <h2>We need to verify your organisation to make sure your account is secure</h2>
+  <!-- <h2>We need to verify your organisation to make sure your account is secure</h2> -->
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-three-quarters">
-  <p>Please choose one option to complete your verification:</p>
-  <div class="brickendon-group" *ngFor="let item of items$! | async">
-    <div><input type="radio" name="scheme" value="{{ item.scheme }}" checked="checked" [(ngModel)]="scheme" (click)="onSelect(item)"><label (click)="onSelect(item)">{{ item.schemeName }}</label></div>
-    <div [class.govuk-form-group--error]="submitted && scheme === item.scheme && txtValue == ''" *ngIf="scheme === item.scheme" style="height: 70px; border-left: 2px solid #8F8F8F; padding-left: 5px; margin-left: 1px;">
-      <label style="padding-bottom: 5px; display: block; padding-top: 8px;padding-left: 15px;">Enter your {{ item.schemeName }} number</label>
-      <!-- <input type="text" [(ngModel)]="txtValue" style="margin-left: 15px;" /> -->
-      <div class="govuk-form-group">
-        <!-- <span id="firstname-error" class="govuk-error-message" *ngIf="submitted && formGroup.controls.firstName.invalid">
-          <span class="govuk-visually-hidden">Error:</span>Enter your first name
-        </span> -->
-        <input class="govuk-input" size="20" type="text" [(ngModel)]="txtValue" style="margin-left: 15px;" [class.govuk-input--error]="submitted && scheme === item.scheme && txtValue == ''">
+      <div class="govuk-form-group" *ngIf="submitted && txtValue == ''">
+        <div class="govuk-error-summary govuk-grid-column-three-quarters" aria-labelledby="error-summary-title" role="alert" tabindex="-1" data-module="govuk-error-summary">
+          <h2 class="govuk-error-summary__title" id="error-summary-title">There is a problem</h2>
+          <div class="govuk-error-summary__body">
+            <ul class="govuk-list govuk-error-summary__list">
+              <a><li>Please enter a registry number</li></a>
+            </ul>
+          </div>
+        </div>
       </div>
+      <p><strong>Please choose one option:</strong></p>
+      <div class="brickendon-group" *ngFor="let item of items$! | async">
+        <div><input type="radio" [attr.id]="item.scheme" name="scheme" [value]="item.scheme" value="{{ item.scheme }}" [checked]="(schemeSubjectObs | async) === item.scheme" [(ngModel)]="scheme" (click)="onSelect(item)"><label (click)="onSelect(item)">{{ item.schemeName }}</label></div>
+        <div [class.govuk-form-group--error]="submitted && (schemeSubjectObs | async) === item.scheme && txtValue == ''" *ngIf="(schemeSubjectObs | async) === item.scheme" style="height: 70px; border-left: 2px solid #8F8F8F; padding-left: 5px; margin-left: 1px;">
+          <label style="padding-bottom: 5px; display: block; padding-top: 8px;padding-left: 15px;">Enter your {{ item.schemeName }} Number</label>
+          <!-- <input type="text" [(ngModel)]="txtValue" style="margin-left: 15px;" /> -->
+          <div class="govuk-form-group">
+            <!-- <span id="firstname-error" class="govuk-error-message" *ngIf="submitted && formGroup.controls.firstName.invalid">
+              <span class="govuk-visually-hidden">Error:</span>Enter your first name
+            </span> -->
+            <input class="govuk-input" size="20" type="text" [(ngModel)]="txtValue" style="margin-left: 15px;" [class.govuk-input--error]="submitted && (schemeSubjectObs | async) === item.scheme && txtValue == ''">
+          </div>
+        </div>
+      </div>
+      <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button" data-module="govuk-button" (click)="onSubmit()">Continue</button>
+      <!--<app-footer></app-footer>-->
     </div>
   </div>
-  <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button" data-module="govuk-button" (click)="onSubmit()">Continue</button>
-  <!--<app-footer></app-footer>-->
-  </div></div>
 </div>

@@ -1,10 +1,39 @@
-<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
-<div class="content flex">
-  <a href="javascript:window.history.back()" class="govuk-back-link">Back</a>
-  <h1 class="govuk-heading-xl page-title">Confirm you want to delete this office?</h1>
-  <h2></h2>
-  <p style="font-weight: bold;">This cannot be undone</p>
-  <button style="width:220px; background: #B10E1E;color:#ffffff;" (click)="onSubmit()" class="secondary-button">Confirm and delete</button>
-  <button style="margin-left:20px;" (click)="goBack()" class="secondary-button">Cancel</button>
-  <!--<app-footer></app-footer>-->
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <div class="user-profile-container">
+      <div class="govuk-breadcrumbs">
+        <ol class="govuk-breadcrumbs__list">
+          <li class="govuk-breadcrumbs__list-item">
+            <a class="govuk-breadcrumbs__link" routerLink="/home">{{ 'ADMINISTRATOR_DASHBOARD' |
+              translate}}</a>
+          </li>
+          <li class="govuk-breadcrumbs__list-item">
+            <a class="govuk-breadcrumbs__link" routerLink="/manage-org/profile">
+              {{ 'MANAGE_YOUR_ORGANISATION' |translate }}</a>
+          </li>
+          <li class="govuk-breadcrumbs__list-item">
+            <a class="govuk-breadcrumbs__link" (click)="onCancelClick()">
+              {{ 'EDIT_SITE' | translate }}</a>
+          </li>
+          <li class="govuk-breadcrumbs__list-item">
+            <span class="govuk-breadcrumbs__link"> {{ 'DELETE_SITE' | translate }}</span>
+          </li>
+        </ol>
+      </div>
+      <h1 class="govuk-heading-xl"> {{ 'CONFIRM_SITE_DELETE' | translate }}</h1>
+      <p class="govuk-body">{{ 'THIS_CANNOT_BE_UNDONE' | translate }}</p>
+      <div class="govuk-button-group continue-cancel-button-group">
+        <button type="submit" (click)="onDeleteConfirmClick()" class="govuk-button govuk-button--warning"
+          data-module="govuk-button">
+          {{ 'CONFIRM_DELETE_BTN' | translate }}
+        </button>
+        <button type="button" (click)="onCancelClick()" class="govuk-button govuk-button--secondary"
+          data-module="govuk-button">
+          {{ 'CANCEL_BTN' | translate }}
+        </button>
+      </div>
+
+    </div>
+
+  </div>
 </div>

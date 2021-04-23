@@ -22,6 +22,6 @@ namespace CcsSso.DbModel.Entity
 
     public List<UserGroupMembership> UserGroupMemberships { get; set; }
 
-    public List<GroupAccess> GroupAccesses { get; set; }
+    public List<OrganisationGroupEligibleRole> GroupEligibleRoles { get; set; }
   }
 }

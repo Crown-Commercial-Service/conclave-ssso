@@ -1,7 +1,15 @@
 <!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
 <div class="content flex">
-  <h1 class="govuk-heading-xl page-title">Enter your admin account details</h1>
-  <h2>As you are registering your organisation you will be the admin for your organisations account</h2>
+  <h1 class="govuk-heading-xl page-title">Enter your administrator account details</h1>
+  <h2>As you are the first person registering the organisation you will be the administrator for your organisation's account</h2>
+  <p style="padding-top:10px;">Alternatively, you can <a routerLink="/nominate">nominate a colleague to register and become an administrator</a></p>
+  <br><p><strong>As an administrator you will be able to:</strong></p>
+  <ul>
+    <li>Add users to the organisation</li>
+    <li>Reset passwords</li>
+    <li>Manage groups</li>
+    <li>Manage sign in providers</li>
+  </ul>
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-three-quarters">
       <form class="govuk-!-width-three-quarters" [class.error]="!formValid(formGroup)" [formGroup]="formGroup">
@@ -18,7 +26,7 @@
             </div>
           </div>
         </div>
-        <div class="govuk-form-group" [class.govuk-form-group--error]="submitted && formGroup.controls.title.invalid">
+        <div class="govuk-form-group" [class.govuk-form-group--error]="submitted && formGroup.controls.title.invalid" [hidden]="true">
           <label class="govuk-label" for="title">Title</label>
           <span id="title-error" class="govuk-error-message" *ngIf="submitted && formGroup.controls.title.invalid">
             <span class="govuk-visually-hidden">Error:</span>Select your title

@@ -1,7 +1,39 @@
-<div class="content flex" [@slide]="(sideNavVisible$ | async) ? 'close' : 'open'">
-    <a class="back-text" (click)="onBackClick()"> <span > &lt; </span>Back</a>
-    <h1 class="govuk-heading-xl page-title">Confirm you want to delete the contact details?</h1>
-    <div class="info-text">This cannot be undone</div>
-    <button class="danger-button mb-one confirm-button" (click)="onConfirmClick()">Confirm and delete</button>
-    <button class="secondary-button cancel-button" (click)="onCancelClick()">Cancel</button>
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <div class="user-profile-container">
+            <div class="govuk-breadcrumbs">
+                <ol class="govuk-breadcrumbs__list">
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/home">{{ 'ADMINISTRATOR_DASHBOARD' |
+                            translate}}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/manage-org/profile">{{ 'MANAGE_YOUR_ORGANISATION' | translate
+                            }}</a>
+                    </li>
+                    <li *ngIf="siteId != 0" class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" (click)="onCancelClick()">{{ 'EDIT_SITE' | translate
+                          }}</a>
+                      </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <span class="govuk-breadcrumbs__link"> {{ 'DELETE_CONTACT' | translate }}</span>
+                    </li>
+                </ol>
+            </div>
+            <h1 class="govuk-heading-xl"> {{ 'CONFIRM_CONTACT_DELETE' | translate }}</h1>
+            <p class="govuk-body">{{ 'THIS_CANNOT_BE_UNDONE' | translate }}</p>
+            <div class="govuk-button-group continue-cancel-button-group">
+                <button type="submit" (click)="onDeleteConfirmClick()" class="govuk-button govuk-button--warning"
+                    data-module="govuk-button">
+                    {{ 'CONFIRM_DELETE_BTN' | translate }}
+                </button>
+                <button type="button" (click)="onCancelClick()" class="govuk-button govuk-button--secondary"
+                    data-module="govuk-button">
+                    {{ 'CANCEL_BTN' | translate }}
+                </button>
+            </div>
+
+        </div>
+
+    </div>
 </div>

@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
@@ -42,103 +43,14 @@ namespace CcsSso.Service
       };
       _dataContext.Party.Add(party);
       await _dataContext.SaveChangesAsync();
-      // TODO verify later with Lee this area since this is already done by the contact service and there are two api calls done by UI for this.
-      //var contactDetail = new CcsSso.DbModel.Entity.ContactDetail
-      //{
-      //  EffectiveFrom = System.DateTime.UtcNow,
-      //  CreatedPartyId = 0,
-      //  LastUpdatedPartyId = 0,
-      //  CreatedOnUtc = System.DateTime.UtcNow,
-      //  LastUpdatedOnUtc = System.DateTime.UtcNow,
-      //  IsDeleted = false,
-      //};
-      //_dataContext.ContactDetail.Add(contactDetail);
-      //await _dataContext.SaveChangesAsync();
-      //var contactPoint = new CcsSso.DbModel.Entity.ContactPoint
-      //{
-      //  PartyId = party.Id,
-      //  PartyTypeId = partyType.Id,
-      //  ContactPointReasonId = 1,
-      //  CreatedPartyId = 0,
-      //  LastUpdatedPartyId = 0,
-      //  CreatedOnUtc = System.DateTime.UtcNow,
-      //  LastUpdatedOnUtc = System.DateTime.UtcNow,
-      //  IsDeleted = false,
-      //  ContactDetailId = contactDetail.Id
-      //};
-      //_dataContext.ContactPoint.Add(contactPoint);
-      //await _dataContext.SaveChangesAsync();
-      //var physicalAddress = new CcsSso.DbModel.Entity.PhysicalAddress
-      //{
-      //  ContactDetailId = contactDetail.Id,
-      //  StreetAddress = model.Address.StreetAddress,
-      //  Locality = model.Address.Locality,
-      //  Region = model.Address.Region,
-      //  PostalCode = model.Address.PostalCode,
-      //  CountryCode = model.Address.CountryCode,
-      //  Uprn = model.Address.Uprn,
-      //  CreatedPartyId = 0,
-      //  LastUpdatedPartyId = 0,
-      //  CreatedOnUtc = System.DateTime.UtcNow,
-      //  LastUpdatedOnUtc = System.DateTime.UtcNow,
-      //  IsDeleted = false,
-      //};
-      //_dataContext.PhysicalAddress.Add(physicalAddress);
-      //await _dataContext.SaveChangesAsync();
-      //var virtualAddress1 = new VirtualAddress
-      //{
-      //  ContactDetailId = contactDetail.Id,
-      //  VirtualAddressTypeId = (await _dataContext.VirtualAddressType.FirstOrDefaultAsync(t => t.Name == "EMAIL")).Id,
-      //  VirtualAddressValue = model.ContactPoint.Email,
-      //  CreatedPartyId = party.Id,
-      //  LastUpdatedPartyId = party.Id,
-      //  CreatedOnUtc = System.DateTime.UtcNow,
-      //  LastUpdatedOnUtc = System.DateTime.UtcNow,
-      //  IsDeleted = false,
-      //};
-      //var virtualAddress2 = new VirtualAddress
-      //{
-      //  ContactDetailId = contactDetail.Id,
-      //  VirtualAddressTypeId = (await _dataContext.VirtualAddressType.FirstOrDefaultAsync(t => t.Name == "FAX")).Id,
-      //  VirtualAddressValue = model.ContactPoint.Fax,
-      //  CreatedPartyId = party.Id,
-      //  LastUpdatedPartyId = party.Id,
-      //  CreatedOnUtc = System.DateTime.UtcNow,
-      //  LastUpdatedOnUtc = System.DateTime.UtcNow,
-      //  IsDeleted = false,
-      //};
-      //_dataContext.VirtualAddress.Add(virtualAddress2);
-      //var virtualAddress3 = new VirtualAddress
-      //{
-      //  ContactDetailId = contactDetail.Id,
-      //  VirtualAddressTypeId = (await _dataContext.VirtualAddressType.FirstOrDefaultAsync(t => t.Name == "PHONE")).Id,
-      //  VirtualAddressValue = model.ContactPoint.PhoneNumber,
-      //  CreatedPartyId = party.Id,
-      //  LastUpdatedPartyId = party.Id,
-      //  CreatedOnUtc = System.DateTime.UtcNow,
-      //  LastUpdatedOnUtc = System.DateTime.UtcNow,
-      //  IsDeleted = false,
-      //};
-      //_dataContext.VirtualAddress.Add(virtualAddress3);
-      //var virtualAddress4 = new VirtualAddress
-      //{
-      //  ContactDetailId = contactDetail.Id,
-      //  VirtualAddressTypeId = (await _dataContext.VirtualAddressType.FirstOrDefaultAsync(t => t.Name == "WEB_ADDRESS")).Id,
-      //  VirtualAddressValue = model.ContactPoint.WebUrl,
-      //  CreatedPartyId = party.Id,
-      //  LastUpdatedPartyId = party.Id,
-      //  CreatedOnUtc = System.DateTime.UtcNow,
-      //  LastUpdatedOnUtc = System.DateTime.UtcNow,
-      //  IsDeleted = false,
-      //};
-      //_dataContext.VirtualAddress.Add(virtualAddress4);
-      //await _dataContext.SaveChangesAsync();
       var org = new Organisation
       {
         CiiOrganisationId = model.CiiOrganisationId,
         OrganisationUri = model.OrganisationUri,
         LegalName = model.LegalName,
         RightToBuy = model.RightToBuy,
+        BusinessType = model.BusinessType,
+        SupplierBuyerType = model.SupplierBuyerType,
         PartyId = party.Id,
         CreatedPartyId = party.Id,
         LastUpdatedPartyId = party.Id,
@@ -147,34 +59,38 @@ namespace CcsSso.Service
         IsDeleted = false,
       };
       _dataContext.Organisation.Add(org);
-      var group = new OrganisationUserGroup
+
+      var eligibleRoles = await GetOrganisationEligibleRolesAsync(org, model.SupplierBuyerType);
+
+      _dataContext.OrganisationEligibleRole.AddRange(eligibleRoles);
+
+      var listEligibleProviders = new List<OrganisationEligibleIdentityProvider>();
+      var providers = await _dataContext.IdentityProvider.Where(x => x.IsDeleted == false).ToListAsync();
+      providers.ForEach((idp) =>
       {
-        Organisation = org,
-        UserGroupName = "Organisation Administrator",
-        UserGroupNameKey = "ORG_ADMINISTRATOR_GROUP",
-      };
-      _dataContext.OrganisationUserGroup.Add(group);
-      var role = _dataContext.CcsAccessRole.FirstOrDefault(x => x.CcsAccessRoleNameKey == "ORG_ADMINISTRATOR");
-      var roleMapping = new GroupAccess
-      {
-        OrganisationUserGroup = group,
-        CcsAccessRole = role,
-      };
-      _dataContext.GroupAccess.Add(roleMapping);
-      var group2 = new OrganisationUserGroup
-      {
-        Organisation = org,
-        UserGroupName = "Default Organisation User",
-        UserGroupNameKey = "ORG_DEFAULT_USER_GROUP",
-      };
-      _dataContext.OrganisationUserGroup.Add(group2);
-      var role2 = _dataContext.CcsAccessRole.FirstOrDefault(x => x.CcsAccessRoleNameKey == "ORG_DEFAULT_USER");
-      var roleMapping2 = new GroupAccess
-      {
-        OrganisationUserGroup = group2,
-        CcsAccessRole = role2,
-      };
-      _dataContext.GroupAccess.Add(roleMapping2);
+        var p = new OrganisationEligibleIdentityProvider
+        {
+          IdentityProvider = idp,
+          Organisation = org
+        };
+        listEligibleProviders.Add(p);
+      });
+      _dataContext.OrganisationEligibleIdentityProvider.AddRange(listEligibleProviders);
+
+      //var role = await _dataContext.CcsAccessRole.FirstOrDefaultAsync(x => x.CcsAccessRoleNameKey == "ORG_ADMINISTRATOR");
+      //var orgEligibleRoleAdmin = new OrganisationEligibleRole
+      //{
+      //  CcsAccessRole = role,
+      //  Organisation = org
+      //};
+      //_dataContext.OrganisationEligibleRole.Add(orgEligibleRoleAdmin);
+      //var role2 = await _dataContext.CcsAccessRole.FirstOrDefaultAsync(x => x.CcsAccessRoleNameKey == "ORG_DEFAULT_USER");
+      //var orgEligibleRoleUser = new OrganisationEligibleRole
+      //{
+      //  CcsAccessRole = role2,
+      //  Organisation = org
+      //};
+      //_dataContext.OrganisationEligibleRole.Add(orgEligibleRoleUser);
       await _dataContext.SaveChangesAsync();
       return org.Id;
     }
@@ -188,10 +104,54 @@ namespace CcsSso.Service
     {
       var organisation = await _dataContext.Organisation
         .Where(x => x.Id == id)
-        .SingleOrDefaultAsync();
+        .Include(c => c.Party)
+        .FirstOrDefaultAsync();
       if (organisation != null)
       {
         organisation.IsDeleted = true;
+        if (organisation.Party != null)
+        {
+          organisation.Party.IsDeleted = true;
+        }
+        await _dataContext.SaveChangesAsync();
+      }
+
+      //var group = await _dataContext.OrganisationUserGroup
+      //  .Where(x => x.Organisation.Id == id)
+      //  .Include(o => o.Organisation)
+      //  .ToListAsync();
+      //if (group != null && group.Any())
+      //{
+      //  group.ForEach((g) =>
+      //  {
+      //    g.IsDeleted = true;
+      //  });
+      //  await _dataContext.SaveChangesAsync();
+      //}
+
+      var eRoles = await _dataContext.OrganisationEligibleRole
+        .Where(x => x.Organisation.Id == id)
+        .Include(o => o.Organisation)
+        .ToListAsync();
+      if (eRoles != null && eRoles.Any())
+      {
+        eRoles.ForEach((e) =>
+        {
+          e.IsDeleted = true;
+        });
+        await _dataContext.SaveChangesAsync();
+      }
+
+      var idpProviders = await _dataContext.OrganisationEligibleIdentityProvider
+        .Where(x => x.Organisation.Id == id)
+        .Include(o => o.Organisation)
+        .ToListAsync();
+      if (idpProviders != null && idpProviders.Any())
+      {
+        idpProviders.ForEach((e) =>
+        {
+          e.IsDeleted = true;
+        });
         await _dataContext.SaveChangesAsync();
       }
     }
@@ -276,5 +236,148 @@ namespace CcsSso.Service
       return null;
     }
 
+    public async Task<List<OrganisationDto>> GetAllAsync()
+    {
+      var organisations = await _dataContext.Organisation
+        .Where(x => x.IsDeleted == false)
+        .ToListAsync();
+
+      if (organisations != null && organisations.Any())
+      {
+        List<OrganisationDto> list = new List<OrganisationDto>();
+        organisations.ForEach((organisation) =>
+        {
+          var dto = new OrganisationDto
+          {
+            OrganisationId = organisation.Id,
+            CiiOrganisationId = organisation.CiiOrganisationId,
+            OrganisationUri = organisation.OrganisationUri,
+            RightToBuy = organisation.RightToBuy,
+            PartyId = organisation.PartyId,
+            LegalName = organisation.LegalName,
+          };
+          list.Add(dto);
+        });
+        return list;
+      }
+
+      return null;
+    }
+
+    /// <summary>
+    /// Updates an organisation
+    /// </summary>
+    /// <param name="model"></param>
+    /// <returns></returns>
+    public async Task PutAsync(OrganisationDto model)
+    {
+      var organisation = await _dataContext.Organisation
+        .Where(x => x.CiiOrganisationId == model.CiiOrganisationId && x.IsDeleted == false)
+        .FirstOrDefaultAsync();
+      if (organisation != null)
+      {
+        organisation.RightToBuy = model.RightToBuy;
+        await _dataContext.SaveChangesAsync();
+      }
+    }
+
+    public async Task Rollback(OrganisationRollbackDto model)
+    {
+      try
+      {
+        
+      }
+      catch(Exception ex)
+      {
+        Console.Write(ex);
+      }
+    }
+
+    public async Task<List<OrganisationUserDto>> GetUsersAsync()
+    {
+      var users = await _dataContext.User
+        .Include(c => c.Party)
+        .ThenInclude(x => x.Person)
+        .ThenInclude(o => o.Organisation)
+        .Where(x => x.IsDeleted == false && x.Party.Person.Organisation.IsDeleted == false)
+        .ToListAsync();
+
+      if (users != null && users.Any())
+      {
+        List<OrganisationUserDto> list = new List<OrganisationUserDto>();
+        users.ForEach((user) =>
+        {
+          var dto = new OrganisationUserDto
+          {
+            Id = user.Id,
+            UserName = user.UserName,
+            Name = (user.Party == null || user.Party.Person == null) ? "" : user.Party.Person.FirstName + " " + user.Party.Person.LastName,
+            OrganisationId = (user.Party == null || user.Party.Person == null || user.Party.Person.Organisation == null) ? 0 : user.Party.Person.Organisation.Id,
+            OrganisationLegalName = (user.Party == null || user.Party.Person == null || user.Party.Person.Organisation == null) ? "" : user.Party.Person.Organisation.LegalName,
+          };
+          list.Add(dto);
+        });
+        return list.Where(x => x.OrganisationLegalName != "" && x.OrganisationId != 0).ToList();
+      }
+      return null;
+    }
+
+    public async Task<List<OrganisationEligibleRole>> GetOrganisationEligibleRolesAsync(Organisation org, int supplierBuyerType)
+    {
+      var eligibleRoles = new List<OrganisationEligibleRole>();
+      if (supplierBuyerType == 0)
+      {
+        var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
+          ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
+          ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
+          (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Both)
+        ).ToListAsync();
+        roles.ForEach((role) =>
+        {
+          var eligibleRole = new OrganisationEligibleRole
+          {
+            CcsAccessRole = role,
+            Organisation = org
+          };
+          eligibleRoles.Add(eligibleRole);
+        });
+      }
+      else if (supplierBuyerType == 1)
+      {
+        var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
+          ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
+          ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
+          (ar.TradeEligibility == RoleEligibleTradeType.Buyer || ar.TradeEligibility == RoleEligibleTradeType.Both)
+        ).ToListAsync();
+        roles.ForEach((role) =>
+        {
+          var eligibleRole = new OrganisationEligibleRole
+          {
+            CcsAccessRole = role,
+            Organisation = org
+          };
+          eligibleRoles.Add(eligibleRole);
+        });
+      }
+      else
+      {
+        var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
+          ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
+          ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
+          (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Buyer || ar.TradeEligibility == RoleEligibleTradeType.Both)
+        ).ToListAsync();
+        roles.ForEach((role) =>
+        {
+          var eligibleRole = new OrganisationEligibleRole
+          {
+            CcsAccessRole = role,
+            Organisation = org
+          };
+          eligibleRoles.Add(eligibleRole);
+        });
+      }
+
+      return eligibleRoles;
+    }
   }
 }

@@ -86,6 +86,8 @@ export class ManageOrgRegStep3Component extends BaseComponent implements OnInit 
     if (this.orgGroup === 'manage-org/register/user') {
       let organisation = JSON.parse(localStorage.getItem('cii_organisation')+'');
       if (organisation.additionalIdentifiers.length > 0) {
+
+        
         this.router.navigateByUrl('manage-org/register/search/' + this.routeParams.scheme + '/' + this.routeParams.id + '/additional-identifiers');
       } else {
         this.router.navigateByUrl(this.orgGroup);

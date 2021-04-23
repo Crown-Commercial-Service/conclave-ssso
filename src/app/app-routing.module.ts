@@ -48,18 +48,45 @@ import { ManageUserProfilesComponent } from './pages/manage-user/manage-user-pro
 import { ManageUserAddSelectionComponent } from './pages/manage-user/manage-user-add-selection/manage-user-add-selection-component';
 import { ManageUserAddSingleUserDetailComponent } from './pages/manage-user/manage-user-add-single-user-detail/manage-user-add-single-user-detail.component';
 import { ManageUserConfirmResetPasswordComponent } from './pages/manage-user/manage-user-confirm-reset-password/manage-user-confirm-reset-password-component';
-import { ManageOrganisationSiteAddComponent } from './pages/manage-organisation/manage-organisation-profile-site-add/manage-organisation-profile-site-add.component';
-import { ManageOrganisationSiteAddConfirmationComponent } from './pages/manage-organisation/manage-organisation-profile-site-add-confirm/manage-organisation-profile-site-add-confirm.component';
 import { ManageOrganisationSiteDeleteComponent } from './pages/manage-organisation/manage-organisation-profile-site-delete/manage-organisation-profile-site-delete.component';
-import { ManageOrganisationSiteDeleteConfirmationComponent } from './pages/manage-organisation/manage-organisation-profile-site-delete-confirm/manage-organisation-profile-site-delete-confirm.component';
 import { ManageOrganisationSiteEditComponent } from './pages/manage-organisation/manage-organisation-profile-site-edit/manage-organisation-profile-site-edit.component';
-import { ManageOrganisationSiteEditConfirmationComponent } from './pages/manage-organisation/manage-organisation-profile-site-edit-confirm/manage-organisation-profile-site-edit-confirm.component';
 import { UserContactDeleteConfirmComponent } from './pages/user-contact/user-contact-delete-confirm/user-contact-delete-confirm-component';
+import { NominateComponent } from './pages/nominate/nominate.component';
+import { ManageOrgRegStep1BComponent } from './pages/manage-organisation/manage-organisation-registration-step-1b/manage-organisation-registration-step-1b.component';
+import { NominateSuccessComponent } from './pages/nominate-success/nominate-success.component';
+import { ManageUserDeleteConfirmComponent } from './pages/manage-user/manage-user-delete-confirm/manage-user-delete-confirm-component';
+import { ManageOrganisationErrorComponent } from './pages/manage-organisation/manage-organisation-error/manage-organisation-error.component';
+import { ContactUsComponent } from './pages/contactus/contactus.component';
+import { BuyerSearchComponent } from './pages/buyer/search/search.component';
+import { BuyerConfirmComponent } from './pages/buyer/confirm/confirm.component';
+import { BuyerDetailsComponent } from './pages/buyer/details/details.component';
+import { BuyerSuccessComponent } from './pages/buyer/success/success.component';
+import { OrgSupportSuccessComponent } from './pages/org-support/success/success.component';
+import { OrgSupportConfirmComponent } from './pages/org-support/confirm/confirm.component';
+import { OrgSupportDetailsComponent } from './pages/org-support/details/details.component';
+import { OrgSupportSearchComponent } from './pages/org-support/search/search.component';
+import { OrgSupportConfirmResetPasswordComponent } from './pages/org-support/confirm-reset-password/confirm.component';
+import { OrgSupportSuccessResetPasswordComponent } from './pages/org-support/success-reset-password/success.component';
+import { OrgSupportSuccessChangedRoleComponent } from './pages/org-support/success-changed-role/success.component';
+import { ManageGroupListComponent } from './pages/manage-group/manage-group-list/manage-group-list-component';
+import { ManageGroupEditNameComponent } from './pages/manage-group/manage-group-edit-name/manage-group-edit-name-component';
+import { ManageGroupEditUsersComponent } from './pages/manage-group/manage-group-edit-users/manage-group-edit-users-component';
+import { ManageGroupEditUsersConfirmComponent } from './pages/manage-group/manage-group-edit-users-confirm/manage-group-edit-users-confirm-component';
+import { ManageGroupEditRolesComponent } from './pages/manage-group/manage-group-edit-roles/manage-group-edit-roles-component';
+import { ManageGroupEditRolesConfirmComponent } from './pages/manage-group/manage-group-edit-roles-confirm/manage-group-edit-roles-confirm-component';
+import { ManageGroupViewComponent } from './pages/manage-group/manage-group-view/manage-group-view-component';
+import { ManageGroupOperationSuccessComponent } from './pages/manage-group/manage-group-operation-success/manage-group-operation-success-component';
+import { ManageGroupDeleteConfirmComponent } from './pages/manage-group/manage-group-delete-confirm/manage-group-delete-confirm-component';
+import { ManageOrganisationProfileSuccessComponent } from './pages/manage-organisation/manage-organisation-profile-success/manage-organisation-profile-success.component';
+import { BuyerConfirmChangesComponent } from './pages/buyer/confirm-changes/confirm.component';
+import { ManageOrgRegRightToBuyComponent } from './pages/manage-organisation/manage-organisation-registration-rightToBuy/manage-organisation-registration-type.component';
+import { ManageOrgRegBuyerTypeComponent } from './pages/manage-organisation/manage-organisation-registration-buyer-type/manage-organisation-registration-buyer-type.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'home', pathMatch: 'full' },
   { path: 'home', canActivate: [AuthGuard], pathMatch: 'full', component: HomeComponent },
   { path: 'error', pathMatch: 'full', component: ErrorComponent },
+  { path: 'contactus', pathMatch: 'full', component: ContactUsComponent},
   { path: 'profile', canActivate: [AuthGuard], pathMatch: 'full', component: UserProfileComponent },
   { path: 'operation-success/:operation', canActivate: [AuthGuard], pathMatch: 'full', component: OperationSuccessComponent },
   { path: 'operation-failed/:operation', pathMatch: 'full', component: OperationFailedComponent },
@@ -75,12 +102,14 @@ const routes: Routes = [
   { path: 'registration/success', component: RegistrationSuccessComponent },
   { path: 'manage-org/login', pathMatch: 'full', component: ManageOrganisationLoginComponent },
   { path: 'manage-org/register', pathMatch: 'full', component: ManageOrgRegStep1Component },
+  { path: 'manage-org/register/start', pathMatch: 'full', component: ManageOrgRegStep1BComponent },
   { path: 'manage-org/register/search', pathMatch: 'full', component: ManageOrgRegStep2Component },
   { path: 'manage-org/register/search/:scheme/:id', pathMatch: 'full', component: ManageOrgRegStep3Component },
   { path: 'manage-org/register/search/:scheme/:id/additional-identifiers', pathMatch: 'full', component: ManageOrgRegAdditionalIdentifiersComponent },
   { path: 'manage-org/register/user', pathMatch: 'full', component: ManageOrgRegAddUserComponent },
   { path: 'manage-org/register/confirm', pathMatch: 'full', component: ManageOrgRegConfirmComponent },
   { path: 'manage-org/register/success', pathMatch: 'full', component: ManageOrgRegSuccessComponent },
+  { path: 'manage-org/error/:reason', pathMatch: 'full', component: ManageOrganisationErrorComponent },
   { path: 'manage-org/register/error', pathMatch: 'full', component: ManageOrgRegErrorComponent },
   { path: 'manage-org/register/error/generic', pathMatch: 'full', component: ManageOrgRegErrorGenericComponent },
   { path: 'manage-org/register/error/username', pathMatch: 'full', component: ManageOrgRegErrorUsernameExistsComponent },
@@ -89,11 +118,12 @@ const routes: Routes = [
   { path: 'manage-org/register/error/wrong-details', pathMatch: 'full', component: ManageOrgRegDetailsWrongComponent },
   { path: 'manage-org/register/error/not-my-details', pathMatch: 'full', component: ManageOrgRegOrgNotFoundComponent },
   { path: 'manage-org/profile', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationProfileComponent },
-  { path: 'manage-org/profile/:organisationId/contact-edit/:contactId', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationContactEditComponent },
-  { path: 'manage-org/profile/:organisationId/contact-delete/:contactId', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationContactDeleteComponent },
-  { path: 'manage-org/profile/:organisationId/contact-operation-success/:operation', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationContactOperationSuccessComponent },
+  { path: 'manage-org/profile/contact-edit', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationContactEditComponent },
+  { path: 'manage-org/profile/contact-delete', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationContactDeleteComponent },
+  { path: 'manage-org/profile/contact-operation-success/:operation', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationContactOperationSuccessComponent },
   { path: 'manage-org/profile/:organisationId/registry', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationRegistryComponent },
   { path: 'manage-org/profile/:organisationId/registry/error/:reason', canActivate: [AuthGuard], component: ManageOrganisationRegistryErrorComponent },
+  { path: 'manage-org/profile/success', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationProfileSuccessComponent },
   // { path: 'manage-org/profile/:organisationId/registry/:scheme/:id', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationRegistryComponent },
   { path: 'manage-org/profile/registry/search', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationRegistrySearchComponent },
   { path: 'manage-org/profile/:organisationId/registry/search', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationRegistrySearchComponent },
@@ -108,17 +138,40 @@ const routes: Routes = [
   { path: 'manage-users/add-user-selection', pathMatch: 'full', canActivate: [AuthGuard], component: ManageUserAddSelectionComponent },
   { path: 'manage-users/add-user/details', pathMatch: 'full', canActivate: [AuthGuard], component: ManageUserAddSingleUserDetailComponent },
   { path: 'manage-users/confirm-reset-password', pathMatch: 'full', canActivate: [AuthGuard], component: ManageUserConfirmResetPasswordComponent },
-  { path: 'manage-org/profile/site/add', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationSiteAddComponent },
-  { path: 'manage-org/profile/site/add/success', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationSiteAddConfirmationComponent },
-  { path: 'manage-org/profile/site/edit/success', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationSiteEditConfirmationComponent },
-  { path: 'manage-org/profile/site/edit/:id', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationSiteEditComponent },
-  { path: 'manage-org/profile/site/delete/success', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationSiteDeleteConfirmationComponent },
-  { path: 'manage-org/profile/site/delete/:id', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationSiteDeleteComponent },
+  { path: 'manage-users/confirm-user-delete', pathMatch: 'full', canActivate: [AuthGuard], component: ManageUserDeleteConfirmComponent },
+  { path: 'manage-org/profile/site/edit', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationSiteEditComponent },
+  { path: 'manage-org/profile/site/delete', pathMatch: 'full', canActivate: [AuthGuard], component: ManageOrganisationSiteDeleteComponent },
+  { path: 'nominate', pathMatch: 'full', component: NominateComponent },
+  { path: 'nominate/success', pathMatch: 'full', component: NominateSuccessComponent },
+  { path: 'buyer/search', pathMatch: 'full', canActivate: [AuthGuard], component: BuyerSearchComponent },
+  { path: 'buyer/details/:id', pathMatch: 'full', canActivate: [AuthGuard], component: BuyerDetailsComponent },
+  { path: 'buyer/confirm/:id', pathMatch: 'full', canActivate: [AuthGuard], component: BuyerConfirmComponent },
+  { path: 'buyer/success', pathMatch: 'full', canActivate: [AuthGuard], component: BuyerSuccessComponent },
+  { path: 'org-support/search', pathMatch: 'full', canActivate: [AuthGuard], component: OrgSupportSearchComponent },
+  { path: 'org-support/details/:id', pathMatch: 'full', canActivate: [AuthGuard], component: OrgSupportDetailsComponent },
+  { path: 'org-support/confirm/:id', pathMatch: 'full', canActivate: [AuthGuard], component: OrgSupportConfirmComponent },
+  { path: 'org-support/success/:id', pathMatch: 'full', canActivate: [AuthGuard], component: OrgSupportSuccessComponent },
+  { path: 'org-support/confirm-reset-password/:id', pathMatch: 'full', canActivate: [AuthGuard], component: OrgSupportConfirmResetPasswordComponent },
+  { path: 'org-support/success-reset-password/:id', pathMatch: 'full', canActivate: [AuthGuard], component: OrgSupportSuccessResetPasswordComponent },
+  { path: 'org-support/success-changed-role/:id', pathMatch: 'full', canActivate: [AuthGuard], component: OrgSupportSuccessChangedRoleComponent },
+  { path: 'manage-groups', pathMatch: 'full', canActivate: [AuthGuard], component: ManageGroupListComponent },
+  { path: 'manage-groups/view', pathMatch: 'full', canActivate: [AuthGuard], component: ManageGroupViewComponent },
+  { path: 'manage-groups/edit-name', pathMatch: 'full', canActivate: [AuthGuard], component: ManageGroupEditNameComponent },
+  { path: 'manage-groups/edit-users', pathMatch: 'full', canActivate: [AuthGuard], component: ManageGroupEditUsersComponent },
+  { path: 'manage-groups/edit-users-confirm', pathMatch: 'full', canActivate: [AuthGuard], component: ManageGroupEditUsersConfirmComponent },
+  { path: 'manage-groups/edit-roles', pathMatch: 'full', canActivate: [AuthGuard], component: ManageGroupEditRolesComponent },
+  { path: 'manage-groups/edit-roles-confirm', pathMatch: 'full', canActivate: [AuthGuard], component: ManageGroupEditRolesConfirmComponent },
+  { path: 'manage-groups/operation-success/:operation', pathMatch: 'full', canActivate: [AuthGuard], component: ManageGroupOperationSuccessComponent },
+  { path: 'manage-groups/delete-group-confirm', pathMatch: 'full', canActivate: [AuthGuard], component: ManageGroupDeleteConfirmComponent },
+  { path: 'buyer/confirm-changes/:id', pathMatch: 'full', canActivate: [AuthGuard], component: BuyerConfirmChangesComponent },
+  { path: 'manage-org/register/type', pathMatch: 'full', component: ManageOrgRegRightToBuyComponent },
+  { path: 'manage-org/register/buyer-type', pathMatch: 'full', component: ManageOrgRegBuyerTypeComponent },
   { path: '**', redirectTo: 'home', pathMatch: 'full' }
 ];
 
 export const routingConfiguration: ExtraOptions = {
-  paramsInheritanceStrategy: 'always'
+  paramsInheritanceStrategy: 'always',
+  scrollPositionRestoration: 'enabled'
 };
 
 

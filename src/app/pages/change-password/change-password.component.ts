@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
@@ -31,6 +31,7 @@ export class ChangePasswordComponent extends BaseComponent implements OnInit {
   submitted: boolean = false;
   usedPasswordThreshold: number = environment.usedPasswordThreshold;
 
+  @ViewChildren('input') inputs!: QueryList<ElementRef>;
 
   constructor(private formBuilder: FormBuilder, private authService: AuthService,
     private router: Router, protected uiStore: Store<UIState>, private location: Location,
@@ -52,6 +53,10 @@ export class ChangePasswordComponent extends BaseComponent implements OnInit {
 
   public scrollToAnchor(elementId: string): void {
     this.viewportScroller.scrollToAnchor(elementId);
+  }
+  
+  setFocus(inputIndex: number){
+    this.inputs.toArray()[inputIndex].nativeElement.focus();
   }
 
   public checkPasswordStrong(control: FormControl) {

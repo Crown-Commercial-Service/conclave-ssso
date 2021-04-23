@@ -4,7 +4,8 @@ import { catchError, map } from 'rxjs/operators';
 import { throwError } from 'rxjs/internal/observable/throwError';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ContactInfo, UserContactInfo, UserContactInfoList } from 'src/app/models/userContact';
+import { ContactInfo, UserContactInfo, UserContactInfoList } from 'src/app/models/contactInfo';
+import { WrapperApiHelperService } from './wrapper-api-helper.service';
 
 @Injectable({
     providedIn: 'root'
@@ -16,8 +17,7 @@ export class WrapperUserContactService {
         headers: new HttpHeaders()
     }
 
-    constructor(private http: HttpClient) {
-        this.options.headers = this.options.headers.set("X-API-Key", environment.wrapperApiKey);
+    constructor(private http: HttpClient, private wrapperApiService: WrapperApiHelperService) {
     }
 
     createUserContact(userName: string, contactInfo: ContactInfo): Observable<any> {

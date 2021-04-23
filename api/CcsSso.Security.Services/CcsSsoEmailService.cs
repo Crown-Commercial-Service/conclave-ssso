@@ -1,18 +1,18 @@
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
-using System;
+using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CcsSso.Security.Services
 {
   public class CcsSsoEmailService : ICcsSsoEmailService
   {
-    private readonly IEmaillProviderService _emaillProviderService;
+    private readonly IEmailProviderService _emaillProviderService;
     private readonly ApplicationConfigurationInfo _appConfigInfo;
 
-    public CcsSsoEmailService(IEmaillProviderService emaillProviderService, ApplicationConfigurationInfo appConfigInfo)
+    public CcsSsoEmailService(IEmailProviderService emaillProviderService, ApplicationConfigurationInfo appConfigInfo)
     {
       _emaillProviderService = emaillProviderService;
       _appConfigInfo = appConfigInfo;
@@ -26,7 +26,7 @@ namespace CcsSso.Security.Services
       var emailInfo = new EmailInfo()
       {
         To = email,
-        TemplateId = _appConfigInfo.EmailConfigurationInfo.UserActivationEmailTemplateId,
+        TemplateId = _appConfigInfo.CcsEmailConfigurationInfo.UserActivationEmailTemplateId,
         BodyContent = data
       };
       await _emaillProviderService.SendEmailAsync(emailInfo);
@@ -40,10 +40,42 @@ namespace CcsSso.Security.Services
       var emailInfo = new EmailInfo()
       {
         To = email,
-        TemplateId = _appConfigInfo.EmailConfigurationInfo.ResetPasswordEmailTemplateId,
+        TemplateId = _appConfigInfo.CcsEmailConfigurationInfo.ResetPasswordEmailTemplateId,
         BodyContent = data
       };
       await _emaillProviderService.SendEmailAsync(emailInfo);
+    }
+
+    public async Task SendNominateEmailAsync(string email, string link)
+    {
+      var data = new Dictionary<string, dynamic>
+      {
+        { "OrgRegistersationlink", link },
+        { "emailaddress", email }
+      };
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.CcsEmailConfigurationInfo.NominateEmailTemplateId,
+        BodyContent = data
+      };
+      await _emaillProviderService.SendEmailAsync(emailInfo);
+    }
+
+    public async Task SendChangePasswordNotificationAsync(string email)
+    {
+      if (_appConfigInfo.CcsEmailConfigurationInfo.SendNotificationsEnabled)
+      {
+        var data = new Dictionary<string, dynamic>();
+        data.Add("emailid", email);
+        var emailInfo = new EmailInfo()
+        {
+          To = email,
+          TemplateId = _appConfigInfo.CcsEmailConfigurationInfo.ChangePasswordNotificationTemplateId,
+          BodyContent = data
+        };
+        await _emaillProviderService.SendEmailAsync(emailInfo);
+      }
     }
   }
 }

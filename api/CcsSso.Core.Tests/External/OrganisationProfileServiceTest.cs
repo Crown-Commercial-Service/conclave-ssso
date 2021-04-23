@@ -1,3 +1,5 @@
+using CcsSso.Core.DbModel.Entity;
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Service.External;
 using CcsSso.Core.Tests.Infrastructure;
@@ -6,8 +8,10 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Dtos.Domain.Models;
 using CcsSso.Service.External;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -140,7 +144,28 @@ namespace CcsSso.Core.Tests.External
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
           await SetupTestDataAsync(dataContext);
-          var orgService = OrganisationProfileService(dataContext);
+          Mock<ICiiService> mockCiiService = new Mock<ICiiService>();
+          mockCiiService.Setup(s => s.GetOrgsAsync(It.IsAny<string>()))
+          .ReturnsAsync(new CiiDto[]
+          {
+            new CiiDto
+            {
+              identifier = new CiiIdentifier
+              {
+                legalName = expectedOrganisationInfo.Identifier.LegalName,
+                uri = expectedOrganisationInfo.Identifier.Uri
+              },
+              address = new CiiAddress
+              {
+                streetAddress = expectedOrganisationInfo.Address.StreetAddress,
+                region = expectedOrganisationInfo.Address.Region,
+                locality = expectedOrganisationInfo.Address.Locality,
+                postalCode = expectedOrganisationInfo.Address.PostalCode,
+                countryName = expectedOrganisationInfo.Address.CountryCode,
+              }
+            }
+          });
+          var orgService = OrganisationProfileService(dataContext, mockCiiService);
 
           var result = await orgService.GetOrganisationAsync(ciiOrganisationId);
 
@@ -154,7 +179,7 @@ namespace CcsSso.Core.Tests.External
           Assert.Equal(expectedOrganisationInfo.Address.StreetAddress, result.Address.StreetAddress);
           Assert.Equal(expectedOrganisationInfo.Address.Region, result.Address.Region);
           Assert.Equal(expectedOrganisationInfo.Address.Locality, result.Address.Locality);
-          Assert.Equal(expectedOrganisationInfo.Address.Locality, result.Address.Locality);
+          Assert.Equal(expectedOrganisationInfo.Address.PostalCode, result.Address.PostalCode);
           Assert.Equal(expectedOrganisationInfo.Address.CountryCode, result.Address.CountryCode);
 
         });
@@ -300,10 +325,19 @@ namespace CcsSso.Core.Tests.External
       }
     }
 
-    public static OrganisationProfileService OrganisationProfileService(IDataContext dataContext)
+    public static OrganisationProfileService OrganisationProfileService(IDataContext dataContext, Mock<ICiiService> mockCiiService = null,
+      Mock<IOrganisationService> mockOrganisationHelperService = null)
     {
       IContactsHelperService contactsHelperService = new ContactsHelperService(dataContext);
-      var service = new OrganisationProfileService(dataContext, contactsHelperService);
+      Mock<ICcsSsoEmailService> mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
+      mockCiiService ??= new Mock<ICiiService>();
+      mockOrganisationHelperService ??= new Mock<IOrganisationService>();
+
+      mockOrganisationHelperService.Setup(s => s.GetOrganisationEligibleRolesAsync(It.IsAny<Organisation>(), It.IsAny<int>()))
+        .ReturnsAsync(new List<OrganisationEligibleRole>());
+
+      var service = new OrganisationProfileService(dataContext, contactsHelperService, mockCcsSsoEmailService.Object,
+        mockCiiService.Object, mockOrganisationHelperService.Object);
       return service;
     }
 
@@ -327,9 +361,11 @@ namespace CcsSso.Core.Tests.External
       dataContext.ContactDetail.Add(new ContactDetail { Id = 1, EffectiveFrom = DateTime.UtcNow });
       dataContext.PhysicalAddress.Add(new PhysicalAddress { Id = 1, ContactDetailId = 1, StreetAddress = "street", Locality = "locality", Region = "region", PostalCode = "postalcode", CountryCode = "countrycode" });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 1, PartyId = 1, PartyTypeId = 1, ContactPointReasonId = 1, ContactDetailId = 1 });
+      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 1, OrganisationId = 1, IdentityProviderId = 1 });
 
       dataContext.Party.Add(new Party { Id = 2, PartyTypeId = 1 });
       dataContext.Organisation.Add(new Organisation { Id = 2, PartyId = 2, CiiOrganisationId = "2", OrganisationUri = "Org2Uri", RightToBuy = true, IsDeleted = true });
+      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 2, OrganisationId = 2, IdentityProviderId = 1 });
 
       dataContext.Party.Add(new Party { Id = 3, PartyTypeId = 2 });
       dataContext.Person.Add(new Person { Id = 1, PartyId = 3, OrganisationId = 1, FirstName = "PesronFN1", LastName = "LN1" });
@@ -347,7 +383,7 @@ namespace CcsSso.Core.Tests.External
 
       dataContext.Party.Add(new Party { Id = 5, PartyTypeId = 3 });
       dataContext.Person.Add(new Person { Id = 3, PartyId = 5, OrganisationId = 1, FirstName = "UserFN1", LastName = "UserLN1" });
-      dataContext.User.Add(new User { Id = 1, IdentityProviderId = 1, PartyId = 5, UserName = "user1@mail.com" });
+      dataContext.User.Add(new User { Id = 1, OrganisationEligibleIdentityProviderId = 1, PartyId = 5, UserName = "user1@mail.com" });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 4, PartyId = 5, PartyTypeId = 3, ContactPointReasonId = 3, ContactDetailId = 2 });
 
       await dataContext.SaveChangesAsync();

@@ -31,7 +31,7 @@ export class ManageOrgRegStep1Component extends BaseComponent implements OnInit 
   ngOnInit() { }
 
   public onClick() {
-    this.router.navigateByUrl(`manage-org/register/search`);
+    this.router.navigateByUrl(`manage-org/register/type`);
   }
 
 }

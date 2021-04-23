@@ -8,15 +8,16 @@ export class ContactDetails {
     public contactType?: ContactType;
     public address?: Address;
     public teamName?: string;
+    public contactReason?: string;
 }
 
-export class Address{
-    public streetAddress?: string;
-    public locality?: string;
-    public region?: string;
-    public postalCode?: string;
-    public countryCode?: string;
-    public uprn?: string;
+export interface Address {
+    streetAddress?: string;
+    locality?: string;
+    region?: string;
+    postalCode?: string;
+    countryCode?: string;
+    uprn?: string;
 }
 
 export enum ContactType{

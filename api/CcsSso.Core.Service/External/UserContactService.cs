@@ -1,3 +1,4 @@
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
@@ -19,12 +20,14 @@ namespace CcsSso.Service.External
     private readonly IDataContext _dataContext;
     private readonly IContactsHelperService _contactsHelper;
     private readonly IUserProfileHelperService _userHelper;
+    private readonly ICcsSsoEmailService _ccsSsoEmailService;
     public UserContactService(IDataContext dataContext, IContactsHelperService contactsHelper,
-      IUserProfileHelperService userHelper)
+      IUserProfileHelperService userHelper, ICcsSsoEmailService ccsSsoEmailService)
     {
       _dataContext = dataContext;
       _contactsHelper = contactsHelper;
       _userHelper = userHelper;
+      _ccsSsoEmailService = ccsSsoEmailService;
     }
 
     /// <summary>
@@ -98,6 +101,9 @@ namespace CcsSso.Service.External
         await _dataContext.SaveChangesAsync();
         #endregion
 
+        // Generate email
+        await _ccsSsoEmailService.SendUserContactUpdateEmailAsync(userName);
+
         return userContactPoint.Id;
       }
       else
@@ -132,6 +138,9 @@ namespace CcsSso.Service.External
         });
 
         await _dataContext.SaveChangesAsync();
+
+        // Generate email
+        await _ccsSsoEmailService.SendUserContactUpdateEmailAsync(userName);
       }
       else
       {
@@ -296,6 +305,9 @@ namespace CcsSso.Service.External
           await _contactsHelper.AssignVirtualContactsToContactPointAsync(contactInfo, updatingContact);
 
           await _dataContext.SaveChangesAsync();
+
+          // Generate email
+          await _ccsSsoEmailService.SendUserContactUpdateEmailAsync(userName);
         }
         else
         {

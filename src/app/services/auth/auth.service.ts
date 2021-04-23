@@ -9,13 +9,16 @@ import * as CryptoJS from 'crypto-js';
 import { environment } from '../../../environments/environment';
 import { ajax } from 'rxjs/ajax';
 import { PasswordChangeDetail } from 'src/app/models/passwordChangeDetail';
+import { TokenInfo } from 'src/app/models/auth';
+import { TokenService } from './token.service';
+import { getLocaleDateTimeFormat } from '@angular/common';
 
 @Injectable()
 export class AuthService {
 
   public url: string = environment.uri.api.security;
-
-  constructor(private readonly httpService: HttpClient) {
+  public authTokenRenewaltimerReference: any = undefined;
+  constructor(private readonly httpService: HttpClient, private readonly tokenService: TokenService) {
   }
 
   login(username: string, password: string): Observable<any> {
@@ -35,9 +38,48 @@ export class AuthService {
   }
 
   public isUserAuthenticated(): boolean {
-    const tokens = localStorage.getItem('brickedon_aws_tokens');
+    const tokens = localStorage.getItem('access_token');
     return tokens != null;
     // return this.httpService.get<boolean>('/auth/isAuthenticated');
+  }
+
+  public registerTokenRenewal() {
+    if (this.authTokenRenewaltimerReference == undefined) {
+      let thisVar = this;
+      this.authTokenRenewaltimerReference = setInterval(function () {
+        let accessToken = thisVar.tokenService.getDecodedAccessToken();
+        if (accessToken != null) {
+          let expireDate = new Date(accessToken.exp * 1000);
+          var date = new Date();
+          let diffInMinutes = Math.floor((expireDate.getTime() - date.getTime()) / 60000);
+
+          // If token expiration is less than 10 minutes, trigger token renewal 
+          if (diffInMinutes <= 10) {
+            thisVar.renewAccessToken();
+          }
+        }
+        else {
+          thisVar.renewAccessToken();
+        }
+      }, 300000); // execute every 5 minutes (60000*5)
+    }
+  }
+
+  private renewAccessToken() {
+    this.getRefreshToken().toPromise().then((refreshToken: any) => {
+      this.renewToken(refreshToken || '').toPromise().then((tokenInfo: TokenInfo) => {
+        this.saveRefreshToken(tokenInfo.refreshToken).toPromise().then(() => {
+          localStorage.setItem('access_token', tokenInfo.accessToken);
+        });
+      },
+        (err) => {
+          // This could due to invalid refresh token (refresh token rotation)  
+          if (err.error == "INVALID_CREDENTIALS") {
+            // sign out the user
+            this.logOutAndRedirect();
+          }
+        });
+    });
   }
 
   private authSuccessSource = new Subject<boolean>();
@@ -50,7 +92,7 @@ export class AuthService {
   }
 
   public isAuthenticated(): Observable<boolean> {
-    const tokens = localStorage.getItem('brickedon_aws_tokens');
+    const tokens = localStorage.getItem('access_token');
     if (tokens) {
       return Observable.of(true);
     }
@@ -60,7 +102,7 @@ export class AuthService {
   register(firstName: string, lastName: string, username: string, email: string): Observable<any> {
     const options = {
       headers: new HttpHeaders().append('Content-Type', 'application/json')
-      .append("X-API-Key", environment.securityApiKey)
+        .append("X-API-Key", environment.securityApiKey)
     }
     const body = { FirstName: firstName, LastName: lastName, UserName: username, Email: email, Role: 'Admin', Groups: [] }
     return this.httpService.post(`${this.url}/security/register`, body, options).pipe(
@@ -73,13 +115,12 @@ export class AuthService {
     );
   }
 
-  changePassword(passwordChangeDetail: PasswordChangeDetail): Observable<any> {
-    const options = {
-      headers: new HttpHeaders().append('Content-Type', 'application/json')
-      .append("X-API-Key", environment.securityApiKey)
-    }
+  getAccesstoken() {
+    return localStorage.getItem('access_token');
+  }
 
-    return this.httpService.post(`${this.url}/security/changepassword`, passwordChangeDetail, options).pipe(
+  changePassword(passwordChangeDetail: PasswordChangeDetail): Observable<any> {
+    return this.httpService.post(`${environment.uri.api.postgres}/auth/change_password`, passwordChangeDetail).pipe(
       map(data => {
         return data;
       }),
@@ -92,7 +133,6 @@ export class AuthService {
   resetPassword(userName: string): Observable<any> {
     const options = {
       headers: new HttpHeaders().append('Content-Type', 'application/json')
-      .append("X-API-Key", environment.securityApiKey)
     }
     return this.httpService.post(`${this.url}/security/passwordresetrequest`, "\"" + userName + "\"", options).pipe(
       map(data => {
@@ -113,7 +153,7 @@ export class AuthService {
       grant_type: 'authorization_code',
       client_id: environment.idam_client_id,
       redirect_uri: environment.uri.web.dashboard + '/authsuccess',
-      code_verifier:this.getCodeVarifier()
+      code_verifier: this.getCodeVerifier()
     };
     return this.httpService.post(`${this.url}/security/token`, body, options).pipe(
       map(data => {
@@ -125,27 +165,71 @@ export class AuthService {
     );
   }
 
+  renewToken(refreshToken: string): Observable<any> {
+    const options = {
+      headers: new HttpHeaders().append('Content-Type', 'application/json')
+    }
+    const body = {
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+      client_id: environment.idam_client_id,
+      redirect_uri: environment.uri.web.dashboard + '/authsuccess',
+    };
+
+    return this.httpService.post(`${this.url}/security/token`, body, options).pipe(
+      map(data => {
+        return data;
+      }),
+      catchError(error => {
+        return throwError(error);
+      })
+    );
+  }
+
+  saveRefreshToken(refreshToken: string) {
+    let coreDataUrl: string = `${environment.uri.api.postgres}/auth/save_refresh_token`;
+    const body = {
+      'refreshToken': refreshToken
+    }
+    return this.httpService.post(coreDataUrl, body).pipe(
+      map(data => {
+        return data;
+      }),
+      catchError(error => {
+        return throwError(error);
+      })
+    );
+  }
+
+  getRefreshToken() {
+    const options = {
+      headers: new HttpHeaders().append('responseType', 'text')
+    }
+    let coreDataUrl: string = `${environment.uri.api.postgres}/auth/get_refresh_token`;
+    return this.httpService.get(coreDataUrl, { responseType: 'text' });
+  }
+
   getSignOutEndpoint() {
     return environment.uri.api.security + '/security/logout?clientId=' + environment.idam_client_id
       + '&redirecturi=' + environment.uri.web.dashboard;
   }
 
   getAuthorizedEndpoint() {
-    let codeVerifier = this.getCodeVarifier();
+    let codeVerifier = this.getCodeVerifier();
     const codeVerifierHash = CryptoJS.SHA256(codeVerifier).toString(CryptoJS.enc.Base64);
     const codeChallenge = codeVerifierHash
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
+      .replace(/=/g, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_');
     let url = environment.uri.api.security + '/security/authorize?scope=email profile openid offline_access&response_type=code&client_id='
-      + environment.idam_client_id 
+      + environment.idam_client_id
       + '&code_challenge_method=S256' + '&code_challenge=' + codeChallenge
       + '&redirect_uri=' + environment.uri.web.dashboard + '/authsuccess'
-      
+
     return url;
   }
 
-  getCodeVarifier() {
+  getCodeVerifier() {
     let codeVerifier = localStorage.getItem('codeVerifier');
     if (codeVerifier == undefined || codeVerifier == '') {
       codeVerifier = this.generateRandom(128);
@@ -166,7 +250,7 @@ export class AuthService {
 
 
   public signOut() {
-    localStorage.removeItem('brickedon_aws_tokens');
+    clearTimeout(this.authTokenRenewaltimerReference);
     localStorage.removeItem('brickedon_user');
     localStorage.removeItem('user_name');
     localStorage.removeItem('ccs_organisation_id');
@@ -176,40 +260,62 @@ export class AuthService {
     localStorage.removeItem('securityapiurl');
     localStorage.removeItem('redirect_uri');
     localStorage.removeItem('client_id');
+    localStorage.removeItem('access_token');
   }
 
   public logOut(userName: string | null): Observable<any> {
     const options = {
       headers: new HttpHeaders().append('Content-Type', 'application/json')
     };
-    return this.httpService.post(`${this.url}/security/logout?userName=${userName}`, null, options).pipe(     
+    return this.httpService.post(`${this.url}/security/logout?userName=${userName}`, null, options).pipe(
       map(data => {
         return data;
       }),
       catchError(error => {
         return throwError(error);
       })
-    );  
+    );
   }
 
   public logOutAndRedirect() {
-    this.signOut();
-    window.location.href = this.getSignOutEndpoint();
+    this.clearRefreshToken().toPromise().then(() => {
+      this.signOut();
+      window.location.href = this.getSignOutEndpoint();
+    }),
+      catchError(error => {
+        return throwError(error);
+      });
+  }
+
+  clearRefreshToken() {
+    let coreDataUrl: string = `${environment.uri.api.postgres}/auth/sign_out`;
+    return this.httpService.post(coreDataUrl, null);
   }
 
   public setWindowLocationHref(href: string) {
     window.location.href = href;
   }
 
-  getPermissions(token: string): Observable<any> {
+  getPermissions(): Observable<any> {
+    return this.httpService.get(`${environment.uri.api.postgres}/user/GetPermissions`).pipe(
+      map(data => {
+        return data;
+      }),
+      catchError(error => {
+        return throwError(error);
+      })
+    );
+  }
+
+  nominate(firstName: string, lastName: string, email: string): Observable<any> {
+    const token = this.getAccesstoken()+'';
     const options = {
       headers: new HttpHeaders().append('Content-Type', 'application/json')
+        .append("X-API-Key", environment.securityApiKey)
+        // .append('Authorization', 'Bearer ' + token)
     }
-    const body = {
-      //token
-    };
-    // return this.httpService.post(`${environment.uri.api.postgres}/user/GetPermissions?token=${token}`, body, options).pipe(
-    return this.httpService.post(`${environment.uri.api.postgres}/user/GetPermissions?token=123456789`, body, options).pipe(
+    const body = { FirstName: firstName, LastName: lastName, UserName: email, Email: email, Role: 'Admin', Groups: [] }
+    return this.httpService.post(`${this.url}/security/nominate`, body, options).pipe(
       map(data => {
         return data;
       }),

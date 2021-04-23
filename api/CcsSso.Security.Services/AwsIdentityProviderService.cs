@@ -38,7 +38,7 @@ namespace CcsSso.Security.Services
     /// <param name="userName"></param>
     /// <param name="userPassword"></param>
     /// <returns></returns>
-    public async Task<AuthResultDto> AuthenticateAsync(string userName, string userPassword)
+    public async Task<AuthResultDto> AuthenticateAsync(string clientId, string secret, string userName, string userPassword)
     {
 
       CognitoUser user = new CognitoUser(userName, _appConfigInfo.AwsCognitoConfigurationInfo.AWSAppClientId, _userPool, _provider);
@@ -194,7 +194,7 @@ namespace CcsSso.Security.Services
     /// </summary>
     /// <param name="refreshToken"></param>
     /// <returns></returns>
-    public async Task<TokenResponseInfo> GetRenewedTokensAsync(string refreshToken)
+    public async Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string refreshToken, string sid)
     {
       var authParam = new Dictionary<string, string>();
       authParam.Add("REFRESH_TOKEN", refreshToken);
@@ -380,7 +380,7 @@ namespace CcsSso.Security.Services
       await _provider.AdminResetUserPasswordAsync(adminResetUserPasswordRequest);
     }
 
-    public string GetAuthenticationEndPoint(string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt)
+    public string GetAuthenticationEndPoint(string state, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt)
     {
       throw new NotImplementedException();
     }
@@ -438,23 +438,18 @@ namespace CcsSso.Security.Services
       return string.Empty;
     }
 
-    /// <summary>
-    /// This method was introduced by Lee and lead to some build errors.
-    /// Therefore remove the code content and keep the method.
-    /// </summary>
-    /// <param name="accessToken"></param>
-    /// <returns></returns>
-    public Task<UserClaims> GetUserAsync(string accessToken)
-    {
-      throw new NotImplementedException();
-    }
 
     public async Task DeleteAsync(string email)
     {
       throw new NotImplementedException();
     }
 
-      public async Task<string> GetIdentityProviderAuthenticationEndPointAsync()
+    public async Task<IdamUser> GetUser(string email)
+    {
+      throw new NotImplementedException();
+    }
+
+    public async Task<string> GetIdentityProviderAuthenticationEndPointAsync()
     {
       var userPoolSettings = await GetDescribeUserPoolClientRequestAsync();
       var userPoolClient = userPoolSettings.UserPoolClient;
@@ -478,9 +473,14 @@ namespace CcsSso.Security.Services
       return userPoolSettings;
     }
 
-    public Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string refreshToken)
+    public Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string clientSecret, string refreshToken, string sid)
     {
       throw new NotImplementedException();
+    }
+
+    public async Task SendNominateEmailAsync(Domain.Dtos.UserInfo userInfo)
+    {
+
     }
   }
 }

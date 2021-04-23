@@ -1,0 +1,82 @@
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <div class="user-profile-container">
+            <div class="govuk-breadcrumbs">
+                <ol class="govuk-breadcrumbs__list">
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/home">{{ 'ADMINISTRATOR_DASHBOARD' | translate
+                            }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/manage-groups">{{ 'MANAGE_GROUPS' | translate
+                            }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" (click)="onCancelClick()">{{ 'EDIT_GROUP' | translate }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <span *ngIf="isEdit== true" class="govuk-breadcrumbs__link">
+                            {{'ADD_REMOVE_USERS'| translate }}</span>
+                        <span *ngIf="isEdit!= true" class="govuk-breadcrumbs__link">
+                            {{ 'ADD_USERS' | translate }}</span>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <h1 *ngIf="isEdit== true" class="govuk-heading-xl page-title">
+            {{ 'MANAGE_GROUP_USERS' | translate }} : {{groupName}}</h1>
+        <h2 *ngIf="isEdit== true" class="govuk-heading-m">
+            {{ 'SELECT_USERS_WANT_TO_ADD' | translate }} : {{groupName}}</h2>
+        <h1 *ngIf="isEdit!= true" class="govuk-heading-xl page-title">{{ 'ADD_USERS' | translate }}</h1>
+        <div>
+            <div class="govuk-form-group" id="search-form-group">
+                <label class="govuk-label" for="search"> {{ 'SEARCH_FOR_USER' | translate }} </label>
+                <div class="govuk-grid-row">
+                    <div class="govuk-grid-column-two-thirds">
+                        <input (change)="searchTextChanged($event)" [value]="searchingUserName" class="govuk-input"
+                            id="search" name="search" type="text">
+                    </div>
+                    <div class="govuk-grid-column-one-third">
+                        <div class="gem-c-search__item gem-c-search__submit-wrapper">
+                            <button class="gem-c-search__submit" (click)="onSearchClick()" type="button">
+                                {{ 'SEARCH' | translate }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+        <div class="user-table">
+            <app-govuk-table [headerTextKeys]="usersTableHeaders" [data]="userGridSource"
+                [dataKeys]="usersColumnsToDisplay" [isCheckBoxVisible]="true"
+                (checkBoxClickEvent)="onCheckBoxClickRow($event)" [isHyperLinkVisible]="false"
+                [useServerPagination]="true" [serverPageCount]="pageCount" [serverPageCurrentPage]="currentPage"
+                (changeCurrentPageEvent)="setPage($event)">
+            </app-govuk-table>
+        </div>
+    </div>
+</div>
+
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <div class="govuk-button-group save-cancel-button-group">
+            <button type="button" (click)="onContinueClick()" class="govuk-button" data-module="govuk-button">
+                {{ 'CONTINUE_BTN' | translate }}
+            </button>
+            <button type="button" (click)="onCancelClick()" class="govuk-button govuk-button--secondary"
+                data-module="govuk-button">
+                {{ 'CANCEL_GO_GROUP_BTN' | translate }}
+            </button>
+        </div>
+    </div>
+</div>

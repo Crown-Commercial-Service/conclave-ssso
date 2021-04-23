@@ -8,7 +8,7 @@ namespace CcsSso.Security.Domain.Dtos
 
     public Auth0Configuration Auth0ConfigurationInfo { get; set; }
 
-    public EmailConfigurationInfo EmailConfigurationInfo { get; set; }
+    public CcsEmailConfigurationInfo CcsEmailConfigurationInfo { get; set; }
 
     public RollBarConfigurationInfo RollBarConfigurationInfo { get; set; }
 
@@ -62,15 +62,19 @@ namespace CcsSso.Security.Domain.Dtos
     public string AWSCognitoURL { get; set; }
   }
 
-  public class EmailConfigurationInfo
+  public class CcsEmailConfigurationInfo
   {
-    public string ApiKey { get; set; }
-
     public string UserActivationEmailTemplateId { get; set; }
 
     public string ResetPasswordEmailTemplateId { get; set; }
 
+    public string NominateEmailTemplateId { get; set; }
+
+    public string ChangePasswordNotificationTemplateId { get; set; }
+
     public int UserActivationLinkTTLInMinutes { get; set; }
+
+    public bool SendNotificationsEnabled { get; set; }
   }
 
   public class RollBarConfigurationInfo

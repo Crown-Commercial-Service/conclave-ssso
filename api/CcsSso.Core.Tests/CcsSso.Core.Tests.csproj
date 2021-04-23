@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CcsSso.Core.DbPersistence\CcsSso.Core.DbPersistence.csproj" />
-    <ProjectReference Include="..\CcsSso.Core.Jobs\CcsSso.Core.Jobs.csproj" />
+    <ProjectReference Include="..\CcsSso.Core.JobScheduler\CcsSso.Core.JobScheduler.csproj" />
     <ProjectReference Include="..\CcsSso.Core.Service\CcsSso.Core.Service.csproj" />
   </ItemGroup>
 

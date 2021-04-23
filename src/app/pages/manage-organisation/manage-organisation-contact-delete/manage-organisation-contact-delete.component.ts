@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Store } from '@ngrx/store';
-import {Location} from '@angular/common';
-import { slideAnimation } from 'src/app/animations/slide.animation';
-
-import { BaseComponent } from 'src/app/components/base/base.component';
-import { contactService } from 'src/app/services/contact/contact.service';
-import { UIState } from 'src/app/store/ui.states';
-import { OperationEnum } from 'src/app/constants/enum';
+import { Component } from "@angular/core";
+import { OnInit } from "@angular/core";
+import { Store } from "@ngrx/store";
+import { BaseComponent } from "src/app/components/base/base.component";
+import { UIState } from "src/app/store/ui.states";
+import { slideAnimation } from "src/app/animations/slide.animation";
+import { ActivatedRoute, Router } from "@angular/router";
+import { AuthService } from "src/app/services/auth/auth.service";
+import { OperationEnum } from "src/app/constants/enum";
+import { WrapperUserContactService } from "src/app/services/wrapper/wrapper-user-contact.service";
+import { WrapperOrganisationContactService } from "src/app/services/wrapper/wrapper-org-contact-service";
+import { WrapperSiteContactService } from "src/app/services/wrapper/wrapper-site-contact-service";
 
 @Component({
     selector: 'app-manage-organisation-contact-delete',
@@ -18,37 +20,61 @@ import { OperationEnum } from 'src/app/constants/enum';
             close: { 'transform': 'translateX(12.5rem)' },
             open: { left: '-12.5rem' }
         })
-    ],
-    encapsulation: ViewEncapsulation.None,
-    changeDetection: ChangeDetectionStrategy.Default
+    ]
 })
 export class ManageOrganisationContactDeleteComponent extends BaseComponent implements OnInit {
-
-    organisationId: number;
-    contactId: number;
-
-    constructor(private contactService: contactService, private router: Router, private location: Location,
-        private route: ActivatedRoute, protected uiStore: Store<UIState>) {
+    organisationId: string;
+    contactId: number = 0;
+    siteId: number = 0;
+    constructor(protected uiStore: Store<UIState>, private router: Router, private activatedRoute: ActivatedRoute,
+        private contactService: WrapperOrganisationContactService, private siteContactService: WrapperSiteContactService) {
         super(uiStore);
-        this.organisationId = parseInt(this.route.snapshot.paramMap.get('organisationId') || '0');
-        this.contactId = parseInt(this.route.snapshot.paramMap.get('contactId') || '0');
+        this.organisationId = localStorage.getItem('cii_organisation_id') || '';
+        let queryParams = this.activatedRoute.snapshot.queryParams;
+        if (queryParams.data) {
+            let routeData = JSON.parse(queryParams.data);
+            console.log(routeData);
+            this.contactId = routeData['contactId'];
+            this.siteId = routeData['siteId'] || 0;
+        }
     }
 
     ngOnInit() {
     }
 
-    public onBackClick(){
-        this.location.back();
+    onDeleteConfirmClick() {
+        if (this.siteId == 0){
+            this.contactService.deleteOrganisationContact(this.organisationId, this.contactId).subscribe({
+                next: () => { 
+                    this.router.navigateByUrl(`manage-org/profile/contact-operation-success/${OperationEnum.DeleteOrgContact}`);           
+                },
+                error: (error) => {
+                    console.log(error);
+                }
+            });
+        }
+        else{
+            this.siteContactService.deleteSiteContact(this.organisationId, this.siteId, this.contactId).subscribe({
+                next: () => { 
+                    let data = {
+                        'siteId': this.siteId
+                    };
+                    this.router.navigateByUrl(`manage-org/profile/contact-operation-success/${OperationEnum.DeleteSiteContact}?data=` + JSON.stringify(data));           
+                },
+                error: (error) => {
+                    console.log(error);
+                }
+            });
+        }
+        
     }
 
-    public onConfirmClick() {
-        this.contactService.deleteContact(this.contactId).subscribe(() => {
-            this.router.navigateByUrl(`manage-org/profile/${this.organisationId}/contact-operation-success/${OperationEnum.Delete}`);
-        });
+    onCancelClick(){
+        let data = {
+            'isEdit': true,
+            'contactId': this.contactId,
+            'siteId': this.siteId
+        };
+        this.router.navigateByUrl('manage-org/profile/contact-edit?data=' + JSON.stringify(data));
     }
-
-    public onCancelClick(){
-        this.location.back();
-    }
-
 }

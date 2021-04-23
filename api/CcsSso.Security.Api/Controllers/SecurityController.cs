@@ -1,17 +1,12 @@
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
-using CcsSso.Security.Domain.Exceptions;
-using CcsSso.Security.Services.Helpers;
+using CcsSso.Shared.Contracts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CcsSso.Security.Api.Controllers
@@ -23,23 +18,21 @@ namespace CcsSso.Security.Api.Controllers
 
     private readonly ISecurityService _securityService;
     private readonly IUserManagerService _userManagerService;
+    private readonly ILocalCacheService _localCacheService;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
-    private readonly IJwtTokenHandler _jwtHandler;
     public SecurityController(ISecurityService securityService, IUserManagerService userManagerService,
-      ApplicationConfigurationInfo applicationConfigurationInfo, IJwtTokenHandler jwtHandler)
+      ApplicationConfigurationInfo applicationConfigurationInfo, ILocalCacheService localCacheService)
     {
       _securityService = securityService;
       _userManagerService = userManagerService;
       _applicationConfigurationInfo = applicationConfigurationInfo;
-      _jwtHandler = jwtHandler;
+      _localCacheService = localCacheService;
     }
 
     /// <summary>
     /// Authenticates a user and issues 3 tokens
     /// </summary>
     /// <response code="200">For successfull authentication id token, refresh token and access token are issued.
-    /// When the temporary password is used ChallengeName = NEW_PASSWORD_REQUIRED and ChallengeRequired = true with a valid SessionId
-    /// 
     /// </response>
     /// <response  code="401">Authentication fails</response>
     /// <response  code="400">Password reset pending. code: PASSWORD_RESET_REQUIRED</response>
@@ -50,19 +43,21 @@ namespace CcsSso.Security.Api.Controllers
     ///     {
     ///        "username": "helen@xxx.com",
     ///        "userpassword": "1234",
+    ///        "client_id":"1234",
+    ///        "client_secret":"xxxx"
     ///     }
     ///
     /// </remarks>
     [HttpPost]
     [Produces("application/json")]
-    [Route("security/login")]
-    [SwaggerOperation(Tags = new[] { "security" })]
+    [Route("test/oauth/token")]
+    [SwaggerOperation(Tags = new[] { "test" })]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
     public async Task<AuthResultDto> Login([FromBody] AuthRequest authRequest)
     {
-      var authResponse = await _securityService.LoginAsync(authRequest.UserName, authRequest.UserPassword);
+      var authResponse = await _securityService.LoginAsync(authRequest.ClientId, authRequest.Secret, authRequest.UserName, authRequest.UserPassword);
       return authResponse;
     }
 
@@ -74,7 +69,9 @@ namespace CcsSso.Security.Api.Controllers
     [SwaggerOperation(Tags = new[] { "security" })]
     public IActionResult Authorize(string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt = null)
     {
-      var url = _securityService.GetAuthenticationEndPoint(scope, response_type, client_id, redirect_uri, code_challenge_method, code_challenge, prompt);
+      var (sid, opbs) = GenerateCookies(client_id);
+
+      var url = _securityService.GetAuthenticationEndPoint(sid, scope, response_type, client_id, redirect_uri, code_challenge_method, code_challenge, prompt);
       return Redirect(url);
     }
 
@@ -95,6 +92,7 @@ namespace CcsSso.Security.Api.Controllers
     ///        "code": "abcs123",
     ///        "refreshtoken": null,
     ///        "granttype:"authorization_code",
+    ///        "client_secret":"xxx"
     ///        "redirect_uri":"http://redirect_url/"
     ///     }
     ///
@@ -103,6 +101,7 @@ namespace CcsSso.Security.Api.Controllers
     ///        "code": null,
     ///        "refreshtoken": "abcs123",
     ///        "granttype:"refresh_token",
+    ///        "client_secret":"xxx"
     ///        "redirect_uri":"http://redirect_url/"
     ///     }
     ///
@@ -116,98 +115,17 @@ namespace CcsSso.Security.Api.Controllers
       // Sessions are handled in two places for a user and they are as Auth0 & Security api (aka CCS-SSO session cookie).
       // Auth0 session is given the highest priority as it used to generate tokens. Hence, CCS-SSO session will be
       // extented for valid Auth0 sessions.
-
-      string opbsCookieName = "opbs";
-      DateTime expiresOnUTC = DateTime.UtcNow.AddMinutes(_applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes);
-
-      CookieOptions opbsCookieOptions = new CookieOptions()
-      {
-        Expires = expiresOnUTC,
-        // Since it's not clear the way the project is build (debug or release), this was always set to None with secure True
-        SameSite = SameSiteMode.None,
-        Secure = true
-        //#if DEBUG
-        //        SameSite = SameSiteMode.None,
-        //        Secure = true
-        //#else
-        //          SameSite = SameSiteMode.Lax    // Need to verify
-        //#endif
-      };
-      string opbsValue;
-      // Generate OPBS cookie if not exists in request
-      if (!Request.Cookies.ContainsKey(opbsCookieName))
-      {
-        opbsValue = Guid.NewGuid().ToString();
-        Response.Cookies.Append(opbsCookieName, opbsValue, opbsCookieOptions);
-      }
-      else
-      {
-        Request.Cookies.TryGetValue(opbsCookieName, out opbsValue);
-        Response.Cookies.Delete(opbsCookieName);
-        Response.Cookies.Append(opbsCookieName, opbsValue, opbsCookieOptions);
-      }
+      var (sid, opbsValue) = GenerateCookies(tokenRequestInfo.ClientId, tokenRequestInfo.State);
       var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
       var host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
-
-      CookieOptions httpCookieOptions = new CookieOptions()
-      {
-        HttpOnly = true,
-        Expires = expiresOnUTC,
-#if DEBUG
-        SameSite = SameSiteMode.None,
-        Secure = true
-#else
-          SameSite = SameSiteMode.Lax    // Need to verify
-#endif
-      };
-      string sessionCookie = "ccs-sso";
-      string sid = string.Empty;
-      if (!Request.Cookies.ContainsKey(sessionCookie))
-      {
-        sid = Guid.NewGuid().ToString();
-        Response.Cookies.Append(sessionCookie, sid, httpCookieOptions);
-      }
-      else
-      {
-        Request.Cookies.TryGetValue(sessionCookie, out sid);
-        Response.Cookies.Delete(sessionCookie);
-        //Re-assign the same session id with new expiration time
-        Response.Cookies.Append(sessionCookie, sid, httpCookieOptions);
-      }
-
       var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
-
-      CookieOptions visitedSiteCookieOptions = new CookieOptions()
-      {
-        HttpOnly = true,
-        Expires = expiresOnUTC,
-#if DEBUG
-        SameSite = SameSiteMode.None,
-        Secure = true
-#else
-          SameSite = SameSiteMode.Lax    // Need to verify
-#endif
-      };
-      string visitedSiteCookie = "ccs-sso-visitedsites";
-      if (!Request.Cookies.ContainsKey(visitedSiteCookie))
-      {
-        Response.Cookies.Append(visitedSiteCookie, tokenRequestInfo.ClientId, httpCookieOptions);
-      }
-      else
-      {
-        Request.Cookies.TryGetValue(visitedSiteCookie, out string visitedSites);
-        var visitedSiteList = visitedSites.Split(',').ToList();
-        if (!visitedSiteList.Contains(tokenRequestInfo.ClientId))
-        {
-          visitedSiteList.Add(tokenRequestInfo.ClientId);
-          visitedSites = string.Join(",", visitedSiteList);
-          Response.Cookies.Delete(visitedSiteCookie);
-          Response.Cookies.Append(visitedSiteCookie, visitedSites, visitedSiteCookieOptions);
-        }
-      }
       return idToken;
     }
 
+    /// <summary>
+    /// Returns OP IFrame
+    /// </summary>
+    /// <response code="200">Returns OPIFrame successfully</response>
     [HttpGet("security/checksession")]
     [SwaggerOperation(Tags = new[] { "security" })]
     [ProducesResponseType(200)]
@@ -450,7 +368,7 @@ namespace CcsSso.Security.Api.Controllers
           Request.Cookies.TryGetValue(visitedSiteCookie, out string visitedSites);
           var visitedSiteList = visitedSites.Split(',').ToList();
           // Perform back chanel logout - This should be performed as a queue triggered background job
-          await _securityService.PerformBackChannelLogoutAsync(sid, visitedSiteList);
+          await _securityService.PerformBackChannelLogoutAsync(clientId, sid, visitedSiteList);
           Response.Cookies.Delete(visitedSiteCookie);
         }
       }
@@ -483,41 +401,6 @@ namespace CcsSso.Security.Api.Controllers
       await _securityService.RevokeTokenAsync(refreshToken);
     }
 
-    /// <summary>
-    /// This endpoint was introduced by Lee and lead to some build errors.
-    /// Therefore change the method content.
-    /// </summary>
-    /// <param name="url"></param>
-    /// <returns></returns>
-    [HttpPost("security/redirect_endpoint")]
-    [SwaggerOperation(Tags = new[] { "security" })]
-    public Task<string> RedirectEndPoint(string url)
-    {
-      throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// This endpoint was introduced by Lee and lead to some build errors.
-    /// Therefore change the method content. 
-    /// </summary>
-    /// <param name="userInfo"></param>
-    /// <returns></returns>
-    [HttpPost("register/external")]
-    [SwaggerOperation(Tags = new[] { "security" })]
-    public Task RegisterExternal(UserInfo userInfo)
-    {
-      throw new NotImplementedException();
-    }
-
-    [HttpGet("user_email")]
-    [SwaggerOperation(Tags = new[] { "security" })]
-    public async Task<UserClaims> GetEmail(string accessToken)
-    {
-      return await _userManagerService.GetUserAsync(accessToken);
-    }
-
-
-
 
     /// <summary>
     /// Validates the token
@@ -539,14 +422,14 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(401)]
     public bool ValidateToken(string clientId)
     {
-      if(Request.Headers.ContainsKey("Authorization"))
+      if (Request.Headers.ContainsKey("Authorization"))
       {
         var bearerToken = Request.Headers["Authorization"].FirstOrDefault();
         if (!string.IsNullOrEmpty(bearerToken))
         {
           var token = bearerToken.Split(' ').Last();
           return _securityService.ValidateToken(clientId, token);
-        }       
+        }
       }
       throw new UnauthorizedAccessException();
     }
@@ -559,13 +442,130 @@ namespace CcsSso.Security.Api.Controllers
     /// <response  code="400">
     /// Code: INVALID_EMAIL (Invalid Email address)
     /// </response>
-    [HttpPost("security/deleteuser")]
+    [HttpDelete("security/deleteuser")]
     [SwaggerOperation(Tags = new[] { "security" })]
     [ProducesResponseType(204)]
     [ProducesResponseType(404)]
-    public async Task DeleteUser([FromBody] string email)
+    public async Task DeleteUser(string email)
     {
       await _userManagerService.DeleteUserAsync(email);
+    }
+
+
+    /// <summary>
+    /// Get a user
+    /// </summary>
+    /// <response code="200">User details</response>
+    /// <response code="404">User not found </response>
+    /// <response  code="400">
+    /// Code: INVALID_EMAIL (Invalid Email address)
+    /// </response>
+    [HttpGet("security/getuser")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(400)]
+    public async Task<IdamUser> GetUser(string email)
+    {
+      return await _userManagerService.GetUserAsync(email);
+    }
+
+    [HttpPost("security/nominate")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    public async Task Nominate(UserInfo userInfo)
+    {
+      await _userManagerService.NominateUserAsync(userInfo);
+    }
+
+    private (string, string) GenerateCookies(string clientId, string state = null)
+    {
+      string sid = string.Empty;
+      string opbsValue = string.Empty;
+      string opbsCookieName = "opbs";
+      DateTime expiresOnUTC = DateTime.UtcNow.AddMinutes(_applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes);
+
+      CookieOptions opbsCookieOptions = new CookieOptions()
+      {
+        Expires = expiresOnUTC,
+        // Since it's not clear the way the project is build (debug or release), this was always set to None with secure True
+        SameSite = SameSiteMode.None,
+        Secure = true
+        //#if DEBUG
+        //        SameSite = SameSiteMode.None,
+        //        Secure = true
+        //#else
+        //          SameSite = SameSiteMode.Lax    // Need to verify
+        //#endif
+      };
+      // Generate OPBS cookie if not exists in request
+      if (!Request.Cookies.ContainsKey(opbsCookieName))
+      {
+        opbsValue = Guid.NewGuid().ToString();
+        Response.Cookies.Append(opbsCookieName, opbsValue, opbsCookieOptions);
+      }
+      else
+      {
+        Request.Cookies.TryGetValue(opbsCookieName, out opbsValue);
+        Response.Cookies.Delete(opbsCookieName);
+        Response.Cookies.Append(opbsCookieName, opbsValue, opbsCookieOptions);
+      }
+
+
+      CookieOptions httpCookieOptions = new CookieOptions()
+      {
+        HttpOnly = true,
+        Expires = expiresOnUTC,
+        SameSite = SameSiteMode.None,
+        Secure = true
+      };
+      string sessionCookie = "ccs-sso";
+
+      if (!Request.Cookies.ContainsKey(sessionCookie) && string.IsNullOrEmpty(state))
+      {
+        sid = Guid.NewGuid().ToString();
+        Response.Cookies.Append(sessionCookie, sid, httpCookieOptions);
+      }
+      else
+      {
+        if (Request.Cookies.ContainsKey(sessionCookie))
+        {
+          Request.Cookies.TryGetValue(sessionCookie, out sid);
+        }
+        else
+        {
+          sid = _localCacheService.GetValue<string>(state);
+        }
+        //Re-assign the same session id with new expiration time
+        Response.Cookies.Delete(sessionCookie);
+        Response.Cookies.Append(sessionCookie, sid, httpCookieOptions);
+      }
+
+      CookieOptions visitedSiteCookieOptions = new CookieOptions()
+      {
+        HttpOnly = true,
+        Expires = expiresOnUTC,
+        SameSite = SameSiteMode.None,
+        Secure = true
+      };
+      string visitedSiteCookie = "ccs-sso-visitedsites";
+      if (!Request.Cookies.ContainsKey(visitedSiteCookie))
+      {
+        Response.Cookies.Append(visitedSiteCookie, clientId, httpCookieOptions);
+      }
+      else
+      {
+        Request.Cookies.TryGetValue(visitedSiteCookie, out string visitedSites);
+        var visitedSiteList = visitedSites.Split(',').ToList();
+        if (!visitedSiteList.Contains(clientId))
+        {
+          visitedSiteList.Add(clientId);
+          visitedSites = string.Join(",", visitedSiteList);
+          Response.Cookies.Delete(visitedSiteCookie);
+          Response.Cookies.Append(visitedSiteCookie, visitedSites, visitedSiteCookieOptions);
+        }
+      }
+
+      return (sid, opbsValue);
     }
   }
 }

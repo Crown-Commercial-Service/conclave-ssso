@@ -44,16 +44,16 @@ export class AuthSuccessComponent extends BaseComponent implements OnInit {
         this.route.queryParams.subscribe(params => {
             if (params['code']) {
                 this.authService.token(params['code']).toPromise().then((tokenInfo: TokenInfo) => {
-                    console.log('---------TOKEN RESPONSE START---------');
-                    console.log(tokenInfo);
-                    console.log('---------TOKEN PASSWORD RESPONSE FINISH--------');
-                    localStorage.setItem('brickedon_aws_tokens', JSON.stringify(tokenInfo));
-                    let idToken = this.tokenService.getDecodedIdToken(tokenInfo.idToken);
+                    let idToken = this.tokenService.getDecodedToken(tokenInfo.idToken);
                     localStorage.setItem('brickedon_user', idToken.email);
+                    localStorage.setItem('access_token', tokenInfo.accessToken);
                     localStorage.setItem('user_name', idToken.email);
                     localStorage.setItem('session_state', tokenInfo.sessionState);
                     this.authService.publishAuthStatus(true);
-                    this.router.navigateByUrl('home');
+                    this.authService.saveRefreshToken(tokenInfo.refreshToken).toPromise().then(() => {
+                        this.authService.registerTokenRenewal();
+                        this.router.navigateByUrl('home');
+                    });
                 }, (err) => {
                     if (err.status == 404) {
                         this.router.navigateByUrl('error?error_description=USER_NOT_FOUND');

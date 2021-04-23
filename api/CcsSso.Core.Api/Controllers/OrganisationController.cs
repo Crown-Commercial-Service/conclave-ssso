@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System;
 
 namespace CcsSso.Api.Controllers
 {
@@ -12,11 +13,17 @@ namespace CcsSso.Api.Controllers
   [ApiController]
   public class OrganisationController : ControllerBase
   {
-
+    private readonly ICiiService _ciiService;
     private readonly IOrganisationService _organisationService;
-    public OrganisationController(IOrganisationService organisationService)
+    private readonly IContactService _contactService;
+    private readonly IUserService _userService;
+
+    public OrganisationController(IOrganisationService organisationService, ICiiService ciiService, IContactService contactService, IUserService userService)
     {
       _organisationService = organisationService;
+      _ciiService = ciiService;
+      _contactService = contactService;
+      _userService = userService;
     }
 
     /// <summary>
@@ -59,6 +66,16 @@ namespace CcsSso.Api.Controllers
       return await _organisationService.GetAsync(id);
     }
 
+    [HttpGet("getAll")]
+    [SwaggerOperation(Tags = new[] { "organisation" })]
+    [ProducesResponseType(typeof(OrganisationDto), 200)]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(401)]
+    public async Task<List<OrganisationDto>> GetAll()
+    {
+      return await _organisationService.GetAllAsync();
+    }
+
     /// <summary>
     /// Method to create an organisation
     /// </summary>
@@ -82,6 +99,75 @@ namespace CcsSso.Api.Controllers
     public async Task<int> Post(OrganisationDto model)
     {
       return await _organisationService.CreateAsync(model);
+    }
+
+    [HttpPut]
+    [SwaggerOperation(Tags = new[] { "organisation" })]
+    [ProducesResponseType(typeof(int), 200)]
+    [ProducesResponseType(401)]
+    public async Task Put(OrganisationDto model)
+    {
+      await _organisationService.PutAsync(model);
+    }
+
+    [HttpGet("getUsers")]
+    [SwaggerOperation(Tags = new[] { "organisation" })]
+    public async Task<List<OrganisationUserDto>> GetUsers()
+    {
+      return await _organisationService.GetUsersAsync();
+    }
+
+    [HttpPost("rollback")]
+    [SwaggerOperation(Tags = new[] { "organisation" })]
+    // [ProducesResponseType(typeof(int), 200)]
+    // [ProducesResponseType(401)]
+    // [ProducesResponseType(typeof(string), 400)]
+    public async Task Rollback(OrganisationRollbackDto model)
+    {
+      if (!String.IsNullOrEmpty(model.CiiOrganisationId))
+      {
+        try
+        {
+          await _ciiService.DeleteAsync(model.CiiOrganisationId);
+        }
+        catch (System.Exception ex)
+        {
+          System.Console.Write(ex);
+        }
+      }
+      if (!String.IsNullOrEmpty(model.OrganisationId))
+      {
+        try
+        {
+          await _organisationService.DeleteAsync(Int32.Parse(model.OrganisationId));
+        }
+        catch (System.Exception ex)
+        {
+          System.Console.Write(ex);
+        }
+      }
+      if (!String.IsNullOrEmpty(model.ContactId))
+      {
+        try
+        {
+          await _contactService.DeleteAsync(Int32.Parse(model.ContactId));
+        }
+        catch (System.Exception ex)
+        {
+          System.Console.Write(ex);
+        }
+      }
+      if (!String.IsNullOrEmpty(model.UserId))
+      {
+        try
+        {
+          await _userService.DeleteAsync(Int32.Parse(model.UserId));
+        }
+        catch (System.Exception ex)
+        {
+          System.Console.Write(ex);
+        }
+      }
     }
   }
 }

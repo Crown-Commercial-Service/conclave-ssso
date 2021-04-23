@@ -1,0 +1,79 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex" *ngIf="org$ | async as o">
+  <div class="govuk-breadcrumbs">
+    <ol class="govuk-breadcrumbs__list">
+        <li class="govuk-breadcrumbs__list-item">
+            <a class="govuk-breadcrumbs__link" routerLink="/home">{{ 'ADMINISTRATOR_DASHBOARD' | translate}}</a>
+        </li>
+        <li class="govuk-breadcrumbs__list-item">
+          <a class="govuk-breadcrumbs__link" routerLink="/buyer/search">Manage service eligibility</a>
+        </li>
+        <li class="govuk-breadcrumbs__list-item">
+          <span class="govuk-breadcrumbs__link">Confirm service roles changes for the organisation</span>
+      </li>
+    </ol>
+  </div>
+  <h1 class="govuk-heading-xl page-title">Confirm service roles changes for the organisation</h1>
+  <ng-container *ngIf="changes?.hasChanges === false">
+    <div class="govuk-form-group" style="margin-top:30px;">
+      <fieldset class="govuk-fieldset">
+        <legend class="govuk-fieldset__legend" style="font-size: 22px;">Right to buy status</legend>
+        <div class="govuk-checkboxes">
+          <div class="govuk-__item">
+            <label class="govuk-label govuk-checkboxes__label">- No Changes</label>
+          </div>
+        </div>
+        <legend class="govuk-fieldset__legend" style="font-size: 22px;margin-top:30px;">Default service roles available for this organisation</legend>
+        <div class="govuk-checkboxes">
+          <div class="govuk-__item">
+            <label class="govuk-label govuk-checkboxes__label">- No Changes</label>
+          </div>
+        </div>
+        <legend class="govuk-fieldset__legend" style="font-size: 22px;margin-top:30px;">Additional service roles available for this organisation</legend>
+        <div class="govuk-checkboxes">
+          <div class="govuk-__item">
+            <label class="govuk-label govuk-checkboxes__label">- No Changes</label>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+    <div class="govuk-button-group" style="margin-top: 40px;">
+      <button class="govuk-button govuk-button--secondary" data-module="govuk-button" (click)="onBackClick()">Back</button>
+    </div>
+  </ng-container>
+  <ng-container *ngIf="changes?.hasChanges === true">
+    <!-- <p style="font-size: 26px;">Is this organisation a verified buyer for CCS?</p>
+    <div style="font-size: 24px;">{{changes?.org?.rightToBuy ? 'Yes' : 'No'}}</div> -->
+    <div class="govuk-form-group" style="margin-top:30px;">
+      <fieldset class="govuk-fieldset">
+        <legend class="govuk-fieldset__legend" style="font-size: 22px;">Right to buy status</legend>
+        <div class="govuk-checkboxes">
+          <div class="govuk-__item">
+            <label *ngIf="changes?.rightToBuy === changes?.org?.rightToBuy" class="govuk-label govuk-checkboxes__label">- No Changes</label>
+            <label *ngIf="changes?.rightToBuy !== changes?.org?.rightToBuy" class="govuk-label govuk-checkboxes__label">- {{changes?.rightToBuy ? 'Yes' : 'No'}}</label>
+          </div>
+        </div>
+        <legend *ngIf="changes?.toAdd.length > 0" class="govuk-fieldset__legend" style="font-size: 22px;margin-top:30px;">Service roles you are adding to this organisation</legend>
+        <div class="govuk-checkboxes">
+          <ng-container *ngFor="let role of changes?.toAdd">
+            <div class="govuk-__item">
+              <label class="govuk-label govuk-checkboxes__label" for="orgRoleControl_{{role.roleId}}">- {{role.roleName}}</label>
+            </div>
+          </ng-container>
+        </div>
+        <legend *ngIf="changes?.toDelete.length > 0" class="govuk-fieldset__legend" style="font-size: 22px;margin-top:30px;">Service roles you are removing from this organisation</legend>
+        <div class="govuk-checkboxes">
+          <ng-container *ngFor="let role of changes?.toDelete">
+            <div class="govuk-__item">
+              <label class="govuk-label govuk-checkboxes__label" for="orgRoleControl_{{role.roleId}}">- {{role.roleName}}</label>
+            </div>
+          </ng-container>
+        </div>
+      </fieldset>
+    </div>
+    <div class="govuk-button-group" style="margin-top: 40px;">
+      <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button" data-module="govuk-button" (click)="onSubmitClick()">Submit</button>
+      <button class="govuk-button govuk-button--secondary" data-module="govuk-button" (click)="onBackClick()">Back</button>
+    </div>
+  </ng-container>
+</div>

@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Router } from '@angular/router';
-import { Observable, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, map, share, timeout } from 'rxjs/operators';
 
 import { BaseComponent } from 'src/app/components/base/base.component';
@@ -27,11 +27,13 @@ export class ManageOrgRegStep2Component extends BaseComponent implements OnInit 
 
   public items$!: Observable<any>;
   public scheme!: string;
+  public schemeSubject: BehaviorSubject<string> = new BehaviorSubject<string>('GB-COH');
+  public schemeSubjectObs: Observable<string> = this.schemeSubject.asObservable();
   public schemeName!: string;
   public txtValue!: string;
   submitted: boolean = false;
   
-  constructor(private ciiService: ciiService, private router: Router, protected uiStore: Store<UIState>) {
+  constructor(private ref: ChangeDetectorRef, private ciiService: ciiService, private router: Router, protected uiStore: Store<UIState>) {
     super(uiStore);
     this.txtValue = '';
   }
@@ -59,10 +61,18 @@ export class ManageOrgRegStep2Component extends BaseComponent implements OnInit 
   }
 
   public onSelect(item: any) {
-    // this.scheme === item.scheme;
+    this.schemeSubject.next(item.scheme);
+    var el = document.getElementById(item.scheme) as HTMLInputElement;
+    if (el) {
+      el.checked = true;
+    }
+    this.scheme === item.scheme;
     this.submitted = false;
     this.txtValue == '';
     localStorage.setItem('scheme_name', JSON.stringify(item.schemeName));
+    setTimeout(() => {
+      this.ref.detectChanges();
+    }, 5000);
   }
 
 }

@@ -3,6 +3,7 @@ using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
 using CcsSso.Security.Services.Helpers;
+using CcsSso.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -27,19 +28,24 @@ namespace CcsSso.Security.Services
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IDataContext _dataContext;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
+    private readonly ICcsSsoEmailService _ccsSsoEmailService;
+    private readonly ILocalCacheService _localCacheService;
     public SecurityService(IIdentityProviderService awsIdentityProviderService, IJwtTokenHandler jwtTokenHandler,
-      IHttpClientFactory httpClientFactory, IDataContext dataContext, ApplicationConfigurationInfo applicationConfigurationInfo)
+      IHttpClientFactory httpClientFactory, IDataContext dataContext, ApplicationConfigurationInfo applicationConfigurationInfo,
+      ICcsSsoEmailService ccsSsoEmailService, ILocalCacheService localCacheService)
     {
       _identityProviderService = awsIdentityProviderService;
       _jwtTokenHandler = jwtTokenHandler;
       _httpClientFactory = httpClientFactory;
       _dataContext = dataContext;
       _applicationConfigurationInfo = applicationConfigurationInfo;
+      _ccsSsoEmailService = ccsSsoEmailService;
+      _localCacheService = localCacheService;
     }
 
-    public async Task<AuthResultDto> LoginAsync(string userName, string userPassword)
+    public async Task<AuthResultDto> LoginAsync(string clientId, string secret, string userName, string userPassword)
     {
-      var result = await _identityProviderService.AuthenticateAsync(userName, userPassword);
+      var result = await _identityProviderService.AuthenticateAsync(clientId, secret, userName, userPassword);
       return result;
     }
 
@@ -73,7 +79,7 @@ namespace CcsSso.Security.Services
         {
           throw new CcsSsoException("REFRESH_TOKEN_REQUIRED");
         }
-        tokenResponseInfo = await _identityProviderService.GetRenewedTokensAsync(tokenRequestInfo.ClientId, tokenRequestInfo.RefreshToken);
+        tokenResponseInfo = await _identityProviderService.GetRenewedTokensAsync(tokenRequestInfo.ClientId, tokenRequestInfo.ClientSecret, tokenRequestInfo.RefreshToken, sid);
       }
       else
       {
@@ -108,6 +114,9 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException("OLD_PASSWORD_REQUIRED");
       }
       await _identityProviderService.ChangePasswordAsync(changePassword);
+
+      //send notification
+      await _ccsSsoEmailService.SendChangePasswordNotificationAsync(changePassword.UserName);
     }
 
     public async Task<AuthResultDto> ChangePasswordWhenPasswordChallengeAsync(PasswordChallengeDto passwordChallengeDto)
@@ -168,10 +177,10 @@ namespace CcsSso.Security.Services
       return await _identityProviderService.SignOutAsync(clientId, redirecturi);
     }
 
-    public async Task<List<string>> PerformBackChannelLogoutAsync(string sid, List<string> relyingParties)
+    public async Task<List<string>> PerformBackChannelLogoutAsync(string clientId, string sid, List<string> relyingParties)
     {
       //Temporary implementation to initiate backchannel logout     
-      var relyingPartiesDB = await _dataContext.RelyingParties.Where(rp => !string.IsNullOrEmpty(rp.BackChannelLogoutUrl)
+      var relyingPartiesDB = await _dataContext.RelyingParties.Where(rp => rp.ClientId != clientId && !string.IsNullOrEmpty(rp.BackChannelLogoutUrl)
                                    && relyingParties.Contains(rp.ClientId) && !rp.IsDeleted).Select(r => r).ToListAsync();
       var successRps = new List<string>();
       foreach (var rp in relyingPartiesDB)
@@ -198,10 +207,10 @@ namespace CcsSso.Security.Services
         }
         successRps.Add(rp.ClientId);
       }
-        return successRps;
+      return successRps;
     }
 
-    public string GetAuthenticationEndPoint(string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt)
+    public string GetAuthenticationEndPoint(string sid, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt)
     {
       if (string.IsNullOrEmpty(client_id))
       {
@@ -219,7 +228,11 @@ namespace CcsSso.Security.Services
       {
         throw new CcsSsoException("SCOPE_REQUIRED");
       }
-      return _identityProviderService.GetAuthenticationEndPoint(scope, response_type, client_id, redirect_uri, code_challenge_method, code_challenge, prompt);
+      //Generate new state and associate with sid
+      var state = Guid.NewGuid().ToString();
+      //store in the Memory (preffered in Redis but for now will store in memory)
+      _localCacheService.SetValue(state, sid);
+      return _identityProviderService.GetAuthenticationEndPoint(state, scope, response_type, client_id, redirect_uri, code_challenge_method, code_challenge, prompt);
     }
 
     public async Task RevokeTokenAsync(string refreshToken)
@@ -231,7 +244,7 @@ namespace CcsSso.Security.Services
       await _identityProviderService.RevokeTokenAsync(refreshToken);
     }
 
-    public string GetJsonWebKeyTokens()
+    public JsonWebKeySet GetJsonWebKeyTokens()
     {
       using (var textReader = new StringReader(_applicationConfigurationInfo.JwtTokenConfiguration.RsaPublicKey))
       {
@@ -255,14 +268,13 @@ namespace CcsSso.Security.Services
         };
         JsonWebKeySet jsonWebKeySet = new JsonWebKeySet();
         jsonWebKeySet.Keys.Add(jsonWebKey);
-        string jsonKeys = JsonConvert.SerializeObject(jsonWebKeySet);
-        return jsonKeys;
+        return jsonWebKeySet;
       }
     }
 
     public bool ValidateToken(string clientId, string token)
     {
-      if(string.IsNullOrEmpty(token))
+      if (string.IsNullOrEmpty(token))
       {
         throw new CcsSsoException("TOKEN_REQUIRED");
       }
@@ -272,8 +284,7 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException("CLIENTID_REQUIRED");
       }
 
-      var jsonKeys = GetJsonWebKeyTokens();
-      var jwks = new JsonWebKeySet(jsonKeys);
+      var jwks = GetJsonWebKeyTokens();
       var jwk = jwks.Keys.First();
       var validationParameters = new TokenValidationParameters
       {

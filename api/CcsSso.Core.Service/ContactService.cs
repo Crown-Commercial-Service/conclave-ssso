@@ -77,6 +77,10 @@ namespace CcsSso.Service
         {
           deletingContact.Party.Person.IsDeleted = true;
         }
+        if (deletingContact.Party != null)
+        {
+          deletingContact.Party.IsDeleted = true;
+        }
 
         await _dataContext.SaveChangesAsync();
       }

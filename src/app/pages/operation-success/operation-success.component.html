@@ -1,74 +1,93 @@
-<div class="content flex" [@slide]="(sideNavVisible$ | async) ? 'close' : 'open'">
-    <div class="govuk-breadcrumbs">
-        <ol class="govuk-breadcrumbs__list">
-            <li class="govuk-breadcrumbs__list-item">
-                <a class="govuk-breadcrumbs__link" routerLink="/home">{{ 'ADMINISTRATOR_DASHBOARD' | translate }}</a>
-            </li>
-            <li *ngIf="operation === operationEnum.MyAccountUpdate || operation === operationEnum.MyAccountContactCreate
-                || operation === operationEnum.MyAccountContactUpdate || operation === operationEnum.MyAccountContactDelete
-                || operation === operationEnum.PasswordChanged" class="govuk-breadcrumbs__list-item">
-                <a class="govuk-breadcrumbs__link" routerLink="/profile">{{ 'MANAGE_MY_ACCOUNT' | translate }}</a>
-            </li>
-            <li *ngIf="operation === operationEnum.UserCreateWithIdamRegister || operation === operationEnum.UserCreate
-                || operation === operationEnum.UserUpdate || operation === operationEnum.UserPasswordChange"
-                class="govuk-breadcrumbs__list-item">
-                <a class="govuk-breadcrumbs__link" routerLink="/manage-users">{{ 'MANAGE_YOUR_USER_ACCOUNTS' | translate
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <div class="content flex">
+            <div class="govuk-breadcrumbs">
+                <ol class="govuk-breadcrumbs__list">
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/home">{{ 'ADMINISTRATOR_DASHBOARD' | translate
+                            }}</a>
+                    </li>
+                    <li *ngIf="operation === operationEnum.MyAccountUpdate || operation === operationEnum.MyAccountContactCreate
+                        || operation === operationEnum.MyAccountContactUpdate || operation === operationEnum.MyAccountContactDelete
+                        || operation === operationEnum.PasswordChanged" class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/profile">{{ 'MANAGE_MY_ACCOUNT' | translate
+                            }}</a>
+                    </li>
+                    <li *ngIf="operation === operationEnum.UserCreateWithIdamRegister || operation === operationEnum.UserCreate
+                        || operation === operationEnum.UserUpdate || operation === operationEnum.UserUpdateWithIdamRegister
+                        || operation === operationEnum.UserPasswordChange || operation === operationEnum.UserDelete"
+                        class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/manage-users">{{ 'MANAGE_YOUR_USER_ACCOUNTS' |
+                            translate
+                            }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <span class="govuk-breadcrumbs__link">{{ 'SUCCESS' | translate }}</span>
+                    </li>
+                </ol>
+            </div>
+            <div *ngIf="operation === operationEnum.MyAccountUpdate">
+                <h1 class="govuk-heading-xl">{{ 'MY_ACCOUNT_UPDATE_SUCCESS' | translate }}</h1>
+                <a class="navigation-text" (click)="onNavigateToProfileClick()"> {{ 'RETURN_TO_MANAGE_MY_ACCOUNT' |
+                    translate
                     }}</a>
-            </li>
-            <li class="govuk-breadcrumbs__list-item">
-                <span class="govuk-breadcrumbs__link">{{ 'SUCCESS' | translate }}</span>
-            </li>
-        </ol>
-    </div>
-    <div *ngIf="operation === operationEnum.MyAccountUpdate">
-        <h1 class="govuk-heading-xl">{{ 'MY_ACCOUNT_UPDATE_SUCCESS' | translate }}</h1>
-        <a class="navigation-text" (click)="onNavigateToProfileClick()"> {{ 'RETURN_TO_MANAGE_MY_ACCOUNT' | translate
-            }}</a>
-    </div>
-    <div
-        *ngIf="operation === operationEnum.MyAccountContactCreate || operation === operationEnum.MyAccountContactUpdate">
-        <h1 class="govuk-heading-xl">{{ 'USER_CONTACT_UPDATE_SUCCESS' | translate }}</h1>
-        <a class="navigation-text" (click)="onNavigateToProfileClick()"> {{ 'RETURN_TO_MANAGE_MY_ACCOUNT' | translate }}
-        </a>
-    </div>
-    <div *ngIf="operation === operationEnum.MyAccountContactDelete">
-        <h1 class="govuk-heading-xl">{{ 'USER_CONTACT_DELETE_SUCCESS' | translate }}</h1>
-        <a class="navigation-text" (click)="onNavigateToProfileClick()"> {{ 'RETURN_TO_MANAGE_MY_ACCOUNT' | translate }}
-        </a>
-    </div>
-    <div *ngIf="operation === operationEnum.PasswordChanged">
-        <h1 class="govuk-heading-xl">{{ 'PASSWORD_CHANGE_SUCCESS' | translate }}</h1>
-        <span> {{ 'YOU_CAN_NOW' | translate }} <a class="navigation-text" (click)="onNavigateToSignInClick()"> {{
-                'SING_IN_TO_YOUR_ACCOUNT' | translate }} </a> </span>
-    </div>
-    <br>
-    <div *ngIf="operation === operationEnum.UserCreateWithIdamRegister">
-        <h1 class="govuk-heading-xl">{{ 'THE_USER' | translate }}{{ userName }}{{
-            'INSTRUCTIONS_WILL_BE_EMAILED_TO_SETUP_ACCOUNT' | translate }}</h1>
-        <a class="navigation-text" (click)="onNavigateToManageUserClick()"> {{ 'MANAGE_YOUR_USER_ACCOUNTS' | translate
-            }}</a>
-    </div>
-    <br>
-    <div *ngIf="operation === operationEnum.UserCreate">
-        <h1 class="govuk-heading-xl">{{ 'THE_USER' | translate }}{{ userName }}{{ 'HAS_BEEN_CREATED_SUCCESSFULLY' |
-            translate }}</h1>
-        <a class="navigation-text" (click)="onNavigateToManageUserClick()"> {{ 'MANAGE_YOUR_USER_ACCOUNTS' | translate
-            }}</a>
-    </div>
-    <br>
-    <div *ngIf="operation === operationEnum.UserUpdate">
-        <h1 class="govuk-heading-xl">{{ 'USER_UPDATE_SUCCESS' | translate }}</h1>
-        <a class="navigation-text" (click)="onNavigateToManageUserClick()"> {{ 'MANAGE_YOUR_USER_ACCOUNTS' | translate
-            }}</a>
-    </div>
-    <br>
-    <div *ngIf="operation === operationEnum.UserPasswordChange">
-        <h1 class="govuk-heading-xl">{{ 'RESET_EMAIL_HAS_BEEN_SENT_TO' | translate }}{{ userName }}</h1>
-        <a class="navigation-text" (click)="onNavigateToManageUserClick()">
-            {{ 'MANAGE_YOUR_USER_ACCOUNTS' | translate}}</a>
-        <div class="govuk-body govuk-!-font-size-19 help-support">{{ 'IF_USER_DOES_NOT_RECEIVE_IT_VIEW' | translate}}
-            <a class="navigation-text"> {{ 'HELP_AND_SUPPORT' | translate}}</a>
+            </div>
+            <div
+                *ngIf="operation === operationEnum.MyAccountContactCreate || operation === operationEnum.MyAccountContactUpdate">
+                <h1 class="govuk-heading-xl">{{ 'USER_CONTACT_UPDATE_SUCCESS' | translate }}</h1>
+                <a class="navigation-text" (click)="onNavigateToProfileClick()"> {{ 'RETURN_TO_MANAGE_MY_ACCOUNT' |
+                    translate }}
+                </a>
+            </div>
+            <div *ngIf="operation === operationEnum.MyAccountContactDelete">
+                <h1 class="govuk-heading-xl">{{ 'USER_CONTACT_DELETE_SUCCESS' | translate }}</h1>
+                <a class="navigation-text" (click)="onNavigateToProfileClick()"> {{ 'RETURN_TO_MANAGE_MY_ACCOUNT' |
+                    translate }}
+                </a>
+            </div>
+            <div *ngIf="operation === operationEnum.PasswordChanged">
+                <h1 class="govuk-heading-xl">{{ 'PASSWORD_CHANGE_SUCCESS' | translate }}</h1>
+                <span> {{ 'YOU_CAN_NOW' | translate }} <a class="navigation-text" (click)="onNavigateToSignInClick()">
+                        {{
+                        'SING_IN_TO_YOUR_ACCOUNT' | translate }} </a> </span>
+            </div>
+            <div *ngIf="operation === operationEnum.UserCreateWithIdamRegister 
+                || operation === operationEnum.UserUpdateWithIdamRegister">
+                <h1 class="govuk-heading-xl">{{ 'THE_USER' | translate }}{{ userName }}{{
+                    'INSTRUCTIONS_WILL_BE_EMAILED_TO_SETUP_ACCOUNT_PASSWORD' | translate }}</h1>
+                <a class="navigation-text" (click)="onNavigateToManageUserClick()"> {{ 'MANAGE_YOUR_USER_ACCOUNTS' |
+                    translate
+                    }}</a>
+            </div>
+            <div *ngIf="operation === operationEnum.UserCreate">
+                <h1 class="govuk-heading-xl">{{ 'THE_USER' | translate }}{{ userName }}{{
+                    'HAS_BEEN_CREATED_SUCCESSFULLY' |
+                    translate }}</h1>
+                <a class="navigation-text" (click)="onNavigateToManageUserClick()"> {{ 'MANAGE_YOUR_USER_ACCOUNTS' |
+                    translate
+                    }}</a>
+            </div>
+            <div *ngIf="operation === operationEnum.UserUpdate">
+                <h1 class="govuk-heading-xl">{{ 'USER_UPDATE_SUCCESS' | translate }}</h1>
+                <a class="navigation-text" (click)="onNavigateToManageUserClick()"> {{ 'MANAGE_YOUR_USER_ACCOUNTS' |
+                    translate
+                    }}</a>
+            </div>
+            <div *ngIf="operation === operationEnum.UserPasswordChange">
+                <h1 class="govuk-heading-xl">{{ 'RESET_EMAIL_HAS_BEEN_SENT_TO' | translate }}{{ userName }}</h1>
+                <a class="navigation-text" (click)="onNavigateToManageUserClick()">
+                    {{ 'MANAGE_YOUR_USER_ACCOUNTS' | translate}}</a>
+                <div class="govuk-body govuk-!-font-size-19 help-support">{{ 'IF_USER_DOES_NOT_RECEIVE_IT_VIEW' |
+                    translate}}
+                    <a class="navigation-text"> {{ 'HELP_AND_SUPPORT' | translate}}</a>
+                </div>
+            </div>
+            <div *ngIf="operation === operationEnum.UserDelete">
+                <h1 class="govuk-heading-xl">{{ 'USER_DELETE_SUCCESS' | translate }}</h1>
+                <a class="navigation-text" (click)="onNavigateToManageUserClick()">
+                    {{ 'MANAGE_YOUR_USER_ACCOUNTS' | translate }}</a>
+            </div>
+            <br>
         </div>
     </div>
-    <br>
 </div>

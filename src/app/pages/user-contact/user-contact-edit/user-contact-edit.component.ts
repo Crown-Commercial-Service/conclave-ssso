@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { FormGroup, FormBuilder, Validators, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Location, ViewportScroller } from '@angular/common';
@@ -8,7 +8,7 @@ import { slideAnimation } from 'src/app/animations/slide.animation';
 import { BaseComponent } from 'src/app/components/base/base.component';
 import { UIState } from 'src/app/store/ui.states';
 import { OperationEnum } from 'src/app/constants/enum';
-import { ContactInfo, UserContactInfo } from 'src/app/models/userContact';
+import { ContactInfo, UserContactInfo } from 'src/app/models/contactInfo';
 import { WrapperUserContactService } from 'src/app/services/wrapper/wrapper-user-contact.service';
 import { ScrollHelper } from 'src/app/services/helper/scroll-helper.services';
 import { ContactReason } from 'src/app/models/contactDetail';
@@ -36,6 +36,8 @@ export class UserContactEditComponent extends BaseComponent implements OnInit {
     contactReasons: ContactReason[] = [];
     isEdit: boolean = false;
     contactId: number = 0;
+
+    @ViewChildren('input') inputs!: QueryList<ElementRef>;
 
     constructor(private contactService: WrapperUserContactService, private formBuilder: FormBuilder, private router: Router,
         private location: Location, private activatedRoute: ActivatedRoute, protected uiStore: Store<UIState>,
@@ -99,6 +101,10 @@ export class UserContactEditComponent extends BaseComponent implements OnInit {
         this.viewportScroller.scrollToAnchor(elementId);
     }
 
+    setFocus(inputIndex: number) {
+        this.inputs.toArray()[inputIndex].nativeElement.focus();
+    }
+
     validateForSufficientDetails(form: FormGroup) {
         let name = form.get('name')?.value;
         let email = form.get('email')?.value;
@@ -130,8 +136,11 @@ export class UserContactEditComponent extends BaseComponent implements OnInit {
                         error: (error) => {
                             console.log(error);
                             console.log(error.error);
-                            if (error.error=="INVALID_PHONE_NUMBER"){
-                                this.setError(form, 'phone')
+                            if (error.error == "INVALID_PHONE_NUMBER") {
+                                this.setError(form, 'phone', 'invalid');
+                            }
+                            else if (error.error == "INVALID_EMAIL") {
+                                this.setError(form, 'email', 'email');
                             }
                         }
                     });
@@ -146,8 +155,11 @@ export class UserContactEditComponent extends BaseComponent implements OnInit {
                         error: (error) => {
                             console.log(error);
                             console.log(error.error);
-                            if (error.error=="INVALID_PHONE_NUMBER"){
-                                this.setError(form, 'phone')
+                            if (error.error == "INVALID_PHONE_NUMBER") {
+                                this.setError(form, 'phone', 'invalid')
+                            }
+                            else if (error.error == "INVALID_EMAIL") {
+                                this.setError(form, 'email', 'email');
                             }
                         }
                     });
@@ -158,8 +170,10 @@ export class UserContactEditComponent extends BaseComponent implements OnInit {
         }
     }
 
-    setError(form: FormGroup, control: string){
-        form.controls[control].setErrors({ 'invalid': true });
+    setError(form: FormGroup, control: string, errorString: string) {
+        var errorObject: ValidationErrors = {};
+        errorObject[errorString] = true;
+        form.controls[control].setErrors(errorObject);
         this.scrollHelper.scrollToFirst('error-summary');
     }
 
@@ -170,10 +184,10 @@ export class UserContactEditComponent extends BaseComponent implements OnInit {
     }
 
     onCancelClick() {
-        this.location.back();
+        this.router.navigateByUrl('profile');
     }
 
-    onDeleteClick(){
+    onDeleteClick() {
         console.log("Delete");
         let data = {
             'userName': this.userName,

@@ -83,6 +83,8 @@ namespace CcsSso.DbPersistence
           .ValueGeneratedOnAdd();
       modelBuilder.Entity<Organisation>()
         .HasIndex(o => o.CiiOrganisationId);
+      modelBuilder.Entity<User>()
+       .HasIndex(u => u.UserName);
     }
 
     public async Task<PagedResultSet<T>> GetPagedResultAsync<T>(IQueryable<T> query, ResultSetCriteria resultSetCriteria)
@@ -152,7 +154,7 @@ namespace CcsSso.DbPersistence
 
     public DbSet<ContactPointReason> ContactPointReason { get; set; }
 
-    public DbSet<GroupAccess> GroupAccess { get; set; }
+    public DbSet<OrganisationGroupEligibleRole> OrganisationGroupEligibleRole { get; set; }
 
     public DbSet<CcsService> CcsService { get; set; }
 
@@ -167,6 +169,10 @@ namespace CcsSso.DbPersistence
     public DbSet<IdamUserLogin> IdamUserLogin { get; set; }
 
     public DbSet<SiteContact> SiteContact { get; set; }
+
+    public DbSet<OrganisationEligibleRole> OrganisationEligibleRole { get; set; }
+
+    public DbSet<OrganisationEligibleIdentityProvider> OrganisationEligibleIdentityProvider { get; set; }
 
     public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {

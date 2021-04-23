@@ -19,13 +19,15 @@ namespace CcsSso.Core.Domain.Jobs
 
   public class CiiSettings
   {
-    public string BaseURL { get; set; }
+    public string Url { get; set; }
 
-    public string ApiKey { get; set; }
+    public string Token { get; set; }
   }
 
   public class ScheduleJobSettings
   {
+    public int JobSchedulerExecutionFrequencyInMinutes { get; set; }
+
     public int OrganizationRegistrationExpiredThresholdInMinutes { get; set; }
   }
 
@@ -34,5 +36,12 @@ namespace CcsSso.Core.Domain.Jobs
     public string ApiKey { get; set; }
 
     public string Url { get; set; }
+  }
+
+  public class ScheduleJobSettingsVault
+  {
+    public string JobSchedulerExecutionFrequencyInMinutes { get; set; }
+
+    public string OrganizationRegistrationExpiredThresholdInMinutes { get; set; }
   }
 }

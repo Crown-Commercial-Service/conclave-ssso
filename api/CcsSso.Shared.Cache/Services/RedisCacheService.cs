@@ -12,7 +12,8 @@ namespace CcsSso.Shared.Cache.Services
   {
     private readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings()
     {
-      TypeNameHandling = TypeNameHandling.Auto
+      TypeNameHandling = TypeNameHandling.Auto,
+      ReferenceLoopHandling = ReferenceLoopHandling.Ignore
     };
 
     private RedisConnectionPoolService _redisConnectionService;

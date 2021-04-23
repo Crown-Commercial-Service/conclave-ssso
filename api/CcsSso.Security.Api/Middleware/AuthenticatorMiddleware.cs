@@ -10,6 +10,10 @@ namespace CcsSso.Security.Api.Middleware
   {
     private RequestDelegate _next;
     private readonly ApplicationConfigurationInfo _appSetting;
+    private List<string> allowedPaths = new List<string>()
+    {
+      "security/nominate"
+    };
 
     public AuthenticatorMiddleware(RequestDelegate next, ApplicationConfigurationInfo appSetting)
     {
@@ -21,6 +25,12 @@ namespace CcsSso.Security.Api.Middleware
     {
       var apiKey = context.Request.Headers["X-API-Key"];
       var path = context.Request.Path.Value.TrimStart('/').TrimEnd('/');
+
+      if (allowedPaths.Contains(path))
+      {
+        await _next(context);
+        return;
+      }
 
       if (!_appSetting.SecurityApiKeySettings.ApiKeyValidationExcludedRoutes.Contains(path) && ((string.IsNullOrEmpty(apiKey) || apiKey != _appSetting.SecurityApiKeySettings.SecurityApiKey)))
       {
