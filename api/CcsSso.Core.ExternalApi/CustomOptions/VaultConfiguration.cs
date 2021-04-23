@@ -51,11 +51,47 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       var _secrets = await _client.V1.Secrets.Cubbyhole.ReadSecretAsync(secretPath: "brickendon/core");
       var _dbConnection = _secrets.Data["DbConnection"].ToString();
       var _key = _secrets.Data["ApiKey"].ToString();
-      var _cors = _secrets.Data["CorsDomains"].ToString();
+      var _cors = _secrets.Data["CorsDomains"].ToString(); 
+      var _conclaveLoginUrl = _secrets.Data["ConclaveLoginUrl"].ToString(); 
 
       Data.Add("DbConnection", _dbConnection);
       Data.Add("ApiKey", _key);
       Data.Add("CorsDomains", _cors);
+      Data.Add("ConclaveLoginUrl", _conclaveLoginUrl);
+
+      if (_secrets.Data.ContainsKey("JwtTokenValidationInfo"))
+      {
+        var jwtTokenValidationInfoVault = JsonConvert.DeserializeObject<JwtTokenValidationInfoVault>(_secrets.Data["JwtTokenValidationInfo"].ToString());
+        Data.Add("JwtTokenValidationInfo:IdamClienId", jwtTokenValidationInfoVault.IdamClienId);
+        Data.Add("JwtTokenValidationInfo:Issuer", jwtTokenValidationInfoVault.Issuer);
+        Data.Add("JwtTokenValidationInfo:JwksUrl", jwtTokenValidationInfoVault.JwksUrl);
+      }
+
+      if (_secrets.Data.ContainsKey("SecurityApiSettings"))
+      {
+        var securityApiKeySettings = JsonConvert.DeserializeObject<SecurityApiSettingsVault>(_secrets.Data["SecurityApiSettings"].ToString());
+        Data.Add("SecurityApiSettings:ApiKey", securityApiKeySettings.ApiKey);
+        Data.Add("SecurityApiSettings:Url", securityApiKeySettings.Url);
+      }
+
+      if (_secrets.Data.ContainsKey("Email"))
+      {
+        var emailsettings = JsonConvert.DeserializeObject<Email>(_secrets.Data["Email"].ToString());
+        Data.Add("Email:ApiKey", emailsettings.ApiKey);
+        Data.Add("Email:UserWelcomeEmailTemplateId", emailsettings.UserWelcomeEmailTemplateId);
+        Data.Add("Email:OrgProfileUpdateNotificationTemplateId", emailsettings.OrgProfileUpdateNotificationTemplateId);
+        Data.Add("Email:UserContactUpdateNotificationTemplateId", emailsettings.UserContactUpdateNotificationTemplateId);
+        Data.Add("Email:UserProfileUpdateNotificationTemplateId", emailsettings.UserProfileUpdateNotificationTemplateId);
+        Data.Add("Email:UserPermissionUpdateNotificationTemplateId", emailsettings.UserPermissionUpdateNotificationTemplateId);
+        Data.Add("Email:SendNotificationsEnabled", emailsettings.SendNotificationsEnabled);
+      }
+
+      if (_secrets.Data.ContainsKey("Cii"))
+      {
+        var _cii = JsonConvert.DeserializeObject<Cii>(_secrets.Data["Cii"].ToString());
+        Data.Add("Cii:Url", _cii.Url);
+        Data.Add("Cii:Token", _cii.Token);
+      }
     }
   }
 
@@ -73,6 +109,45 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
     {
       return new VaultConfigurationProvider(_config);
     }
+  }
+
+  public class JwtTokenValidationInfoVault
+  {
+    public string IdamClienId { get; set; }
+
+    public string Issuer { get; set; }
+
+    public string JwksUrl { get; set; }
+  }
+
+  public class SecurityApiSettingsVault
+  {
+    public string ApiKey { get; set; }
+
+    public string Url { get; set; }
+  }
+
+  public class Email
+  {
+    public string ApiKey { get; set; }
+
+    public string UserWelcomeEmailTemplateId { get; set; }
+
+    public string OrgProfileUpdateNotificationTemplateId { get; set; }
+
+    public string UserProfileUpdateNotificationTemplateId { get; set; }
+
+    public string UserContactUpdateNotificationTemplateId { get; set; }
+
+    public string UserPermissionUpdateNotificationTemplateId { get; set; }
+
+    public string SendNotificationsEnabled { get; set; }
+  }
+
+  public class Cii
+  {
+    public string Url { get; set; }
+    public string Token { get; set; }
   }
 
   public class VaultOptions

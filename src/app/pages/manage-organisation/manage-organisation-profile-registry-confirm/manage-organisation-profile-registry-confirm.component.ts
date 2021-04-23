@@ -79,6 +79,12 @@ export class ManageOrganisationRegistryConfirmComponent extends BaseComponent im
                 this.router.navigateByUrl(`manage-org/profile/${this.organisationId}/registry/error/generic`);
               }
             } else {
+              const registries = JSON.parse(localStorage.getItem('cii_registries')+'');
+              if (registries) {
+                if (registries.some((x: any) => x.identifier.id === result.identifier.id)) {
+                  this.router.navigateByUrl(`manage-org/profile/${this.organisationId}/registry/error/exists`);
+                }
+              }
               // this.selectedIdentifiers = result.additionalIdentifiers;
               // localStorage.setItem('cii_organisation', JSON.stringify(result));
             }

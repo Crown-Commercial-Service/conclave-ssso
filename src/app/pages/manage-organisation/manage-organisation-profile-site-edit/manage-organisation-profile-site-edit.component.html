@@ -1,96 +1,149 @@
-<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
-<div class="content flex" style="height:650px;">
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
     <div class="govuk-breadcrumbs">
       <ol class="govuk-breadcrumbs__list">
-          <li class="govuk-breadcrumbs__list-item">
-              <a class="govuk-breadcrumbs__link" routerLink="/home">Administrator dashboard</a>
-          </li>
-          <li class="govuk-breadcrumbs__list-item">
-              <a class="govuk-breadcrumbs__link" routerLink="/manage-org/profile">Manage your organisation</a>
-          </li>
-          <li class="govuk-breadcrumbs__list-item">
-            <a class="govuk-breadcrumbs__link">Edit Office</a>
-          </li>
+        <li class="govuk-breadcrumbs__list-item">
+          <a class="govuk-breadcrumbs__link" routerLink="/home">
+            {{ 'ADMINISTRATOR_DASHBOARD' | translate}}</a>
+        </li>
+        <li class="govuk-breadcrumbs__list-item">
+          <a class="govuk-breadcrumbs__link" routerLink="/manage-org/profile">{{ 'MANAGE_YOUR_ORGANISATION' | translate
+            }}</a>
+        </li>
+        <li class="govuk-breadcrumbs__list-item">
+          <span *ngIf="isEdit!=true" class="govuk-breadcrumbs__link">{{ 'ADD_SITE' | translate
+            }}</span>
+          <span *ngIf="isEdit==true" class="govuk-breadcrumbs__link">{{ 'EDIT_SITE' | translate
+            }}</span>
+        </li>
       </ol>
+    </div>
+    <h1 *ngIf="isEdit!=true" class="govuk-heading-xl page-title">{{ 'ADD_SITE' | translate }}</h1>
+    <h1 *ngIf="isEdit==true" class="govuk-heading-xl page-title">{{ 'EDIT_SITE' | translate }}</h1>
+    <div class="govuk-error-summary contact-form-error" aria-labelledby="error-summary-title" role="alert" tabindex="-1"
+      id="error-summary" data-module="govuk-error-summary" *ngIf="!formValid(siteForm) && submitted">
+      <h2 class="govuk-error-summary__title" id="error-summary-title">
+        {{ 'ERROR_SUMMARY' | translate }}
+      </h2>
+      <div class="govuk-error-summary__body">
+        <ul class="govuk-list govuk-error-summary__list">
+          <li *ngIf="submitted && siteForm.controls.name.hasError('required')">
+            <a href="#" onClick="return false;" (click)="setFocus(0)"> {{
+              'ERROR_SITE_NAME' | translate }}</a>
+          </li>
+          <li *ngIf="submitted && siteForm.controls.streetAddress.hasError('required')">
+            <a href="#" onClick="return false;" (click)="setFocus(1)"> {{
+              'ERROR_STREET_ADDRESS' | translate }} </a>
+          </li>
+          <li *ngIf="submitted && siteForm.controls.postalCode.hasError('required')">
+            <a href="#" onClick="return false;" (click)="setFocus(2)"> {{
+              'ERROR_POSTAL_CODE' | translate }} </a>
+          </li>
+          <li *ngIf="submitted && siteForm.controls.countryCode.hasError('required')">
+            <a href="#" onClick="return false;" (click)="setFocus(3)"> {{
+              'ERROR_COUNTRY_CODE' | translate }} </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
   </div>
-  <h1 class="govuk-heading-xl page-title">Edit Office</h1>
-  <h2></h2>
-  <div class="govuk-grid-row">
-    <div class="govuk-grid-column-three-quarters">
-      <form class="govuk-!-width-three-quarters" [class.error]="!formValid(formGroup)" [formGroup]="formGroup">
-        
-        <div class="govuk-form-group" *ngIf="formValid(formGroup) == false && submitted">
-          <div class="govuk-error-summary govuk-grid-column-three-quarters" aria-labelledby="error-summary-title" role="alert" tabindex="-1" data-module="govuk-error-summary">
-            <h2 class="govuk-error-summary__title" id="error-summary-title"> There is a problem</h2>
-            <div class="govuk-error-summary__body">
-              <ul class="govuk-list govuk-error-summary__list">
-                <a *ngIf="formGroup.controls['name'].hasError('required')"><li>Enter your office location</li></a>
-                <a *ngIf="formGroup.controls['streetAddress'].hasError('required')"><li>Enter your street address</li></a>
-                <a *ngIf="formGroup.controls['locality'].hasError('required')"><li>Enter your locality</li></a>
-                <a *ngIf="formGroup.controls['region'].hasError('required')"><li>Enter your region</li></a>
-                <a *ngIf="formGroup.controls['postalCode'].hasError('required')"><li>Enter your post code</li></a>
-                <a *ngIf="formGroup.controls['countryCode'].hasError('required')"><li>Enter your country code</li></a>
-              </ul>
-            </div>
+</div>
+
+<div class="form site-form">
+  <form class="ui form login mb-two" [class.error]="!formValid(siteForm)" (submit)="onSubmit(siteForm)"
+    [formGroup]="siteForm">
+    <div class="ui segment">
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          <div class="govuk-form-group" id="name-form-group"
+            [class.govuk-form-group--error]="submitted && siteForm.controls.name.hasError('required')">
+            <label class="govuk-label" for="name"> {{ 'SITE_NAME' | translate }} </label>
+            <span id="name-error" class="govuk-error-message"
+              *ngIf="submitted && siteForm.controls.name.hasError('required')">
+              <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span> {{
+              'ERROR_SITE_NAME' | translate }}
+            </span>
+            <input #input formControlName="name" class="govuk-input" id="name" name="name" type="text"
+              [class.govuk-input--error]="submitted && siteForm.controls.name.hasError('required')">
+          </div>
+          <div class="govuk-form-group" id="street-address-form-group"
+            [class.govuk-form-group--error]="submitted && siteForm.controls.streetAddress.hasError('required')">
+            <label class="govuk-label" for="street-address"> {{ 'STREET_ADDRESS' | translate }} </label>
+            <span id="name-error" class="govuk-error-message"
+              *ngIf="submitted && siteForm.controls.streetAddress.hasError('required')">
+              <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span> {{
+              'ERROR_STREET_ADDRESS' | translate }}
+            </span>
+            <input #input formControlName="streetAddress" class="govuk-input" id="street-address" name="street-address"
+              type="text"
+              [class.govuk-input--error]="submitted && siteForm.controls.streetAddress.hasError('required')">
+          </div>
+          <div class="govuk-form-group" id="locality-form-group">
+            <label class="govuk-label" for="locality"> {{ 'LOCALITY' | translate }} </label>
+            <input formControlName="locality" class="govuk-input" id="locality" name="locality" type="text">
+          </div>
+          <div class="govuk-form-group" id="region-form-group">
+            <label class="govuk-label" for="region"> {{ 'REGION' | translate }} </label>
+            <input formControlName="region" class="govuk-input" id="region" name="region" type="text">
+          </div>
+          <div class="govuk-form-group" id="postal-code-form-group"
+            [class.govuk-form-group--error]="submitted && siteForm.controls.postalCode.hasError('required')">
+            <label class="govuk-label" for="postal-code"> {{ 'POSTAL_CODE' | translate }} </label>
+            <span id="name-error" class="govuk-error-message"
+              *ngIf="submitted && siteForm.controls.postalCode.hasError('required')">
+              <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span> {{
+              'ERROR_POSTAL_CODE' | translate }}
+            </span>
+            <input #input formControlName="postalCode" class="govuk-input" id="postal-code" name="postal-code" type="text"
+              [class.govuk-input--error]="submitted && siteForm.controls.postalCode.hasError('required')">
+          </div>
+          <div class="govuk-form-group" id="country-code-form-group"
+            [class.govuk-form-group--error]="submitted && siteForm.controls.countryCode.hasError('required')">
+            <label class="govuk-label" for="country-code"> {{ 'COUNTRY_CODE' | translate }} </label>
+            <span id="name-error" class="govuk-error-message"
+              *ngIf="submitted && siteForm.controls.countryCode.hasError('required')">
+              <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span> {{
+              'ERROR_COUNTRY_CODE' | translate }}
+            </span>
+            <input #input formControlName="countryCode" class="govuk-input" id="country-code" name="country-code" type="text"
+              [class.govuk-input--error]="submitted && siteForm.controls.countryCode.hasError('required')">
+          </div>
+
+        </div>
+      </div>
+
+      <div class="govuk-grid-row" *ngIf="isEdit==true">
+        <div class="govuk-grid-column-full">
+          <div>
+            <h2> {{ 'CONTACT_DETAILS' | translate }}</h2>
+            <app-govuk-table [headerTextKeys]="contactTableHeaders" [data]="contactData"
+              [dataKeys]="contactColumnsToDisplay" [isHyperLinkVisible]="true" [hyperLinkText]="'EDIT'"
+              (hyperLinkClickEvent)="onContactEditClick($event)" [useClientPagination]="true">
+            </app-govuk-table>
+          </div>
+          <div class="govuk-form-group govuk-button-group">
+            <button class="govuk-button govuk-button--secondary" data-module="govuk-button" (click)="onContactAddClick()">
+              {{ 'ADD_ANOTHER_CONTACT_BTN' | translate }}</button>
           </div>
         </div>
+      </div>
 
-        <div class="govuk-form-group" [class.govuk-form-group--error]="submitted && formGroup.controls.name.invalid">
-          <label class="govuk-label" for="name">Office Location</label>
-          <span id="name-error" class="govuk-error-message" *ngIf="submitted && formGroup.controls.name.invalid">
-            <span class="govuk-visually-hidden">Error:</span>Enter your office location
-          </span>
-          <input class="govuk-input" id="name" formControlName="name" maxlength="100" name="name" size="20" type="text" value="" autocomplete="name" [class.govuk-input--error]="submitted && formGroup.controls.name.invalid">
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          <div class="govuk-button-group save-cancel-button-group">
+            <button type="submit" class="govuk-button" data-module="govuk-button">
+              {{'SAVE_BTN' | translate }}
+            </button>
+            <button type="button" (click)="onCancelClick()" class="govuk-button govuk-button--secondary"
+              data-module="govuk-button">
+              {{ 'CANCEL_BTN' | translate }}
+            </button>
+          </div>
+          <a *ngIf="isEdit==true" (click)="onDeleteClick()" class="govuk-link delete-link">{{ 'DELETE_SITE'
+            | translate }}</a>
         </div>
-        
-        <div class="govuk-form-group" [class.govuk-form-group--error]="submitted && formGroup.controls.streetAddress.invalid">
-          <label class="govuk-label" for="streetAddress">Office Street Address</label>
-          <span id="streetAddress-error" class="govuk-error-message" *ngIf="submitted && formGroup.controls.streetAddress.invalid">
-            <span class="govuk-visually-hidden">Error:</span>Enter your street address
-          </span>
-          <input class="govuk-input" id="streetAddress" formControlName="streetAddress" maxlength="100" name="streetAddress" size="20" type="text" value="" autocomplete="streetAddress" [class.govuk-input--error]="submitted && formGroup.controls.streetAddress.invalid">
-        </div>
-
-        <div class="govuk-form-group" [class.govuk-form-group--error]="submitted && formGroup.controls.locality.invalid">
-          <label class="govuk-label" for="locality">Office Locality</label>
-          <span id="locality-error" class="govuk-error-message" *ngIf="submitted && formGroup.controls.locality.invalid">
-            <span class="govuk-visually-hidden">Error:</span>Enter your locality
-          </span>
-          <input class="govuk-input" id="locality" formControlName="locality" maxlength="100" name="locality" size="20" type="text" value="" autocomplete="locality" [class.govuk-input--error]="submitted && formGroup.controls.locality.invalid">
-        </div>
-
-        <div class="govuk-form-group" [class.govuk-form-group--error]="submitted && formGroup.controls.region.invalid">
-          <label class="govuk-label" for="region">Office Region</label>
-          <span id="region-error" class="govuk-error-message" *ngIf="submitted && formGroup.controls.region.invalid">
-            <span class="govuk-visually-hidden">Error:</span>Enter your region
-          </span>
-          <input class="govuk-input" id="region" formControlName="region" maxlength="100" name="region" size="20" type="text" value="" autocomplete="region" [class.govuk-input--error]="submitted && formGroup.controls.region.invalid">
-        </div>
-
-        <div class="govuk-form-group" [class.govuk-form-group--error]="submitted && formGroup.controls.postalCode.invalid">
-          <label class="govuk-label" for="postalCode">Office Post Code</label>
-          <span id="postalCode-error" class="govuk-error-message" *ngIf="submitted && formGroup.controls.postalCode.invalid">
-            <span class="govuk-visually-hidden">Error:</span>Enter your post code
-          </span>
-          <input class="govuk-input" id="postalCode" formControlName="postalCode" maxlength="100" name="postalCode" size="20" type="text" value="" autocomplete="postal code" [class.govuk-input--error]="submitted && formGroup.controls.postalCode.invalid">
-        </div>
-
-        <div class="govuk-form-group" [class.govuk-form-group--error]="submitted && formGroup.controls.countryCode.invalid">
-          <label class="govuk-label" for="countryCode">Office Country code</label>
-          <span id="countryCode-error" class="govuk-error-message" *ngIf="submitted && formGroup.controls.countryCode.invalid">
-            <span class="govuk-visually-hidden">Error:</span>Enter your country code
-          </span>
-          <input class="govuk-input" id="countryCode" formControlName="countryCode" maxlength="100" name="countryCode" size="20" type="text" value="" autocomplete="country code" [class.govuk-input--error]="submitted && formGroup.controls.countryCode.invalid">
-        </div>
-
-        <div class="govuk-form-group govuk-button-group">
-          <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button" data-module="govuk-button" (click)="onSubmit(formGroup)">Save changes</button>
-          <button class="govuk-button govuk-button--secondary" data-module="govuk-button" (click)="onCancelClick()">Cancel</button>
-        </div>
-        <div class="govuk-form-group govuk-button-group">
-            <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button govuk-button--warning" data-module="govuk-button" (click)="onDeleteClick()">Delete details</button>
-        </div>
-      </form>
+      </div>
     </div>
-  </div>
+  </form>
 </div>

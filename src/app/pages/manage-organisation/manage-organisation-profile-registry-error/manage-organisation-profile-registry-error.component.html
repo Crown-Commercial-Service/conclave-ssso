@@ -4,11 +4,13 @@
   <h1 class="govuk-heading-xl page-title" *ngIf="reason === 'generic'">An unexpected error has occured. Please try again in a few minutes</h1>
   <h1 class="govuk-heading-xl page-title" *ngIf="reason === 'notfound'">We could not find any matching records for your search. Please check the details and  try again</h1>
   <h1 class="govuk-heading-xl page-title"*ngIf="reason === 'unknown'">This Organisation is already registered for Conclave. Contact your Organisation Administrator</h1>
+  <h1 class="govuk-heading-xl page-title"*ngIf="reason === 'exists'">This Registry is already registered for your organisation. Search with a different organisation ID</h1>
   <h2></h2>
   <!-- <p><a routerLink="/manage-org/profile/{{organisationId}}/registry/search">Search with a different organisation ID</a></p> -->
   <!-- <p><a (click)="goBack()">Search with a different organisation ID</a></p> -->
-  <p><a href="/manage-org/profile/registry/search">Search with a different organisation ID</a></p>
-  
-  <p><a>Submit a claim form</a></p>
+  <p *ngIf="reason !== 'generic'"><a href="/manage-org/profile/registry/search">Search with a different organisation ID</a></p>
+  <p *ngIf="reason !== 'generic'"><a href="https://www.crowncommercial.gov.uk/contact" target="_blank">Submit a claim form</a></p>
+  <p *ngIf="reason === 'generic'"><a href="/manage-org/profile/registry/search">Back</a></p>
+
   <!--<app-footer></app-footer>-->
 </div>

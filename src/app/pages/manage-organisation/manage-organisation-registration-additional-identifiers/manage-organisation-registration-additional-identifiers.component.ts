@@ -31,6 +31,7 @@ export class ManageOrgRegAdditionalIdentifiersComponent extends BaseComponent im
   public selectedIdentifiers: any[] = new Array();
   public additionalIdentifiers: any[] = new Array();
   public routeParams!: any;
+  public organisation!:any;
 
   constructor(private ciiService: ciiService, private router: Router, private route: ActivatedRoute, protected uiStore: Store<UIState>) {
     super(uiStore);
@@ -40,39 +41,14 @@ export class ManageOrgRegAdditionalIdentifiersComponent extends BaseComponent im
     this.schemeName = JSON.parse(localStorage.getItem('scheme_name')+'').replace('"','').replace('"','');
     this.route.params.subscribe(params => {
       this.routeParams = params;
-      if (params.id && params.scheme) {
-        this.item$ = this.ciiService.getDetails(params.scheme, params.id).pipe(share());
-        this.item$.subscribe({
-          next: result => {
-            if (result.error) {
-              if (result.message == 'Error 400') {
-                this.router.navigateByUrl(`manage-org/register/error/notfound`);
-              } if (result.message == 'Error 404') {
-                this.router.navigateByUrl(`manage-org/register/error/notfound`);
-              } else {
-               this.router.navigateByUrl(`manage-org/register/error`);
-              }
-            } else {
-              // this.additionalIdentifiers = result.additionalIdentifiers;
-              // this.selectedIdentifiers = result.additionalIdentifiers;
-              this.selectedIdentifiers = [...result.additionalIdentifiers];
-              // Object.assign(result.additionalIdentifiers, this.selectedIdentifiers);
-              localStorage.setItem('cii_organisation', JSON.stringify(result));
-            }
-          }, error: err => {
-            if (err.status) {
-              if (err.status == '400') {
-                this.router.navigateByUrl(`manage-org/register/error/notfound`);
-              } else if (err.status == '404') {
-                this.router.navigateByUrl(`manage-org/register/error/notfound`);
-              } else {
-               this.router.navigateByUrl(`manage-org/register/error`);
-              }
-            } else {
-              this.router.navigateByUrl(`manage-org/register/error`);
-            }
-          }
-        });
+      this.organisation = JSON.parse(localStorage.getItem('cii_organisation')+'');
+      if (this.organisation) {
+        this.selectedIdentifiers = [...this.organisation.additionalIdentifiers];
+        // this.additionalIdentifiers = this.organisation.additionalIdentifiers;
+        // this.selectedIdentifiers = this.organisation.additionalIdentifiers;
+        // Object.assign(this.organisation.additionalIdentifiers, this.selectedIdentifiers);
+      } else {
+        this.router.navigateByUrl(`manage-org/register/error/notfound`);
       }
     });
   }
@@ -82,9 +58,9 @@ export class ManageOrgRegAdditionalIdentifiersComponent extends BaseComponent im
   }
 
   public onSubmit() {
-    let organisation = JSON.parse(localStorage.getItem('cii_organisation')+'');
-    organisation.additionalIdentifiers = this.selectedIdentifiers;
-    localStorage.setItem('cii_organisation', JSON.stringify(organisation));
+    const org = JSON.parse(localStorage.getItem('cii_organisation')+'');
+    org.additionalIdentifiers = this.selectedIdentifiers;
+    localStorage.setItem('cii_organisation', JSON.stringify(org));
     this.router.navigateByUrl(this.orgGroup);
   }
 

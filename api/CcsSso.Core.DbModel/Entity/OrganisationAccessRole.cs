@@ -18,7 +18,5 @@ namespace CcsSso.DbModel.Entity
     public string OrganisationAccessRoleName { get; set; }
 
     public string OrganisationAccessRoleDescription { get; set; }
-
-    public List<UserAccessRole> UserAccessRoles { get; set; }
   }
 }

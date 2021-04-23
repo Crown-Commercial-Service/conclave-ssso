@@ -4,7 +4,7 @@ import { catchError, map } from 'rxjs/operators';
 import { throwError } from 'rxjs/internal/observable/throwError';
 import { Observable } from 'rxjs';
 
-import { User, UserProfileRequestInfo, UserProfileResponseInfo } from 'src/app/models/user';
+import { User, UserEditResponseInfo, UserProfileRequestInfo, UserProfileResponseInfo } from 'src/app/models/user';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -19,14 +19,24 @@ export class WrapperUserService {
   }
 
   constructor(private http: HttpClient) {
-    this.options.headers = this.options.headers.set("X-API-Key", environment.wrapperApiKey);
   }
 
   createUser(userRequest: UserProfileRequestInfo): Observable<any> {
     const url = `${this.userEndpointUrl}`;
-    return this.http.post<string>(url, userRequest, this.options).pipe(
-      map((data : string) => {
+    return this.http.post<UserEditResponseInfo>(url, userRequest, this.options).pipe(
+      map((data : UserEditResponseInfo) => {
         return data;
+      }), catchError(error => {
+        return throwError(error);
+      })
+    );
+  }
+
+  deleteUser(userName: string): Observable<any> {
+    const url = `${this.userEndpointUrl}?userId=${userName}`;
+    return this.http.delete(url, this.options).pipe(
+      map(() => {
+        return true;
       }), catchError(error => {
         return throwError(error);
       })
@@ -44,11 +54,33 @@ export class WrapperUserService {
     );
   }
 
-  updateUser(userName: string, userRequest: UserProfileRequestInfo, isMyProfile: boolean = false): Observable<any> {
-    const url = `${this.userEndpointUrl}?userId=${userName}&isMyProfile=${isMyProfile}`;
-    return this.http.put(url, userRequest, this.options).pipe(
-      map(() => {
-        return true;
+  updateUser(userName: string, userRequest: UserProfileRequestInfo): Observable<any> {
+    const url = `${this.userEndpointUrl}?userId=${userName}`;
+    return this.http.put<UserEditResponseInfo>(url, userRequest, this.options).pipe(
+      map((data: UserEditResponseInfo) => {
+        return data;
+      }), catchError(error => {
+        return throwError(error);
+      })
+    );
+  }
+
+  updateUserRoles(userName: string, userRequest: UserProfileRequestInfo): Observable<any> {
+    const url = `${this.userEndpointUrl}/UpdateUserRoles?userId=${userName}`;
+    return this.http.put<UserEditResponseInfo>(url, userRequest, this.options).pipe(
+      map((data: UserEditResponseInfo) => {
+        return data;
+      }), catchError(error => {
+        return throwError(error);
+      })
+    );
+  }
+
+  addAdminRole(userName: string, userRequest: UserProfileRequestInfo): Observable<any> {
+    const url = `${this.userEndpointUrl}/AddAdminRole?userId=${userName}`;
+    return this.http.put<UserEditResponseInfo>(url, userRequest, this.options).pipe(
+      map((data: UserEditResponseInfo) => {
+        return data;
       }), catchError(error => {
         return throwError(error);
       })

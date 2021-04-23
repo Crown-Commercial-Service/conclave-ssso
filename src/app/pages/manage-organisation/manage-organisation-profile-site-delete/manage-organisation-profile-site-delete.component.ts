@@ -1,20 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { share, timeout } from 'rxjs/operators';
 import { slideAnimation } from 'src/app/animations/slide.animation';
 
 import { BaseComponent } from 'src/app/components/base/base.component';
-import { Data } from 'src/app/models/data';
-import { dataService } from 'src/app/services/data/data.service';
 import { UIState } from 'src/app/store/ui.states';
-import { ciiService } from 'src/app/services/cii/cii.service';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
-import { WrapperUserService } from 'src/app/services/wrapper/wrapper-user.service';
-import { User } from 'src/app/models/user';
-import { TokenService } from 'src/app/services/auth/token.service';
-import { WrapperOrganisationService } from 'src/app/services/wrapper/wrapper-org-service';
+import { OperationEnum } from 'src/app/constants/enum';
+import { WrapperOrganisationSiteService } from 'src/app/services/wrapper/wrapper-org-site-service';
 
 @Component({
   selector: 'app-manage-organisation-profile-site-delete',
@@ -31,31 +23,40 @@ import { WrapperOrganisationService } from 'src/app/services/wrapper/wrapper-org
 })
 export class ManageOrganisationSiteDeleteComponent extends BaseComponent implements OnInit {
 
-  public item$!: Observable<any>;
-  public id: number;
-  public routeParams!: any;
+  organisationId: string;
+  siteId: number = 0;
+    constructor(protected uiStore: Store<UIState>, private router: Router, private activatedRoute: ActivatedRoute,
+        private contactService: WrapperOrganisationSiteService) {
+        super(uiStore);
+        this.organisationId = localStorage.getItem('cii_organisation_id') || '';
+        let queryParams = this.activatedRoute.snapshot.queryParams;
+        if (queryParams.data) {
+            let routeData = JSON.parse(queryParams.data);
+            console.log(routeData);
+            this.siteId = routeData['siteId'];
+        }
+    }
 
-  constructor(private ciiService: ciiService, private wrapperService: WrapperUserService, private wrapperOrgService: WrapperOrganisationService, private dataService: dataService, private router: Router, private route: ActivatedRoute, protected uiStore: Store<UIState>, private readonly tokenService: TokenService) {
-    super(uiStore);
-    this.id = parseInt(this.route.snapshot.paramMap.get('id') || '0');
-  }
+    ngOnInit() {
+    }
 
-  ngOnInit() {
-    this.route.params.subscribe(params => {
-      this.routeParams = params;
-    });
-  }
+    onDeleteConfirmClick() {
+        this.contactService.deleteOrganisationSite(this.organisationId, this.siteId).subscribe({
+            next: () => { 
+                this.router.navigateByUrl(`manage-org/profile/contact-operation-success/${OperationEnum.DeleteSite}`);           
+            },
+            error: (error : any) => {
+                console.log(error);
+            }
+        });
+    }
 
-  public onSubmit() {
-    const accesstoken = this.tokenService.getDecodedAccessToken();
-    this.wrapperOrgService.deleteSite(accesstoken.ciiOrgId, this.id).subscribe(data => {
-      this.router.navigateByUrl(`manage-org/profile/site/delete/success`);
-    });
-    // this.router.navigateByUrl('manage-org/profile/site/delete/success');
-  }
-
-  public goBack() {
-    this.router.navigateByUrl(`manage-org/profile/site/edit/${this.id}`);
-  }
+    onCancelClick(){
+        let data = {
+            'isEdit': true,
+            'siteId': this.siteId
+        };
+        this.router.navigateByUrl('manage-org/profile/site/edit?data=' + JSON.stringify(data));
+    }
 
 }

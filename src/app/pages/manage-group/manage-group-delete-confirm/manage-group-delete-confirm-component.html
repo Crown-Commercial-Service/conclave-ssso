@@ -1,0 +1,37 @@
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <div class="user-profile-container">
+            <div class="govuk-breadcrumbs">
+                <ol class="govuk-breadcrumbs__list">
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/home">{{ 'ADMINISTRATOR_DASHBOARD' |
+                            translate}}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/manage-groups">{{ 'MANAGE_GROUPS' | translate }}</a>
+                    </li>
+                    <li *ngIf="isEdit==true" class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" (click)="onCancelClick()">{{ 'EDIT_GROUP' | translate }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <span class="govuk-breadcrumbs__link"> {{ 'DELETE_GROUP' | translate }}</span>
+                    </li>
+                </ol>
+            </div>
+            <h1 class="govuk-heading-xl"> {{ 'CONFIRM_GROUP_DELETE' | translate }}</h1>
+            <p class="govuk-body">{{ 'THIS_CANNOT_BE_UNDONE' | translate }}</p>
+            <div class="govuk-button-group continue-cancel-button-group">
+                <button type="submit" (click)="onDeleteConfirmClick()" class="govuk-button govuk-button--warning"
+                    data-module="govuk-button">
+                    {{ 'CONFIRM_DELETE_BTN' | translate }}
+                </button>
+                <button type="button" (click)="onCancelClick()" class="govuk-button govuk-button--secondary"
+                    data-module="govuk-button">
+                    {{ 'CANCEL_BTN' | translate }}
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+</div>

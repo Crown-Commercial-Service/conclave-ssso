@@ -6,13 +6,13 @@ namespace CcsSso.Security.Domain.Contracts
 {
   public interface IIdentityProviderService
   {
-    Task<AuthResultDto> AuthenticateAsync(string userName, string userPassword);
+    Task<AuthResultDto> AuthenticateAsync(string clientId, string secret, string userName, string userPassword);
 
     Task<UserRegisterResult> CreateUserAsync(UserInfo userInfo);
 
     Task UpdateUserAsync(UserInfo userInfo);
 
-    Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string refreshToken);
+    Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string clientSecret, string refreshToken, string sid);
 
     Task<TokenResponseInfo> GetTokensAsync(TokenRequestInfo tokenRequestInfo, string sid);
 
@@ -30,12 +30,14 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task<string> SignOutAsync(string clientId, string userName);
 
-    Task<UserClaims> GetUserAsync(string accessToken);
-
     Task DeleteAsync(string email);
+
+    Task<IdamUser> GetUser(string email);
 
     Task<string> GetIdentityProviderAuthenticationEndPointAsync();
 
-    string GetAuthenticationEndPoint(string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt);
+    string GetAuthenticationEndPoint(string state, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt);
+
+    Task SendNominateEmailAsync(Domain.Dtos.UserInfo userInfo);
   }
 }

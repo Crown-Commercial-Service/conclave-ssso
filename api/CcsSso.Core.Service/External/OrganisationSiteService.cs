@@ -134,13 +134,19 @@ namespace CcsSso.Core.Service.External
       {
         var organisationSite = new OrganisationSite
         {
-          SiteId = organisationSiteContactPoint.Id,
+          Details = new SiteDetail
+          {
+            SiteId = organisationSiteContactPoint.Id,
+          },
           SiteName = organisationSiteContactPoint.SiteName,
-          StreetAddress = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.StreetAddress ?? string.Empty,
-          Locality = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.Locality ?? string.Empty,
-          Region = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.Region ?? string.Empty,
-          PostalCode = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.PostalCode ?? string.Empty,
-          CountryCode = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.CountryCode ?? string.Empty,
+          Address = new OrganisationAddress
+          {
+            StreetAddress = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.StreetAddress ?? string.Empty,
+            Locality = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.Locality ?? string.Empty,
+            Region = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.Region ?? string.Empty,
+            PostalCode = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.PostalCode ?? string.Empty,
+            CountryCode = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.CountryCode ?? string.Empty,
+          }
         };
 
         sites.Add(organisationSite);
@@ -172,13 +178,19 @@ namespace CcsSso.Core.Service.External
         var organisationSiteResponse = new OrganisationSiteResponse
         {
           OrganisationId = ciiOrganisationId,
-          SiteId = siteId,
+          Details = new SiteDetail
+          {
+            SiteId = siteId
+          },
           SiteName = organisationSiteContactPoint.SiteName,
-          StreetAddress = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.StreetAddress ?? string.Empty,
-          Locality = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.Locality ?? string.Empty,
-          Region = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.Region ?? string.Empty,
-          PostalCode = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.PostalCode ?? string.Empty,
-          CountryCode = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.CountryCode ?? string.Empty,
+          Address = new OrganisationAddress
+          {
+            StreetAddress = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.StreetAddress ?? string.Empty,
+            Locality = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.Locality ?? string.Empty,
+            Region = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.Region ?? string.Empty,
+            PostalCode = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.PostalCode ?? string.Empty,
+            CountryCode = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.CountryCode ?? string.Empty,
+          }
         };
 
         return organisationSiteResponse;
@@ -229,11 +241,11 @@ namespace CcsSso.Core.Service.External
     /// <param name="contactPoint"></param>
     private void AssignSitePhysicalContactsDetailsToContactPoint(OrganisationSiteInfo organisationSiteInfo, ContactPoint contactPoint)
     {
-      contactPoint.ContactDetail.PhysicalAddress.StreetAddress = organisationSiteInfo.StreetAddress;
-      contactPoint.ContactDetail.PhysicalAddress.Region = organisationSiteInfo.Region;
-      contactPoint.ContactDetail.PhysicalAddress.Locality = organisationSiteInfo.Locality;
-      contactPoint.ContactDetail.PhysicalAddress.PostalCode = organisationSiteInfo.PostalCode;
-      contactPoint.ContactDetail.PhysicalAddress.CountryCode = organisationSiteInfo.CountryCode;
+      contactPoint.ContactDetail.PhysicalAddress.StreetAddress = organisationSiteInfo.Address.StreetAddress;
+      contactPoint.ContactDetail.PhysicalAddress.Region = organisationSiteInfo.Address.Region;
+      contactPoint.ContactDetail.PhysicalAddress.Locality = organisationSiteInfo.Address.Locality;
+      contactPoint.ContactDetail.PhysicalAddress.PostalCode = organisationSiteInfo.Address.PostalCode;
+      contactPoint.ContactDetail.PhysicalAddress.CountryCode = organisationSiteInfo.Address.CountryCode;
     }
 
     /// <summary>
@@ -247,9 +259,13 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
       }
 
-      if (string.IsNullOrWhiteSpace(organisationSiteInfo.StreetAddress) && string.IsNullOrWhiteSpace(organisationSiteInfo.Locality)
-        && string.IsNullOrWhiteSpace(organisationSiteInfo.Region) && string.IsNullOrWhiteSpace(organisationSiteInfo.PostalCode)
-        && string.IsNullOrWhiteSpace(organisationSiteInfo.CountryCode))
+      if (organisationSiteInfo.Address == null)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteAddress);
+      }
+
+      if (string.IsNullOrWhiteSpace(organisationSiteInfo.Address.StreetAddress) || string.IsNullOrWhiteSpace(organisationSiteInfo.Address.PostalCode)
+        || string.IsNullOrWhiteSpace(organisationSiteInfo.Address.CountryCode))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
       }

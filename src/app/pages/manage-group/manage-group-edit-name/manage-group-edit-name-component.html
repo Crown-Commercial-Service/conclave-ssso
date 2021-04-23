@@ -1,0 +1,93 @@
+<!-- <div class="content flex" [@slide]="(sideNavVisible$ | async) ? 'close' : 'open'"> -->
+<div class="user-profile-container">
+    <div class="govuk-breadcrumbs">
+        <ol class="govuk-breadcrumbs__list">
+            <li class="govuk-breadcrumbs__list-item">
+                <a class="govuk-breadcrumbs__link" routerLink="/home">{{ 'ADMINISTRATOR_DASHBOARD' | translate }}</a>
+            </li>
+            <li class="govuk-breadcrumbs__list-item">
+                <a class="govuk-breadcrumbs__link" routerLink="/manage-groups">{{ 'MANAGE_GROUPS' | translate }}</a>
+            </li>
+            <li *ngIf="isEdit==true" class="govuk-breadcrumbs__list-item">
+                <a class="govuk-breadcrumbs__link" (click)="onCancelAndGoToGroupClick()">{{ 'EDIT_GROUP' | translate }}</a>
+            </li>
+            <li *ngIf="isEdit!=true"  class="govuk-breadcrumbs__list-item">
+                <span class="govuk-breadcrumbs__link"> {{ 'CREATE_GROUP' | translate }}</span>
+            </li>
+            <li *ngIf="isEdit==true" class="govuk-breadcrumbs__list-item">
+                <span class="govuk-breadcrumbs__link"> {{ 'UPDATE_GROUP_NAME' | translate }}</span>
+            </li>
+            
+        </ol>
+    </div>
+    <h1 *ngIf="isEdit!=true" class="govuk-heading-xl page-title">{{ 'CREATE_GROUP' | translate }}</h1>
+    <h1 *ngIf="isEdit==true" class="govuk-heading-xl page-title">{{ 'UPDATE_GROUP_NAME' | translate }}</h1>
+    <div class="govuk-error-summary form-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1"
+        id="error-summary" data-module="govuk-error-summary" *ngIf="formValid(groupNameForm) == false && submitted">
+        <h2 class="govuk-error-summary__title" id="error-summary-title">
+            {{ 'ERROR_SUMMARY' | translate }}
+        </h2>
+        <div class="govuk-error-summary__body">
+            <ul class="govuk-list govuk-error-summary__list">
+                <li
+                    *ngIf="submitted && groupNameForm.controls.groupName.hasError('required')">
+                    <a href="#" onClick="return false;" (click)="setFocus(0)"> {{
+                        'ERROR_GROUP_NAME_REQUIRED' | translate }} </a>
+                </li>
+                <li
+                    *ngIf="submitted && groupNameForm.controls.groupName.hasError('alreadyExists')">
+                    <a href="#" onClick="return false;" (click)="setFocus(0)"> {{
+                        'ERROR_GROUP_NAME_EXISTS' | translate }}</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="form">
+        <form class="ui form profile mb-two" [formGroup]="groupNameForm" (submit)="onSubmit(groupNameForm)">
+            <div class="ui segment">
+
+                <div class="govuk-grid-row">
+                    <div class="govuk-grid-column-two-thirds">
+                        <div class="govuk-form-group" id="group-name-form-group"
+                            [class.govuk-form-group--error]="submitted && (groupNameForm.controls.groupName.invalid || groupNameForm.controls.groupName.hasError('alreadyExists'))">
+                            <label *ngIf="isEdit!=true" class="govuk-label" for="group-name"> {{ 'GIVE_GROUP_NAME' | translate }} </label>
+                            <span id="group-name-error" class="govuk-error-message"
+                                *ngIf="submitted && groupNameForm.controls.groupName.hasError('required')">
+                                <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span> {{
+                                'ERROR_GROUP_NAME_REQUIRED' | translate }}
+                            </span>
+                            <span id="group-name-error" class="govuk-error-message"
+                                *ngIf="submitted && groupNameForm.controls.groupName.hasError('alreadyExists')">
+                                <span class="govuk-visually-hidden">{{ 'ERROR_PREFIX' | translate }}</span> {{
+                                'ERROR_GROUP_NAME_EXISTS' | translate }}
+                            </span>
+                            <div *ngIf="isEdit!=true" id="group-name-hint" class="govuk-hint">
+                                {{ 'YOU_CAN_CHANGE_THIS_LATER' | translate }}
+                            </div>
+                            <input #input formControlName="groupName" class="govuk-input" id="group-name"
+                                name="group-name" type="text"
+                                [class.govuk-input--error]="submitted && (groupNameForm.controls.groupName.invalid || groupNameForm.controls.groupName.hasError('alreadyExists'))">
+                        </div>
+                    </div>
+                </div>
+                <div class="govuk-button-group save-cancel-button-group">
+                    <button *ngIf="isEdit!=true" type="submit" class="govuk-button" data-module="govuk-button">
+                        {{ 'SAVE_CONTINUE_BTN' | translate }}
+                    </button>
+                    <button *ngIf="isEdit==true" type="submit" class="govuk-button" data-module="govuk-button">
+                        {{ 'SAVE_BTN' | translate }}
+                    </button>
+                    <button *ngIf="isEdit!=true" type="button" (click)="onCancelClick()" class="govuk-button govuk-button--secondary"
+                        data-module="govuk-button">
+                        {{ 'CANCEL_BTN' | translate }}
+                    </button>
+                    <button *ngIf="isEdit==true" type="button" (click)="onCancelAndGoToGroupClick()" class="govuk-button govuk-button--secondary"
+                        data-module="govuk-button">
+                        {{ 'CANCEL_GO_GROUP_BTN' | translate }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- </div> -->

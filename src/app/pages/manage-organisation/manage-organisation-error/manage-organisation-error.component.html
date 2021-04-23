@@ -1,0 +1,18 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex">
+  <h1 class="govuk-heading-xl page-title" *ngIf="reason === 'wrong'">Kindly contact your registry authority to update your organisation details</h1>
+  <h1 class="govuk-heading-xl page-title" *ngIf="reason === 'generic'">An unexpected error has occured. Please try again in a few minutes</h1>
+  <h1 class="govuk-heading-xl page-title" *ngIf="reason === 'notfound'">We could not find any matching records for your search. Please check the details and  try again</h1>
+  <h1 class="govuk-heading-xl page-title"*ngIf="reason === 'unknown'">This Organisation is already registered for Conclave. Contact your Organisation Administrator</h1>
+  
+  <h1 class="govuk-heading-xl page-title"*ngIf="reason === 'user'">An unexpected error has occured. we were unable to register a user</h1>
+  <h1 class="govuk-heading-xl page-title"*ngIf="reason === 'contact'">An unexpected error has occured. we were unable to add a contact</h1>
+  <h1 class="govuk-heading-xl page-title"*ngIf="reason === 'conclave'">User already exists on Conclave with this email address. Please try with another email address</h1>
+  <h2></h2>
+  <!-- <p><a routerLink="/manage-org/profile/{{organisationId}}/registry/search">Search with a different organisation ID</a></p> -->
+  <!-- <p><a (click)="goBack()">Search with a different organisation ID</a></p> -->
+  <p *ngIf="reason !== 'generic'"><a href="/manage-org/registry/search">Search with a different organisation ID</a></p>
+  <p *ngIf="reason !== 'generic'"><a href="https://www.crowncommercial.gov.uk/contact" target="_blank">Submit a claim form</a></p>
+  <p *ngIf="reason === 'generic'"><a href="javascript:window.history.back()">Back</a></p>
+  <!--<app-footer></app-footer>-->
+</div>

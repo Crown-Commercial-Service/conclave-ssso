@@ -26,5 +26,19 @@ namespace CcsSso.Core.Service.External
 
       return identityProviders;
     }
+
+    public async Task<List<OrganisationRole>> GetRolesAsync()
+    {
+      var roles = await _dataContext.CcsAccessRole.Select(i => new OrganisationRole
+      {
+        RoleId = i.Id,
+        RoleName = i.CcsAccessRoleName,
+        OrgTypeEligibility = i.OrgTypeEligibility,
+        SubscriptionTypeEligibility = i.SubscriptionTypeEligibility,
+        TradeEligibility = i.TradeEligibility
+      }).ToListAsync();
+
+      return roles;
+    }
   }
 }

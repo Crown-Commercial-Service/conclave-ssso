@@ -451,6 +451,7 @@ namespace CcsSso.Core.Tests.External
       //Org1
       dataContext.Party.Add(new Party { Id = 1, PartyTypeId = 1 });
       dataContext.Organisation.Add(new Organisation { Id = 1, PartyId = 1, CiiOrganisationId = "1", LegalName = "Org1", OrganisationUri = "Org1Uri", RightToBuy = true, IsActivated = true, IsSme = true, IsVcse = true });
+      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 1, OrganisationId = 1, IdentityProviderId = 1 });
       //Registered
       dataContext.ContactDetail.Add(new ContactDetail { Id = 1, EffectiveFrom = DateTime.UtcNow });
       dataContext.PhysicalAddress.Add(new PhysicalAddress { Id = 1, ContactDetailId = 1, StreetAddress = "street", Locality = "locality", Region = "region", PostalCode = "postalcode", CountryCode = "countrycode" });
@@ -465,6 +466,7 @@ namespace CcsSso.Core.Tests.External
       //Org2
       dataContext.Party.Add(new Party { Id = 2, PartyTypeId = 1 });
       dataContext.Organisation.Add(new Organisation { Id = 2, PartyId = 2, CiiOrganisationId = "2", OrganisationUri = "Org2Uri", RightToBuy = true, IsDeleted = true });
+      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 2, OrganisationId = 2, IdentityProviderId = 1 });
       //Registered
       dataContext.ContactDetail.Add(new ContactDetail { Id = 3, EffectiveFrom = DateTime.UtcNow });
       dataContext.PhysicalAddress.Add(new PhysicalAddress { Id = 3, ContactDetailId = 3, StreetAddress = "street", Locality = "locality", Region = "region", PostalCode = "postalcode", CountryCode = "countrycode" });
@@ -492,7 +494,7 @@ namespace CcsSso.Core.Tests.External
 
       dataContext.Party.Add(new Party { Id = 5, PartyTypeId = 3 });
       dataContext.Person.Add(new Person { Id = 3, PartyId = 5, OrganisationId = 1, FirstName = "UserFN1", LastName = "UserLN1" });
-      dataContext.User.Add(new User { Id = 1, IdentityProviderId = 1, PartyId = 5, UserName = "user1@mail.com" });
+      dataContext.User.Add(new User { Id = 1, OrganisationEligibleIdentityProviderId = 1, PartyId = 5, UserName = "user1@mail.com" });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 7, PartyId = 5, PartyTypeId = 3, ContactPointReasonId = 3, ContactDetailId = 6 });
 
       //Org3

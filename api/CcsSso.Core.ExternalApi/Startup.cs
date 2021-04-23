@@ -1,11 +1,19 @@
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Service;
 using CcsSso.Core.Service.External;
 using CcsSso.DbPersistence;
 using CcsSso.Domain;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
+using CcsSso.Domain.Dtos;
 using CcsSso.ExternalApi.Middleware;
+using CcsSso.Service;
 using CcsSso.Service.External;
+using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain;
+using CcsSso.Shared.Domain.Contexts;
+using CcsSso.Shared.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
@@ -35,19 +43,57 @@ namespace CcsSso.ExternalApi
     {
 
       services.AddControllers();
+      services.AddSingleton<ITokenService, TokenService>();
       services.AddSingleton(s =>
       {
-        AppSetting appConfigInfo = new AppSetting()
+        bool.TryParse(Configuration["Email:SendNotificationsEnabled"], out bool sendNotificationsEnabled);
+        ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
-          ApiKey = Configuration["ApiKey"]
+          ApiKey = Configuration["ApiKey"],
+          ConclaveLoginUrl = Configuration["ConclaveLoginUrl"],
+          JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
+          {
+            IdamClienId = Configuration["JwtTokenValidationInfo:IdamClienId"],
+            Issuer = Configuration["JwtTokenValidationInfo:Issuer"],
+            JwksUrl = Configuration["JwtTokenValidationInfo:JwksUrl"]
+          },
+          SecurityApiDetails = new SecurityApiDetails
+          {
+            ApiKey = Configuration["SecurityApiSettings:ApiKey"],
+            Url = Configuration["SecurityApiSettings:Url"],
+          },
+          EmailInfo = new CcsEmailInfo
+          {
+            UserWelcomeEmailTemplateId = Configuration["Email:UserWelcomeEmailTemplateId"],
+            OrgProfileUpdateNotificationTemplateId = Configuration["Email:OrgProfileUpdateNotificationTemplateId"],
+            UserProfileUpdateNotificationTemplateId = Configuration["Email:UserProfileUpdateNotificationTemplateId"],
+            UserContactUpdateNotificationTemplateId = Configuration["Email:UserContactUpdateNotificationTemplateId"],
+            UserPermissionUpdateNotificationTemplateId = Configuration["Email:UserPermissionUpdateNotificationTemplateId"],
+            SendNotificationsEnabled = sendNotificationsEnabled,
+          }
         };
         return appConfigInfo;
       });
 
+      services.AddSingleton(s =>
+      {
+        EmailConfigurationInfo emailConfigurationInfo = new()
+        {
+          ApiKey = Configuration["Email:ApiKey"],
+        };
+
+        return emailConfigurationInfo;
+      });
+
+      services.AddSingleton<IEmailProviderService, EmailProviderService>();
+      services.AddSingleton<ICcsSsoEmailService, CcsSsoEmailService>();
+
       services.AddDbContext<DataContext>(options => options.UseNpgsql(Configuration["DbConnection"]));
       services.AddScoped<IDataContext>(s => s.GetRequiredService<DataContext>());
 
+      services.AddScoped<RequestContext>();
       services.AddScoped<IOrganisationProfileService, OrganisationProfileService>(); 
+      services.AddScoped<IOrganisationService, OrganisationService>(); 
       services.AddScoped<IOrganisationContactService, OrganisationContactService>();
       services.AddScoped<IOrganisationSiteService, OrganisationSiteService>();
       services.AddScoped<IOrganisationSiteContactService, OrganisationSiteContactService>();
@@ -56,6 +102,15 @@ namespace CcsSso.ExternalApi
       services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
       services.AddScoped<IContactsHelperService, ContactsHelperService>();
       services.AddScoped<IConfigurationDetailService, ConfigurationDetailService>();
+      services.AddScoped<IOrganisationGroupService, OrganisationGroupService>();
+      services.AddScoped<IIdamService, IdamService>();
+      services.AddScoped<ICiiService, CiiService>();
+      services.AddHttpClient<ICiiService, CiiService>().ConfigureHttpClient((serviceProvider, httpClient) =>
+      {
+        httpClient.BaseAddress = new Uri(Configuration["Cii:Url"]);
+        httpClient.DefaultRequestHeaders.Add("Apikey", Configuration["Cii:Token"]);
+      });
+      services.AddHttpClient();
 
       services.AddSwaggerGen(c =>
       {
@@ -102,8 +157,8 @@ namespace CcsSso.ExternalApi
         .AllowCredentials()
       );
 
-      app.UseMiddleware<AuthenticatorMiddleware>();
       app.UseMiddleware<CommonExceptionHandlerMiddleware>();
+      app.UseMiddleware<AuthenticatorMiddleware>();
 
       app.UseAuthorization();
 

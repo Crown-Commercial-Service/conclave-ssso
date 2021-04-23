@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Service.External;
 using CcsSso.Core.Tests.Infrastructure;
@@ -52,11 +53,11 @@ namespace CcsSso.Core.Tests.External
           Assert.True(createdSiteContactpoint.IsSite);
           Assert.Equal(organisationSiteInfo.SiteName, createdSiteContactpoint.SiteName);
 
-          Assert.Equal(organisationSiteInfo.StreetAddress, createdSiteContactpoint.ContactDetail.PhysicalAddress.StreetAddress);
-          Assert.Equal(organisationSiteInfo.Region, createdSiteContactpoint.ContactDetail.PhysicalAddress.Region);
-          Assert.Equal(organisationSiteInfo.Locality, createdSiteContactpoint.ContactDetail.PhysicalAddress.Locality);
-          Assert.Equal(organisationSiteInfo.PostalCode, createdSiteContactpoint.ContactDetail.PhysicalAddress.PostalCode);
-          Assert.Equal(organisationSiteInfo.CountryCode, createdSiteContactpoint.ContactDetail.PhysicalAddress.CountryCode);
+          Assert.Equal(organisationSiteInfo.Address.StreetAddress, createdSiteContactpoint.ContactDetail.PhysicalAddress.StreetAddress);
+          Assert.Equal(organisationSiteInfo.Address.Region, createdSiteContactpoint.ContactDetail.PhysicalAddress.Region);
+          Assert.Equal(organisationSiteInfo.Address.Locality, createdSiteContactpoint.ContactDetail.PhysicalAddress.Locality);
+          Assert.Equal(organisationSiteInfo.Address.PostalCode, createdSiteContactpoint.ContactDetail.PhysicalAddress.PostalCode);
+          Assert.Equal(organisationSiteInfo.Address.CountryCode, createdSiteContactpoint.ContactDetail.PhysicalAddress.CountryCode);
         });
       }
 
@@ -242,11 +243,11 @@ namespace CcsSso.Core.Tests.External
           Assert.NotNull(result);
           Assert.Equal(expectedOrganisationSiteInfo.SiteName, result.SiteName);
 
-          Assert.Equal(expectedOrganisationSiteInfo.StreetAddress, result.StreetAddress);
-          Assert.Equal(expectedOrganisationSiteInfo.Region, result.Region);
-          Assert.Equal(expectedOrganisationSiteInfo.Locality, result.Locality);
-          Assert.Equal(expectedOrganisationSiteInfo.PostalCode, result.PostalCode);
-          Assert.Equal(expectedOrganisationSiteInfo.CountryCode, result.CountryCode);
+          Assert.Equal(expectedOrganisationSiteInfo.Address.StreetAddress, result.Address.StreetAddress);
+          Assert.Equal(expectedOrganisationSiteInfo.Address.Region, result.Address.Region);
+          Assert.Equal(expectedOrganisationSiteInfo.Address.Locality, result.Address.Locality);
+          Assert.Equal(expectedOrganisationSiteInfo.Address.PostalCode, result.Address.PostalCode);
+          Assert.Equal(expectedOrganisationSiteInfo.Address.CountryCode, result.Address.CountryCode);
 
         });
       }
@@ -302,11 +303,11 @@ namespace CcsSso.Core.Tests.External
           Assert.True(updatedSiteContactpoint.IsSite);
           Assert.Equal(organisationSiteInfo.SiteName, updatedSiteContactpoint.SiteName);
 
-          Assert.Equal(organisationSiteInfo.StreetAddress, updatedSiteContactpoint.ContactDetail.PhysicalAddress.StreetAddress);
-          Assert.Equal(organisationSiteInfo.Region, updatedSiteContactpoint.ContactDetail.PhysicalAddress.Region);
-          Assert.Equal(organisationSiteInfo.Locality, updatedSiteContactpoint.ContactDetail.PhysicalAddress.Locality);
-          Assert.Equal(organisationSiteInfo.PostalCode, updatedSiteContactpoint.ContactDetail.PhysicalAddress.PostalCode);
-          Assert.Equal(organisationSiteInfo.CountryCode, updatedSiteContactpoint.ContactDetail.PhysicalAddress.CountryCode);
+          Assert.Equal(organisationSiteInfo.Address.StreetAddress, updatedSiteContactpoint.ContactDetail.PhysicalAddress.StreetAddress);
+          Assert.Equal(organisationSiteInfo.Address.Region, updatedSiteContactpoint.ContactDetail.PhysicalAddress.Region);
+          Assert.Equal(organisationSiteInfo.Address.Locality, updatedSiteContactpoint.ContactDetail.PhysicalAddress.Locality);
+          Assert.Equal(organisationSiteInfo.Address.PostalCode, updatedSiteContactpoint.ContactDetail.PhysicalAddress.PostalCode);
+          Assert.Equal(organisationSiteInfo.Address.CountryCode, updatedSiteContactpoint.ContactDetail.PhysicalAddress.CountryCode);
         });
       }
 
@@ -420,6 +421,7 @@ namespace CcsSso.Core.Tests.External
       //Org1
       dataContext.Party.Add(new Party { Id = 1, PartyTypeId = 1 });
       dataContext.Organisation.Add(new Organisation { Id = 1, PartyId = 1, CiiOrganisationId = "1", LegalName = "Org1", OrganisationUri = "Org1Uri", RightToBuy = true, IsActivated = true, IsSme = true, IsVcse = true });
+      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 1, OrganisationId = 1, IdentityProviderId = 1 });
       //Registered
       dataContext.ContactDetail.Add(new ContactDetail { Id = 1, EffectiveFrom = DateTime.UtcNow });
       dataContext.PhysicalAddress.Add(new PhysicalAddress { Id = 1, ContactDetailId = 1, StreetAddress = "street", Locality = "locality", Region = "region", PostalCode = "postalcode", CountryCode = "countrycode" });
@@ -433,6 +435,7 @@ namespace CcsSso.Core.Tests.External
       //Org2
       dataContext.Party.Add(new Party { Id = 2, PartyTypeId = 1 });
       dataContext.Organisation.Add(new Organisation { Id = 2, PartyId = 2, CiiOrganisationId = "2", OrganisationUri = "Org2Uri", RightToBuy = true, IsDeleted = true });
+      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 2, OrganisationId = 2, IdentityProviderId = 1 });
       //Registered
       dataContext.ContactDetail.Add(new ContactDetail { Id = 3, EffectiveFrom = DateTime.UtcNow });
       dataContext.PhysicalAddress.Add(new PhysicalAddress { Id = 3, ContactDetailId = 3, StreetAddress = "street", Locality = "locality", Region = "region", PostalCode = "postalcode", CountryCode = "countrycode" });
@@ -458,7 +461,7 @@ namespace CcsSso.Core.Tests.External
 
       dataContext.Party.Add(new Party { Id = 5, PartyTypeId = 3 });
       dataContext.Person.Add(new Person { Id = 3, PartyId = 5, OrganisationId = 1, FirstName = "UserFN1", LastName = "UserLN1" });
-      dataContext.User.Add(new User { Id = 1, IdentityProviderId = 1, PartyId = 5, UserName = "user1@mail.com" });
+      dataContext.User.Add(new User { Id = 1, OrganisationEligibleIdentityProviderId = 1, PartyId = 5, UserName = "user1@mail.com" });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 7, PartyId = 5, PartyTypeId = 3, ContactPointReasonId = 3, ContactDetailId = 6 });
 
       //Org3

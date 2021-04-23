@@ -29,7 +29,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="401">Unauthorised</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_USER_ID
+    /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE, INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, INVALID_USER_DETAIL
     /// </response>
     /// <remarks>
     /// Sample request:
@@ -40,15 +40,19 @@ namespace CcsSso.ExternalApi.Controllers
     ///        "lastName": "LastName",
     ///        "userName": "user@mail.com",
     ///        "organisationId": "CcsOrgId1",
-    ///        "groupIds": { 1, 2},
-    ///        "identityProviderId": 1
+    ///        "detail": {
+    ///           "id": 0,
+    ///           "groupIds": { 1, 2 },
+    ///           "roleIds": { 1, 2 },
+    ///           "identityProviderId": 1,
+    ///        }
     ///     }
     ///
     /// </remarks>
     [HttpPost]
     [SwaggerOperation(Tags = new[] { "User" })]
-    [ProducesResponseType(typeof(string), 200)]
-    public async Task<string> CreateUser(UserProfileRequestInfo userProfileRequestInfo)
+    [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
+    public async Task<UserEditResponseInfo> CreateUser(UserProfileEditRequestInfo userProfileRequestInfo)
     {
       return await _userProfileService.CreateUserAsync(userProfileRequestInfo);
     }
@@ -84,7 +88,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="401">Unauthorised</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_USER_ID
+    /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE, INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, ERROR_CANNOT_REMOVE_ADMIN_ROLE_OR_GROUP_OF_LAST_ADMIN, INVALID_USER_DETAIL
     /// </response>
     /// <remarks>
     /// Sample request:
@@ -93,19 +97,63 @@ namespace CcsSso.ExternalApi.Controllers
     ///     {
     ///        "firstName": "FirstName",
     ///        "lastName": "LastName",
-    ///        "userName": "user@mail.com",
     ///        "organisationId": "CcsOrgId1",
-    ///        "groupIds": { 1, 2},
-    ///        "identityProviderId": 1
+    ///        "userName": "user@mail.com",
+    ///        "detail": {
+    ///           "id": 1,
+    ///           "groupIds": { 1, 2},
+    ///           "roleIds": { 1, 2 },
+    ///           "identityProviderId": 1,
+    ///        }
     ///     }
     ///
     /// </remarks>
     [HttpPut]
     [SwaggerOperation(Tags = new[] { "User" })]
-    [ProducesResponseType(typeof(void), 200)]
-    public async Task UpdateUser(string userId, bool isMyProfile, UserProfileRequestInfo userProfileRequestInfo)
+    [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
+    public async Task<UserEditResponseInfo> UpdateUser(string userId, UserProfileEditRequestInfo userProfileRequestInfo)
     {
-      await _userProfileService.UpdateUserAsync(userId, isMyProfile, userProfileRequestInfo);
+      return await _userProfileService.UpdateUserAsync(userId, userProfileRequestInfo);
+    }
+
+    /// <summary>
+    /// Delete a user
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_USER_ID, ERROR_CANNOT_DELETE_LAST_ADMIN_OF_ORGANISATION
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     DELETE /users?userId=user@mail.com
+    ///     
+    ///
+    /// </remarks>
+    [HttpDelete]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task DeleteUser(string userId)
+    {
+      await _userProfileService.DeleteUserAsync(userId);
+    }
+
+    [HttpPut("UpdateUserRoles")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
+    public async Task<UserEditResponseInfo> UpdateUserRoles(string userId, UserProfileEditRequestInfo userProfileRequestInfo)
+    {
+      return await _userProfileService.UpdateUserRolesAsync(userId, userProfileRequestInfo);
+    }
+
+    [HttpPut("AddAdminRole")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
+    public async Task<UserEditResponseInfo> AddAdminRole(string userId, UserProfileEditRequestInfo userProfileRequestInfo)
+    {
+      return await _userProfileService.AddAdminRoleAsync(userId, userProfileRequestInfo);
     }
     #endregion
 

@@ -1,0 +1,20 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex" *ngIf="user$ | async as u">
+  <div class="govuk-breadcrumbs">
+    <ol class="govuk-breadcrumbs__list">
+        <li class="govuk-breadcrumbs__list-item">
+            <a class="govuk-breadcrumbs__link" routerLink="/home">Administrator dashboard</a>
+        </li>
+        <li class="govuk-breadcrumbs__list-item">
+            <a class="govuk-breadcrumbs__link" routerLink="/org-support/search">Organisation user support</a>
+        </li>
+        <li class="govuk-breadcrumbs__list-item">
+          <a class="govuk-breadcrumbs__link">Success</a>
+        </li>
+    </ol>
+  </div>
+  <h1 class="govuk-heading-xl page-title" style="margin-top: 50px;">You have successfully changed the organisation administrator role and a password reset email has been sent to {{u.userName}}</h1>
+  <h2></h2>
+  <p><a routerLink="/org-support/search" style="text-decoration: underline;">Return to Organisation user support</a></p>
+  <!--<app-footer></app-footer>-->
+</div>

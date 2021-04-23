@@ -59,7 +59,7 @@ namespace CcsSso.Domain.Contracts
 
     DbSet<ContactPointReason> ContactPointReason { get; set; }
 
-    DbSet<GroupAccess> GroupAccess { get; set; }
+    DbSet<OrganisationGroupEligibleRole> OrganisationGroupEligibleRole { get; set; }
 
     DbSet<CcsService> CcsService { get; set; }
 
@@ -74,6 +74,10 @@ namespace CcsSso.Domain.Contracts
     DbSet<IdamUserLogin> IdamUserLogin { get; set; }
 
     DbSet<SiteContact> SiteContact { get; set; }
+
+    DbSet<OrganisationEligibleRole> OrganisationEligibleRole { get; set; }
+
+    DbSet<OrganisationEligibleIdentityProvider> OrganisationEligibleIdentityProvider { get; set; }
 
     Task<PagedResultSet<T>> GetPagedResultAsync<T>(IQueryable<T> query, ResultSetCriteria resultSetCriteria);
 

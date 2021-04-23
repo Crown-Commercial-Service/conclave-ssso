@@ -10,5 +10,6 @@ namespace CcsSso.Core.Domain.Contracts.External
   public interface IConfigurationDetailService
   {
     Task<List<IdentityProviderDetail>> GetIdentityProvidersAsync();
+    Task<List<OrganisationRole>> GetRolesAsync();
   }
 }

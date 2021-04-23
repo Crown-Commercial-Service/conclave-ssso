@@ -54,14 +54,19 @@ namespace CcsSso.Security.Services
       }
     }
 
-    public async Task<UserClaims> GetUserAsync(string accessToken)
-    {
-      return await _identityProviderService.GetUserAsync(accessToken);
-    }
-
     public async Task DeleteUserAsync(string email)
     {
       await _identityProviderService.DeleteAsync(email);
+    }
+
+    public async Task NominateUserAsync(UserInfo userInfo)
+    {
+      await _identityProviderService.SendNominateEmailAsync(userInfo);
+    }
+
+    public async Task<IdamUser> GetUserAsync(string email)
+    {
+      return await _identityProviderService.GetUser(email);
     }
   }
 }

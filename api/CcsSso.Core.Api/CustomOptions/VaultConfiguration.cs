@@ -25,7 +25,6 @@ namespace CcsSso.Api.CustomOptions
       _config = config;
 
       var env = System.Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
-      Console.WriteLine(env);
       var vault = (JObject)JsonConvert.DeserializeObject<JObject>(env)["hashicorp-vault"][0];
       _vcapSettings = JsonConvert.DeserializeObject<VCapSettings>(vault.ToString());
       IAuthMethodInfo authMethod = new TokenAuthMethodInfo(vaultToken: _vcapSettings.credentials.auth.token);
@@ -50,7 +49,7 @@ namespace CcsSso.Api.CustomOptions
       var _dbConnection = _secrets.Data["DbConnection"].ToString();
       var _cors = _secrets.Data["CorsDomains"].ToString();
 
-      var _cii = JsonConvert.DeserializeObject<Cii>(_secrets.Data["Cii"].ToString());      
+      var _cii = JsonConvert.DeserializeObject<Cii>(_secrets.Data["Cii"].ToString());
       Data.Add("DbConnection", _dbConnection);
       Data.Add("CorsDomains", _cors);
       Data.Add("Cii:Url", _cii.url);
@@ -61,6 +60,13 @@ namespace CcsSso.Api.CustomOptions
         Data.Add("JwtTokenValidationInfo:IdamClienId", jwtTokenValidationInfoVault.IdamClienId);
         Data.Add("JwtTokenValidationInfo:Issuer", jwtTokenValidationInfoVault.Issuer);
         Data.Add("JwtTokenValidationInfo:JwksUrl", jwtTokenValidationInfoVault.JwksUrl);
+      }
+
+      if (_secrets.Data.ContainsKey("SecurityApiSettings"))
+      {
+        var securityApiKeySettings = JsonConvert.DeserializeObject<SecurityApiSettingsVault>(_secrets.Data["SecurityApiSettings"].ToString());
+        Data.Add("SecurityApiSettings:ApiKey", securityApiKeySettings.ApiKey);
+        Data.Add("SecurityApiSettings:Url", securityApiKeySettings.Url);
       }
     }
   }
@@ -144,4 +150,12 @@ namespace CcsSso.Api.CustomOptions
 
     public string JwksUrl { get; set; }
   }
+
+  public class SecurityApiSettingsVault
+  {
+    public string ApiKey { get; set; }
+
+    public string Url { get; set; }
+  }
+
 }

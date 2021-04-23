@@ -1,0 +1,40 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex">
+  <h1 class="govuk-heading-xl page-title">Contact Us</h1>
+  <h2>You can contact us by email, phone or using the enquiry form below.</h2>
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-three-quarters">
+      <form class="govuk-!-width-three-quarters" [class.error]="!formValid(formGroup)" [formGroup]="formGroup">
+        <div class="govuk-form-group" *ngIf="formValid(formGroup) == false && submitted">
+          <div class="govuk-error-summary govuk-grid-column-three-quarters" aria-labelledby="error-summary-title" role="alert" tabindex="-1" data-module="govuk-error-summary">
+            <h2 class="govuk-error-summary__title" id="error-summary-title"> There is a problem</h2>
+            <div class="govuk-error-summary__body">
+              <ul class="govuk-list govuk-error-summary__list">
+                <a *ngIf="formGroup.controls['firstName'].hasError('required')"><li>Enter your name</li></a>
+                <a *ngIf="formGroup.controls['email'].hasError('required')"><li>Enter your email address</li></a>
+                <a *ngIf="formGroup.controls['email'].hasError('email')"><li>Enter an email address in the correct format, like name@example.com</li></a>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="govuk-form-group" [class.govuk-form-group--error]="submitted && formGroup.controls.firstName.invalid">
+          <label class="govuk-label" for="firstName">Name</label>
+          <span id="firstname-error" class="govuk-error-message" *ngIf="submitted && formGroup.controls.firstName.invalid">
+            <span class="govuk-visually-hidden">Error:</span>Enter your name
+          </span>
+          <input class="govuk-input" id="firstName" formControlName="firstName" maxlength="100" name="firstName" size="20" type="text" value="" [class.govuk-input--error]="submitted && formGroup.controls.firstName.invalid">
+        </div>
+        <div class="govuk-form-group" [class.govuk-form-group--error]="submitted && formGroup.controls.email.invalid">
+          <label class="govuk-label" for="email">{{ 'EMAIL' | translate }}</label>
+          <span id="email-error" class="govuk-error-message" *ngIf="submitted && formGroup.controls.email.invalid">
+            <span class="govuk-visually-hidden">Error:</span>Enter your email
+          </span>
+          <input class="govuk-input" id="email" formControlName="email" maxlength="100" name="email" size="20" type="text" value="" autocomplete="email" [class.govuk-input--error]="submitted && formGroup.controls.email.invalid">
+        </div>
+        <div class="govuk-form-group">
+          <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button" data-module="govuk-button" (click)="onSubmit(formGroup)">Send enquiry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

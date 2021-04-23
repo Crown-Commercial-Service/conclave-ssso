@@ -15,8 +15,8 @@ export class OrganisationService {
 
     constructor(private http: HttpClient) {}
 
-    get(id:number): Observable<any> {        
-        const url = `${this.url}/${id}`;
+    get(): Observable<any> {        
+        const url = `${this.url}/getAll`;
         var user = this.http.get<any>(url).pipe(
             map((data: any) => {
               return data;
@@ -28,12 +28,66 @@ export class OrganisationService {
         return user;
     }
 
+    getById(id:number): Observable<any> {        
+      const url = `${this.url}/${id}`;
+      var user = this.http.get<any>(url).pipe(
+          map((data: any) => {
+            return data;
+          }), catchError(error => {
+            console.log(error);
+            return throwError(error);
+          })
+       )
+      return user;
+    }
+
+    getUsers(): Observable<any> {        
+      const url = `${this.url}/getUsers`;
+      var user = this.http.get<any>(url).pipe(
+          map((data: any) => {
+            return data;
+          }), catchError(error => {
+            console.log(error);
+            return throwError(error);
+          })
+       )
+      return user;
+    }
+
     add(organisation: any): Observable<any> {
       const options = {
         headers: new HttpHeaders().append('Content-Type', 'application/json')
       }
-      const body = { legalName: organisation.identifier.legalName, ciiOrganisationId: organisation.ccsOrgId+'', contactPoint: organisation.contactPoint, address: organisation.address, organisationUri: organisation.identifier.uri, rightToBuy: true }
+      const body = { legalName: organisation.identifier.legalName, ciiOrganisationId: organisation.ccsOrgId+'', contactPoint: organisation.contactPoint, address: organisation.address, organisationUri: organisation.identifier.uri, rightToBuy: organisation.rightToBuy, supplierBuyerType: organisation.supplierBuyerType, businessType: organisation.buyerType  }
       return this.http.post(`${this.url}`, body, options).pipe(
+        map(data => {
+          return data;
+        }),
+        catchError(error => {
+          console.log(error);
+          return throwError(error);
+        })
+      );
+    }
+
+    put(organisation: any): void {
+      const options = {
+        headers: new HttpHeaders().append('Content-Type', 'application/json')
+      }
+      const body = { legalName: organisation.identifier.legalName, ciiOrganisationId: organisation.ccsOrgId+'', contactPoint: organisation.contactPoint, address: organisation.address, organisationUri: organisation.identifier.uri, rightToBuy: organisation.rightToBuy, supplierBuyerType: organisation.supplierBuyerType, businessType: organisation.buyerType }
+      this.http.put(`${this.url}`, body, options).pipe(
+        map(data => {
+          console.log(data);
+        })
+      );
+    }
+
+    rollback(model: any): Observable<any> {
+      const options = {
+        headers: new HttpHeaders().append('Content-Type', 'application/json')
+      }
+      const body = { organisationId: model.organisationId, ciiOrganisationId: model.ciiOrganisationId, physicalAddressId: model.physicalAddressId }
+      return this.http.post(`${this.url}/rollback`, body, options).pipe(
         map(data => {
           return data;
         }),

@@ -1,0 +1,40 @@
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <div class="content flex">
+            <div class="govuk-breadcrumbs">
+                <ol class="govuk-breadcrumbs__list">
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/home">{{ 'ADMINISTRATOR_DASHBOARD' | translate
+                            }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/manage-groups">{{ 'MANAGE_GROUPS' | translate
+                            }}</a>
+                    </li>
+                    <li *ngIf="isEdit==true" class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" (click)="onNavigateToGroupClick()">
+                            {{ 'EDIT_GROUP' | translate }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <span class="govuk-breadcrumbs__link">{{ 'SUCCESS' | translate }}</span>
+                    </li>
+                </ol>
+            </div>
+            <div>
+                <h1 *ngIf="operation=== operationEnum.GroupAdd" class="govuk-heading-xl">
+                    {{ 'GROUP_ADD_SUCCESS' | translate }} {{userCount}} {{ 'USERS_SIMPLE' | translate }} {{ 'AND_SIMPLE' | translate }} {{roleCount}} {{ 'ROLES_SIMPLE' | translate }}
+                </h1>
+
+                <h1 *ngIf="operation=== operationEnum.GroupNameUpdate" class="govuk-heading-xl">{{ 'GROUP_NAME_UPDATE_SUCCESS' | translate }}</h1>
+                <h1 *ngIf="operation=== operationEnum.GroupUserAdd" class="govuk-heading-xl">{{ 'GROUP_USER_ADD_SUCCESS' | translate }}</h1>
+                <h1 *ngIf="operation=== operationEnum.GroupUserUpdate" class="govuk-heading-xl">{{ 'GROUP_USER_UPDATE_SUCCESS' | translate }}</h1>
+                <h1 *ngIf="operation=== operationEnum.GroupRoleUpdate" class="govuk-heading-xl">{{ 'GROUP_ROLE_UPDATE_SUCCESS' | translate }}</h1>
+                <h1 *ngIf="operation=== operationEnum.GroupDelete" class="govuk-heading-xl">{{ 'GROUP_DELETE_SUCCESS' | translate }}</h1>
+                <a *ngIf="operation!= operationEnum.GroupDelete" class="navigation-text" (click)="onNavigateToGroupClick()">
+                    {{ 'RETURN_TO_GROUP' | translate }}</a>
+                <a *ngIf="operation=== operationEnum.GroupDelete" class="navigation-text" routerLink="/manage-groups">
+                    {{ 'RETURN_TO_MANAGE_GROUPS' | translate }}</a>
+            </div>
+        </div>
+    </div>
+</div>

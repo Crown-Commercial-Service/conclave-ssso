@@ -1,10 +1,14 @@
 using CcsSso.Api.Middleware;
+using CcsSso.Core.Api.Middleware;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Service;
 using CcsSso.DbPersistence;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Service;
+using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain;
+using CcsSso.Shared.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -35,11 +39,16 @@ namespace CcsSso.Api
       {
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
-          JwtTokenValidationInfo = new JwtTokenValidationInfo()
+          JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
           {
             IdamClienId = Configuration["JwtTokenValidationInfo:IdamClienId"],
             Issuer = Configuration["JwtTokenValidationInfo:Issuer"],
             JwksUrl = Configuration["JwtTokenValidationInfo:JwksUrl"]
+          },
+          SecurityApiDetails = new SecurityApiDetails()
+          {
+            ApiKey = Configuration["SecurityApiSettings:ApiKey"],
+            Url = Configuration["SecurityApiSettings:Url"]
           }
         };
         return appConfigInfo;
@@ -47,12 +56,14 @@ namespace CcsSso.Api
 
       services.AddControllers();
       services.AddSingleton<IAuthService, AuthService>();
+      services.AddSingleton<ITokenService, TokenService>();
       services.AddDbContext<DataContext>(options => options.UseNpgsql(Configuration["DbConnection"]));
       services.AddScoped<IDataContext>(s => s.GetRequiredService<DataContext>());
       services.AddHttpClient<ICiiService, CiiService>().ConfigureHttpClient((serviceProvider, httpClient) =>
       {
         httpClient.BaseAddress = new Uri(Configuration["Cii:Url"]);
         httpClient.DefaultRequestHeaders.Add("Apikey", Configuration["Cii:ApiKey"]);
+        httpClient.DefaultRequestHeaders.Add("x-api-key", Configuration["Cii:ApiKey"]);
       });
       services.AddScoped<IContactService, ContactService>();
       services.AddScoped<IOrganisationService, OrganisationService>();
@@ -84,8 +95,8 @@ namespace CcsSso.Api
       );
 
       app.UseMiddleware<CommonExceptionHandlerMiddleware>();
+      // app.UseMiddleware<AuthenticationMiddleware>();
 
-      app.UseAuthorization();
 
       app.UseEndpoints(endpoints =>
       {

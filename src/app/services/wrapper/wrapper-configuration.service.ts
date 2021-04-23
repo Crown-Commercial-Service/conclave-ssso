@@ -8,6 +8,7 @@ import { User, UserProfileRequestInfo } from 'src/app/models/user';
 import { environment } from 'src/environments/environment';
 import { ContactReason } from 'src/app/models/contactDetail';
 import { IdentityProvider } from 'src/app/models/identityProvider';
+import { WrapperApiHelperService } from './wrapper-api-helper.service';
 
 @Injectable({
   providedIn: 'root'
@@ -19,8 +20,7 @@ export class WrapperConfigurationService {
     headers: new HttpHeaders()
   }
 
-  constructor(private http: HttpClient) {
-    this.options.headers = this.options.headers.set("X-API-Key", environment.wrapperApiKey);
+  constructor(private http: HttpClient, private wrapperApiService: WrapperApiHelperService) {
   }
 
   getContactReasons(): Observable<any> {
@@ -38,6 +38,17 @@ export class WrapperConfigurationService {
     const url = `${this.url}/identity-providers`;
     return this.http.get<IdentityProvider[]>(url, this.options).pipe(
       map((data: IdentityProvider[]) => {
+        return data;
+      }), catchError(error => {
+        return throwError(error);
+      })
+    );
+  }
+
+  getRoles(): Observable<any> {
+    const url = `${this.url}/roles`;
+    return this.http.get<any[]>(url, this.options).pipe(
+      map((data: any[]) => {
         return data;
       }), catchError(error => {
         return throwError(error);

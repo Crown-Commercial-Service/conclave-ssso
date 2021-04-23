@@ -5,12 +5,18 @@ namespace CcsSso.Core.Domain.Contracts.External
 {
   public interface IUserProfileService
   {
+    Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo);
+
+    Task DeleteUserAsync(string userName);
+
     Task<UserProfileResponseInfo> GetUserAsync(string userName);
 
-    Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string userName = null);
+    Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null);
 
-    Task UpdateUserAsync(string userName, bool isMyProfile, UserProfileRequestInfo userProfileRequestInfo);
+    Task<UserEditResponseInfo> UpdateUserAsync(string userName, UserProfileEditRequestInfo userProfileRequestInfo);
 
-    Task<string> CreateUserAsync(UserProfileRequestInfo userProfileRequestInfo);
+    Task<UserEditResponseInfo> UpdateUserRolesAsync(string userName, UserProfileEditRequestInfo userProfileRequestInfo);
+
+    Task<UserEditResponseInfo> AddAdminRoleAsync(string userName, UserProfileEditRequestInfo userProfileRequestInfo);
   }
 }

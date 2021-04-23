@@ -1,0 +1,29 @@
+app-org-support-search {
+    input[type=radio] {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+        top: 4px;
+        position: relative;
+    }
+    // input[type='radio']:checked:after {
+    //     background-color: #ffa500;
+    // }
+    li {
+        font-size: 18px;
+        font-weight: 400;
+        margin-left: 20px;
+        list-style-type: none;
+    }
+
+    .pagination {
+        display: -ms-flexbox;
+        display: inline-flex;
+        -ms-flex-flow: row nowrap;
+        flex-flow: row nowrap;
+        width: 995px;
+        margin-top: -1.5rem;
+        margin-left: 266px;
+        border-top:none;
+    }
+}

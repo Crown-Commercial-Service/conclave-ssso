@@ -44,7 +44,7 @@ namespace CcsSso.Security.Tests
         Assert.NotNull(result);
         var tokenDecoded = service.DecodeToken(result);
         Assert.NotNull(tokenDecoded);
-        Assert.Equal(2, tokenDecoded.Claims.Count());
+        Assert.Equal(6, tokenDecoded.Claims.Count());
         var email = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
         Assert.Equal("Ann@brickendon.com", email);
         var name = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "name")?.Value;

@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Domain.Constants;
 using System;
 using System.Collections.Generic;
@@ -10,8 +11,6 @@ namespace CcsSso.Core.Domain.Dtos.External
 {
   public class OrganisationProfileInfo
   {
-    public string OrganisationId { get; set; }
-
     public OrganisationIdentifier Identifier { get; set; }
 
     public OrganisationAddress Address { get; set; }
@@ -19,11 +18,29 @@ namespace CcsSso.Core.Domain.Dtos.External
     public OrganisationDetail Detail { get; set; }
   }
 
+  public class OrganisationProfileResponseInfo
+  {
+    public OrganisationIdentifier Identifier { get; set; }
+
+    public List<OrganisationIdentifier> AdditionalIdentifiers { get; set; }
+
+    public OrganisationAddress Address { get; set; }
+
+    // Commented since this is still not available from CII service
+    //public OrganisationContactPoint ContactPoint { get; set; }
+
+    public OrganisationDetail Detail { get; set; }
+  }
+
   public class OrganisationIdentifier
   {
+    public string Id { get; set; }
+
     public string LegalName { get; set; }
 
     public string Uri { get; set; }
+
+    public string Scheme { get; set; }
   }
 
   public class OrganisationAddress
@@ -39,27 +56,58 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string CountryCode { get; set; }
   }
 
+  public class OrganisationContactPoint
+  {
+    public string Email { get; set; }
+
+    public string FaxNumber { get; set; }
+
+    public string Name { get; set; }
+
+    public string Telephone { get; set; }
+
+    public string Uri { get; set; }
+  }
+
   public class OrganisationDetail
   {
+    public string OrganisationId { get; set; }
+
     public string CreationDate { get; set; }
 
-    public string CountryCode { get; set; }
-
     public string CompanyType { get; set; }
+
+    public int SupplierBuyerType { get; set; }
 
     public bool IsSme { get; set; }
 
     public bool IsVcse{ get; set; }
 
-    public string Status { get; set; }
+    public bool RightToBuy { get; set; }
 
     public bool IsActive { get; set; }
   }
 
-  public class OrganisationGroups
+  public class OrganisationRole
   {
-    public int GroupId { get; set; }
+    public int RoleId { get; set; }
 
-    public string GroupName { get; set; }
+    public string RoleName { get; set; }
+
+    public RoleEligibleOrgType OrgTypeEligibility { get; set; }
+
+    public RoleEligibleSubscriptionType SubscriptionTypeEligibility { get; set; }
+
+    public RoleEligibleTradeType TradeEligibility { get; set; }
   }
+
+  public class OrganisationRoleUpdate
+  {
+    public bool IsBuyer { get; set; }
+    public List<OrganisationRole> RolesToAdd { get; set; }
+    public List<OrganisationRole> RolesToDelete { get; set; }
+  }
+
+
+
 }

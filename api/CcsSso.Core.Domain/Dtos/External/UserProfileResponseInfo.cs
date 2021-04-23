@@ -7,26 +7,40 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Dtos.External
 {
-  public class UserProfileRequestInfo
-  {
-    public string OrganisationId { get; set; }
 
+  public class UserDetail
+  {
     public string UserName { get; set; }
+
+    public string OrganisationId { get; set; }
 
     public string FirstName { get; set; }
 
     public string LastName { get; set; }
 
-    public UserTitle Title { get; set; }
+    public UserTitle? Title { get; set; }
+  }
+
+  public class UserRequestDetail
+  {
+    public int Id { get; set; }
 
     public List<int> GroupIds { get; set; }
+
+    public List<int> RoleIds { get; set; }
 
     public int IdentityProviderId { get; set; }
   }
 
-  public class UserProfileResponseInfo : UserProfileRequestInfo
+  public class UserResponseDetail
   {
     public int Id { get; set; }
+
+    public List<int> GroupIds { get; set; }
+
+    public List<int> RoleIds { get; set; }
+
+    public int IdentityProviderId { get; set; }
 
     public string IdentityProvider { get; set; }
 
@@ -35,6 +49,18 @@ namespace CcsSso.Core.Domain.Dtos.External
     public List<GroupAccessRole> UserGroups { get; set; }
 
     public bool CanChangePassword { get; set; }
+
+    public List<string> RoleNames { get; set; }
+  }
+
+  public class UserProfileEditRequestInfo : UserDetail
+  {
+    public UserRequestDetail Detail { get; set; }
+  }
+
+  public class UserProfileResponseInfo : UserDetail
+  {
+    public UserResponseDetail Detail { get; set; }
   }
 
   public class UserListInfo
@@ -53,8 +79,19 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class GroupAccessRole
   {
+    public int GroupId { get; set; }
+
     public string AccessRole { get; set; }
 
+    public string AccessRoleName { get; set; }
+
     public string Group { get; set; }
+  }
+
+  public class UserEditResponseInfo
+  {
+    public string UserId { get; set; }
+
+    public bool IsRegisteredInIdam { get; set; }
   }
 }

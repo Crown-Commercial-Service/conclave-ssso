@@ -14,12 +14,39 @@ namespace CcsSso.Dtos.Domain.Models
 
     public string LegalName { get; set; }
 
-    public bool RightToBuy { get; set; }
+    public bool? RightToBuy { get; set; }
+
+    public string BusinessType { get; set; }
+
+    public int SupplierBuyerType { get; set; }
 
     public int PartyId { get; set; }
 
     public ContactDetailDto ContactPoint { get; set; }
 
     public Address Address { get; set; }
+  }
+
+  public class OrganisationRollbackDto
+  {
+    public string OrganisationId { get; set; }
+
+    public string CiiOrganisationId { get; set; }
+
+    public string PhysicalContactId { get; set; }
+    public string ContactId { get; set; }
+    public string UserId { get; set; }
+  }
+  public class OrganisationUserDto
+  {
+    public int Id { get; set; }
+
+    public string UserName { get; set; }
+
+    public string Name { get; set; }
+
+    public int OrganisationId { get; set; }
+
+    public string OrganisationLegalName { get; set; }
   }
 }

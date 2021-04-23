@@ -82,6 +82,10 @@ h3 {
 ul, ol {
   padding-left: 12px;
 }
+li {
+  font-size: 18px;
+  font-weight: 400;
+}
 button {
   color: #ffffff;
   width: 130px;
@@ -94,7 +98,7 @@ button {
 
   a, a:hover, a:visited {
     color: #ffffff;
-    text-decoration: none;
+    // text-decoration: none;
   }
 }
 // input[type="text"], input[type="email"], input[type="password"] {
@@ -156,4 +160,7 @@ form {
   line-height: 23px;
   text-align: center;
   color: #ffffff;
+}
+.govuk-back-link:link {
+  margin-bottom: 35px;
 }

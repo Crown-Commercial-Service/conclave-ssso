@@ -2,6 +2,7 @@ using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Dtos.External;
 using CcsSso.Dtos.Domain.Models;
+using System;
 using System.Collections.Generic;
 
 namespace CcsSso.Core.Tests.Infrastructure
@@ -43,7 +44,10 @@ namespace CcsSso.Core.Tests.Infrastructure
     {
       var organisationProfile = new OrganisationProfileInfo
       {
-        OrganisationId = ciiOrganisationId
+        Detail = new OrganisationDetail
+        {
+          OrganisationId = ciiOrganisationId
+        }
       };
 
       if (!isNullIdentifier)
@@ -69,12 +73,9 @@ namespace CcsSso.Core.Tests.Infrastructure
 
       if (!isNullDetails)
       {
-        organisationProfile.Detail = new OrganisationDetail
-        {
-          IsActive = isActive,
-          IsSme = isSme,
-          IsVcse = isVcse
-        };
+        organisationProfile.Detail.IsActive = isActive;
+        organisationProfile.Detail.IsSme = isSme;
+        organisationProfile.Detail.IsVcse = isVcse;
       }
 
       return organisationProfile;
@@ -86,11 +87,14 @@ namespace CcsSso.Core.Tests.Infrastructure
       return new OrganisationSiteInfo
       {
         SiteName = siteName,
-        StreetAddress = streetAddress,
-        Locality = locality,
-        Region = region,
-        PostalCode = postalCode,
-        CountryCode = countryCode
+        Address = new OrganisationAddress
+        {
+          StreetAddress = streetAddress,
+          Locality = locality,
+          Region = region,
+          PostalCode = postalCode,
+          CountryCode = countryCode
+        }
       };
     }
 
@@ -102,31 +106,40 @@ namespace CcsSso.Core.Tests.Infrastructure
         FirstName = firstName,
         LastName = lastName,
         UserName = userName,
-        OrganisationId = ccsOrganisationId,
-        UserGroups = groupAccessRoles
+        Detail = new UserResponseDetail
+        {
+          UserGroups = groupAccessRoles
+        },
+        OrganisationId = ccsOrganisationId
       };
     }
 
-    public static UserProfileRequestInfo GetUserProfileRequestInfo(string firstName, string lastName, string userName,
-      string organisationId, int identityProviderId, List<int> groupIds)
+    public static UserProfileEditRequestInfo GetUserProfileRequestInfo(string firstName, string lastName, string userName,
+      string organisationId, int identityProviderId, UserTitle? title, List<int> groupIds = null, List<int> roleIds = null)
     {
-      return new UserProfileRequestInfo
+      return new UserProfileEditRequestInfo
       {
         FirstName = firstName,
         LastName = lastName,
         UserName = userName,
         OrganisationId = organisationId,
-        IdentityProviderId = identityProviderId,
-        GroupIds = groupIds
+        Title = title,
+        Detail = new UserRequestDetail
+        {
+          IdentityProviderId = identityProviderId,
+          GroupIds = groupIds,
+          RoleIds = roleIds
+        }
       };
     }
 
-    public static GroupAccessRole GetGroupAccessRole(string groupName, string accessRoleName)
+    public static GroupAccessRole GetGroupAccessRole(string groupName, string accessRoleKey, string accessRoleName)
     {
       return new GroupAccessRole
       {
         Group = groupName,
-        AccessRole = accessRoleName
+        AccessRole = accessRoleKey,
+        AccessRoleName = accessRoleName
       };
     }
 
@@ -149,6 +162,94 @@ namespace CcsSso.Core.Tests.Infrastructure
       {
         Name = name,
         UserName = userName
+      };
+    }
+
+    public static OrganisationGroupNameInfo GetOrganisationGroupNameInfo(string name)
+    {
+      return new OrganisationGroupNameInfo
+      {
+        GroupName = name
+      };
+    }
+
+    public static OrganisationGroupResponseInfo GetOrganisationGroupResponse(string orgId, int groupId, string groupName,
+      List<GroupRole> groupRoles, List<GroupUser> groupUsers, DateTime dateTime)
+    {
+      return new OrganisationGroupResponseInfo
+      {
+        OrganisationId = orgId,
+        GroupId = groupId,
+        GroupName = groupName,
+        Roles = groupRoles,
+        Users = groupUsers,
+        CreatedDate = dateTime.ToString(DateTimeFormat.DateFormatShortMonth)
+      };
+    }
+
+    public static GroupRole GetGroupRole(int id, string name)
+    {
+      return new GroupRole
+      {
+        Id = id,
+        Name = name
+      };
+    }
+
+    public static GroupUser GetGroupUser(string userName, string name)
+    {
+      return new GroupUser
+      {
+        UserId = userName,
+        Name = name
+      };
+    }
+
+    public static OrganisationGroupList GetOrganisationGroupListObject(string orgId, List<OrganisationGroupInfo> organisationGroupInfos)
+    {
+      return new OrganisationGroupList
+      {
+        OrganisationId = orgId,
+        GroupList = organisationGroupInfos
+      };
+    }
+
+    public static OrganisationGroupInfo GetOrganisationGroupInfo(int id, string name, DateTime createdDate)
+    {
+      return new OrganisationGroupInfo
+      {
+        GroupId = id,
+        GroupName = name,
+        CreatedDate = createdDate.ToString(DateTimeFormat.DateFormatShortMonth)
+      };
+    }
+
+    public static OrganisationGroupRequestInfo GetOrganisationGroupRequestInfo(string groupName,
+      OrganisationGroupRolePatchInfo organisationGroupRolePatchInfo, OrganisationGroupUserPatchInfo organisationGroupUserPatchInfo)
+    {
+      return new OrganisationGroupRequestInfo
+      {
+        GroupName = groupName,
+        RoleInfo = organisationGroupRolePatchInfo,
+        UserInfo = organisationGroupUserPatchInfo
+      };
+    }
+
+    public static OrganisationGroupRolePatchInfo GetOrganisationGroupRolePatchInfo(List<int> added, List<int> removed)
+    {
+      return new OrganisationGroupRolePatchInfo
+      {
+        AddedRoleIds = added,
+        RemovedRoleIds = removed
+      };
+    }
+
+    public static OrganisationGroupUserPatchInfo GetOrganisationGroupUserPatchInfo(List<string> added, List<string> removed)
+    {
+      return new OrganisationGroupUserPatchInfo
+      {
+        AddedUserIds = added,
+        RemovedUserIds = removed
       };
     }
   }

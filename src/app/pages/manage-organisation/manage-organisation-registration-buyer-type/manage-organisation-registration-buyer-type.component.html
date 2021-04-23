@@ -1,0 +1,47 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex">
+  <a routerLink="/manage-org/register/type" class="govuk-back-link">Back</a>
+  <h1 class="govuk-heading-xl page-title">What type of buyer are you?</h1>
+  <h2 style="margin-bottom: 35px;">To help us sign you in as fast as possible, please state what type of buyer you are. Crown Commercial Service is open to government, public sector, charity, and third party sector.</h2>
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-three-quarters">
+      <form class="govuk-!-width-three-quarters">
+        <div class="govuk-form-group">
+          <fieldset class="govuk-fieldset">
+            <div class="govuk-radios">
+              <div class="govuk-radios__item">
+                <input class="govuk-radios__input" id="where-do-you-live" name="where-do-you-live" type="radio" value="Central Government" [(ngModel)]="defaultChoice">
+                <label class="govuk-label govuk-radios__label" for="where-do-you-live">
+                  Central Government
+                </label>
+              </div>
+              <div class="govuk-radios__item">
+                <input class="govuk-radios__input" id="where-do-you-live-2" name="where-do-you-live" type="radio" value="Wider public sector/Local authority" [(ngModel)]="defaultChoice">
+                <label class="govuk-label govuk-radios__label" for="where-do-you-live-2">
+                  Wider public sector/Local authority
+                </label>
+              </div>
+              <div class="govuk-radios__item">
+                <input class="govuk-radios__input" id="where-do-you-live-3" name="where-do-you-live" type="radio" value="Charity" [(ngModel)]="defaultChoice">
+                <label class="govuk-label govuk-radios__label" for="where-do-you-live-3">
+                  Charity
+                </label>
+              </div>
+              <div class="govuk-radios__item">
+                <input class="govuk-radios__input" id="where-do-you-live-4" name="where-do-you-live" type="radio" value="Third sector" [(ngModel)]="defaultChoice">
+                <label class="govuk-label govuk-radios__label" for="where-do-you-live-4">
+                  Third sector
+                  <span style="display: block; font-size: 14px; color: #6F777B;">(Not for personal profit organisation)</span>
+                </label>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+        <div class="govuk-form-group">
+          <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button" data-module="govuk-button" (click)="onSubmit()">Continue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!--<app-footer></app-footer>-->
+</div>

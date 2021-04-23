@@ -9,6 +9,7 @@ import { Scheme } from '../../models/scheme';
 import { fromFetch } from 'rxjs/fetch'
 import { ajax } from 'rxjs/ajax';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,13 +17,17 @@ import { environment } from '../../../environments/environment';
 export class ciiService {
 
   public url: string = environment.uri.api.postgres;
+  public token: string;
 
-  constructor(private http: HttpClient, private identityService: identityService) { }
+  constructor(private http: HttpClient, private authService: AuthService, private identityService: identityService) {
+    this.token = this.authService.getAccesstoken()+'';
+  }
 
   getSchemes(): Observable<any> {
     return fromFetch(`${this.url}/cii/GetSchemes`, {
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.token,
       },
       method: 'GET'
     }).pipe(
@@ -44,6 +49,7 @@ export class ciiService {
     return fromFetch(`${this.url}/cii/${scheme}?&companyNumber=${id}`, {
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.token,
       },
       method: 'GET'
     }).pipe(
@@ -65,6 +71,7 @@ export class ciiService {
     return fromFetch(`${this.url}/cii/GetOrg?id=${id}`, {
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.token,
       },
       method: 'GET'
     }).pipe(
@@ -86,6 +93,7 @@ export class ciiService {
     return fromFetch(`${this.url}/cii/GetOrgs?id=${id}`, {
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.token,
       },
       method: 'GET'
     }).pipe(
@@ -107,6 +115,7 @@ export class ciiService {
     return fromFetch(`${this.url}/cii/GetIdentifiers/?orgId=${orgId}&scheme=${scheme}&id=${id}`, {
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.token,
       },
       method: 'GET'
     }).pipe(
@@ -131,6 +140,7 @@ export class ciiService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.token,
       },
       body:  body
     });
@@ -143,6 +153,7 @@ export class ciiService {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.token,
       },
       body:  body
     });
@@ -155,6 +166,7 @@ export class ciiService {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.token,
       },
       body:  body
     });
@@ -166,6 +178,7 @@ export class ciiService {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.token,
       },
     });
   }
@@ -176,6 +189,7 @@ export class ciiService {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.token,
       },
     });
   }
@@ -186,6 +200,7 @@ export class ciiService {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + this.token,
       },
     });
   }

@@ -45,7 +45,7 @@ namespace CcsSso.Api.Middleware
       }
       catch (CcsSsoException ex)
       {
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.BadRequest);
+        await HandleException(context, ex.Message, ex, HttpStatusCode.BadRequest);
       }
       catch (Exception ex)
       {

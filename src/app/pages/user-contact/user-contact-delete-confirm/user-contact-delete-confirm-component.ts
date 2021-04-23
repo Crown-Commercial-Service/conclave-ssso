@@ -10,7 +10,7 @@ import { OperationEnum } from "src/app/constants/enum";
 import { WrapperUserContactService } from "src/app/services/wrapper/wrapper-user-contact.service";
 
 @Component({
-    selector: 'app-user-contact-delete-confirm-component',
+    selector: 'app-user-contact-delete-confirm',
     templateUrl: './user-contact-delete-confirm-component.html',
     styleUrls: ['./user-contact-delete-confirm-component.scss'],
     animations: [

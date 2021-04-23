@@ -1,4 +1,5 @@
 using CcsSso.Security.Domain.Dtos;
+using Microsoft.IdentityModel.Tokens;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -6,9 +7,9 @@ namespace CcsSso.Security.Domain.Contracts
 {
   public interface ISecurityService
   {
-    Task<AuthResultDto> LoginAsync(string userName, string userPassword);
+    Task<AuthResultDto> LoginAsync(string clientId, string secret, string userName, string userPassword);
 
-    string GetAuthenticationEndPoint(string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt);
+    string GetAuthenticationEndPoint(string sid, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt);
 
     Task<TokenResponseInfo> GetRenewedTokenAsync(TokenRequestInfo tokenRequestInfo, string opbsValue, string host, string sid);
 
@@ -24,13 +25,13 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task<string> LogoutAsync(string clientId, string redirecturi);
 
-    Task<List<string>> PerformBackChannelLogoutAsync(string sid, List<string> relyingParties);
+    Task<List<string>> PerformBackChannelLogoutAsync(string clientId, string sid, List<string> relyingParties);
 
     Task<string> GetIdentityProviderAuthenticationEndPointAsync();
 
     Task RevokeTokenAsync(string refreshToken);
 
-    string GetJsonWebKeyTokens();
+    JsonWebKeySet GetJsonWebKeyTokens();
 
     bool ValidateToken(string clientId, string token);
 

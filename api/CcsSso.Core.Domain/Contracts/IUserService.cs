@@ -11,10 +11,12 @@ namespace CcsSso.Domain.Contracts
   {
     Task<string> CreateAsync(UserDto model);
 
+    Task DeleteAsync(int id);
+
     Task<UserDetails> GetAsync(int id);
 
     Task<UserDetails> GetAsync(string userName);
 
-    Task<List<ServicePermissionDto>> GetPermissions(string token);
+    Task<List<ServicePermissionDto>> GetPermissions();
   }
 }

@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import {Location} from '@angular/common';
 import { slideAnimation } from 'src/app/animations/slide.animation';
 
 import { BaseComponent } from 'src/app/components/base/base.component';
-import { contactService } from 'src/app/services/contact/contact.service';
 import { UIState } from 'src/app/store/ui.states';
 import { OperationEnum } from 'src/app/constants/enum';
 
@@ -18,27 +16,37 @@ import { OperationEnum } from 'src/app/constants/enum';
             close: { 'transform': 'translateX(12.5rem)' },
             open: { left: '-12.5rem' }
         })
-    ],
-    encapsulation: ViewEncapsulation.None,
-    changeDetection: ChangeDetectionStrategy.Default
+    ]
 })
 export class ManageOrganisationContactOperationSuccessComponent extends BaseComponent implements OnInit {
 
-    organisationId: number;
     operation : OperationEnum;
     operationEnum = OperationEnum;
+    siteId: number = 0;
 
-    constructor(private contactService: contactService, private router: Router,
-        private route: ActivatedRoute, protected uiStore: Store<UIState>) {
+    constructor(private activatedRoute: ActivatedRoute, private router: Router,
+        protected uiStore: Store<UIState>) {
         super(uiStore);
-        this.organisationId = parseInt(this.route.snapshot.paramMap.get('organisationId') || '0');
-        this.operation = parseInt(this.route.snapshot.paramMap.get('operation') || '0');
+        this.operation = parseInt(this.activatedRoute.snapshot.paramMap.get('operation') || '0');
+        let queryParams = this.activatedRoute.snapshot.queryParams;
+        if (queryParams.data) {
+            let routeData = JSON.parse(queryParams.data);
+            this.siteId = routeData['siteId'] || 0;
+        }
     }
 
     ngOnInit() {
     }
 
-    public onNavigateToProfileClick(){
+    onNavigateToProfileClick(){
         this.router.navigateByUrl(`manage-org/profile`);
+    }
+
+    onNavigateToSiteClick(){
+        let data = {
+            'isEdit': true,
+            'siteId': this.siteId
+        };
+        this.router.navigateByUrl('manage-org/profile/site/edit?data=' + JSON.stringify(data));
     }
 }

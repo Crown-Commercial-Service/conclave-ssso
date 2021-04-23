@@ -8,7 +8,7 @@ applications:
   routes:
     - route: sand-api-contact.london.cloudapps.digital
   services:
-    - san2-sso-pg-service
+    - sand-sso-pg-service
     - sand-vault
   env:
     CACHE_NUGET_PACKAGES: false   

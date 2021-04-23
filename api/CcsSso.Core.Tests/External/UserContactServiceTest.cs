@@ -1,3 +1,5 @@
+using CcsSso.Core.DbModel.Entity;
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Service.External;
 using CcsSso.Core.Tests.Infrastructure;
@@ -9,6 +11,7 @@ using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Service.External;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -317,7 +320,8 @@ namespace CcsSso.Core.Tests.External
     {
       IContactsHelperService contactsHelperService = new ContactsHelperService(dataContext);
       IUserProfileHelperService userProfileHelperService = new UserProfileHelperService();
-      var service = new UserContactService(dataContext, contactsHelperService, userProfileHelperService);
+      Mock<ICcsSsoEmailService> mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
+      var service = new UserContactService(dataContext, contactsHelperService, userProfileHelperService, mockCcsSsoEmailService.Object);
       return service;
     }
 
@@ -337,15 +341,17 @@ namespace CcsSso.Core.Tests.External
 
       dataContext.Party.Add(new Party { Id = 1, PartyTypeId = 1 });
       dataContext.Organisation.Add(new Organisation { Id = 1, PartyId = 1, OrganisationUri = "Org1Uri", RightToBuy = true });
+      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 1, OrganisationId = 1, IdentityProviderId = 1 });
 
       dataContext.Party.Add(new Party { Id = 2, PartyTypeId = 1 });
       dataContext.Organisation.Add(new Organisation { Id = 2, PartyId = 2, OrganisationUri = "Org2Uri", RightToBuy = true });
+      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 2, OrganisationId = 2, IdentityProviderId = 1 });
 
       #region User1 contacts
       // User 1 has two contacts
       dataContext.Party.Add(new Party { Id = 3, PartyTypeId = 3 });
       dataContext.Person.Add(new Person { Id = 1, PartyId = 3, OrganisationId = 1, FirstName = "UserFN1", LastName = "UserLN1" });
-      dataContext.User.Add(new User { Id = 1, IdentityProviderId = 1, PartyId = 3, UserName = "user1@mail.com" });
+      dataContext.User.Add(new User { Id = 1, OrganisationEligibleIdentityProviderId = 1, PartyId = 3, UserName = "user1@mail.com" });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 1, PartyId = 3, PartyTypeId = 3, ContactPointReasonId = 1, ContactDetailId = 1 });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 2, PartyId = 3, PartyTypeId = 3, ContactPointReasonId = 2, ContactDetailId = 2 });
 
@@ -368,7 +374,7 @@ namespace CcsSso.Core.Tests.External
       // User 2 has only 1 contact with 1 deleted contact.
       dataContext.Party.Add(new Party { Id = 6, PartyTypeId = 3 });
       dataContext.Person.Add(new Person { Id = 4, PartyId = 6, OrganisationId = 1, FirstName = "UserFN2", LastName = "UserLN2" });
-      dataContext.User.Add(new User { Id = 2, IdentityProviderId = 1, PartyId = 6, UserName = "user2@mail.com" });
+      dataContext.User.Add(new User { Id = 2, OrganisationEligibleIdentityProviderId = 1, PartyId = 6, UserName = "user2@mail.com" });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 5, PartyId = 6, PartyTypeId = 3, ContactPointReasonId = 1, ContactDetailId = 2 });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 6, PartyId = 6, PartyTypeId = 3, ContactPointReasonId = 1, ContactDetailId = 3, IsDeleted = true });
 
@@ -384,7 +390,7 @@ namespace CcsSso.Core.Tests.External
       // User 3 has no contcats
       dataContext.Party.Add(new Party { Id = 8, PartyTypeId = 3 });
       dataContext.Person.Add(new Person { Id = 6, PartyId = 8, OrganisationId = 1, FirstName = "UserFN3", LastName = "UserLN3" });
-      dataContext.User.Add(new User { Id = 3, IdentityProviderId = 1, PartyId = 8, UserName = "user3@mail.com" });
+      dataContext.User.Add(new User { Id = 3, OrganisationEligibleIdentityProviderId = 1, PartyId = 8, UserName = "user3@mail.com" });
       #endregion
 
       await dataContext.SaveChangesAsync();

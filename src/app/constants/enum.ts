@@ -1,7 +1,7 @@
 export enum OperationEnum {
-    Create,
-    Delete,
-    Update,
+    CreateOrgContact,
+    DeleteOrgContact,
+    UpdateOrgContact,
     MyAccountUpdate,
     MyAccountContactCreate,
     MyAccountContactUpdate,
@@ -10,7 +10,21 @@ export enum OperationEnum {
     UserCreate,
     UserUpdate,
     UserCreateWithIdamRegister,
-    UserPasswordChange
+    UserUpdateWithIdamRegister,
+    UserPasswordChange,
+    UserDelete,
+    GroupAdd,
+    GroupNameUpdate,
+    GroupUserAdd,
+    GroupUserUpdate,
+    GroupRoleUpdate,
+    GroupDelete,
+    CreateSite,
+    DeleteSite,
+    UpdateSite,
+    CreateSiteContact,
+    DeleteSiteContact,
+    UpdateSiteContact
 }
 
 export enum UserTitleEnum {

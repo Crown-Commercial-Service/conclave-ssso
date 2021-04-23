@@ -1,0 +1,92 @@
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <div class="user-profile-container">
+            <div class="govuk-breadcrumbs">
+                <ol class="govuk-breadcrumbs__list">
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/home">{{ 'ADMINISTRATOR_DASHBOARD' | translate
+                            }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" routerLink="/manage-groups">{{ 'MANAGE_GROUPS' | translate
+                            }}</a>
+                    </li>
+                    <li *ngIf="isEdit==true" class="govuk-breadcrumbs__list-item">
+                        <a class="govuk-breadcrumbs__link" (click)="onGoToEditGroupClick()">{{ 'EDIT_GROUP' | translate }}</a>
+                    </li>
+                    <li class="govuk-breadcrumbs__list-item">
+                        <span class="govuk-breadcrumbs__link"> {{ 'CONFIRM' | translate }}</span>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <h1 *ngIf="isEdit==true" class="govuk-heading-xl page-title">{{ 'CONFIRM_FOLLOWING_CHANGES_TO_GROUP' | translate }}</h1>
+        <h1 *ngIf="isEdit!=true" class="govuk-heading-xl page-title">{{ 'CONFIRM_ADD_FOLLOWING_USERS_TO_GROUP' | translate }}</h1>
+    </div>
+</div>
+
+<div>
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <h3 class="govuk-heading-m">{{ 'USERS_ADDED_TO_GROUP' | translate }}</h3>
+                <div *ngIf="addingUsers.length == 0">
+                    <p>{{'NONE'| translate}}
+                    <p>
+                </div>
+        </div>
+    </div>
+    <div *ngIf="addingUsers.length != 0" class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+            <div class="user-table">
+                <app-govuk-table [headerTextKeys]="usersTableHeaders" [data]="addingUsers"
+                    [dataKeys]="usersColumnsToDisplay" [useClientPagination]="true">
+                </app-govuk-table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div *ngIf="isEdit==true">
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            <h3 class="govuk-heading-m">{{ 'USERS_REMOVED_FROM_GROUP' | translate }}</h3>
+                <div *ngIf="removingUsers.length == 0">
+                    <p>{{'NONE'| translate}}
+                    <p>
+                </div>
+        </div>
+    </div>
+    <div *ngIf="removingUsers.length != 0" class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+            <div class="user-table">
+                <app-govuk-table [headerTextKeys]="usersTableHeaders" [data]="removingUsers"
+                    [dataKeys]="usersColumnsToDisplay" [useClientPagination]="true">
+                </app-govuk-table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+        <div class="govuk-button-group save-cancel-button-group">
+            <button *ngIf="isEdit!=true" type="button" (click)="onConfirmClick()" class="govuk-button" data-module="govuk-button">
+                {{ 'CONFIRM_CONTINUE_BTN' | translate }}
+            </button>
+            <button *ngIf="isEdit==true"  type="button" (click)="onConfirmClick()" class="govuk-button" data-module="govuk-button">
+                {{ 'CONFIRM_BTN' | translate }}
+            </button>
+            <button type="button" (click)="onCancelClick()" class="govuk-button govuk-button--secondary"
+                data-module="govuk-button">
+                {{ 'CANCEL_BTN' | translate }}
+            </button>
+        </div>
+    </div>
+</div>

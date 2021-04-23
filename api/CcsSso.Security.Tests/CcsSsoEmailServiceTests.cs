@@ -1,6 +1,8 @@
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Services;
+using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -18,10 +20,10 @@ namespace CcsSso.Security.Tests
       [Fact]
       public async Task SendUserActivationEmail_WhenProvidedData()
       {
-        var emailServiceMoq = new Mock<IEmaillProviderService>();
+        var emailServiceMoq = new Mock<IEmailProviderService>();
         ApplicationConfigurationInfo applicationConfigurationInfo = new ApplicationConfigurationInfo()
         {
-          EmailConfigurationInfo = new EmailConfigurationInfo()
+          CcsEmailConfigurationInfo = new CcsEmailConfigurationInfo()
           {
             UserActivationEmailTemplateId = "123"
           }
@@ -37,7 +39,7 @@ namespace CcsSso.Security.Tests
         var emailInfo = new EmailInfo()
         {
           To = email,
-          TemplateId = applicationConfigurationInfo.EmailConfigurationInfo.UserActivationEmailTemplateId,
+          TemplateId = applicationConfigurationInfo.CcsEmailConfigurationInfo.UserActivationEmailTemplateId,
           BodyContent = dataContent
         };
 
@@ -47,7 +49,7 @@ namespace CcsSso.Security.Tests
       }
     }
 
-    private static CcsSsoEmailService GetCcsSsoEmailService(Mock<IEmaillProviderService> emailServiceMoq, ApplicationConfigurationInfo applicationConfigurationInfo)
+    private static CcsSsoEmailService GetCcsSsoEmailService(Mock<IEmailProviderService> emailServiceMoq, ApplicationConfigurationInfo applicationConfigurationInfo)
     {
 
       return new CcsSsoEmailService(emailServiceMoq.Object, applicationConfigurationInfo);

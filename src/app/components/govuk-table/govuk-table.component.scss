@@ -15,6 +15,31 @@ a{
   text-decoration: underline;
 }
 
+.pagination-area {
+  ul {
+    text-align: center;
+  }
+  li {
+    display: inline-block;
+    font-size: 19px;
+    margin-right: 10px;
+    a {
+      text-decoration: none;
+    }
+  }
+}
+
+.active {
+  cursor: default;
+  color: #6f777b;
+}
+
+.disabled {
+  pointer-events: none;
+  cursor: default;
+  color: #6f777b;
+}
+
 
 // th {
 //   font-style: normal;

@@ -1,0 +1,23 @@
+<!--<app-sidenav [collapsed]="sideNavVisible$ | async"></app-sidenav>-->
+<div class="content flex" *ngIf="user$ | async as u">
+  <div class="govuk-breadcrumbs">
+    <ol class="govuk-breadcrumbs__list">
+        <li class="govuk-breadcrumbs__list-item">
+            <a class="govuk-breadcrumbs__link" routerLink="/home">Administrator dashboard</a>
+        </li>
+        <li class="govuk-breadcrumbs__list-item">
+            <a class="govuk-breadcrumbs__link" routerLink="/org-support/search">Organisation user support</a>
+        </li>
+        <li class="govuk-breadcrumbs__list-item">
+          <a class="govuk-breadcrumbs__link">Reset Password</a>
+        </li>
+    </ol>
+  </div>
+  <h1 class="govuk-heading-xl page-title" style="margin-top: 50px;">Confirm you want to change the password for {{u.userName}}</h1>
+  <h2></h2>
+  <div class="govuk-button-group" style="margin-top: 40px;">
+    <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button" data-module="govuk-button" (click)="onSubmitClick()">Continue</button>
+    <button class="govuk-button govuk-button--secondary" data-module="govuk-button" (click)="onCancelClick()">Cancel</button>
+  </div>
+  <!--<app-footer></app-footer>-->
+</div>

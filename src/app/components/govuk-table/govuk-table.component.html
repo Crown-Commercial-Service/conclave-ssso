@@ -2,13 +2,43 @@
   <thead class="govuk-table__head">
     <tr class="govuk-table__row">
       <th *ngFor="let header of headerTextKeys" scope="col" class="govuk-table__header">{{ header | translate }}</th>
-      <th *ngIf="isEditVisible == true" scope="col" class="govuk-table__header"></th>
+      <th *ngIf="isHyperLinkVisible == true" scope="col" class="govuk-table__header"></th>
     </tr>
   </thead>
   <tbody class="govuk-table__body">
-    <tr class="govuk-table__row" *ngFor="let dataRow of data">
+    <tr class="govuk-table__row" *ngFor="let dataRow of tableVisibleData">
       <td class="govuk-table__cell" *ngFor="let dataKey of dataKeys">{{dataRow[dataKey]}}</td>
-      <td class="govuk-table__cell" *ngIf="isEditVisible == true"><a (click)="onEditClick(dataRow)"> Edit</a></td>
+      <td class="govuk-table__cell" *ngIf="isHyperLinkVisible == true"><a (click)="onHyperLinkClick(dataRow)"> {{
+          hyperLinkText || '' | translate }}</a></td>
+      <td class="govuk-table__cell" *ngIf="isCheckBoxVisible == true">
+        <input type="checkbox" (change)="onCheckChange($event, dataRow)" [checked]="dataRow['isChecked']==true">
+      </td>
     </tr>
   </tbody>
 </table>
+
+<div *ngIf="(useServerPagination==true || useClientPagination==true) && pageCount && pageCount > 1"
+  class="pagination-area" aria-label="Pagination">
+  <ul>
+    <li>
+      <a *ngIf="currentPage != 1" href="javascript:;" (click)="onSetPageClick(currentPage-1)" aria-label="Previous">
+        <span aria-hidden="true">{{ 'PREVIOUS' | translate }}</span>
+      </a>
+      <a *ngIf="currentPage == 1" class="disabled" aria-label="Previous">
+        <span aria-hidden="true">{{ 'PREVIOUS' | translate }}</span>
+      </a>
+    </li>
+    <li *ngFor="let page of totalPagesArray;">
+      <a href="javascript:;" [class.active]="page == currentPage" (click)="onSetPageClick(page)">
+        {{ page}}</a>
+    </li>
+    <li class="inline-list">
+      <a *ngIf="currentPage != pageCount" href="javascript:;" (click)="onSetPageClick(currentPage+1)" aria-label="Next">
+        <span aria-hidden="true">{{ 'NEXT' | translate }}</span>
+      </a>
+      <a *ngIf="currentPage == pageCount" class="disabled" aria-label="Next">
+        <span aria-hidden="true">{{ 'NEXT' | translate }}</span>
+      </a>
+    </li>
+  </ul>
+</div>

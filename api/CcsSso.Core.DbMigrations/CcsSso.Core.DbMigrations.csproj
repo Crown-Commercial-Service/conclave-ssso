@@ -12,28 +12,18 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Scripts\20210225035729_DropTablesScript.sql" />
-    <None Remove="Scripts\20210225035730_InitialMigration.sql" />
-    <None Remove="Scripts\20210316064622_InsertInitialRolesServicePermissions.sql" />
-    <None Remove="Scripts\20210316064623_InsertIdentityProviderData.sql" />
-    <None Remove="Scripts\Sprint7\20210302035502_AddSiteRelatedEntities.sql" />
-    <None Remove="Scripts\Sprint7\20210303074142_AddUniqueIndexToUserName.sql" />
-    <None Remove="Scripts\Sprint8\20210316061618_RemoveUniqueUserNameConstraint.sql" />
-    <None Remove="Scripts\Sprint8\20210316064621_AddIdentifierKeysForRolesGroupsIdps.sql" />
-    <None Remove="Scripts\Sprint8\20210316064622_InsertInitialRolesServicePermissions.sql" />
-    <None Remove="Scripts\Sprint8\20210316064623_InsertIdentityProviderData.sql" />
+    <None Remove="Scripts\20210401142220_DropTable.sql" />
+    <None Remove="Scripts\20210401142221_InitialMigration.sql" />
+    <None Remove="Scripts\20210401142223_InsertInitialRolesServicePermissions.sql" />
+    <None Remove="Scripts\20210401142224_InsertIdentityProviderData.sql" />
+    <None Remove="Scripts\Sprint10\20210421032608_OrganisationEntityChanges.sql" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Scripts\20210225035729_DropTablesScript.sql" />
-    <EmbeddedResource Include="Scripts\20210225035730_InitialMigration.sql" />
-    <EmbeddedResource Include="Scripts\20210316064622_InsertInitialRolesServicePermissions.sql" />
-    <EmbeddedResource Include="Scripts\20210316064623_InsertIdentityProviderData.sql" />
-    <EmbeddedResource Include="Scripts\Sprint7\20210303074142_AddUniqueIndexToUserName.sql" />
-    <EmbeddedResource Include="Scripts\Sprint7\20210302035502_AddSiteRelatedEntities.sql" />
-    <EmbeddedResource Include="Scripts\Sprint8\20210316064621_AddIdentifierKeysForRolesGroupsIdps.sql" />
-    <EmbeddedResource Include="Scripts\Sprint8\20210316061618_RemoveUniqueUserNameConstraint.sql" />
-    <EmbeddedResource Include="Scripts\Sprint8\20210316064622_InsertInitialRolesServicePermissions.sql" />
-    <EmbeddedResource Include="Scripts\Sprint8\20210316064623_InsertIdentityProviderData.sql" />
+    <EmbeddedResource Include="Scripts\20210401142220_DropTable.sql" />
+    <EmbeddedResource Include="Scripts\20210401142221_InitialMigration.sql" />
+    <EmbeddedResource Include="Scripts\20210401142223_InsertInitialRolesServicePermissions.sql" />
+    <EmbeddedResource Include="Scripts\20210401142224_InsertIdentityProviderData.sql" />
+    <EmbeddedResource Include="Scripts\Sprint10\20210421032608_OrganisationEntityChanges.sql" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.2" />

@@ -9,8 +9,10 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task UpdateUserAsync(UserInfo userInfo);
 
-    Task<UserClaims> GetUserAsync(string accessToken);
-
     Task DeleteUserAsync(string email);
+
+    Task<IdamUser> GetUserAsync(string email);
+
+    Task NominateUserAsync(UserInfo userInfo);
   }
 }

@@ -18,14 +18,18 @@ namespace CcsSso.ExternalApi.Controllers
     private readonly IOrganisationSiteService _siteService;
     private readonly IOrganisationSiteContactService _siteContactService;
     private readonly IUserProfileService _userProfileService;
+    private readonly IOrganisationGroupService _organisationGroupService;
+
     public OrganisationProfileController(IOrganisationProfileService organisationService, IOrganisationContactService contactService,
-       IOrganisationSiteService siteService, IOrganisationSiteContactService siteContactService, IUserProfileService userProfileService)
+       IOrganisationSiteService siteService, IOrganisationSiteContactService siteContactService, IUserProfileService userProfileService,
+       IOrganisationGroupService organisationGroupService)
     {
       _organisationService = organisationService;
       _contactService = contactService;
       _siteService = siteService;
       _siteContactService = siteContactService;
       _userProfileService = userProfileService;
+      _organisationGroupService = organisationGroupService;
     }
 
     #region Organisation profile
@@ -43,7 +47,6 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     ///     POST /organisations/
     ///     {
-    ///       "organisationId": "CiiOrgidFeb221",
     ///       "Identifier": {
     ///         "legalName": "Kier Limited",
     ///         "uri": "http://data.companieshouse.gov.uk/doc/company/1"
@@ -56,10 +59,10 @@ namespace CcsSso.ExternalApi.Controllers
     ///         "countryCode": "UK"
     ///       },
     ///       "Detail": {
-    ///         "companyType": "Type of company",
+    ///         "organisationId": "CiiOrgidId",
+    ///         "rightToBuy": "true",
     ///         "is_sme": 1,
     ///         "is_vcse": 1,
-    ///         "status": "Organisation status",
     ///         "active": 1
     ///       }
     ///     }
@@ -82,13 +85,13 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /organisations/1
+    ///     GET /organisations/CiiOrgidId
     ///     
     /// </remarks>
     [HttpGet("{organisationId}")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
-    [ProducesResponseType(typeof(OrganisationProfileInfo), 200)]
-    public async Task<OrganisationProfileInfo> GetOrganisation(string organisationId)
+    [ProducesResponseType(typeof(OrganisationProfileResponseInfo), 200)]
+    public async Task<OrganisationProfileResponseInfo> GetOrganisation(string organisationId)
     {
       return await _organisationService.GetOrganisationAsync(organisationId);
     }
@@ -105,9 +108,8 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     PUT /organisations/1
+    ///     PUT /organisations/CiiOrgidId
     ///     {
-    ///       "organisationId": "CiiOrgidFeb221",
     ///       "Identifier": {
     ///         "legalName": "Kier Limited",
     ///         "uri": "http://data.companieshouse.gov.uk/doc/company/1"
@@ -120,10 +122,10 @@ namespace CcsSso.ExternalApi.Controllers
     ///         "countryCode": "UK"
     ///       },
     ///       "Detail": {
-    ///         "companyType": "Type of company",
+    ///         "organisationId": "CiiOrgidId",
+    ///         "rightToBuy": "true",
     ///         "is_sme": 1,
     ///         "is_vcse": 1,
-    ///         "status": "Organisation status",
     ///         "active": 1
     ///       }
     ///     }
@@ -165,7 +167,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     ///
     /// </remarks>
-    [HttpPost("{organisationId}/contact")]
+    [HttpPost("{organisationId}/contacts")]
     [SwaggerOperation(Tags = new[] { "Organisation contact" })]
     [ProducesResponseType(typeof(int), 200)]
     public async Task<int> CreateOrganisationContact(string organisationId, ContactInfo contactInfo)
@@ -187,7 +189,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     ///
     /// </remarks>
-    [HttpGet("{organisationId}/contact")]
+    [HttpGet("{organisationId}/contacts")]
     [SwaggerOperation(Tags = new[] { "Organisation contact" })]
     [ProducesResponseType(typeof(OrganisationContactInfoList), 200)]
     public async Task<OrganisationContactInfoList> GetOrganisationContactsList(string organisationId, [FromQuery] string contactType)
@@ -208,7 +210,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     ///
     /// </remarks>
-    [HttpGet("{organisationId}/contact/{contactId}")]
+    [HttpGet("{organisationId}/contacts/{contactId}")]
     [SwaggerOperation(Tags = new[] { "Organisation contact" })]
     [ProducesResponseType(typeof(OrganisationContactInfo), 200)]
     public async Task<OrganisationContactInfo> GetOrganisationContact(string organisationId, int contactId)
@@ -240,7 +242,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     ///
     /// </remarks>
-    [HttpPut("{organisationId}/contact/{contactId}")]
+    [HttpPut("{organisationId}/contacts/{contactId}")]
     [SwaggerOperation(Tags = new[] { "Organisation contact" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task UpdateOrganisationContact(string organisationId, int contactId, ContactInfo contactInfo)
@@ -261,7 +263,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     ///
     /// </remarks>
-    [HttpDelete("{organisationId}/contact/{contactId}")]
+    [HttpDelete("{organisationId}/contacts/{contactId}")]
     [SwaggerOperation(Tags = new[] { "Organisation contact" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task DeleteOrganisationContact(string organisationId, int contactId)
@@ -288,16 +290,18 @@ namespace CcsSso.ExternalApi.Controllers
     ///     POST /organisations/1/site
     ///     {
     ///       "siteName": "Main Branch",
-    ///       "streetAddress": "1600 Amphitheatre Pkwy",
-    ///       "locality": "Mountain View.",
-    ///       "region": "CA.",
-    ///       "postalCode": "94043",
-    ///       "countryCode": "UK"
+    ///       "address": {
+    ///         "streetAddress": "1600 Amphitheatre Pkwy",
+    ///         "locality": "Mountain View.",
+    ///         "region": "CA.",
+    ///         "postalCode": "94043",
+    ///         "countryCode": "UK"
+    ///       }
     ///     }
     ///     
     ///
     /// </remarks>
-    [HttpPost("{organisationId}/site")]
+    [HttpPost("{organisationId}/sites")]
     [SwaggerOperation(Tags = new[] { "Organisation site" })]
     [ProducesResponseType(typeof(int), 200)]
     public async Task<int> CreateOrganisationSite(string organisationId, OrganisationSiteInfo organisationSiteInfo)
@@ -317,7 +321,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     GET /organisations/1/site
     ///
     /// </remarks>
-    [HttpGet("{organisationId}/site")]
+    [HttpGet("{organisationId}/sites")]
     [SwaggerOperation(Tags = new[] { "Organisation site" })]
     [ProducesResponseType(typeof(OrganisationSiteInfoList), 200)]
     public async Task<OrganisationSiteInfoList> GetOrganisationSite(string organisationId)
@@ -337,7 +341,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     GET /organisations/1/site/1    
     ///
     /// </remarks>
-    [HttpGet("{organisationId}/site/{siteId}")]
+    [HttpGet("{organisationId}/sites/{siteId}")]
     [SwaggerOperation(Tags = new[] { "Organisation site" })]
     [ProducesResponseType(typeof(OrganisationSiteResponse), 200)]
     public async Task<OrganisationSiteResponse> GetOrganisationSite(string organisationId, int siteId)
@@ -361,16 +365,18 @@ namespace CcsSso.ExternalApi.Controllers
     ///     PUT /organisations/1/site/1
     ///     {
     ///       "siteName": "Main Branch",
-    ///       "streetAddress": "1600 Amphitheatre Pkwy",
-    ///       "locality": "Mountain View.",
-    ///       "region": "CA.",
-    ///       "postalCode": "94043",
-    ///       "countryCode": "UK"
+    ///       "address": {
+    ///         "streetAddress": "1600 Amphitheatre Pkwy",
+    ///         "locality": "Mountain View.",
+    ///         "region": "CA.",
+    ///         "postalCode": "94043",
+    ///         "countryCode": "UK"
+    ///       }
     ///     }
     ///     
     ///
     /// </remarks>
-    [HttpPut("{organisationId}/site/{siteId}")]
+    [HttpPut("{organisationId}/sites/{siteId}")]
     [SwaggerOperation(Tags = new[] { "Organisation site" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task UpdateOrganisationSite(string organisationId, int siteId, OrganisationSiteInfo organisationSiteInfo)
@@ -390,7 +396,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     DELETE /organisations/1/site/1    
     ///
     /// </remarks>
-    [HttpDelete("{organisationId}/site/{siteId}")]
+    [HttpDelete("{organisationId}/sites/{siteId}")]
     [SwaggerOperation(Tags = new[] { "Organisation site" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task DeleteOrganisationSite(string organisationId, int siteId)
@@ -426,7 +432,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     ///
     /// </remarks>s
-    [HttpPost("{organisationId}/site/{siteId}/contact")]
+    [HttpPost("{organisationId}/sites/{siteId}/contacts")]
     [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
     [ProducesResponseType(typeof(int), 200)]
     public async Task<int> CreateOrganisationSiteContact(string organisationId, int siteId, ContactInfo contactInfo)
@@ -448,7 +454,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     ///
     /// </remarks>
-    [HttpGet("{organisationId}/site/{siteId}/contact")]
+    [HttpGet("{organisationId}/sites/{siteId}/contacts")]
     [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
     [ProducesResponseType(typeof(OrganisationSiteContactInfoList), 200)]
     public async Task<OrganisationSiteContactInfoList> GetOrganisationSiteContactsList(string organisationId, int siteId, string contactType)
@@ -469,7 +475,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     ///
     /// </remarks>
-    [HttpGet("{organisationId}/site/{siteId}/contact/{contactId}")]
+    [HttpGet("{organisationId}/sites/{siteId}/contacts/{contactId}")]
     [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
     [ProducesResponseType(typeof(OrganisationSiteContactInfo), 200)]
     public async Task<OrganisationSiteContactInfo> GetOrganisationSiteContact(string organisationId, int siteId, int contactId)
@@ -501,7 +507,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     ///
     /// </remarks>
-    [HttpPut("{organisationId}/site/{siteId}/contact/{contactId}")]
+    [HttpPut("{organisationId}/sites/{siteId}/contacts/{contactId}")]
     [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task UpdateOrganisationSiteContact(string organisationId, int siteId, int contactId, ContactInfo contactInfo)
@@ -522,7 +528,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     ///
     /// </remarks>
-    [HttpDelete("{organisationId}/site/{siteId}/contact/{contactId}")]
+    [HttpDelete("{organisationId}/sites/{siteId}/contacts/{contactId}")]
     [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task DeleteOrganisationSiteContact(string organisationId, int siteId, int contactId)
@@ -550,7 +556,7 @@ namespace CcsSso.ExternalApi.Controllers
     [HttpGet("{organisationId}/user")]
     [SwaggerOperation(Tags = new[] { "Organisation User" })]
     [ProducesResponseType(typeof(UserListResponse), 200)]
-    public async Task<UserListResponse> GetUsers(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria, string userName)
+    public async Task<UserListResponse> GetUsers(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria, string searchString)
     {
       resultSetCriteria ??= new ResultSetCriteria
       {
@@ -559,11 +565,78 @@ namespace CcsSso.ExternalApi.Controllers
       };
       resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
       resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
-      return await _userProfileService.GetUsersAsync(organisationId, resultSetCriteria, userName);
+      return await _userProfileService.GetUsersAsync(organisationId, resultSetCriteria, searchString);
     }
     #endregion
 
     #region Organisation Group
+    /// <summary>
+    /// Create organisation group
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="404">Resource not found</response>
+    /// <response  code="409">Resource already exists</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_GROUP_NAME
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /organisations/1/groups
+    ///     {
+    ///       'groupName': "Group Name"
+    ///     }
+    ///     
+    /// </remarks>
+    [HttpPost("{organisationId}/groups")]
+    [SwaggerOperation(Tags = new[] { "Organisation Group" })]
+    [ProducesResponseType(typeof(int), 200)]
+    public async Task<int> CreateOrganisationGroup(string organisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
+    {
+      return await _organisationGroupService.CreateGroupAsync(organisationId, organisationGroupNameInfo);
+    }
+
+    /// <summary>
+    /// Delete organisation group
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     DELETE /organisations/1/groups/1
+    ///     
+    /// </remarks>
+    [HttpDelete("{organisationId}/groups/{groupId}")]
+    [SwaggerOperation(Tags = new[] { "Organisation Group" })]
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task DeleteOrganisationGroup(string organisationId, int groupId)
+    {
+      await _organisationGroupService.DeleteGroupAsync(organisationId, groupId);
+    }
+
+    /// <summary>
+    /// Get organisation group
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/groups/1
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/groups/{groupId}")]
+    [SwaggerOperation(Tags = new[] { "Organisation Group" })]
+    [ProducesResponseType(typeof(OrganisationGroupResponseInfo), 200)]
+    public async Task<OrganisationGroupResponseInfo> GetOrganisationGroup(string organisationId, int groupId)
+    {
+      return await _organisationGroupService.GetGroupAsync(organisationId, groupId);
+    }
+
     /// <summary>
     /// Get organisation groups
     /// </summary>
@@ -577,12 +650,158 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     /// </remarks>
     [HttpGet("{organisationId}/groups")]
-    [SwaggerOperation(Tags = new[] { "Organisation" })]
-    [ProducesResponseType(typeof(List<OrganisationGroups>), 200)]
-    public async Task<List<OrganisationGroups>> GetOrganisationGroups(string organisationId)
+    [SwaggerOperation(Tags = new[] { "Organisation Group" })]
+    [ProducesResponseType(typeof(OrganisationGroupList), 200)]
+    public async Task<OrganisationGroupList> GetOrganisationGroups(string organisationId, string searchString = null)
     {
-      return await _organisationService.GetOrganisationGroupsAsync(organisationId);
+      return await _organisationGroupService.GetGroupsAsync(organisationId, searchString);
     }
+
+    /// <summary>
+    /// Update organisation group
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="404">Resource not found</response>
+    /// <response  code="409">Resource already exists</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_ROLE_INFO, INVALID_USER_INFO
+    /// </response>
+    /// <remarks>
+    /// Sample requests:
+    ///
+    ///     PATCH /organisations/1/groups/1
+    ///     {
+    ///       'groupName': "Group Name",
+    ///       'roleInfo': null,
+    ///       'userInfo': null
+    ///     }
+    ///
+    ///     PATCH /organisations/1/groups/1
+    ///     {
+    ///       'groupName': "",
+    ///       'roleInfo':{
+    ///           'addedRoleIds': [ 1, 2 ],
+    ///           'removedRoleIds': [ 3 ]
+    ///        },
+    ///       'userInfo':{
+    ///           'addedUserIds': [ "user1@mail.com", "user2@mail.com" ],
+    ///           'addedUserIds': [ "user3@mail.com" ]
+    ///        }
+    ///     }
+    ///
+    ///     PATCH /organisations/1/groups/1
+    ///     {
+    ///       'groupName': null,
+    ///       'roleInfo':{
+    ///           'addedRoleIds': [ 1, 2 ],
+    ///           'removedRoleIds': [ 3 ]
+    ///        },
+    ///       'userInfo':{
+    ///           'addedUserIds': [ "user1@mail.com", "user2@mail.com" ],
+    ///           'addedUserIds': [ "user3@mail.com" ]
+    ///        }
+    ///     }
+    ///
+    ///     PATCH /organisations/1/groups/1
+    ///     {
+    ///       'groupName': "Group Name",
+    ///       'roleInfo': null,
+    ///       'userInfo':{
+    ///           'addedUserIds': [ "user1@mail.com", "user2@mail.com" ],
+    ///           'addedUserIds': [ "user3@mail.com" ]
+    ///        }
+    ///     }
+    ///
+    ///     PATCH /organisations/1/groups/1
+    ///     {
+    ///       'groupName': "Group Name",
+    ///       'roleInfo':{
+    ///           'addedRoleIds': [ 1, 2 ],
+    ///           'removedRoleIds': [ 3 ]
+    ///        },
+    ///       'userInfo': null
+    ///     }
+    ///     
+    /// </remarks>
+    [HttpPatch("{organisationId}/groups/{groupId}")]
+    [SwaggerOperation(Tags = new[] { "Organisation Group" })]
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task UpdateOrganisationGroup(string organisationId, int groupId, OrganisationGroupRequestInfo organisationGroupRequestInfo)
+    {
+      await _organisationGroupService.UpdateGroupAsync(organisationId, groupId, organisationGroupRequestInfo);
+    }
+    #endregion
+
+    #region Organisation IdentityProviders
+    /// <summary>
+    /// Allows a user to get identity provider details of an organisation
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET organisations/1/identity-providers
+    ///     
+    ///     
+    ///
+    /// </remarks>
+    [HttpGet("{organisationId}/identity-providers")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    [ProducesResponseType(typeof(List<IdentityProviderDetail>), 200)]
+    public async Task<List<IdentityProviderDetail>> GetIdentityProviders(string organisationId)
+    {
+      return await _organisationService.GetOrganisationIdentityProvidersAsync(organisationId);
+    }
+
+    [HttpPut("{organisationId}/identity-providers/update")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    [ProducesResponseType(typeof(List<IdentityProviderDetail>), 200)]
+    public async Task UpdateIdentityProvider(string organisationId, [System.Web.Http.FromUri] string idpName, [System.Web.Http.FromUri] bool enabled)
+    {
+      await _organisationService.UpdateIdentityProviderAsync(organisationId, idpName, enabled);
+    }
+
+    #endregion
+
+    #region Organisation Role
+    /// <summary>
+    /// Get organisation roles
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/roles
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/roles")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
+    public async Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId)
+    {
+      return await _organisationService.GetOrganisationRolesAsync(organisationId);
+    }
+
+    [HttpGet("{ciiOrganisationId}/eligableRoles")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
+    public async Task<List<OrganisationRole>> GetEligableRoles(string ciiOrganisationId)
+    {
+      return await _organisationService.GetEligableRolesAsync(ciiOrganisationId);
+    }
+
+    [HttpPut("{ciiOrganisationId}/updateEligableRoles")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    public async Task updateEligableRoles(string ciiOrganisationId, OrganisationRoleUpdate model)
+    {
+      await _organisationService.UpdateOrganisationAsync(ciiOrganisationId, model.IsBuyer, model.RolesToAdd, model.RolesToDelete);
+    }
+
     #endregion
 
   }

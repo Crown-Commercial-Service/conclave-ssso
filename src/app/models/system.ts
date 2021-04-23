@@ -1,5 +1,6 @@
 export interface SystemModule {
     name : string;
     description : string;
-    route : string;
+    route? : string;
+    href? : string;
 }

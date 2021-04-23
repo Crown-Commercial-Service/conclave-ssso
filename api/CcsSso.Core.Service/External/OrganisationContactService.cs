@@ -33,14 +33,16 @@ namespace CcsSso.Service.External
     {
       _contactsHelper.ValidateContacts(contactInfo);
 
-      var organisation = await _dataContext.Organisation.FirstOrDefaultAsync(o => o.CiiOrganisationId == ciiOrganisationId);
+      var organisation = await _dataContext.Organisation
+        .Include(o => o.Party)
+        .FirstOrDefaultAsync(o => o.CiiOrganisationId == ciiOrganisationId);
 
       if (organisation != null)
       {
         var contactPointReasonId = await _contactsHelper.GetContactPointReasonIdAsync(contactInfo.ContactReason);
 
-        #region Create new contact person with party
-        var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(t => t.PartyTypeName == PartyTypeName.NonUser)).Id;
+        #region Create new contact person with party and contact etails
+        var personPartyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(t => t.PartyTypeName == PartyTypeName.NonUser)).Id;
 
         var (firstName, lastName) = _contactsHelper.GetContactPersonNameTuple(contactInfo);
 
@@ -53,29 +55,40 @@ namespace CcsSso.Service.External
 
         var party = new Party
         {
-          PartyTypeId = partyTypeId,
+          PartyTypeId = personPartyTypeId,
           Person = person,
           ContactPoints = new List<ContactPoint>()
         };
-        #endregion
 
-        var contactPoint = new ContactPoint
+        var personContactPoint = new ContactPoint
         {
           ContactPointReasonId = contactPointReasonId,
-          PartyTypeId = partyTypeId,
+          PartyTypeId = personPartyTypeId,
           ContactDetail = new ContactDetail
           {
             EffectiveFrom = DateTime.UtcNow
           }
         };
-        await _contactsHelper.AssignVirtualContactsToContactPointAsync(contactInfo, contactPoint);
-        party.ContactPoints.Add(contactPoint);
-
+        await _contactsHelper.AssignVirtualContactsToContactPointAsync(contactInfo, personContactPoint);
+        party.ContactPoints.Add(personContactPoint);
         _dataContext.Party.Add(party);
+        #endregion
+
+        #region Add new contact point with created contact details
+        // Link the created contact details to organisation by adding a contact point with a party type of EX/IN - ORGANISATION
+        var userContactPoint = new ContactPoint
+        {
+          PartyId = organisation.Party.Id,
+          PartyTypeId = organisation.Party.PartyTypeId,
+          ContactPointReasonId = contactPointReasonId,
+          ContactDetail = personContactPoint.ContactDetail
+        };
+        _dataContext.ContactPoint.Add(userContactPoint);
+        #endregion
 
         await _dataContext.SaveChangesAsync();
 
-        return contactPoint.Id;
+        return userContactPoint.Id;
       }
       else
       {
@@ -92,10 +105,14 @@ namespace CcsSso.Service.External
     /// <returns></returns>
     public async Task DeleteOrganisationContactAsync(string ciiOrganisationId, int contactId)
     {
-      var deletingContact = await _dataContext.ContactPoint.Where(c => c.Id == contactId && !c.IsDeleted
-        && c.Party.Person.Organisation.CiiOrganisationId == ciiOrganisationId && !c.Party.Person.Organisation.IsDeleted)
+      var personPartyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(t => t.PartyTypeName == PartyTypeName.NonUser)).Id;
+
+      // Taking the contact point and its person party with contactId and not a site and site contact and not a registered(Physical address (ContactPointReason is OTHER)) contact point
+      var deletingContact = await _dataContext.ContactPoint.Where(c => c.Id == contactId && !c.IsDeleted &&
+        !c.IsSite && c.ContactPointReason.Name != ContactReasonType.Site && c.ContactPointReason.Name != ContactReasonType.Other &&
+        c.Party.Organisation.CiiOrganisationId == ciiOrganisationId && !c.Party.Organisation.IsDeleted)
         .Include(c => c.ContactDetail).ThenInclude(cd => cd.VirtualAddresses)
-        .Include(c => c.Party).ThenInclude(p => p.Person)
+        .Include(c => c.ContactDetail).ThenInclude(cd => cd.ContactPoints.Where(cp=> cp.PartyTypeId == personPartyTypeId)).ThenInclude(cp => cp.Party).ThenInclude(p => p.Person)
         .FirstOrDefaultAsync();
 
       if (deletingContact != null)
@@ -108,10 +125,8 @@ namespace CcsSso.Service.External
           virtualAddress.IsDeleted = true;
         });
 
-        if (deletingContact.Party.Person != null)
-        {
-          deletingContact.Party.Person.IsDeleted = true;
-        }
+        var deletingPersonContactPoint = deletingContact.ContactDetail.ContactPoints.First(cp => cp.PartyTypeId == personPartyTypeId);
+        deletingPersonContactPoint.Party.Person.IsDeleted = true;
 
         await _dataContext.SaveChangesAsync();
       }
@@ -129,11 +144,17 @@ namespace CcsSso.Service.External
     /// <returns></returns>
     public async Task<OrganisationContactInfo> GetOrganisationContactAsync(string ciiOrganisationId, int contactId)
     {
+
+      var personPartyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(t => t.PartyTypeName == PartyTypeName.NonUser)).Id;
+
+      // Taking the contact point and its person party with contactId and not a site and site contact and not a registered(Physical address (ContactPointReason is OTHER)) contact point
       var contact = await _dataContext.ContactPoint
-        .Where(c => !c.IsDeleted && c.Id == contactId && c.Party.Person.Organisation.CiiOrganisationId == ciiOrganisationId)
-        .Include(c => c.Party).ThenInclude(p => p.Person)
+        .Where(c => !c.IsDeleted && c.Id == contactId &&
+        !c.IsSite && c.ContactPointReason.Name != ContactReasonType.Site && c.ContactPointReason.Name != ContactReasonType.Other &&
+        !c.Party.Organisation.IsDeleted && c.Party.Organisation.CiiOrganisationId == ciiOrganisationId)
         .Include(c => c.ContactPointReason)
-        .Include(c => c.ContactDetail.VirtualAddresses)
+        .Include(c => c.ContactDetail).ThenInclude(cd => cd.VirtualAddresses)
+        .Include(c => c.ContactDetail).ThenInclude(cd => cd.ContactPoints.Where(cp => cp.PartyTypeId == personPartyTypeId)).ThenInclude(cp => cp.Party).ThenInclude(p => p.Person)
         .FirstOrDefaultAsync();
 
       if (contact != null)
@@ -147,7 +168,9 @@ namespace CcsSso.Service.External
           ContactReason = contact.ContactPointReason.Name
         };
 
-        _contactsHelper.AssignVirtualContactsToContactResponse(contact, virtualContactTypes, contactInfo);
+        var personContactPoint = contact.ContactDetail.ContactPoints.First(cp => cp.PartyTypeId == personPartyTypeId);
+
+        _contactsHelper.AssignVirtualContactsToContactResponse(personContactPoint, virtualContactTypes, contactInfo);
 
         return contactInfo;
       }
@@ -162,17 +185,18 @@ namespace CcsSso.Service.External
     /// <returns></returns>
     public async Task<OrganisationContactInfoList> GetOrganisationContactsListAsync(string ciiOrganisationId, string contactType = null)
     {
-      var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(t => t.PartyTypeName == PartyTypeName.NonUser)).Id;
+      var personPartyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(t => t.PartyTypeName == PartyTypeName.NonUser)).Id;
 
       List<ContactResponseInfo> contactInfos = new List<ContactResponseInfo>();
 
+      // Taking the contact points and there person party which are and not sites and site contacts and not a registered(Physical address (ContactPointReason is OTHER)) contact point
       var contacts = await _dataContext.ContactPoint
-        .Where(c => !c.IsDeleted && c.PartyTypeId == partyTypeId &&
-          c.Party.Person.Organisation.CiiOrganisationId == ciiOrganisationId &&
+        .Where(c => !c.IsDeleted && c.Party.Organisation.CiiOrganisationId == ciiOrganisationId &&
+          !c.IsSite && c.ContactPointReason.Name != ContactReasonType.Site && c.ContactPointReason.Name != ContactReasonType.Other &&
           (contactType == null || c.ContactPointReason.Name == contactType))
-        .Include(c => c.Party).ThenInclude(p => p.Person)
         .Include(c => c.ContactPointReason)
-        .Include(c => c.ContactDetail.VirtualAddresses)
+        .Include(c => c.ContactDetail).ThenInclude(cd => cd.VirtualAddresses)
+        .Include(c => c.ContactDetail).ThenInclude(cd => cd.ContactPoints.Where(cp => cp.PartyTypeId == personPartyTypeId)).ThenInclude(cp => cp.Party).ThenInclude(p => p.Person)
         .ToListAsync();
 
       if (!contacts.Any() && !await _dataContext.Organisation.AnyAsync(o => o.CiiOrganisationId == ciiOrganisationId))
@@ -190,7 +214,9 @@ namespace CcsSso.Service.External
           ContactReason = contact.ContactPointReason.Name
         };
 
-        _contactsHelper.AssignVirtualContactsToContactResponse(contact, virtualContactTypes, contactInfo);
+        var personContactPoint = contact.ContactDetail.ContactPoints.First(cp => cp.PartyTypeId == personPartyTypeId);
+
+        _contactsHelper.AssignVirtualContactsToContactResponse(personContactPoint, virtualContactTypes, contactInfo);
 
         contactInfos.Add(contactInfo);
       }
@@ -213,27 +239,32 @@ namespace CcsSso.Service.External
     {
       _contactsHelper.ValidateContacts(contactInfo);
 
-      var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(t => t.PartyTypeName == PartyTypeName.NonUser)).Id;
+      var personPartyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(t => t.PartyTypeName == PartyTypeName.NonUser)).Id;
 
+      // Taking the contact point and its person party with contactId and not a site and site contact and not a registered(Physical address (ContactPointReason is OTHER)) contact point
       var updatingContact = await _dataContext.ContactPoint
-        .Where(c => !c.IsDeleted && c.PartyTypeId == partyTypeId &&
-          c.Id == contactId && c.Party.Person.Organisation.CiiOrganisationId == ciiOrganisationId)
+        .Where(c => !c.IsDeleted && c.Id == contactId &&
+        !c.IsSite && c.ContactPointReason.Name != ContactReasonType.Site && c.ContactPointReason.Name != ContactReasonType.Other &&
+        c.Party.Organisation.CiiOrganisationId == ciiOrganisationId)
         .Include(c => c.ContactDetail).ThenInclude(cd => cd.VirtualAddresses)
-        .Include(c => c.Party).ThenInclude(p => p.Person)
+        .Include(c => c.ContactDetail).ThenInclude(cd => cd.VirtualAddresses)
+        .Include(c => c.ContactDetail).ThenInclude(cd => cd.ContactPoints.Where(cp => cp.PartyTypeId == personPartyTypeId)).ThenInclude(cp => cp.Party).ThenInclude(p => p.Person)
         .FirstOrDefaultAsync();
 
       if (updatingContact != null)
       {
         var (firstName, lastName) = _contactsHelper.GetContactPersonNameTuple(contactInfo);
 
-        updatingContact.Party.Person.FirstName = firstName;
-        updatingContact.Party.Person.LastName = lastName;
+        var updatingPersonContactPoint = updatingContact.ContactDetail.ContactPoints.First(cp => cp.PartyTypeId == personPartyTypeId);
+
+        updatingPersonContactPoint.Party.Person.FirstName = firstName;
+        updatingPersonContactPoint.Party.Person.LastName = lastName;
 
         var contactPointReasonId = await _contactsHelper.GetContactPointReasonIdAsync(contactInfo.ContactReason);
 
         updatingContact.ContactPointReasonId = contactPointReasonId;
 
-        await _contactsHelper.AssignVirtualContactsToContactPointAsync(contactInfo, updatingContact);
+        await _contactsHelper.AssignVirtualContactsToContactPointAsync(contactInfo, updatingPersonContactPoint);
 
         await _dataContext.SaveChangesAsync();
       }

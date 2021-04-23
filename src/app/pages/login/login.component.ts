@@ -74,8 +74,7 @@ export class LoginComponent extends BaseComponent implements OnInit {
                   this.router.navigateByUrl('change-password?session=' + tokenInfo.sessionId);
                 }
               } else {
-                localStorage.setItem('brickedon_aws_tokens', JSON.stringify(tokenInfo));
-                let idToken = this.tokenService.getDecodedIdToken(tokenInfo.idToken);
+                let idToken = this.tokenService.getDecodedToken(tokenInfo.idToken);
                 localStorage.setItem('user_name', idToken.email);
                 localStorage.setItem('brickedon_user', idToken.email);
                 // this.router.navigateByUrl('home');

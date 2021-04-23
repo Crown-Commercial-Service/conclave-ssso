@@ -75,15 +75,24 @@ export class ManageOrgRegAddUserComponent extends BaseComponent implements OnIni
             console.log('---------CII ADD ORG RESPONSE START---------');
             console.log(result);
             console.log('---------CII ADD ORG RESPONSE FINISH--------');
-            if (result.error) {
-              this.router.navigateByUrl(`manage-org/register/error/reg-id-exists`);
-            }
-            if (result.identifier) {
+            if (result.error || result.identifier) {
               this.router.navigateByUrl(`manage-org/register/error/reg-id-exists`);
             }
             const org = JSON.parse(organisation ? organisation : '');
             if (org) {
               org.ccsOrgId = result.response.ccsOrgId;
+              let regType = localStorage.getItem("manage-org_reg_type")+'';
+              if (regType == 'supplier') {
+                org.supplierBuyerType = 0;
+              } else if (regType == 'buyer') {
+                org.supplierBuyerType = 1;
+              } else if (regType == 'both') {
+                org.supplierBuyerType = 2;
+              } else {
+                org.supplierBuyerType = 0;
+              }
+              org.rightToBuy = false;
+              org.buyerType = localStorage.getItem("manage-org_buyer_type")+'';
               localStorage.setItem('ccs_organisation_id', JSON.stringify(org.ccsOrgId));
               this.organisationService.add(org).toPromise().then((orgResponse) => {
                 console.log(orgResponse);
@@ -103,9 +112,17 @@ export class ManageOrgRegAddUserComponent extends BaseComponent implements OnIni
                 this.contactService.createContact(physicalContact).toPromise().then((contactResponse) => {
                   console.log('---------ADD PHYSICAL CONTACT RESPONSE START---------');
                   console.log(contactResponse);
+                  localStorage.setItem('brickendon_org_physical_contactid', JSON.stringify(contactResponse));
                   console.log('---------ADD PHYSICAL CONTACT RESPONSE FINISH--------');
                 }, (err) => {
                   console.log(err);
+                  this.organisationService.rollback({ 
+                    ciiOrganisationId: localStorage.getItem('ccs_organisation_id'),
+                    organisationId: localStorage.getItem('organisation_id'),
+                  }).toPromise().then((orgResponse) => {
+
+                  });
+                  this.router.navigateByUrl(`manage-org/error/contact`);
                 });
                 if (org.contactPoint.email.length > 0 || org.contactPoint.name.length > 0 || org.contactPoint.faxNumber.length > 0 || org.contactPoint.telephone.length > 0  || org.contactPoint.uri.length > 0) {
                   const contact = {
@@ -119,14 +136,25 @@ export class ManageOrgRegAddUserComponent extends BaseComponent implements OnIni
                   this.contactService.createContact(contact).toPromise().then((contactResponse) => {
                     console.log('---------ADD CONTACT RESPONSE START---------');
                     console.log(contactResponse);
+                    localStorage.setItem('brickendon_org_contactid', JSON.stringify(contactResponse));
                     console.log('---------ADD CONTACT RESPONSE FINISH--------');
                   }, (err) => {
                     console.log(err);
+                    // this.organisationService.rollback({ 
+                    //   ciiOrganisationId: localStorage.getItem('ccs_organisation_id'),
+                    //   organisationId: localStorage.getItem('organisation_id'),
+                    //   physicalContactId: localStorage.getItem('brickendon_org_physical_contactid'),
+                    //   contactId: localStorage.getItem('brickendon_org_contactid')
+                    // }).toPromise().then((orgResponse) => {
+  
+                    // });
+                    this.router.navigateByUrl(`manage-org/error/contact`);
                   });
                 }
                 this.userService.add(user).toPromise().then((userResponse) => {
                   console.log('---------USER RESPONSE START---------');
                   console.log(userResponse);
+                  localStorage.setItem('brickendon_org_userid', JSON.stringify(userResponse));
                   console.log('---------USER RESPONSE FINISH--------');
                   this.authService.register(form.get('firstName')?.value, form.get('lastName')?.value, form.get('email')?.value, form.get('email')?.value).toPromise().then((registerResponse: any) => {
                     console.log('---------REGISTER RESPONSE START---------');
@@ -136,16 +164,33 @@ export class ManageOrgRegAddUserComponent extends BaseComponent implements OnIni
                     this.router.navigateByUrl(`manage-org/register/confirm`);
                   }, (err) => {
                     console.log(err);
-                    this.router.navigateByUrl(`manage-org/register/error/generic`);
+                    this.organisationService.rollback({ 
+                      ciiOrganisationId: localStorage.getItem('ccs_organisation_id'),
+                      organisationId: localStorage.getItem('organisation_id'),
+                      physicalContactId: localStorage.getItem('brickendon_org_physical_contactid'),
+                      contactId: localStorage.getItem('brickendon_org_contactid'),
+                      userId: localStorage.getItem('brickendon_org_userid'),
+                    }).toPromise().then((orgResponse) => {
+  
+                    });
+                    // this.router.navigateByUrl(`manage-org/register/error/generic`);
+                    this.router.navigateByUrl(`manage-org/error/conclave`);
                   });
                 });
               }, (err) => {
                 console.log(err);
-                this.router.navigateByUrl(`manage-org/register/error/generic`);
+                this.organisationService.rollback({ ciiOrganisationId: localStorage.getItem('ccs_organisation_id')}).toPromise().then((orgResponse) => {
+  
+                });
+                // this.router.navigateByUrl(`manage-org/register/error/generic`);
+                this.router.navigateByUrl(`manage-org/error/generic`);
               });
             }
           },
           error: err => {
+            this.organisationService.rollback({ ciiOrganisationId: localStorage.getItem('ccs_organisation_id')}).toPromise().then((orgResponse) => {
+  
+            });
             if(err.status == 400) {
               this.router.navigateByUrl(`manage-org/register/error/notfound`);
             } else if(err.status == 404) {

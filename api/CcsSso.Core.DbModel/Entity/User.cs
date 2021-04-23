@@ -23,13 +23,12 @@ namespace CcsSso.DbModel.Entity
     [ForeignKey("PartyId")]
     public int PartyId { get; set; }
 
+    public OrganisationEligibleIdentityProvider OrganisationEligibleIdentityProvider { get; set; }
+
+    [ForeignKey("OrganisationEligibleIdentityProviderId")]
+    public int OrganisationEligibleIdentityProviderId { get; set; }
+
     public List<UserGroupMembership> UserGroupMemberships { get; set; }
-
-    public IdentityProvider IdentityProvider { get; set; }
-
-    [ForeignKey("IdentityProviderId")]
-    // [NotMapped]
-    public int IdentityProviderId { get; set; }
 
     public List<UserSetting> UserSettings { get; set; }
 

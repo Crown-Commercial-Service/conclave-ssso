@@ -38,6 +38,7 @@ namespace CcsSso.Security.Services.Helpers
           };
 
           HttpContent codeContent = new StringContent(JsonConvert.SerializeObject(requestData, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
+          // HttpContent codeContent = new StringContent(JsonConvert.SerializeObject(requestData, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
 
           try
           {

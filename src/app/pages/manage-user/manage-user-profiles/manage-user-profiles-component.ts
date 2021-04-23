@@ -9,11 +9,12 @@ import { slideAnimation } from "src/app/animations/slide.animation";
 import { User, UserGroup, UserListInfo, UserListResponse, UserProfileRequestInfo } from "src/app/models/user";
 import { WrapperUserService } from "src/app/services/wrapper/wrapper-user.service";
 import { WrapperUserContactService } from "src/app/services/wrapper/wrapper-user-contact.service";
-import { ContactInfo, UserContactInfoList } from "src/app/models/userContact";
+import { ContactInfo, UserContactInfoList } from "src/app/models/contactInfo";
 import { Router } from "@angular/router";
 import { OperationEnum } from "src/app/constants/enum";
 import { ScrollHelper } from "src/app/services/helper/scroll-helper.services";
 import { WrapperOrganisationService } from "src/app/services/wrapper/wrapper-org-service";
+import { environment } from "src/environments/environment";
 
 @Component({
     selector: 'app-manage-user-profiles',
@@ -31,8 +32,8 @@ export class ManageUserProfilesComponent extends BaseComponent implements OnInit
     organisationId: string;
     searchingUserName: string = "";
     currentPage: number = 1;
-    totalPagesArray: number[] = [];
-    pageSize: number = 10;
+    pageCount: number = 0;
+    pageSize: number = environment.listPageSize;
     usersTableHeaders = ['NAME', 'EMAIL'];
     usersColumnsToDisplay = ['name', 'userName'];
 
@@ -50,7 +51,7 @@ export class ManageUserProfilesComponent extends BaseComponent implements OnInit
     }
 
     ngOnInit() {
-        this.getOrganisationUsers()
+        this.getOrganisationUsers();
     }
 
     getOrganisationUsers() {
@@ -58,7 +59,7 @@ export class ManageUserProfilesComponent extends BaseComponent implements OnInit
             next: (userListResponse: UserListResponse) => {
                 if (userListResponse != null) {
                     this.userList = userListResponse;
-                    this.totalPagesArray = Array(this.userList.pageCount).fill(0).map((x, i) => i + 1);
+                    this.pageCount = this.userList.pageCount;
                 }
             },
             error: (error: any) => {
@@ -75,12 +76,12 @@ export class ManageUserProfilesComponent extends BaseComponent implements OnInit
     }
 
     onSearchClick() {
+        this.currentPage = 1;
         this.getOrganisationUsers();
     }
 
     setPage(pageNumber: any) {
         this.currentPage = pageNumber;
-        console.log(this.currentPage);
         this.getOrganisationUsers();
     }
 

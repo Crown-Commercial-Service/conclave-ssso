@@ -24,7 +24,7 @@ namespace CcsSso.Security.Api.CustomOptions
       _vcapSettings = JsonConvert.DeserializeObject<VCapSettings>(vault.ToString());
 
       IAuthMethodInfo authMethod = new TokenAuthMethodInfo(vaultToken: _vcapSettings.credentials.auth.token);
-      var vaultClientSettings = new VaultClientSettings("https://dev.vault.ai-cloud.uk:8443", authMethod)
+      var vaultClientSettings = new VaultClientSettings(_vcapSettings.credentials.address, authMethod)
       {
         ContinueAsyncTasksOnCapturedContext = false
       };
@@ -129,7 +129,10 @@ namespace CcsSso.Security.Api.CustomOptions
       Data.Add("Email:ApiKey", _email.ApiKey);
       Data.Add("Email:UserActivationEmailTemplateId", _email.UserActivationEmailTemplateId);
       Data.Add("Email:ResetPasswordEmailTemplateId", _email.ResetPasswordEmailTemplateId);
+      Data.Add("Email:NominateEmailTemplateId", _email.NominateEmailTemplateId);
       Data.Add("Email:UserActivationLinkTTLInMinutes", _email.UserActivationLinkTTLInMinutes);
+      Data.Add("Email:ChangePasswordNotificationTemplateId", _email.ChangePasswordNotificationTemplateId);
+      Data.Add("Email:SendNotificationsEnabled", _email.SendNotificationsEnabled);
       Data.Add("CorsDomains", _cors);
     }
   }
@@ -180,7 +183,13 @@ namespace CcsSso.Security.Api.CustomOptions
 
     public string ResetPasswordEmailTemplateId { get; set; }
 
+    public string NominateEmailTemplateId { get; set; }
+
     public string UserActivationLinkTTLInMinutes { get; set; }
+
+    public string ChangePasswordNotificationTemplateId { get; set; }
+
+    public string SendNotificationsEnabled { get; set; }
   }
 
   public class SecurityApiKeySettingsVault

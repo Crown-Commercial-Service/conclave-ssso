@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 export class ScrollHelper {
     private elementIdToScrollTo: string | null = null;
@@ -21,7 +21,7 @@ export class ScrollHelper {
             }
             scrollingTargetElement.scrollIntoView();
         }
-        finally{
+        finally {
             this.elementIdToScrollTo = null;
         }
     }

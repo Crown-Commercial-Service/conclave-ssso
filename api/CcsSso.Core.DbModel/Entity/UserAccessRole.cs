@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Entity;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -15,12 +16,8 @@ namespace CcsSso.DbModel.Entity
 
     public int UserId { get; set; }
 
-    public CcsAccessRole CcsAccessRole { get; set; }
+    public OrganisationEligibleRole OrganisationEligibleRole { get; set; }
 
-    public int CcsAccessRoleId { get; set; }
-
-    public OrganisationAccessRole OrganisationAccessRole { get; set; }
-
-    public int OrganisationAccessRoleId { get; set; }
+    public int OrganisationEligibleRoleId { get; set; }
   }
 }
