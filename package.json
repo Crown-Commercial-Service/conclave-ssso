@@ -51,7 +51,7 @@
     "@ngrx/store": "^10.1.2",
     "@ngrx/store-devtools": "^10.1.2",
     "@types/crypto-js": "^4.0.1",
-    "@types/jasmine": "~3.6.0",
+    "@types/jasmine": "~3.7.6",
     "@types/node": "^12.19.11",
     "codelyzer": "^6.0.0",
     "jasmine-core": "~3.6.0",
