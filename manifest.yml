@@ -3,7 +3,7 @@ applications:
 - name: preprod-api-security
   instances: 1
   memory: 512M
-  path: api/CcsSso.Security.Api/bin/Debug/net5.0
+  path: api/CcsSso.Security.Api/bin/Release/net5.0
   buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
   routes:
     - route: preprod-api-security.london.cloudapps.digital
@@ -16,7 +16,7 @@ applications:
 - name: preprod-api-wrapper
   instances: 1
   memory: 512M
-  path: api/CcsSso.Core.ExternalApi/bin/Debug/net5.0
+  path: api/CcsSso.Core.ExternalApi/bin/Release/net5.0
   buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
   routes:
     - route: preprod-api-wrapper.london.cloudapps.digital
@@ -30,7 +30,7 @@ applications:
 - name: preprod-api-core
   instances: 1
   memory: 512M
-  path: api/CcsSso.Core.Api/bin/Debug/net5.0
+  path: api/CcsSso.Core.Api/bin/Release/net5.0
   buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
   routes:
     - route: preprod-api-core.london.cloudapps.digital
@@ -44,7 +44,7 @@ applications:
 - name: preprod-api-adaptor
   instances: 1
   memory: 512M
-  path: api/CcsSso.Adaptor.Api/bin/Debug/net5.0
+  path: api/CcsSso.Adaptor.Api/bin/Release/net5.0
   buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
   routes:
     - route: preprod-api-adaptor.london.cloudapps.digital
@@ -58,7 +58,7 @@ applications:
 - name: preprod-adaptor-sqs-listener
   instances: 1
   memory: 512M
-  path: api/CcsSso.Adaptor.SqsListener/bin/Debug/net5.0
+  path: api/CcsSso.Adaptor.SqsListener/bin/Release/net5.0
   buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
   no-route: true
   health-check-type: none
@@ -70,7 +70,7 @@ applications:
 - name: preprod-org-dereg-job
   instances: 1
   memory: 512M
-  path: api/CcsSso.Core.JobScheduler/bin/Debug/net5.0
+  path: api/CcsSso.Core.JobScheduler/bin/Release/net5.0
   buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
   no-route: true
   health-check-type: none
