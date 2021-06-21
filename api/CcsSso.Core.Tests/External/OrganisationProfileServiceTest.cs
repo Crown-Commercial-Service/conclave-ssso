@@ -10,6 +10,7 @@ using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Dtos.Domain.Models;
 using CcsSso.Service.External;
+using CcsSso.Shared.Cache.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using System;
@@ -30,7 +31,7 @@ namespace CcsSso.Core.Tests.External
             {
                 new object[]
                 {
-                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "Org3@web.com", "street3", "local3", "region3", "pcode3", "ccode3", true, true, true)
+                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "Org3@web.com", "street3", "local3", "region3", "pcode3", "GB", true, true, true)
                 }
             };
 
@@ -75,36 +76,45 @@ namespace CcsSso.Core.Tests.External
                   DtoHelper.GetOrganisationProfileInfo("3", "Org3", "Org3@web.com", "street3", "local3", "region3", "pcode3", "ccode3", true, true, true, true),
                   ErrorConstant.ErrorInvalidIdentifier
                 },
-
                 new object[]
                 {
-                  DtoHelper.GetOrganisationProfileInfo("3", null, "Org3@web.com", "street3", "local3", "region3", "pcode3", "ccode3", true, true, true),
+                  DtoHelper.GetOrganisationProfileInfo("3", null, "Org3@web.com", "street3", "local3", "region3", "pcode3", "GB", true, true, true),
                   ErrorConstant.ErrorInvalidOrganisationName
                 },
                 new object[]
                 {
-                  DtoHelper.GetOrganisationProfileInfo("3", "", "Org3@web.com", "street3", "local3", "region3", "pcode3", "ccode3", true, true, true),
+                  DtoHelper.GetOrganisationProfileInfo("3", "", "Org3@web.com", "street3", "local3", "region3", "pcode3", "GB", true, true, true),
                   ErrorConstant.ErrorInvalidOrganisationName
                 },
                 new object[]
                 {
-                  DtoHelper.GetOrganisationProfileInfo("3", " ", "Org3@web.com", "street3", "local3", "region3", "pcode3", "ccode3", true, true, true),
+                  DtoHelper.GetOrganisationProfileInfo("3", " ", "Org3@web.com", "street3", "local3", "region3", "pcode3", "GB", true, true, true),
                   ErrorConstant.ErrorInvalidOrganisationName
                 },
                 new object[]
                 {
-                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", null, "street3", "local3", "region3", "pcode3", "ccode3", true, true, true),
+                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", null, "street3", "local3", "region3", "pcode3", "GB", true, true, true),
                   ErrorConstant.ErrorInvalidOrganisationUri
                 },
                 new object[]
                 {
-                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "", "street3", "local3", "region3", "pcode3", "ccode3", true, true, true),
+                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "", "street3", "local3", "region3", "pcode3", "GB", true, true, true),
                   ErrorConstant.ErrorInvalidOrganisationUri
                 },
                 new object[]
                 {
-                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", " ", "street3", "local3", "region3", "pcode3", "ccode3", true, true, true),
+                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", " ", "street3", "local3", "region3", "pcode3", "GB", true, true, true),
                   ErrorConstant.ErrorInvalidOrganisationUri
+                },
+                new object[]
+                {
+                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "uri", "street", "local3", "region3", "pcode3", "", true, false, true),
+                  ErrorConstant.ErrorInsufficientDetails
+                },
+                new object[]
+                {
+                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "uri", "street3", "local3", "region3", "pcode3", "ccode3", true, false, true),
+                  ErrorConstant.ErrorInvalidCountryCode
                 }
             };
 
@@ -145,7 +155,7 @@ namespace CcsSso.Core.Tests.External
         {
           await SetupTestDataAsync(dataContext);
           Mock<ICiiService> mockCiiService = new Mock<ICiiService>();
-          mockCiiService.Setup(s => s.GetOrgsAsync(It.IsAny<string>()))
+          mockCiiService.Setup(s => s.GetOrgsAsync(It.IsAny<string>(),""))
           .ReturnsAsync(new CiiDto[]
           {
             new CiiDto
@@ -209,7 +219,7 @@ namespace CcsSso.Core.Tests.External
                 new object[]
                 {
                   "1",
-                  DtoHelper.GetOrganisationProfileInfo("1", "Org1up", "Org1up@web.com", "street1up", "local1up", "region1up", "pcode1up", "ccode1up", true, true, true)
+                  DtoHelper.GetOrganisationProfileInfo("1", "Org1up", "Org1up@web.com", "street1up", "local1up", "region1up", "pcode1up", "GB", true, true, true)
                 }
             };
 
@@ -283,6 +293,16 @@ namespace CcsSso.Core.Tests.External
                 {
                   DtoHelper.GetOrganisationProfileInfo("3", "Org3", " ", "street3", "local3", "region3", "pcode3", "ccode3", true, true, true),
                   ErrorConstant.ErrorInvalidOrganisationUri
+                },
+                new object[]
+                {
+                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "uri", "", "local3", "region3", "pcode3", "GB", true, false, true),
+                  ErrorConstant.ErrorInsufficientDetails
+                },
+                new object[]
+                {
+                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "uri", "street3", "local3", "region3", "pcode3", "ccode3", true, false, true),
+                  ErrorConstant.ErrorInvalidCountryCode
                 }
            };
 
@@ -307,7 +327,7 @@ namespace CcsSso.Core.Tests.External
                 new object[]
                 {
                   "2",
-                  DtoHelper.GetOrganisationProfileInfo("2", "Org1up", "Org1up@web.com", "street1up", "local1up", "region1up", "pcode1up", "ccode1up", true, true, true)
+                  DtoHelper.GetOrganisationProfileInfo("2", "Org1up", "Org1up@web.com", "street1up", "local1up", "region1up", "pcode1up", "GB", true, true, true)
                 }
            };
 
@@ -332,12 +352,15 @@ namespace CcsSso.Core.Tests.External
       Mock<ICcsSsoEmailService> mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
       mockCiiService ??= new Mock<ICiiService>();
       mockOrganisationHelperService ??= new Mock<IOrganisationService>();
+      Mock<IAdaptorNotificationService> mockAdapterNotificationService = new Mock<IAdaptorNotificationService>();
 
       mockOrganisationHelperService.Setup(s => s.GetOrganisationEligibleRolesAsync(It.IsAny<Organisation>(), It.IsAny<int>()))
         .ReturnsAsync(new List<OrganisationEligibleRole>());
+      var mockWrapperCacheService = new Mock<IWrapperCacheService>(); 
+      var mockLocalCacheService = new Mock<ILocalCacheService>();
 
-      var service = new OrganisationProfileService(dataContext, contactsHelperService, mockCcsSsoEmailService.Object,
-        mockCiiService.Object, mockOrganisationHelperService.Object);
+       var service = new OrganisationProfileService(dataContext, contactsHelperService, mockCcsSsoEmailService.Object,
+        mockCiiService.Object, mockOrganisationHelperService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object, mockLocalCacheService.Object);
       return service;
     }
 

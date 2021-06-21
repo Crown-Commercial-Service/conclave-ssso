@@ -81,4 +81,12 @@ namespace CcsSso.Domain.Dtos
 
     public string LastName { get; set; }
   }
+
+  public class UserRolePermissionInfo
+  {
+    public string RoleName { get; set; }
+    public string RoleKey { get; set; }
+
+    public List<string> PermissionList { get; set; }
+  }
 }

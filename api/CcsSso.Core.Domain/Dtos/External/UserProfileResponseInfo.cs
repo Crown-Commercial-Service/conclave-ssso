@@ -36,10 +36,6 @@ namespace CcsSso.Core.Domain.Dtos.External
   {
     public int Id { get; set; }
 
-    public List<int> GroupIds { get; set; }
-
-    public List<int> RoleIds { get; set; }
-
     public int IdentityProviderId { get; set; }
 
     public string IdentityProvider { get; set; }
@@ -50,7 +46,18 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public bool CanChangePassword { get; set; }
 
-    public List<string> RoleNames { get; set; }
+    public List<RolePermissionInfo> RolePermissionInfo { get; set; }
+  }
+
+  public class RolePermissionInfo
+  {
+    public int RoleId { get; set; }
+
+    public string RoleName { get; set; }
+
+    public string RoleKey { get; set; }
+
+    public string ServiceClientId { get; set; }
   }
 
   public class UserProfileEditRequestInfo : UserDetail
@@ -86,6 +93,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string AccessRoleName { get; set; }
 
     public string Group { get; set; }
+
+    public string ServiceClientId { get; set; }
   }
 
   public class UserEditResponseInfo

@@ -50,9 +50,9 @@ namespace CcsSso.Api.Middleware
       catch (Exception ex)
       {
 #if DEBUG
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.BadRequest);
+        await HandleException(context, ex.Message, ex, HttpStatusCode.InternalServerError);
 # else
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.BadRequest);
+        await HandleException(context, "ERROR", ex, HttpStatusCode.InternalServerError);
 #endif
       }
     }

@@ -6,6 +6,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
+using Microsoft.AspNetCore.Http;
 
 namespace CcsSso.Api.Controllers
 {
@@ -17,13 +18,15 @@ namespace CcsSso.Api.Controllers
     private readonly IOrganisationService _organisationService;
     private readonly IContactService _contactService;
     private readonly IUserService _userService;
+    private IHttpContextAccessor _httpContextAccessor;
 
-    public OrganisationController(IOrganisationService organisationService, ICiiService ciiService, IContactService contactService, IUserService userService)
+    public OrganisationController(IOrganisationService organisationService, ICiiService ciiService, IContactService contactService, IUserService userService, IHttpContextAccessor httpContextAccessor)
     {
       _organisationService = organisationService;
       _ciiService = ciiService;
       _contactService = contactService;
       _userService = userService;
+      _httpContextAccessor = httpContextAccessor;
     }
 
     /// <summary>
@@ -71,9 +74,9 @@ namespace CcsSso.Api.Controllers
     [ProducesResponseType(typeof(OrganisationDto), 200)]
     [ProducesResponseType(204)]
     [ProducesResponseType(401)]
-    public async Task<List<OrganisationDto>> GetAll()
+    public async Task<List<OrganisationDto>> GetAll(string orgName)
     {
-      return await _organisationService.GetAllAsync();
+      return await _organisationService.GetAllAsync(orgName);
     }
 
     /// <summary>
@@ -112,9 +115,9 @@ namespace CcsSso.Api.Controllers
 
     [HttpGet("getUsers")]
     [SwaggerOperation(Tags = new[] { "organisation" })]
-    public async Task<List<OrganisationUserDto>> GetUsers()
+    public async Task<List<OrganisationUserDto>> GetUsers(string name)
     {
-      return await _organisationService.GetUsersAsync();
+      return await _organisationService.GetUsersAsync(name);
     }
 
     [HttpPost("rollback")]
@@ -128,7 +131,8 @@ namespace CcsSso.Api.Controllers
       {
         try
         {
-          await _ciiService.DeleteAsync(model.CiiOrganisationId);
+          var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
+          await _ciiService.DeleteOrgAsync(model.CiiOrganisationId, accessToken);
         }
         catch (System.Exception ex)
         {

@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Entity;
 using CcsSso.Domain.Dtos;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,8 @@ namespace CcsSso.Domain.Contracts
 
     Task<UserDetails> GetAsync(string userName);
 
-    Task<List<ServicePermissionDto>> GetPermissions();
+    Task<List<ServicePermissionDto>> GetPermissions(string userName, string serviceClientId);
+
+    Task SendUserActivationEmailAsync(string email);
   }
 }

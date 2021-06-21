@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using VaultSharp;
 using VaultSharp.V1.AuthMethods;
@@ -48,34 +49,53 @@ namespace CcsSso.Security.Api.CustomOptions
     public async Task GetSecrets()
     {
       var _secrets = await _client.V1.Secrets.Cubbyhole.ReadSecretAsync(secretPath: "brickendon");
-
+      var _isApiGatewayEnabled = _secrets.Data["IsApiGatewayEnabled"].ToString();
       var _identityProvider = _secrets.Data["IdentityProvider"].ToString();
 
       var _awsCognito = JsonConvert.DeserializeObject<AWSCognito>(_secrets.Data["AWSCognito"].ToString());
       var _auth0 = JsonConvert.DeserializeObject<Auth0>(_secrets.Data["Auth0"].ToString());
       var _email = JsonConvert.DeserializeObject<Email>(_secrets.Data["Email"].ToString());
-      var _cors = _secrets.Data["CorsDomains"].ToString();
+      if (_secrets.Data.ContainsKey("CorsDomains"))
+      {
+        var corsList = JsonConvert.DeserializeObject<List<string>>(_secrets.Data["CorsDomains"].ToString());
+        int index = 0;
+        foreach (var cors in corsList)
+        {
+          Data.Add($"CorsDomains:{index++}", cors);
+        }
+      }
 
-      if(_secrets.Data.ContainsKey("PasswordPolicy"))
+      if (_secrets.Data.ContainsKey("PasswordPolicy"))
       {
         var passwordPolicy = JsonConvert.DeserializeObject<PasswordPolicyVault>(_secrets.Data["PasswordPolicy"].ToString());
         Data.Add("PasswordPolicy:LowerAndUpperCaseWithDigits", passwordPolicy.LowerAndUpperCaseWithDigits.ToString());
         Data.Add("PasswordPolicy:RequiredLength", passwordPolicy.RequiredLength.ToString());
         Data.Add("PasswordPolicy:RequiredUniqueChars", passwordPolicy.RequiredUniqueChars.ToString());
       }
-      
+
+      if (_secrets.Data.ContainsKey("RedisCacheSettings"))
+      {
+        var redisCacheSettingsVault = JsonConvert.DeserializeObject<RedisCacheSettingsVault>(_secrets.Data["RedisCacheSettings"].ToString());
+        Data.Add("RedisCacheSettings:ConnectionString", redisCacheSettingsVault.ConnectionString);
+        Data.Add("RedisCacheSettings:IsEnabled", redisCacheSettingsVault.IsEnabled);
+      }
 
       if (_secrets.Data.ContainsKey("SessionConfig"))
       {
         var sessionConfig = JsonConvert.DeserializeObject<SessionConfigVault>(_secrets.Data["SessionConfig"].ToString());
         Data.Add("SessionConfig:SessionTimeoutInMinutes", sessionConfig.SessionTimeoutInMinutes);
+        Data.Add("SessionConfig:StateExpirationInMinutes", sessionConfig.StateExpirationInMinutes);
       }
 
-      if(_secrets.Data.ContainsKey("SecurityApiKeySettings"))
+      if (_secrets.Data.ContainsKey("SecurityApiKeySettings"))
       {
         var securityApiKeySettings = JsonConvert.DeserializeObject<SecurityApiKeySettingsVault>(_secrets.Data["SecurityApiKeySettings"].ToString());
-        Data.Add("SecurityApiKeySettings.SecurityApiKey", securityApiKeySettings.SecurityApiKey);
-        Data.Add("SecurityApiKeySettings.ApiKeyValidationExcludedRoutes", string.Join(",", securityApiKeySettings.ApiKeyValidationExcludedRoutes));
+        Data.Add("SecurityApiKeySettings:SecurityApiKey", securityApiKeySettings.SecurityApiKey);
+        int index = 0;
+        foreach (var route in securityApiKeySettings.ApiKeyValidationExcludedRoutes)
+        {
+          Data.Add($"SecurityApiKeySettings:ApiKeyValidationExcludedRoutes:{index++}", route);
+        }
       }
 
       if (_secrets.Data.ContainsKey("JwtTokenConfig"))
@@ -88,11 +108,13 @@ namespace CcsSso.Security.Api.CustomOptions
         Data.Add("JwtTokenConfig:LogoutTokenExpireTimeInMinutes", jwtTokenInfo.LogoutTokenExpireTimeInMinutes);
       }
 
+      // Keep the trailing "/" for all the urls. Ex: "https://abc.com/user-profiles/"
       if (_secrets.Data.ContainsKey("UserExternalApiDetails"))
       {
         var userExternalApiDetailsVault = JsonConvert.DeserializeObject<UserExternalApiDetailsVault>(_secrets.Data["UserExternalApiDetails"].ToString());
         Data.Add("UserExternalApiDetails:ApiKey", userExternalApiDetailsVault.ApiKey);
-        Data.Add("UserExternalApiDetails:Url", userExternalApiDetailsVault.Url);
+        Data.Add("UserExternalApiDetails:ApiGatewayEnabledUrl", userExternalApiDetailsVault.ApiGatewayEnabledUrl);
+        Data.Add("UserExternalApiDetails:ApiGatewayDisabledUrl", userExternalApiDetailsVault.ApiGatewayDisabledUrl);
       }
 
       if (_secrets.Data.ContainsKey("RollBarLogger"))
@@ -111,6 +133,14 @@ namespace CcsSso.Security.Api.CustomOptions
       {
         Data.Add("SecurityDbConnection", _secrets.Data["SecurityDbConnection"].ToString());
       }
+
+      if (_secrets.Data.ContainsKey("Crypto"))
+      {
+        var cryptoVault = JsonConvert.DeserializeObject<CryptoVault>(_secrets.Data["Crypto"].ToString());
+        Data.Add("Crypto:CookieEncryptionKey", cryptoVault.CookieEncryptionKey);
+      }
+
+      Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
       Data.Add("Auth0:ClientId", _auth0.ClientId);
       Data.Add("Auth0:Secret", _auth0.Secret);
       Data.Add("Auth0:Domain", _auth0.Domain);
@@ -132,8 +162,9 @@ namespace CcsSso.Security.Api.CustomOptions
       Data.Add("Email:NominateEmailTemplateId", _email.NominateEmailTemplateId);
       Data.Add("Email:UserActivationLinkTTLInMinutes", _email.UserActivationLinkTTLInMinutes);
       Data.Add("Email:ChangePasswordNotificationTemplateId", _email.ChangePasswordNotificationTemplateId);
+      Data.Add("Email:ResetPasswordLinkTTLInMinutes", _email.ResetPasswordLinkTTLInMinutes);
       Data.Add("Email:SendNotificationsEnabled", _email.SendNotificationsEnabled);
-      Data.Add("CorsDomains", _cors);
+
     }
   }
 
@@ -187,6 +218,8 @@ namespace CcsSso.Security.Api.CustomOptions
 
     public string UserActivationLinkTTLInMinutes { get; set; }
 
+    public string ResetPasswordLinkTTLInMinutes { get; set; }
+
     public string ChangePasswordNotificationTemplateId { get; set; }
 
     public string SendNotificationsEnabled { get; set; }
@@ -212,13 +245,17 @@ namespace CcsSso.Security.Api.CustomOptions
   public class SessionConfigVault
   {
     public string SessionTimeoutInMinutes { get; set; }
+
+    public string StateExpirationInMinutes { get; set; }
   }
 
   public class UserExternalApiDetailsVault
   {
     public string ApiKey { get; set; }
 
-    public string Url { get; set; }
+    public string ApiGatewayEnabledUrl { get; set; }
+
+    public string ApiGatewayDisabledUrl { get; set; }
   }
 
   public class PasswordPolicyVault
@@ -233,6 +270,18 @@ namespace CcsSso.Security.Api.CustomOptions
     public string Environment { get; set; }
 
     public string Token { get; set; }
+  }
+
+  public class RedisCacheSettingsVault
+  {
+    public string ConnectionString { get; set; }
+
+    public string IsEnabled { get; set; }
+  }
+
+  public class CryptoVault
+  {
+    public string CookieEncryptionKey { get; set; }
   }
 
   public class VaultOptions

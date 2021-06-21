@@ -10,6 +10,8 @@ namespace CcsSso.Domain.Contracts
 {
   public interface IDataContext
   {
+    DbSet<AuditLog> AuditLog { get; set; }
+
     DbSet<Party> Party { get; set; }
 
     DbSet<PartyType> PartyType { get; set; }

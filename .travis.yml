@@ -1,30 +1,17 @@
-language: node_js
-node_js:
-- 12.16.1
-addons:
-  chrome: stable
-cache:
-  directories:
-  - "./node_modules"
+language: csharp
+dotnet: 5.0.1
 install:
-- npm install
-before_script:
-- npm install -g @angular/cli
+- dotnet restore ./api/CcsSso.sln
 script:
-- npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
-- npm run e2e -- --protractor-config=e2e/protractor-ci.conf.js
-before_deploy:
-  - npm run build -- --prod --configuration=$space_sandbox
-  - cd dist
-  - cp index.html 404.html
+- dotnet build ./api/CcsSso.sln
 deploy:
   - provider: cloudfoundry
     username: $username
     password: $password
     api: $api
     organization: $organisation
-    space: $space_sandbox
-    manifest: ../manifest.yml
+    space: $space_preprod
+    manifest: ./manifest.yml
     skip-cleanup: true
     repo: Crown-Commercial-Service/conclave-ssso
     on:

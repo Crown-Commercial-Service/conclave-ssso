@@ -14,5 +14,7 @@ namespace CcsSso.Security.Domain.Contracts
     Task<IdamUser> GetUserAsync(string email);
 
     Task NominateUserAsync(UserInfo userInfo);
+
+    Task SendUserActivationEmailAsync(string email);
   }
 }

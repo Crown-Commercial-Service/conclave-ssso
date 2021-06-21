@@ -2,6 +2,7 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,7 @@ namespace CcsSso.Api.Controllers
     /// User/123
     /// </remarks>
     [HttpGet("{id}")]
-    [Produces("application/json")]    
+    [Produces("application/json")]
     [SwaggerOperation(Tags = new[] { "user" })]
     [ProducesResponseType(200)]
     [ProducesResponseType(404)]
@@ -92,14 +93,48 @@ namespace CcsSso.Api.Controllers
     // [ProducesResponseType(typeof(string), 400)]
     public async Task<string> Post(UserDto model)
     {
+      CookieOptions httpCookieOptions = new CookieOptions()
+      {
+        HttpOnly = true,
+        SameSite = SameSiteMode.None,
+        Secure = true
+      };
+      string userDetailsCookie = "ud";
+      Response.Cookies.Delete(userDetailsCookie);
+      //"as" stands for activation email sent
+      Response.Cookies.Append(userDetailsCookie, "as", httpCookieOptions);
       return await _userService.CreateAsync(model);
     }
 
     [HttpGet("GetPermissions")]
     [SwaggerOperation(Tags = new[] { "user" })]
-    public async Task<List<ServicePermissionDto>> GetPermissions()
+    public async Task<List<ServicePermissionDto>> GetPermissions(string userName, string serviceClientId)
     {
-      return await _userService.GetPermissions();
+      return await _userService.GetPermissions(userName, serviceClientId);
+    }
+
+    [HttpPost("useractivationemail")]
+    [Consumes("application/x-www-form-urlencoded")]
+    public async Task SendUserActivationEmail(IFormCollection userDetails)
+    {
+      string userDetailsCookie = "ud";
+      if (Request.Cookies.ContainsKey(userDetailsCookie))
+      {
+        Request.Cookies.TryGetValue(userDetailsCookie, out string details);
+        if (details == "as")
+        {
+          userDetails.TryGetValue("email", out StringValues email);
+          await _userService.SendUserActivationEmailAsync(email);
+          CookieOptions httpCookieOptions = new CookieOptions()
+          {
+            HttpOnly = true,
+            SameSite = SameSiteMode.None,
+            Secure = true
+          };
+          //"ras" stands for activation email re-sent
+          Response.Cookies.Append(userDetailsCookie, "ras", httpCookieOptions);
+        }
+      }
     }
   }
 }

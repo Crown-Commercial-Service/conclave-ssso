@@ -15,11 +15,11 @@ namespace CcsSso.Domain.Contracts
 
     Task<OrganisationDto> GetAsync(string id);
 
-    Task<List<OrganisationDto>> GetAllAsync();
+    Task<List<OrganisationDto>> GetAllAsync(string orgName);
 
     Task PutAsync(OrganisationDto model);
 
-    Task<List<OrganisationUserDto>> GetUsersAsync();
+    Task<List<OrganisationUserDto>> GetUsersAsync(string name);
 
     Task Rollback(OrganisationRollbackDto model);
 

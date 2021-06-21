@@ -17,4 +17,10 @@
     <ProjectReference Include="..\CcsSso.Core.Domain\CcsSso.Core.Domain.csproj" />
     <ProjectReference Include="..\CcsSso.Shared\CcsSso.Shared.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsecrets.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

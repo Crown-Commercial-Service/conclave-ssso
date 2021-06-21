@@ -83,4 +83,12 @@ namespace CcsSso.Dtos.Domain.Models
 
     public CiiIdentifier identifier { get; set; }
   }
+
+  public class CiiConfig
+  {
+    public string url { get; set; }
+    public string token { get; set; }
+    public string deleteToken { get; set; }
+    public string clientId { get; set; }
+  }
 }

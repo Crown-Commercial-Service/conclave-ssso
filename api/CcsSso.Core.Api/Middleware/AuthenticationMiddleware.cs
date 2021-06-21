@@ -1,5 +1,7 @@
 using CcsSso.Domain.Dtos;
 using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain.Contexts;
+using CcsSso.Shared.Extensions;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -15,7 +17,13 @@ namespace CcsSso.Core.Api.Middleware
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private List<string> allowedPaths = new List<string>()
     {
-      "auth/backchannel_logout", "auth/sign_out", "auth/get_refresh_token","auth/save_refresh_token", "cii", "cii/scheme", "cii/GetSchemes", "cii/GetSchemes", "cii/GetOrg", "cii/GetOrgs", "cii/GetIdentifiers", "cii/DeleteOrg"
+      "auth/backchannel_logout", "auth/sign_out", "auth/get_refresh_token", "auth/save_refresh_token",
+      "organisation/rollback", "organisation", "user", "user/useractivationemail", "user/getuser", "contact"
+    };
+    private const string allowedCiiRoute = "cii";
+    private List<string> restrictedCiiPaths = new List<string>()
+    {
+      "cii/DeleteScheme"
     };
 
     public AuthenticationMiddleware(RequestDelegate next, ITokenService tokenService, ApplicationConfigurationInfo applicationConfigurationInfo)
@@ -25,11 +33,13 @@ namespace CcsSso.Core.Api.Middleware
       _applicationConfigurationInfo = applicationConfigurationInfo;
     }
 
-    public async Task Invoke(HttpContext context)
+    public async Task Invoke(HttpContext context, RequestContext requestContext)
     {
       var path = context.Request.Path.Value.TrimStart('/').TrimEnd('/');
+      requestContext.IpAddress = context.GetRemoteIPAddress();
+      requestContext.Device = context.Request.Headers["User-Agent"];
 
-      if (allowedPaths.Contains(path))
+      if (allowedPaths.Contains(path) || (path.Contains(allowedCiiRoute) && !restrictedCiiPaths.Any(rp => rp == path)))
       {
         await _next(context);
         return;
@@ -42,10 +52,15 @@ namespace CcsSso.Core.Api.Middleware
         {
           var token = bearerToken.Split(' ').Last();
           var result = await _tokenService.ValidateTokenAsync(token, _applicationConfigurationInfo.JwtTokenValidationInfo.JwksUrl,
-            _applicationConfigurationInfo.JwtTokenValidationInfo.IdamClienId, _applicationConfigurationInfo.JwtTokenValidationInfo.Issuer);
+            _applicationConfigurationInfo.JwtTokenValidationInfo.IdamClienId, _applicationConfigurationInfo.JwtTokenValidationInfo.Issuer, new List<string>() { "uid", "ciiOrgId" });
 
           if (result.IsValid)
           {
+            var userId = result.ClaimValues["uid"];
+            var ciiOrgId = result.ClaimValues["ciiOrgId"];
+            requestContext.UserId = int.Parse(userId);
+            requestContext.CiiOrganisationId = ciiOrgId;
+
             await _next(context);
           }
           else

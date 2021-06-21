@@ -1,5 +1,6 @@
 using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
@@ -7,6 +8,7 @@ using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Dtos.Domain.Models;
 using CcsSso.Services.Helpers;
+using CcsSso.Shared.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -19,9 +21,14 @@ namespace CcsSso.Service
   {
 
     private readonly IDataContext _dataContext;
-    public OrganisationService(IDataContext dataContext)
+    private readonly IAdaptorNotificationService _adapterNotificationService;
+    private readonly IWrapperCacheService _wrapperCacheService;
+    public OrganisationService(IDataContext dataContext, IAdaptorNotificationService adapterNotificationService,
+      IWrapperCacheService wrapperCacheService)
     {
       _dataContext = dataContext;
+      _adapterNotificationService = adapterNotificationService;
+      _wrapperCacheService = wrapperCacheService;
     }
 
     /// <summary>
@@ -35,8 +42,8 @@ namespace CcsSso.Service
       var party = new CcsSso.DbModel.Entity.Party
       {
         PartyTypeId = partyType.Id,
-        CreatedPartyId = 0,
-        LastUpdatedPartyId = 0,
+        CreatedUserId = 0,
+        LastUpdatedUserId = 0,
         CreatedOnUtc = System.DateTime.UtcNow,
         LastUpdatedOnUtc = System.DateTime.UtcNow,
         IsDeleted = false,
@@ -52,8 +59,8 @@ namespace CcsSso.Service
         BusinessType = model.BusinessType,
         SupplierBuyerType = model.SupplierBuyerType,
         PartyId = party.Id,
-        CreatedPartyId = party.Id,
-        LastUpdatedPartyId = party.Id,
+        CreatedUserId = party.Id,
+        LastUpdatedUserId = party.Id,
         CreatedOnUtc = System.DateTime.UtcNow,
         LastUpdatedOnUtc = System.DateTime.UtcNow,
         IsDeleted = false,
@@ -76,25 +83,27 @@ namespace CcsSso.Service
         listEligibleProviders.Add(p);
       });
       _dataContext.OrganisationEligibleIdentityProvider.AddRange(listEligibleProviders);
-
-      //var role = await _dataContext.CcsAccessRole.FirstOrDefaultAsync(x => x.CcsAccessRoleNameKey == "ORG_ADMINISTRATOR");
-      //var orgEligibleRoleAdmin = new OrganisationEligibleRole
-      //{
-      //  CcsAccessRole = role,
-      //  Organisation = org
-      //};
-      //_dataContext.OrganisationEligibleRole.Add(orgEligibleRoleAdmin);
-      //var role2 = await _dataContext.CcsAccessRole.FirstOrDefaultAsync(x => x.CcsAccessRoleNameKey == "ORG_DEFAULT_USER");
-      //var orgEligibleRoleUser = new OrganisationEligibleRole
-      //{
-      //  CcsAccessRole = role2,
-      //  Organisation = org
-      //};
-      //_dataContext.OrganisationEligibleRole.Add(orgEligibleRoleUser);
       await _dataContext.SaveChangesAsync();
+
+      // Notify the adapter
+      await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Create, org.CiiOrganisationId);
+
       return org.Id;
     }
-
+    //var role = await _dataContext.CcsAccessRole.FirstOrDefaultAsync(x => x.CcsAccessRoleNameKey == "ORG_ADMINISTRATOR");
+    //var orgEligibleRoleAdmin = new OrganisationEligibleRole
+    //{
+    //  CcsAccessRole = role,
+    //  Organisation = org
+    //};
+    //_dataContext.OrganisationEligibleRole.Add(orgEligibleRoleAdmin);
+    //var role2 = await _dataContext.CcsAccessRole.FirstOrDefaultAsync(x => x.CcsAccessRoleNameKey == "ORG_DEFAULT_USER");
+    //var orgEligibleRoleUser = new OrganisationEligibleRole
+    //{
+    //  CcsAccessRole = role2,
+    //  Organisation = org
+    //};
+    //_dataContext.OrganisationEligibleRole.Add(orgEligibleRoleUser);
     /// <summary>
     /// Delete an organisation by its id
     /// </summary>
@@ -114,6 +123,12 @@ namespace CcsSso.Service
           organisation.Party.IsDeleted = true;
         }
         await _dataContext.SaveChangesAsync();
+
+        //Invalidate redis
+        await _wrapperCacheService.RemoveCacheAsync($"{CacheKeyConstant.Organisation}-{organisation.CiiOrganisationId}");
+
+        // Notify the adapter
+        await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Delete, organisation.CiiOrganisationId);
       }
 
       //var group = await _dataContext.OrganisationUserGroup
@@ -166,14 +181,16 @@ namespace CcsSso.Service
       var organisation = await _dataContext.Organisation
         .Where(x => x.CiiOrganisationId == id && x.IsDeleted == false)
         .FirstOrDefaultAsync();
-      if (organisation != null) {
-        var dto = new OrganisationDto {
-            OrganisationId = organisation.Id,
-            CiiOrganisationId = organisation.CiiOrganisationId,
-            OrganisationUri = organisation.OrganisationUri,
-            RightToBuy = organisation.RightToBuy,
-            PartyId = organisation.PartyId,
-            LegalName = organisation.LegalName,
+      if (organisation != null)
+      {
+        var dto = new OrganisationDto
+        {
+          OrganisationId = organisation.Id,
+          CiiOrganisationId = organisation.CiiOrganisationId,
+          OrganisationUri = organisation.OrganisationUri,
+          RightToBuy = organisation.RightToBuy,
+          PartyId = organisation.PartyId,
+          LegalName = organisation.LegalName,
         };
         var contactPoint = await _dataContext.ContactPoint
           .Include(c => c.ContactDetail)
@@ -182,7 +199,8 @@ namespace CcsSso.Service
         if (contactPoint != null)
         {
           var contactDetail = contactPoint.ContactDetail;
-          if (contactDetail != null) {
+          if (contactDetail != null)
+          {
             var physicalAddress = await _dataContext.PhysicalAddress
             .Where(x => x.ContactDetailId == contactDetail.Id)
             .FirstOrDefaultAsync();
@@ -198,7 +216,8 @@ namespace CcsSso.Service
                 Uprn = physicalAddress.Uprn,
               };
             }
-            dto.ContactPoint = new ContactDetailDto {
+            dto.ContactPoint = new ContactDetailDto
+            {
               Email = "",
               WebUrl = "",
               PhoneNumber = "",
@@ -207,25 +226,29 @@ namespace CcsSso.Service
             var virtualAddress1 = await _dataContext.VirtualAddress
             .Where(x => x.ContactDetailId == contactDetail.Id && x.VirtualAddressTypeId == 1)
             .FirstOrDefaultAsync();
-            if (virtualAddress1 != null) {
+            if (virtualAddress1 != null)
+            {
               dto.ContactPoint.Email = virtualAddress1.VirtualAddressValue;
             }
             var virtualAddress2 = await _dataContext.VirtualAddress
             .Where(x => x.ContactDetailId == contactDetail.Id && x.VirtualAddressTypeId == 2)
             .FirstOrDefaultAsync();
-            if (virtualAddress2 != null) {
+            if (virtualAddress2 != null)
+            {
               dto.ContactPoint.WebUrl = virtualAddress2.VirtualAddressValue;
             }
             var virtualAddress3 = await _dataContext.VirtualAddress
             .Where(x => x.ContactDetailId == contactDetail.Id && x.VirtualAddressTypeId == 3)
             .FirstOrDefaultAsync();
-            if (virtualAddress3 != null) {
+            if (virtualAddress3 != null)
+            {
               dto.ContactPoint.PhoneNumber = virtualAddress3.VirtualAddressValue;
             }
             var virtualAddress4 = await _dataContext.VirtualAddress
             .Where(x => x.ContactDetailId == contactDetail.Id && x.VirtualAddressTypeId == 4)
             .FirstOrDefaultAsync();
-            if (virtualAddress4 != null) {
+            if (virtualAddress4 != null)
+            {
               dto.ContactPoint.Fax = virtualAddress4.VirtualAddressValue;
             }
           }
@@ -236,32 +259,21 @@ namespace CcsSso.Service
       return null;
     }
 
-    public async Task<List<OrganisationDto>> GetAllAsync()
+    public async Task<List<OrganisationDto>> GetAllAsync(string orgName)
     {
       var organisations = await _dataContext.Organisation
-        .Where(x => x.IsDeleted == false)
-        .ToListAsync();
-
-      if (organisations != null && organisations.Any())
-      {
-        List<OrganisationDto> list = new List<OrganisationDto>();
-        organisations.ForEach((organisation) =>
+        .Where(x => x.IsDeleted == false && (string.IsNullOrEmpty(orgName) || x.LegalName.ToLower().Contains(orgName.ToLower())))
+        .Select(organisation => new OrganisationDto
         {
-          var dto = new OrganisationDto
-          {
-            OrganisationId = organisation.Id,
-            CiiOrganisationId = organisation.CiiOrganisationId,
-            OrganisationUri = organisation.OrganisationUri,
-            RightToBuy = organisation.RightToBuy,
-            PartyId = organisation.PartyId,
-            LegalName = organisation.LegalName,
-          };
-          list.Add(dto);
-        });
-        return list;
-      }
+          OrganisationId = organisation.Id,
+          CiiOrganisationId = organisation.CiiOrganisationId,
+          OrganisationUri = organisation.OrganisationUri,
+          RightToBuy = organisation.RightToBuy,
+          PartyId = organisation.PartyId,
+          LegalName = organisation.LegalName,
+        }).ToListAsync();
 
-      return null;
+      return organisations;
     }
 
     /// <summary>
@@ -278,6 +290,12 @@ namespace CcsSso.Service
       {
         organisation.RightToBuy = model.RightToBuy;
         await _dataContext.SaveChangesAsync();
+
+        //Invalidate redis
+        await _wrapperCacheService.RemoveCacheAsync($"{CacheKeyConstant.Organisation}-{organisation.CiiOrganisationId}");
+
+        // Notify the adapter
+        await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Update, organisation.CiiOrganisationId);
       }
     }
 
@@ -285,41 +303,32 @@ namespace CcsSso.Service
     {
       try
       {
-        
+
       }
-      catch(Exception ex)
+      catch (Exception ex)
       {
         Console.Write(ex);
       }
     }
 
-    public async Task<List<OrganisationUserDto>> GetUsersAsync()
+    public async Task<List<OrganisationUserDto>> GetUsersAsync(string name)
     {
+      name = name?.ToLower();
       var users = await _dataContext.User
         .Include(c => c.Party)
         .ThenInclude(x => x.Person)
         .ThenInclude(o => o.Organisation)
-        .Where(x => x.IsDeleted == false && x.Party.Person.Organisation.IsDeleted == false)
-        .ToListAsync();
-
-      if (users != null && users.Any())
-      {
-        List<OrganisationUserDto> list = new List<OrganisationUserDto>();
-        users.ForEach((user) =>
+        .Where(u => u.IsDeleted == false &&
+        (string.IsNullOrEmpty(name) || u.UserName.Contains(name) || (u.Party.Person.FirstName + " " + u.Party.Person.LastName).ToLower().Contains(name) || u.Party.Person.Organisation.LegalName.ToLower().Contains(name)) &&
+        u.Party.Person.Organisation.IsDeleted == false).Select(user => new OrganisationUserDto
         {
-          var dto = new OrganisationUserDto
-          {
-            Id = user.Id,
-            UserName = user.UserName,
-            Name = (user.Party == null || user.Party.Person == null) ? "" : user.Party.Person.FirstName + " " + user.Party.Person.LastName,
-            OrganisationId = (user.Party == null || user.Party.Person == null || user.Party.Person.Organisation == null) ? 0 : user.Party.Person.Organisation.Id,
-            OrganisationLegalName = (user.Party == null || user.Party.Person == null || user.Party.Person.Organisation == null) ? "" : user.Party.Person.Organisation.LegalName,
-          };
-          list.Add(dto);
-        });
-        return list.Where(x => x.OrganisationLegalName != "" && x.OrganisationId != 0).ToList();
-      }
-      return null;
+          Id = user.Id,
+          UserName = user.UserName,
+          Name = user.Party.Person.FirstName + " " + user.Party.Person.LastName,
+          OrganisationId = user.Party.Person.Organisation.Id,
+          OrganisationLegalName = user.Party.Person.Organisation.LegalName,
+        }).ToListAsync();
+      return users;
     }
 
     public async Task<List<OrganisationEligibleRole>> GetOrganisationEligibleRolesAsync(Organisation org, int supplierBuyerType)

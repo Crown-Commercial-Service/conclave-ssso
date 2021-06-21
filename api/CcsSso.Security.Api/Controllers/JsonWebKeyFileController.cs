@@ -1,4 +1,5 @@
 using CcsSso.Security.Domain.Contracts;
+using CcsSso.Shared.Domain;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -21,7 +22,7 @@ namespace CcsSso.Security.Api.Controllers
 
     [Route(".well-known/jwks.json")]
     [HttpGet]
-    public JsonWebKeySet GenerateJsonWebTokens()
+    public JsonWebKeySetInfo GenerateJsonWebTokens()
     {
       return _securityService.GetJsonWebKeyTokens();
     }

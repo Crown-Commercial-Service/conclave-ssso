@@ -53,7 +53,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(CorrectContactData))]
-      public async Task ReturnCorrectNameTuple(ContactInfo contactInfo, string expectedFirstName, string expectedLastName)
+      public async Task ReturnCorrectNameTuple(ContactRequestInfo contactInfo, string expectedFirstName, string expectedLastName)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -141,19 +141,79 @@ namespace CcsSso.Core.Tests.External
                 {
                     DtoHelper.GetContactInfo("OTHER", null, null, null, null, null),
                     ErrorConstant.ErrorInsufficientDetails
-                }
+                },
+                new object[]
+                {
+                    new ContactRequestInfo
+                    {
+                      ContactPointReason = "OTHER",
+                      ContactPointName = "",
+                      Contacts = new List<ContactRequestDetail> { new ContactRequestDetail { ContactType = VirtualContactTypeName.Email, ContactValue = ""} }
+                    },
+                    ErrorConstant.ErrorInsufficientDetails
+                },
+                new object[]
+                {
+                    new ContactRequestInfo
+                    {
+                      ContactPointReason = "OTHER",
+                      ContactPointName = " ",
+                      Contacts = new List<ContactRequestDetail> { new ContactRequestDetail { ContactType = VirtualContactTypeName.Email, ContactValue = " "} }
+                    },
+                    ErrorConstant.ErrorInsufficientDetails
+                },
+                new object[]
+                {
+                    new ContactRequestInfo
+                    {
+                      ContactPointReason = "OTHER",
+                      ContactPointName = null,
+                      Contacts = new List<ContactRequestDetail> { new ContactRequestDetail { ContactType = VirtualContactTypeName.Email, ContactValue = null} }
+                    },
+                    ErrorConstant.ErrorInsufficientDetails
+                },
+                new object[]
+                {
+                    new ContactRequestInfo
+                    {
+                      ContactPointReason = "OTHER",
+                      ContactPointName = "OTHER",
+                      Contacts = new List<ContactRequestDetail> { new ContactRequestDetail { ContactType = "wrongType", ContactValue = "asdas"} }
+                    },
+                    ErrorConstant.ErrorInvalidContactType
+                },
+                new object[]
+                {
+                    new ContactRequestInfo
+                    {
+                      ContactPointReason = "OTHER",
+                      ContactPointName = "OTHER",
+                      Contacts = new List<ContactRequestDetail> { new ContactRequestDetail { ContactType = "", ContactValue = "asdas"} }
+                    },
+                    ErrorConstant.ErrorInvalidContactType
+                },
+                new object[]
+                {
+                    new ContactRequestInfo
+                    {
+                      ContactPointReason = "OTHER",
+                      ContactPointName = "OTHER",
+                      Contacts = new List<ContactRequestDetail> { new ContactRequestDetail { ContactType = null, ContactValue = "asdas"} }
+                    },
+                    ErrorConstant.ErrorInvalidContactType
+                },
             };
 
       [Theory]
       [MemberData(nameof(InCorrectContactData))]
-      public async Task ThrowsException_WhenValidating(ContactInfo contactInfo, string expectedError)
+      public async Task ThrowsException_WhenValidating(ContactRequestInfo contactInfo, string expectedError)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
           await SetupTestDataAsync(dataContext);
           var contactHelperService = GetContactHelperService(dataContext);
 
-          var ex = Assert.Throws<CcsSsoException>(() => contactHelperService.ValidateContacts(contactInfo));
+          var ex = await Assert.ThrowsAsync<CcsSsoException>(() => contactHelperService.ValidateContactsAsync(contactInfo));
 
           Assert.Equal(expectedError, ex.Message);
         });
@@ -181,7 +241,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(CorrectContactData))]
-      public async Task UpdateContactPointObjectSuccessfully(ContactInfo contactInfo, ContactPoint contactPoint, int expectedVirtualAddressCount)
+      public async Task UpdateContactPointObjectSuccessfully(ContactRequestInfo contactInfo, ContactPoint contactPoint, int expectedVirtualAddressCount)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -195,8 +255,8 @@ namespace CcsSso.Core.Tests.External
           var email = contactPoint.ContactDetail.VirtualAddresses.FirstOrDefault(v => v.VirtualAddressTypeId == 1).VirtualAddressValue;
           var phone = contactPoint.ContactDetail.VirtualAddresses.FirstOrDefault(v => v.VirtualAddressTypeId == 2).VirtualAddressValue;
 
-          Assert.Equal(contactInfo.Email, email);
-          Assert.Equal(contactInfo.PhoneNumber, phone);
+          Assert.Equal(contactInfo.Contacts.First(c => c.ContactType ==  VirtualContactTypeName.Email).ContactValue, email);
+          Assert.Equal(contactInfo.Contacts.First(c => c.ContactType == VirtualContactTypeName.Phone).ContactValue, phone);
         });
       }
     }
@@ -240,9 +300,16 @@ namespace CcsSso.Core.Tests.External
                       new VirtualAddressType { Id = 3, Name = VirtualContactTypeName.Fax },
                       new VirtualAddressType { Id = 4, Name = VirtualContactTypeName.Url }
                     },
-                    new ContactResponseInfo { ContactId = 1, ContactReason = "BILLING" },
-                    new ContactResponseInfo { ContactId = 1, ContactReason = "BILLING", Name = "Test User", Email = "testuser@mail.com",
-                      PhoneNumber = "1234phone", Fax = "1234fax", WebUrl = "testuserweb.com" },
+                    new ContactResponseInfo { ContactPointId = 1, ContactPointReason = "BILLING", Contacts = new List<ContactResponseDetail>() },
+                    new ContactResponseInfo { ContactPointId = 1, ContactPointReason = "BILLING", ContactPointName = "Test User",
+                      Contacts = new List<ContactResponseDetail>
+                      {
+                        new ContactResponseDetail { ContactId = 1, ContactType = VirtualContactTypeName.Email, ContactValue = "testuser@mail.com" },
+                        new ContactResponseDetail { ContactId = 2, ContactType = VirtualContactTypeName.Phone, ContactValue = "1234phone" },
+                        new ContactResponseDetail { ContactId = 3, ContactType = VirtualContactTypeName.Fax, ContactValue = "1234fax" },
+                        new ContactResponseDetail { ContactId = 4, ContactType = VirtualContactTypeName.Url, ContactValue = "testuserweb.com" },
+                      }
+                    },
                 },
             };
 
@@ -258,13 +325,17 @@ namespace CcsSso.Core.Tests.External
 
           contactHelperService.AssignVirtualContactsToContactResponse(contactPoint, virtualContactTypes, contactResponseInfo);
 
-          Assert.Equal(expectedContactResponseInfo.ContactId, contactResponseInfo.ContactId);
-          Assert.Equal(expectedContactResponseInfo.ContactReason, contactResponseInfo.ContactReason);
-          Assert.Equal(expectedContactResponseInfo.Name, contactResponseInfo.Name);
-          Assert.Equal(expectedContactResponseInfo.Email, contactResponseInfo.Email);
-          Assert.Equal(expectedContactResponseInfo.PhoneNumber, contactResponseInfo.PhoneNumber);
-          Assert.Equal(expectedContactResponseInfo.Fax, contactResponseInfo.Fax);
-          Assert.Equal(expectedContactResponseInfo.WebUrl, contactResponseInfo.WebUrl);
+          Assert.Equal(expectedContactResponseInfo.ContactPointId, contactResponseInfo.ContactPointId);
+          Assert.Equal(expectedContactResponseInfo.ContactPointReason, contactResponseInfo.ContactPointReason);
+          Assert.Equal(expectedContactResponseInfo.ContactPointName, contactResponseInfo.ContactPointName);
+          Assert.Equal(expectedContactResponseInfo.Contacts.First(c => c.ContactType == VirtualContactTypeName.Email).ContactValue,
+              contactResponseInfo.Contacts.First(c => c.ContactType == VirtualContactTypeName.Email).ContactValue);
+          Assert.Equal(expectedContactResponseInfo.Contacts.First(c => c.ContactType == VirtualContactTypeName.Phone).ContactValue,
+              contactResponseInfo.Contacts.First(c => c.ContactType == VirtualContactTypeName.Phone).ContactValue);
+          Assert.Equal(expectedContactResponseInfo.Contacts.First(c => c.ContactType == VirtualContactTypeName.Fax).ContactValue,
+              contactResponseInfo.Contacts.First(c => c.ContactType == VirtualContactTypeName.Fax).ContactValue);
+          Assert.Equal(expectedContactResponseInfo.Contacts.First(c => c.ContactType == VirtualContactTypeName.Url).ContactValue,
+              contactResponseInfo.Contacts.First(c => c.ContactType == VirtualContactTypeName.Url).ContactValue);
         });
       }
     }

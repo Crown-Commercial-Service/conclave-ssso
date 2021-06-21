@@ -26,20 +26,39 @@ namespace CcsSso.Service.External
     /// <param name="contactInfo"></param>
     /// <param name="contactPoint"></param>
     /// <returns></returns>
-    public async Task AssignVirtualContactsToContactPointAsync(ContactInfo contactInfo, ContactPoint contactPoint)
+    public async Task AssignVirtualContactsToContactPointAsync(ContactRequestInfo contactInfo, ContactPoint contactPoint)
     {
-      List<VirtualAddress> virtualAddresses = await GetVirtualAddressesAsync(contactInfo);
+      List<VirtualAddress> updatingVirtualAddresses = await GetVirtualAddressesAsync(contactInfo);
 
-      if (virtualAddresses.Any())
+      if (updatingVirtualAddresses.Any())
+      {
+        if (contactPoint.ContactDetail.VirtualAddresses != null)
+        {
+          contactPoint.ContactDetail.VirtualAddresses.RemoveAll(va => !updatingVirtualAddresses.Any(uva => uva.VirtualAddressTypeId == va.VirtualAddressTypeId));
+          updatingVirtualAddresses.ForEach((virtualAddress) =>
+          {
+            var existingVirtualAddress = contactPoint.ContactDetail.VirtualAddresses
+              .FirstOrDefault(a => a.VirtualAddressTypeId == virtualAddress.VirtualAddressTypeId);
+            if (existingVirtualAddress != null)
+            {
+              existingVirtualAddress.VirtualAddressValue = virtualAddress.VirtualAddressValue;
+            }
+            else
+            {
+              contactPoint.ContactDetail.VirtualAddresses.Add(virtualAddress);
+            }
+          });
+        }
+        else
+        {
+          contactPoint.ContactDetail.VirtualAddresses = updatingVirtualAddresses;
+        }
+      }
+      else
       {
         if (contactPoint.ContactDetail.VirtualAddresses != null)
         {
           contactPoint.ContactDetail.VirtualAddresses.RemoveAll(va => true);
-          contactPoint.ContactDetail.VirtualAddresses.AddRange(virtualAddresses);
-        }
-        else
-        {
-          contactPoint.ContactDetail.VirtualAddresses = virtualAddresses;
         }
       }
     }
@@ -56,22 +75,25 @@ namespace CcsSso.Service.External
       var virtualAddresses = contactPoint.ContactDetail.VirtualAddresses;
       if (virtualAddresses != null)
       {
-        contactResponseInfo.Email = virtualAddresses.FirstOrDefault(va => va.VirtualAddressTypeId == virtualContactTypes.FirstOrDefault(vct =>
-          vct.Name == VirtualContactTypeName.Email)?.Id)?.VirtualAddressValue ?? string.Empty;
-
-        contactResponseInfo.PhoneNumber = virtualAddresses.FirstOrDefault(va => va.VirtualAddressTypeId == virtualContactTypes.FirstOrDefault(vct =>
-          vct.Name == VirtualContactTypeName.Phone)?.Id)?.VirtualAddressValue ?? string.Empty;
-
-        contactResponseInfo.Fax = virtualAddresses.FirstOrDefault(va => va.VirtualAddressTypeId == virtualContactTypes.FirstOrDefault(vct =>
-          vct.Name == VirtualContactTypeName.Fax)?.Id)?.VirtualAddressValue ?? string.Empty;
-
-        contactResponseInfo.WebUrl = virtualAddresses.FirstOrDefault(va => va.VirtualAddressTypeId == virtualContactTypes.FirstOrDefault(vct =>
-           vct.Name == VirtualContactTypeName.Url)?.Id)?.VirtualAddressValue ?? string.Empty;
+        foreach (var virtualAddress in virtualAddresses)
+        {
+          if (!virtualAddress.IsDeleted)
+          {
+            var contactType = virtualContactTypes.First(t => t.Id == virtualAddress.VirtualAddressTypeId).Name;
+            ContactResponseDetail contactResponseDetail = new ContactResponseDetail
+            {
+              ContactId = virtualAddress.Id,
+              ContactType = contactType,
+              ContactValue = virtualAddress.VirtualAddressValue
+            };
+            contactResponseInfo.Contacts.Add(contactResponseDetail); 
+          }
+        }
       }
 
       if (contactPoint.Party.Person != null)
       {
-        contactResponseInfo.Name = $"{contactPoint.Party.Person.FirstName} {contactPoint.Party.Person.LastName}";
+        contactResponseInfo.ContactPointName = $"{contactPoint.Party.Person.FirstName} {contactPoint.Party.Person.LastName}";
       }
     }
 
@@ -80,11 +102,11 @@ namespace CcsSso.Service.External
     /// </summary>
     /// <param name="contactInfo"></param>
     /// <returns></returns>
-    public (string firstName, string lastName) GetContactPersonNameTuple(ContactInfo contactInfo)
+    public (string firstName, string lastName) GetContactPersonNameTuple(ContactRequestInfo contactInfo)
     {
       var firstName = string.Empty;
       var lastName = string.Empty;
-      var name = contactInfo.Name;
+      var name = contactInfo.ContactPointName;
       if (!string.IsNullOrWhiteSpace(name))
       {
         var nameArray = name.Trim().Split(" ");
@@ -116,36 +138,54 @@ namespace CcsSso.Service.External
       }
     }
 
-    public async Task<List<ContactReasonInfo>> GetContactPointReasonsForUIAsync()
+    public async Task<List<ContactReasonInfo>> GetContactPointReasonsAsync()
     {
       var excludingContactReasons = new List<string> { "OTHER", "SITE", "UNSPECIFIED" };
       var contactPointReasons = await _dataContext.ContactPointReason.Where(r => !excludingContactReasons.Contains(r.Name)).OrderBy(r => r.Name).ToListAsync();
 
-      var contactReasonInfoList = contactPointReasons.Select(r => new ContactReasonInfo { Key= r.Name, Value = r.Description }).ToList();
+      var contactReasonInfoList = contactPointReasons.Select(r => new ContactReasonInfo { Key = r.Name, Value = r.Description }).ToList();
 
       return contactReasonInfoList;
+    }
+
+    public async Task<List<string>> GetContactTypesAsync()
+    {
+      var contactTypes = await _dataContext.VirtualAddressType.Select(t => t.Name).ToListAsync();
+
+      return contactTypes;
     }
 
     /// <summary>
     /// Validate the contact details
     /// </summary>
     /// <param name="contactInfo"></param>
-    public void ValidateContacts(ContactInfo contactInfo)
+    public async Task ValidateContactsAsync(ContactRequestInfo contactInfo)
     {
-      if (string.IsNullOrWhiteSpace(contactInfo.Name) && string.IsNullOrWhiteSpace(contactInfo.Email)
-        && string.IsNullOrWhiteSpace(contactInfo.PhoneNumber) && string.IsNullOrWhiteSpace(contactInfo.Fax)
-        && string.IsNullOrWhiteSpace(contactInfo.WebUrl))
+      var validContactsNameList = await _dataContext.VirtualAddressType.Select(vat => vat.Name).ToListAsync();
+
+      if (string.IsNullOrWhiteSpace(contactInfo.ContactPointName) &&
+        (contactInfo.Contacts == null || !contactInfo.Contacts.Any() || !contactInfo.Contacts.Any(c => !string.IsNullOrWhiteSpace(c.ContactValue))))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
       }
 
-      if (!string.IsNullOrWhiteSpace(contactInfo.Email) && !UtilitiesHelper.IsEmailValid(contactInfo.Email))
+      if (contactInfo.Contacts.Any(c => string.IsNullOrWhiteSpace(c.ContactType)) ||
+        contactInfo.Contacts.Any(c => !validContactsNameList.Contains(c.ContactType)))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidContactType);
+      }
+
+      var email = contactInfo.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Email)?.ContactValue;
+
+      if (!string.IsNullOrEmpty(email) && !UtilitiesHelper.IsEmailValid(email))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidEmail);
       }
 
+      var phoneNumber = contactInfo.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Phone)?.ContactValue;
+
       // Validate the phone number for the E.164 standard
-      if (!string.IsNullOrWhiteSpace(contactInfo.PhoneNumber) && !UtilitiesHelper.IsPhoneNumberValid(contactInfo.PhoneNumber))
+      if (!string.IsNullOrEmpty(phoneNumber) && !UtilitiesHelper.IsPhoneNumberValid(phoneNumber))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidPhoneNumber);
       }
@@ -157,55 +197,23 @@ namespace CcsSso.Service.External
     /// </summary>
     /// <param name="contacts"></param>
     /// <returns></returns>
-    private async Task<List<VirtualAddress>> GetVirtualAddressesAsync(ContactInfo contactInfo)
+    private async Task<List<VirtualAddress>> GetVirtualAddressesAsync(ContactRequestInfo contactInfo)
     {
       var virtualAddressTypes = await _dataContext.VirtualAddressType.ToListAsync();
 
       List<VirtualAddress> virtualAddresses = new List<VirtualAddress>();
 
-      if (!string.IsNullOrWhiteSpace(contactInfo.Email))
+      foreach (var contact in contactInfo.Contacts)
       {
-        var virtualAddressTypeId = virtualAddressTypes.FirstOrDefault(t => t.Name == VirtualContactTypeName.Email).Id;
-
-        var virtualAddress = new VirtualAddress
+        if (!string.IsNullOrWhiteSpace(contact.ContactValue))
         {
-          VirtualAddressTypeId = virtualAddressTypeId,
-          VirtualAddressValue = contactInfo.Email
-        };
-        virtualAddresses.Add(virtualAddress);
-      }
-      if (!string.IsNullOrWhiteSpace(contactInfo.PhoneNumber))
-      {
-        var virtualAddressTypeId = virtualAddressTypes.FirstOrDefault(t => t.Name == VirtualContactTypeName.Phone).Id;
-
-        var virtualAddress = new VirtualAddress
-        {
-          VirtualAddressTypeId = virtualAddressTypeId,
-          VirtualAddressValue = contactInfo.PhoneNumber
-        };
-        virtualAddresses.Add(virtualAddress);
-      }
-      if (!string.IsNullOrWhiteSpace(contactInfo.Fax))
-      {
-        var virtualAddressTypeId = virtualAddressTypes.FirstOrDefault(t => t.Name == VirtualContactTypeName.Fax).Id;
-
-        var virtualAddress = new VirtualAddress
-        {
-          VirtualAddressTypeId = virtualAddressTypeId,
-          VirtualAddressValue = contactInfo.Fax
-        };
-        virtualAddresses.Add(virtualAddress);
-      }
-      if (!string.IsNullOrWhiteSpace(contactInfo.WebUrl))
-      {
-        var virtualAddressTypeId = virtualAddressTypes.FirstOrDefault(t => t.Name == VirtualContactTypeName.Url).Id;
-
-        var virtualAddress = new VirtualAddress
-        {
-          VirtualAddressTypeId = virtualAddressTypeId,
-          VirtualAddressValue = contactInfo.WebUrl
-        };
-        virtualAddresses.Add(virtualAddress);
+          var virtualAddress = new VirtualAddress
+          {
+            VirtualAddressTypeId = virtualAddressTypes.FirstOrDefault(t => t.Name == contact.ContactType).Id,
+            VirtualAddressValue = contact.ContactValue
+          };
+          virtualAddresses.Add(virtualAddress);
+        }
       }
       return virtualAddresses;
     }

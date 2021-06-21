@@ -21,11 +21,11 @@ namespace CcsSso.Core.JobScheduler
   public class OrganisationDeleteForInactiveRegistrationJob : BackgroundService
   {
     private readonly IDataContext _dataContext;
-    private readonly IDataTimeService _dataTimeService;
+    private readonly IDateTimeService _dataTimeService;
     private readonly AppSettings _appSettings;
     private readonly IHttpClientFactory _httpClientFactory;
 
-    public OrganisationDeleteForInactiveRegistrationJob(IServiceScopeFactory factory, IDataTimeService dataTimeService,
+    public OrganisationDeleteForInactiveRegistrationJob(IServiceScopeFactory factory, IDateTimeService dataTimeService,
       AppSettings appSettings, IHttpClientFactory httpClientFactory)
     {
       _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
@@ -44,13 +44,12 @@ namespace CcsSso.Core.JobScheduler
         await Task.Delay(_appSettings.ScheduleJobSettings.JobSchedulerExecutionFrequencyInMinutes * 60000, stoppingToken);
         Console.WriteLine($"******************Organization batch processing job ended ***********");
       }
-      Console.WriteLine($"Org batch processing job ended");
     }
 
     private async Task PerformJobAsync()
     {
       var organisationIds = await GetExpiredOrganisationIdsAsync();
-      Console.WriteLine($"{organisationIds.Count()} organizations found");
+      //Console.WriteLine($"{organisationIds.Count()} organizations found");
       if (organisationIds != null)
       {
         var client = _httpClientFactory.CreateClient();
@@ -64,7 +63,7 @@ namespace CcsSso.Core.JobScheduler
             bool isCandidateToDelete = true;
             //Get admin users to check their statuses in idam
             var adminUsers = await GetOrganisationAdmins(orgDetail.Item1);
-            Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.Item2}");
+            //Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.Item2}");
             foreach (var adminUser in adminUsers)
             {
               var url = "/security/getuser?email=" + adminUser.UserName;
@@ -84,24 +83,24 @@ namespace CcsSso.Core.JobScheduler
 
             if (isCandidateToDelete)
             {
-              Console.WriteLine($"*********Deleting from Conclave Organization id {orgDetail.Item1}***********************");
+              //Console.WriteLine($"*********Deleting from Conclave Organization id {orgDetail.Item1}***********************");
               await DeleteOrganisationAsync(orgDetail.Item1);
-              Console.WriteLine($"*********Deleted from Conclave Organization id {orgDetail.Item1}***********************");
+              //Console.WriteLine($"*********Deleted from Conclave Organization id {orgDetail.Item1}***********************");
 
-              Console.WriteLine($"*********Deleting from CII Organization id {orgDetail.Item1} ***********************");
+              //Console.WriteLine($"*********Deleting from CII Organization id {orgDetail.Item1} ***********************");
               await DeleteCIIOrganisationEntryAsync(orgDetail.Item2);              
             }
             else
             {
-              Console.WriteLine($"*********Activating CII Organization id {orgDetail.Item1} ***********************");
+              //Console.WriteLine($"*********Activating CII Organization id {orgDetail.Item1} ***********************");
               await ActivateOrganisationAsync(orgDetail.Item1);
-              Console.WriteLine($"*********Activated CII Organization id {orgDetail.Item1} ***********************");
+              //Console.WriteLine($"*********Activated CII Organization id {orgDetail.Item1} ***********************");
             }
           }
           catch (Exception e)
           {
-            Console.WriteLine($"Org deletion error " + e.Message);
-            Console.WriteLine($"*********Error deleting Organization***********************" + e.Message);
+            //Console.WriteLine($"Org deletion error " + e.Message);
+            //Console.WriteLine($"*********Error deleting Organization***********************" + e.Message);
           }
         }
       }
@@ -224,7 +223,7 @@ namespace CcsSso.Core.JobScheduler
         await _dataContext.SaveChangesAsync();
         foreach (var userName in userNames)
         {
-          Console.WriteLine($"********* Deleting {userName} from Auth0 ***********************");
+          //Console.WriteLine($"********* Deleting {userName} from Auth0 ***********************");
           await DeleteUserFromSecurityApiAsync(userName);          
         }
       }
@@ -243,24 +242,24 @@ namespace CcsSso.Core.JobScheduler
     public async Task DeleteCIIOrganisationEntryAsync(string ciiOrgId)
     {
       var client = _httpClientFactory.CreateClient();
-      client.DefaultRequestHeaders.Add("Apikey", _appSettings.CiiSettings.Token);
+      client.DefaultRequestHeaders.Add("x-api-key", _appSettings.CiiSettings.Token);
       client.BaseAddress = new Uri(_appSettings.CiiSettings.Url);
       var url = "/identities/organisation?ccs_org_id=" + ciiOrgId;
       var result = await client.DeleteAsync(url);
       if (result.IsSuccessStatusCode)
       {
-        Console.WriteLine($"*********Deleted from CII Organization id {ciiOrgId} ***********************");
+        //Console.WriteLine($"*********Deleted from CII Organization id {ciiOrgId} ***********************");
       }
       else
       {
-        Console.WriteLine($"*********Could not delete from CII Organization id {ciiOrgId} ***********************");
+        //Console.WriteLine($"*********Could not delete from CII Organization id {ciiOrgId} ***********************");
       }
     }
 
     private async Task DeleteUserFromSecurityApiAsync(string userName)
     {
       //Delete the user from IDAM via Security api
-      Console.WriteLine($"User {userName} will be deleted");
+      //Console.WriteLine($"User {userName} will be deleted");
       var client = _httpClientFactory.CreateClient();
       client.DefaultRequestHeaders.Add("X-API-Key", _appSettings.SecurityApiSettings.ApiKey);
       client.BaseAddress = new Uri(_appSettings.SecurityApiSettings.Url);
@@ -268,11 +267,11 @@ namespace CcsSso.Core.JobScheduler
       var response = await client.DeleteAsync(url);
       if (response.StatusCode == System.Net.HttpStatusCode.OK)
       {
-        Console.WriteLine($"********* Deleted {userName} from Auth0 ***********************");
+        //Console.WriteLine($"********* Deleted {userName} from Auth0 ***********************");
       }
       else
       {
-        Console.WriteLine($"********* Could not delete {userName} from Auth0 ***********************");
+        //Console.WriteLine($"********* Could not delete {userName} from Auth0 ***********************");
       }
     }
 

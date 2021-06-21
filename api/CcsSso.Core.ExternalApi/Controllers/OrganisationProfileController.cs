@@ -150,19 +150,33 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="401">Unauthorised</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_EMAIL, INVALID_PHONE_NUMBER, INSUFFICIENT_DETAILS
+    /// Error Codes: INSUFFICIENT_DETAILS, INVALID_CONTACT_TYPE, INVALID_EMAIL, INVALID_PHONE_NUMBER
     /// </response>
     /// <remarks>
     /// Sample request:
     ///
-    ///     POST /organisations/1/contact
+    ///     POST /organisations/1/contacts
     ///     {
-    ///        "contactReason": "BILLING/SHIPPING",
-    ///        "name": "Test User",
-    ///        "email": "testuser@mail.com",
-    ///        "phoneNumber": "+551155256325",
-    ///        "fax": "9123453",
-    ///        "webUrl": "testuser.com"
+    ///        "contactPointReason": "BILLING/SHIPPING",
+    ///        "contactPointName": "Test User",
+    ///        "contacts": [
+    ///           {
+    ///             contactType: "EMAIL",
+    ///             contactValue: "testuser@mail.com"
+    ///           },
+    ///           {
+    ///             contactType: "PHONE",
+    ///             contactValue: "+551155256325"
+    ///           },
+    ///           {
+    ///             contactType: "FAX",
+    ///             contactValue: "+551155256325"
+    ///           },
+    ///           {
+    ///             contactType: "WEB_ADDRESS",
+    ///             contactValue: "test.com"
+    ///           },
+    ///        ]
     ///     }
     ///     
     ///
@@ -170,7 +184,7 @@ namespace CcsSso.ExternalApi.Controllers
     [HttpPost("{organisationId}/contacts")]
     [SwaggerOperation(Tags = new[] { "Organisation contact" })]
     [ProducesResponseType(typeof(int), 200)]
-    public async Task<int> CreateOrganisationContact(string organisationId, ContactInfo contactInfo)
+    public async Task<int> CreateOrganisationContact(string organisationId, ContactRequestInfo contactInfo)
     {
       return await _contactService.CreateOrganisationContactAsync(organisationId, contactInfo);
     }
@@ -184,7 +198,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET organisations/1/contact
+    ///     GET organisations/1/contacts
     ///     
     ///     
     ///
@@ -206,7 +220,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /organisations/1/contact/1
+    ///     GET /organisations/1/contacts/1
     ///     
     ///
     /// </remarks>
@@ -225,19 +239,33 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="401">Unauthorised</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_EMAIL, INVALID_PHONE_NUMBER, INSUFFICIENT_DETAILS
+    /// Error Codes: INSUFFICIENT_DETAILS, INVALID_CONTACT_TYPE, INVALID_EMAIL, INVALID_PHONE_NUMBER
     /// </response>
     /// <remarks>
     /// Sample request:
     ///
-    ///     PUT /organisations/1/contact/1
+    ///     PUT /organisations/1/contacts/1
     ///     {
-    ///        "contactReason": "BILLING/SHIPPING",
-    ///        "name": "Test User",
-    ///        "email": "testuser@mail.com",
-    ///        "phoneNumber": "+551155256325",
-    ///        "fax": "9123453",
-    ///        "webUrl": "testuser.com"
+    ///        "contactPointReason": "BILLING/SHIPPING",
+    ///        "contactPointName": "Test User",
+    ///        "contacts": [
+    ///           {
+    ///             contactType: "EMAIL",
+    ///             contactValue: "testuser@mail.com"
+    ///           },
+    ///           {
+    ///             contactType: "PHONE",
+    ///             contactValue: "+551155256325"
+    ///           },
+    ///           {
+    ///             contactType: "FAX",
+    ///             contactValue: "+551155256325"
+    ///           },
+    ///           {
+    ///             contactType: "WEB_ADDRESS",
+    ///             contactValue: "test.com"
+    ///           },
+    ///        ]
     ///     }
     ///     
     ///
@@ -245,7 +273,7 @@ namespace CcsSso.ExternalApi.Controllers
     [HttpPut("{organisationId}/contacts/{contactId}")]
     [SwaggerOperation(Tags = new[] { "Organisation contact" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task UpdateOrganisationContact(string organisationId, int contactId, ContactInfo contactInfo)
+    public async Task UpdateOrganisationContact(string organisationId, int contactId, ContactRequestInfo contactInfo)
     {
       await _contactService.UpdateOrganisationContactAsync(organisationId, contactId, contactInfo);
     }
@@ -259,7 +287,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     DELETE /organisations/1/contact/1
+    ///     DELETE /organisations/1/contacts/1
     ///     
     ///
     /// </remarks>
@@ -415,19 +443,33 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="401">Unauthorised</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_EMAIL, INVALID_PHONE_NUMBER, INSUFFICIENT_DETAILS
+    /// Error Codes: INSUFFICIENT_DETAILS, INVALID_CONTACT_TYPE, INVALID_EMAIL, INVALID_PHONE_NUMBER
     /// </response>
     /// <remarks>
     /// Sample request:
     ///
-    ///     POST /organisations/1/site/1/contact
+    ///     POST /organisations/1/sites/1/contacts
     ///     {
-    ///        "contactReason": "BILLING/SHIPPING",
-    ///        "name": "Test User",
-    ///        "email": "testuser@mail.com",
-    ///        "phoneNumber": "+551155256325",
-    ///        "fax": "9123453",
-    ///        "webUrl": "testuser.com"
+    ///        "contactPointReason": "BILLING/SHIPPING",
+    ///        "contactPointName": "Test User",
+    ///        "contacts": [
+    ///           {
+    ///             contactType: "EMAIL",
+    ///             contactValue: "testuser@mail.com"
+    ///           },
+    ///           {
+    ///             contactType: "PHONE",
+    ///             contactValue: "+551155256325"
+    ///           },
+    ///           {
+    ///             contactType: "FAX",
+    ///             contactValue: "+551155256325"
+    ///           },
+    ///           {
+    ///             contactType: "WEB_ADDRESS",
+    ///             contactValue: "test.com"
+    ///           },
+    ///        ]
     ///     }
     ///     
     ///
@@ -435,7 +477,7 @@ namespace CcsSso.ExternalApi.Controllers
     [HttpPost("{organisationId}/sites/{siteId}/contacts")]
     [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
     [ProducesResponseType(typeof(int), 200)]
-    public async Task<int> CreateOrganisationSiteContact(string organisationId, int siteId, ContactInfo contactInfo)
+    public async Task<int> CreateOrganisationSiteContact(string organisationId, int siteId, ContactRequestInfo contactInfo)
     {
       return await _siteContactService.CreateOrganisationSiteContactAsync(organisationId, siteId, contactInfo);
     }
@@ -449,7 +491,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET organisations/1/site/1/contact
+    ///     GET organisations/1/sites/1/contacts
     ///     
     ///     
     ///
@@ -471,7 +513,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /organisations/1/site/1/contact/1
+    ///     GET /organisations/1/sites/1/contacts/1
     ///     
     ///
     /// </remarks>
@@ -490,19 +532,33 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="401">Unauthorised</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_EMAIL, INVALID_PHONE_NUMBER, INSUFFICIENT_DETAILS
+    /// Error Codes: INSUFFICIENT_DETAILS, INVALID_CONTACT_TYPE, INVALID_EMAIL, INVALID_PHONE_NUMBER
     /// </response>
     /// <remarks>
     /// Sample request:
     ///
-    ///     PUT /organisations/1/site/1/contact/1
+    ///     PUT /organisations/1/sites/1/contacts/1
     ///     {
-    ///        "contactReason": "BILLING/SHIPPING",
-    ///        "name": "Test User",
-    ///        "email": "testuser@mail.com",
-    ///        "phoneNumber": "+551155256325",
-    ///        "fax": "9123453",
-    ///        "webUrl": "testuser.com"
+    ///        "contactPointReason": "BILLING/SHIPPING",
+    ///        "contactPointName": "Test User",
+    ///        "contacts": [
+    ///           {
+    ///             contactType: "EMAIL",
+    ///             contactValue: "testuser@mail.com"
+    ///           },
+    ///           {
+    ///             contactType: "PHONE",
+    ///             contactValue: "+551155256325"
+    ///           },
+    ///           {
+    ///             contactType: "FAX",
+    ///             contactValue: "+551155256325"
+    ///           },
+    ///           {
+    ///             contactType: "WEB_ADDRESS",
+    ///             contactValue: "test.com"
+    ///           },
+    ///        ]
     ///     }
     ///     
     ///
@@ -510,7 +566,7 @@ namespace CcsSso.ExternalApi.Controllers
     [HttpPut("{organisationId}/sites/{siteId}/contacts/{contactId}")]
     [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task UpdateOrganisationSiteContact(string organisationId, int siteId, int contactId, ContactInfo contactInfo)
+    public async Task UpdateOrganisationSiteContact(string organisationId, int siteId, int contactId, ContactRequestInfo contactInfo)
     {
       await _siteContactService.UpdateOrganisationSiteContactAsync(organisationId, siteId, contactId, contactInfo);
     }
@@ -524,7 +580,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     DELETE /organisations/1/site/1/contact/1
+    ///     DELETE /organisations/1/sites/1/contacts/1
     ///     
     ///
     /// </remarks>
@@ -758,10 +814,10 @@ namespace CcsSso.ExternalApi.Controllers
 
     [HttpPut("{organisationId}/identity-providers/update")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
-    [ProducesResponseType(typeof(List<IdentityProviderDetail>), 200)]
-    public async Task UpdateIdentityProvider(string organisationId, [System.Web.Http.FromUri] string idpName, [System.Web.Http.FromUri] bool enabled)
+    [ProducesResponseType(200)]
+    public async Task UpdateIdentityProvider(OrgIdentityProviderSummary orgIdentityProviderSummary)
     {
-      await _organisationService.UpdateIdentityProviderAsync(organisationId, idpName, enabled);
+      await _organisationService.UpdateIdentityProviderAsync(orgIdentityProviderSummary);
     }
 
     #endregion
@@ -787,19 +843,11 @@ namespace CcsSso.ExternalApi.Controllers
       return await _organisationService.GetOrganisationRolesAsync(organisationId);
     }
 
-    [HttpGet("{ciiOrganisationId}/eligableRoles")]
-    [SwaggerOperation(Tags = new[] { "Organisation" })]
-    [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
-    public async Task<List<OrganisationRole>> GetEligableRoles(string ciiOrganisationId)
-    {
-      return await _organisationService.GetEligableRolesAsync(ciiOrganisationId);
-    }
-
     [HttpPut("{ciiOrganisationId}/updateEligableRoles")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
-    public async Task updateEligableRoles(string ciiOrganisationId, OrganisationRoleUpdate model)
+    public async Task UpdateEligableRoles(string ciiOrganisationId, OrganisationRoleUpdate model)
     {
-      await _organisationService.UpdateOrganisationAsync(ciiOrganisationId, model.IsBuyer, model.RolesToAdd, model.RolesToDelete);
+      await _organisationService.UpdateOrganisationEligibleRolesAsync(ciiOrganisationId, model.IsBuyer, model.RolesToAdd, model.RolesToDelete);
     }
 
     #endregion

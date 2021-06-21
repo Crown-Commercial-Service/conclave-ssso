@@ -1,4 +1,5 @@
 using CcsSso.Core.DbModel.Entity;
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Service.External;
 using CcsSso.Core.Tests.Infrastructure;
 using CcsSso.DbModel.Entity;
@@ -9,6 +10,7 @@ using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Service.External;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,7 +54,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(CorrectContactData))]
-      public async Task CreateSiteContactSuccessfully_WhenCorrectData(string ciiOrganisationId, int siteId, ContactInfo contactInfo)
+      public async Task CreateSiteContactSuccessfully_WhenCorrectData(string ciiOrganisationId, int siteId, ContactRequestInfo contactInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -70,7 +72,7 @@ namespace CcsSso.Core.Tests.External
             .FirstOrDefaultAsync();
 
           Assert.NotNull(createdContactData);
-          var name = contactInfo.Name;
+          var name = contactInfo.ContactPointName;
           if (!string.IsNullOrEmpty(name))
           {
             var nameArray = name.Trim().Split(" ");
@@ -122,7 +124,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(ContactDataInvalidOrgSite))]
-      public async Task ThrowsResourceNotFoundException_WhenOrgSiteDoesnotExists(string ciiOrganisationId, int siteId, ContactInfo contactInfo)
+      public async Task ThrowsResourceNotFoundException_WhenOrgSiteDoesnotExists(string ciiOrganisationId, int siteId, ContactRequestInfo contactInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -182,8 +184,19 @@ namespace CcsSso.Core.Tests.External
                   "1",
                   2,
                   1,
-                  new OrganisationSiteContactInfo { ContactId = 1, OrganisationId = "1", SiteId = 2, ContactReason = "BILLING",
-                    Name = "PesronFN1 LN1", Email = "email1@mail.com", PhoneNumber = "+94112345671", Fax = string.Empty, WebUrl = string.Empty}
+                  new OrganisationSiteContactInfo { ContactPointId = 1,
+                    Detail = new SiteDetailInfo
+                    {
+                      OrganisationId = "1", SiteId = 2
+                    },
+                    ContactPointReason = "BILLING",
+                    ContactPointName = "PesronFN1 LN1",
+                    Contacts = new List<ContactResponseDetail>
+                      {
+                        new ContactResponseDetail { ContactId = 1, ContactType = VirtualContactTypeName.Email, ContactValue = "email1@mail.com" },
+                        new ContactResponseDetail { ContactId = 2, ContactType = VirtualContactTypeName.Phone, ContactValue = "+94112345671" },
+                      }
+                  }
                 }
             };
 
@@ -199,15 +212,33 @@ namespace CcsSso.Core.Tests.External
           var result = await contactService.GetOrganisationSiteContactAsync(ciiOrganisationId, siteId, contactId);
 
           Assert.NotNull(result);
-          Assert.Equal(expectedSiteContact.ContactId, result.ContactId);
-          Assert.Equal(expectedSiteContact.OrganisationId, result.OrganisationId);
-          Assert.Equal(expectedSiteContact.SiteId, result.SiteId);
-          Assert.Equal(expectedSiteContact.ContactReason, result.ContactReason);
-          Assert.Equal(expectedSiteContact.Name, result.Name);
-          Assert.Equal(expectedSiteContact.Email, result.Email);
-          Assert.Equal(expectedSiteContact.PhoneNumber, result.PhoneNumber);
-          Assert.Equal(expectedSiteContact.Fax, result.Fax);
-          Assert.Equal(expectedSiteContact.WebUrl, result.WebUrl);
+          Assert.Equal(expectedSiteContact.ContactPointId, result.ContactPointId);
+          Assert.Equal(expectedSiteContact.Detail.OrganisationId, result.Detail.OrganisationId);
+          Assert.Equal(expectedSiteContact.Detail.SiteId, result.Detail.SiteId);
+          Assert.Equal(expectedSiteContact.ContactPointReason, result.ContactPointReason);
+          Assert.Equal(expectedSiteContact.ContactPointName, result.ContactPointName);
+
+          var expectedEmailContact = expectedSiteContact.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Email);
+          var expectedPhoneContact = expectedSiteContact.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Phone);
+          var expectedFaxContact = expectedSiteContact.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Fax);
+          var expectedUrlContact = expectedSiteContact.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Url);
+
+          if (expectedEmailContact != null)
+          {
+            Assert.Equal(expectedEmailContact.ContactValue, result.Contacts.First(c => c.ContactType == VirtualContactTypeName.Email).ContactValue);
+          }
+          if (expectedPhoneContact != null)
+          {
+            Assert.Equal(expectedPhoneContact.ContactValue, result.Contacts.First(c => c.ContactType == VirtualContactTypeName.Phone).ContactValue);
+          }
+          if (expectedFaxContact != null)
+          {
+            Assert.Equal(expectedFaxContact.ContactValue, result.Contacts.First(c => c.ContactType == VirtualContactTypeName.Fax).ContactValue);
+          }
+          if (expectedUrlContact != null)
+          {
+            Assert.Equal(expectedUrlContact.ContactValue, result.Contacts.First(c => c.ContactType == VirtualContactTypeName.Url).ContactValue);
+          }
 
         });
       }
@@ -242,12 +273,20 @@ namespace CcsSso.Core.Tests.External
                   2,
                   new OrganisationSiteContactInfoList
                   {
-                    OrganisationId = "1",
-                    SiteId = 2,
-                    SiteContacts = new List<ContactResponseInfo>
+                    Detail = new SiteDetailInfo
                     {
-                      new ContactResponseInfo { ContactId = 1, ContactReason = "BILLING", Name = "PesronFN1 LN1",
-                              Email = "email1@mail.com", PhoneNumber = "+94112345671", Fax = string.Empty, WebUrl = string.Empty}
+                      OrganisationId = "1",
+                      SiteId = 2
+                    },
+                    ContactPoints = new List<ContactResponseInfo>
+                    {
+                      new ContactResponseInfo { ContactPointId = 1, ContactPointReason = "BILLING", ContactPointName = "PesronFN1 LN1",
+                        Contacts = new List<ContactResponseDetail>
+                        {
+                          new ContactResponseDetail { ContactId = 1, ContactType = VirtualContactTypeName.Email, ContactValue = "email1@mail.com" },
+                          new ContactResponseDetail { ContactId = 2, ContactType = VirtualContactTypeName.Phone, ContactValue = "+94112345671" },
+                        }
+                      }
                     }
                   }
                 }
@@ -265,18 +304,36 @@ namespace CcsSso.Core.Tests.External
           var result = await contactService.GetOrganisationSiteContactsListAsync(ciiOrganisationId, siteId);
 
           Assert.NotNull(result);
-          Assert.Equal(expectedResult.SiteContacts.Count, result.SiteContacts.Count);
+          Assert.Equal(expectedResult.ContactPoints.Count, result.ContactPoints.Count);
 
-          var expectedContactResponse = expectedResult.SiteContacts.First();
-          var actualContactResponse = result.SiteContacts.First();
+          var expectedContactResponse = expectedResult.ContactPoints.First();
+          var actualContactResponse = result.ContactPoints.First();
 
-          Assert.Equal(expectedContactResponse.ContactId, actualContactResponse.ContactId);
-          Assert.Equal(expectedContactResponse.ContactReason, actualContactResponse.ContactReason);
-          Assert.Equal(expectedContactResponse.Name, actualContactResponse.Name);
-          Assert.Equal(expectedContactResponse.Email, actualContactResponse.Email);
-          Assert.Equal(expectedContactResponse.PhoneNumber, actualContactResponse.PhoneNumber);
-          Assert.Equal(expectedContactResponse.Fax, actualContactResponse.Fax);
-          Assert.Equal(expectedContactResponse.WebUrl, actualContactResponse.WebUrl);
+          Assert.Equal(expectedContactResponse.ContactPointId, actualContactResponse.ContactPointId);
+          Assert.Equal(expectedContactResponse.ContactPointReason, actualContactResponse.ContactPointReason);
+          Assert.Equal(expectedContactResponse.ContactPointName, actualContactResponse.ContactPointName);
+
+          var expectedEmailContact = expectedContactResponse.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Email);
+          var expectedPhoneContact = expectedContactResponse.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Phone);
+          var expectedFaxContact = expectedContactResponse.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Fax);
+          var expectedUrlContact = expectedContactResponse.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Url);
+
+          if (expectedEmailContact != null)
+          {
+            Assert.Equal(expectedEmailContact.ContactValue, actualContactResponse.Contacts.First(c => c.ContactType == VirtualContactTypeName.Email).ContactValue);
+          }
+          if (expectedPhoneContact != null)
+          {
+            Assert.Equal(expectedPhoneContact.ContactValue, actualContactResponse.Contacts.First(c => c.ContactType == VirtualContactTypeName.Phone).ContactValue);
+          }
+          if (expectedFaxContact != null)
+          {
+            Assert.Equal(expectedFaxContact.ContactValue, actualContactResponse.Contacts.First(c => c.ContactType == VirtualContactTypeName.Fax).ContactValue);
+          }
+          if (expectedUrlContact != null)
+          {
+            Assert.Equal(expectedUrlContact.ContactValue, actualContactResponse.Contacts.First(c => c.ContactType == VirtualContactTypeName.Url).ContactValue);
+          }
         });
       }
 
@@ -333,7 +390,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(CorrectContactData))]
-      public async Task UpdateSiteContactSuccessfully_WhenCorrectData(string ciiOrganisationId, int siteId, int contactId, ContactInfo contactInfo)
+      public async Task UpdateSiteContactSuccessfully_WhenCorrectData(string ciiOrganisationId, int siteId, int contactId, ContactRequestInfo contactInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -355,7 +412,7 @@ namespace CcsSso.Core.Tests.External
 
           Assert.NotNull(updatedContactData);
 
-          var name = contactInfo.Name;
+          var name = contactInfo.ContactPointName;
           if (!string.IsNullOrEmpty(name))
           {
             var nameArray = name.Trim().Split(" ");
@@ -411,7 +468,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(ContactDataInvalidOrgSiteContact))]
-      public async Task ThrowsException_WhenUserDoesnotExists(string ciiOrganisationId, int siteId, int contactId, ContactInfo contactInfo)
+      public async Task ThrowsException_WhenUserDoesnotExists(string ciiOrganisationId, int siteId, int contactId, ContactRequestInfo contactInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -427,7 +484,9 @@ namespace CcsSso.Core.Tests.External
     public static OrganisationSiteContactService ContactService(IDataContext dataContext)
     {
       IContactsHelperService contactsHelperService = new ContactsHelperService(dataContext);
-      var service = new OrganisationSiteContactService(dataContext, contactsHelperService);
+      var mockAdaptorNotificationService = new Mock<IAdaptorNotificationService>();
+      var mockWrapperCacheService = new Mock<IWrapperCacheService>();
+      var service = new OrganisationSiteContactService(dataContext, contactsHelperService, mockAdaptorNotificationService.Object, mockWrapperCacheService.Object);
       return service;
     }
 

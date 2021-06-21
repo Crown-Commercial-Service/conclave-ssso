@@ -1,4 +1,5 @@
 using CcsSso.Core.DbModel.Entity;
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
@@ -6,6 +7,7 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Shared.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -18,10 +20,16 @@ namespace CcsSso.Core.Service.External
   {
     private readonly IDataContext _dataContext;
     private readonly IContactsHelperService _contactsHelper;
-    public OrganisationSiteContactService(IDataContext dataContext, IContactsHelperService contactsHelper)
+    private IAdaptorNotificationService _adaptorNotificationService;
+    private readonly IWrapperCacheService _wrapperCacheService;
+
+    public OrganisationSiteContactService(IDataContext dataContext, IContactsHelperService contactsHelper,
+      IAdaptorNotificationService adaptorNotificationService, IWrapperCacheService wrapperCacheService)
     {
       _dataContext = dataContext;
       _contactsHelper = contactsHelper;
+      _adaptorNotificationService = adaptorNotificationService;
+      _wrapperCacheService = wrapperCacheService;
     }
 
     /// <summary>
@@ -31,9 +39,9 @@ namespace CcsSso.Core.Service.External
     /// <param name="siteId"></param>
     /// <param name="contactInfo"></param>
     /// <returns></returns>
-    public async Task<int> CreateOrganisationSiteContactAsync(string ciiOrganisationId, int siteId, ContactInfo contactInfo)
+    public async Task<int> CreateOrganisationSiteContactAsync(string ciiOrganisationId, int siteId, ContactRequestInfo contactInfo)
     {
-      _contactsHelper.ValidateContacts(contactInfo);
+      await _contactsHelper.ValidateContactsAsync(contactInfo);
 
       var organisationSiteContactPoint = await _dataContext.ContactPoint
         .Include(cp => cp.Party).ThenInclude(p => p.Organisation)
@@ -42,7 +50,7 @@ namespace CcsSso.Core.Service.External
 
       if (organisationSiteContactPoint != null)
       {
-        var contactPointReasonId = await _contactsHelper.GetContactPointReasonIdAsync(contactInfo.ContactReason);
+        var contactPointReasonId = await _contactsHelper.GetContactPointReasonIdAsync(contactInfo.ContactPointReason);
 
         #region Create new contact point for person with party
         var personPartyTypeId = (await _dataContext.PartyType.Where(pt => pt.PartyTypeName == PartyTypeName.NonUser).FirstOrDefaultAsync()).Id;
@@ -90,6 +98,13 @@ namespace CcsSso.Core.Service.External
         _dataContext.SiteContact.Add(siteContact);
         await _dataContext.SaveChangesAsync();
 
+        //Invalidate redis
+        await _wrapperCacheService.RemoveCacheAsync($"{CacheKeyConstant.SiteContactPoints}-{ciiOrganisationId}-{siteId}");
+
+        // Notify Adapter
+        var contactIds = contactPoint.ContactDetail.VirtualAddresses.Select(va => va.Id).ToList();
+        await _adaptorNotificationService.NotifyContactPointChangesAsync(ConclaveEntityNames.SiteContact, OperationType.Create, ciiOrganisationId, contactIds);
+
         return siteContact.Id;
       }
 
@@ -107,19 +122,47 @@ namespace CcsSso.Core.Service.External
     /// <returns></returns>
     public async Task DeleteOrganisationSiteContactAsync(string ciiOrganisationId, int siteId, int contactId)
     {
-      var organisationSiteContactPoint = await _dataContext.ContactPoint
-        .Include(cp => cp.SiteContacts)
-        .FirstOrDefaultAsync(cp => !cp.IsDeleted && cp.IsSite && cp.Id == siteId && cp.Party.Organisation.CiiOrganisationId == ciiOrganisationId);
+      // Site contact
+      var deletingSiteContact = await _dataContext.SiteContact
+        .FirstOrDefaultAsync(c => c.Id == contactId && !c.IsDeleted && c.ContactPointId == siteId && c.ContactPoint.Party.Organisation.CiiOrganisationId == ciiOrganisationId);
 
-      // Check whether there is a site, organisation and contact with given ids.
-      if (organisationSiteContactPoint == null || !organisationSiteContactPoint.SiteContacts.Any(c => c.Id == contactId && !c.IsDeleted))
+      // Check whether ther is a site, organisation and contact with given ids.
+      if (deletingSiteContact == null)
       {
         throw new ResourceNotFoundException();
       }
 
-      var deletingSiteContact = organisationSiteContactPoint.SiteContacts.First(c => c.Id == contactId);
+      // Get the actual contact point including the site contact person information
+      var deletingSiteContactPoint = await _dataContext.ContactPoint
+        .Where(cp => !cp.IsDeleted && !cp.IsSite && cp.Id == deletingSiteContact.ContactId)
+        .Include(cp => cp.ContactDetail).ThenInclude(cd => cd.VirtualAddresses)
+        .Include(cp => cp.Party).ThenInclude(p => p.Person)
+        .FirstOrDefaultAsync();
+
       deletingSiteContact.IsDeleted = true;
+      deletingSiteContactPoint.IsDeleted = true;
+      deletingSiteContactPoint.Party.Person.IsDeleted = true;
+
+      if (deletingSiteContactPoint.ContactDetail != null)
+      {
+        deletingSiteContactPoint.ContactDetail.IsDeleted = true;
+        deletingSiteContactPoint.ContactDetail.VirtualAddresses.ForEach((va) => va.IsDeleted = true);
+      }
+
       await _dataContext.SaveChangesAsync();
+
+      if (deletingSiteContactPoint.ContactDetail != null)
+      {
+        //Invalidate redis
+        var invalidatingCacheKeys = new List<string>();
+        invalidatingCacheKeys.AddRange(deletingSiteContactPoint.ContactDetail.VirtualAddresses.Select(va => $"{CacheKeyConstant.Contact}-{va.Id}").ToList());
+        invalidatingCacheKeys.Add($"{CacheKeyConstant.SiteContactPoints}-{ciiOrganisationId}-{siteId}");
+        await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeys.ToArray());
+
+        // Notify Adapter
+        var contactIds = deletingSiteContactPoint.ContactDetail.VirtualAddresses.Select(va => va.Id).ToList();
+        await _adaptorNotificationService.NotifyContactPointChangesAsync(ConclaveEntityNames.SiteContact, OperationType.Delete, ciiOrganisationId, contactIds); 
+      }
     }
 
     /// <summary>
@@ -155,10 +198,14 @@ namespace CcsSso.Core.Service.External
 
         var organisationSiteContactInfo = new OrganisationSiteContactInfo
         {
-          ContactId = contactId,
-          OrganisationId = ciiOrganisationId,
-          SiteId = siteId,
-          ContactReason = siteContactDetailContactPoint.ContactPointReason.Name
+          ContactPointId = contactId,
+          Detail = new SiteDetailInfo
+          {
+            OrganisationId = ciiOrganisationId,
+            SiteId = siteId,
+          },
+          ContactPointReason = siteContactDetailContactPoint.ContactPointReason.Name,
+          Contacts = new List<ContactResponseDetail>()
         };
 
         _contactsHelper.AssignVirtualContactsToContactResponse(siteContactDetailContactPoint, virtualContactTypes, organisationSiteContactInfo);
@@ -205,8 +252,9 @@ namespace CcsSso.Core.Service.External
         var contactId = siteContactPoint.SiteContacts.FirstOrDefault(sc => sc.ContactId == sitePersonContact.Id).Id;
         var siteContactResponseInfo = new ContactResponseInfo
         {
-          ContactId = contactId,
-          ContactReason = sitePersonContact.ContactPointReason.Name
+          ContactPointId = contactId,
+          ContactPointReason = sitePersonContact.ContactPointReason.Name,
+          Contacts = new List<ContactResponseDetail>()
         };
 
         _contactsHelper.AssignVirtualContactsToContactResponse(sitePersonContact, virtualContactTypes, siteContactResponseInfo);
@@ -216,15 +264,18 @@ namespace CcsSso.Core.Service.External
 
       return new OrganisationSiteContactInfoList
       {
-        OrganisationId = ciiOrganisationId,
-        SiteId = siteId,
-        SiteContacts = siteContactList
+        Detail = new SiteDetailInfo
+        {
+          OrganisationId = ciiOrganisationId,
+          SiteId = siteId
+        },
+        ContactPoints = siteContactList
       };
     }
 
-    public async Task UpdateOrganisationSiteContactAsync(string ciiOrganisationId, int siteId, int contactId, ContactInfo contactInfo)
+    public async Task UpdateOrganisationSiteContactAsync(string ciiOrganisationId, int siteId, int contactId, ContactRequestInfo contactInfo)
     {
-      _contactsHelper.ValidateContacts(contactInfo);
+      await _contactsHelper.ValidateContactsAsync(contactInfo);
 
       // Site contact
       var updatingSiteContact = await _dataContext.SiteContact
@@ -245,18 +296,39 @@ namespace CcsSso.Core.Service.External
 
       if (updatingContact != null)
       {
+        var previousVirtualContacts = updatingContact.ContactDetail.VirtualAddresses.Select(va => new KeyValuePair<int, string>(va.Id, va.VirtualAddressValue)).ToList();
         var (firstName, lastName) = _contactsHelper.GetContactPersonNameTuple(contactInfo);
 
         updatingContact.Party.Person.FirstName = firstName;
         updatingContact.Party.Person.LastName = lastName;
 
-        var contactPointReasonId = await _contactsHelper.GetContactPointReasonIdAsync(contactInfo.ContactReason);
+        var contactPointReasonId = await _contactsHelper.GetContactPointReasonIdAsync(contactInfo.ContactPointReason);
 
         updatingContact.ContactPointReasonId = contactPointReasonId;
 
         await _contactsHelper.AssignVirtualContactsToContactPointAsync(contactInfo, updatingContact);
 
         await _dataContext.SaveChangesAsync();
+
+        var updatedVirtualContacts = updatingContact.ContactDetail.VirtualAddresses.Select(va => new KeyValuePair<int, string>(va.Id, va.VirtualAddressValue)).ToList();
+
+        var createdContactIds = updatedVirtualContacts.Where(uc => !previousVirtualContacts.Any(pc => pc.Key == uc.Key)).Select(uc => uc.Key).ToList();
+        var deletedContactIds = previousVirtualContacts.Where(pc => !updatedVirtualContacts.Any(uc => uc.Key == pc.Key)).Select(pc => pc.Key).ToList();
+        var updatedContactIds = previousVirtualContacts.Where(pc => updatedVirtualContacts.Any(uc => uc.Key == pc.Key)).Select(pc => pc.Key).ToList();
+
+        //Invalidate redis
+        var invalidatingCacheKeys = new List<string>();
+        deletedContactIds.ForEach((id) => invalidatingCacheKeys.Add($"{CacheKeyConstant.Contact}-{id}"));
+        updatedContactIds.ForEach((id) => invalidatingCacheKeys.Add($"{CacheKeyConstant.Contact}-{id}"));
+        invalidatingCacheKeys.Add($"{CacheKeyConstant.SiteContactPoints}-{ciiOrganisationId}-{siteId}");
+        await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeys.ToArray());
+
+        // Notify Adapter
+        var createdContactNotifyTask = _adaptorNotificationService.NotifyContactPointChangesAsync(ConclaveEntityNames.SiteContact, OperationType.Create, ciiOrganisationId, createdContactIds);
+        var deletedContactNotifyTask = _adaptorNotificationService.NotifyContactPointChangesAsync(ConclaveEntityNames.SiteContact, OperationType.Delete, ciiOrganisationId, deletedContactIds);
+        var updatedContactNotifyTask = _adaptorNotificationService.NotifyContactPointChangesAsync(ConclaveEntityNames.SiteContact, OperationType.Update, ciiOrganisationId, updatedContactIds);
+
+        await Task.WhenAll(createdContactNotifyTask, deletedContactNotifyTask, updatedContactNotifyTask);
       }
       else
       {

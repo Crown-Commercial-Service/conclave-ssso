@@ -8,20 +8,15 @@ using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
 using CcsSso.Security.Services.Helpers;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.OpenSsl;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Security.Cryptography;
-using System.Text.Json;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace CcsSso.Security.Services
@@ -67,7 +62,7 @@ namespace CcsSso.Security.Services
           Scope = "offline_access" //Need this to receive a refresh token
         };
 
-        if(!string.IsNullOrEmpty(secret))
+        if (!string.IsNullOrEmpty(secret))
         {
           resourceOwnerTokenRequest.ClientSecret = secret;
         }
@@ -75,7 +70,7 @@ namespace CcsSso.Security.Services
         var result = await _authenticationApiClient.GetTokenAsync(resourceOwnerTokenRequest);
         if (result != null)
         {
-          var tokenInfo = await GetTokensAsync(clientId, result.IdToken, result.RefreshToken);
+          var tokenInfo = await GetTokensAsync(clientId, result);
           return new AuthResultDto()
           {
             AccessToken = tokenInfo.AccessToken,
@@ -87,15 +82,19 @@ namespace CcsSso.Security.Services
       }
       catch (ErrorApiException e)
       {
-        //if (e.Message.ToUpper() == "UNAUTHORIZED")
-        //{
-        //  throw new CcsSsoException("PASSWORD_RESET_REQUIRED");
-        //}
         if (e.ApiError.Error == "invalid_grant") // This is the same error which we get for password reset required and invalid username/password
         {
           throw new CcsSsoException("INVALID_USERNAME_PASSWORD");
         }
-        return null;
+        else if (e.ApiError.Error == "access_denied")
+        {
+          throw new CcsSsoException("INVALID_CLIENT_CONFIGURATION");
+        }
+        else if (e.ApiError.Error == "invalid_request")
+        {
+          throw new CcsSsoException("MISSING_REQUIRED_PARAMETERS");
+        }
+        throw new UnauthorizedAccessException();
       }
     }
 
@@ -118,13 +117,7 @@ namespace CcsSso.Security.Services
         {
           var result = await _managementApiClient.Users.CreateAsync(userCreateRequest);
 
-          var ticket = await GetResetPasswordTicketAsync(userInfo.Email, managementApiToken);
-
-          if (!string.IsNullOrEmpty(ticket))
-          {
-            ticket = ticket + "&initial";
-            await _ccsSsoEmailService.SendUserActivationLinkAsync(userInfo.Email, ticket);
-          }
+          await SendUserActivationEmailAsync(userInfo.Email, managementApiToken);
 
           return new UserRegisterResult()
           {
@@ -145,6 +138,23 @@ namespace CcsSso.Security.Services
         }
       }
     }
+
+    public async Task SendUserActivationEmailAsync(string email, string managementApiToken = null)
+    {
+      if (string.IsNullOrEmpty(managementApiToken))
+      {
+        managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
+      }
+
+      var ticket = await GetResetPasswordTicketAsync(email, managementApiToken);
+
+      if (!string.IsNullOrEmpty(ticket))
+      {
+        ticket = ticket + "&initial";
+        await _ccsSsoEmailService.SendUserActivationLinkAsync(email, ticket);
+      }
+    }
+
 
     public async Task UpdateUserAsync(Domain.Dtos.UserInfo userInfo)
     {
@@ -204,7 +214,7 @@ namespace CcsSso.Security.Services
           }
 
           var userDetails = await GetUserAsync(email);
-          var customClaims = GetCustomClaimsForIdToken(email, sid, userDetails);
+          var customClaims = GetCustomClaimsForIdToken(tokenDecoded, clientId, email, sid, userDetails);
           var idToken = _jwtTokenHandler.CreateToken(clientId, customClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
           var accessToken = GetAccessToken(clientId, email, userDetails);
           return new TokenResponseInfo
@@ -216,9 +226,13 @@ namespace CcsSso.Security.Services
         }
         throw new UnauthorizedAccessException();
       }
-      catch (ErrorApiException)
+      catch (ErrorApiException e)
       {
-        throw new CcsSsoException("INVALID_CREDENTIALS");
+        throw new SecurityException(new ErrorInfo()
+        {
+          Error = e.ApiError.Error,
+          ErrorDescription = e.ApiError.Message
+        });
       }
     }
 
@@ -255,21 +269,17 @@ namespace CcsSso.Security.Services
           };
           result = await _authenticationApiClient.GetTokenAsync(resourceOwnerTokenRequest);
         }
-
-        if (result != null)
-        {
-          var tokenInfo = await GetTokensAsync(tokenRequestInfo.ClientId, result.IdToken, result.RefreshToken, sid);
-          return tokenInfo;
-        }
+        var tokenInfo = await GetTokensAsync(tokenRequestInfo.ClientId, result, sid);
+        return tokenInfo;
       }
       catch (ErrorApiException e)
       {
-        if (e.ApiError.Error == "invalid_grant")
+        throw new SecurityException(new ErrorInfo()
         {
-          throw new CcsSsoException("INVALID_CODE");
-        }
+          Error = e.ApiError.Error,
+          ErrorDescription = e.ApiError.Message
+        });
       }
-      throw new RecordNotFoundException();
     }
 
     public async Task<List<IdentityProviderInfoDto>> ListIdentityProvidersAsync()
@@ -407,8 +417,9 @@ namespace CcsSso.Security.Services
       await client.PostAsync(url, codeContent);
     }
 
-    public string GetAuthenticationEndPoint(string state, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt)
-    {      
+    public string GetAuthenticationEndPoint(string state, string scope, string response_type, string client_id, string redirect_uri,
+      string code_challenge_method, string code_challenge, string prompt, string nonce, string display, string login_hint, int? max_age, string acr_values)
+    {
       string uri = $"{_appConfigInfo.Auth0ConfigurationInfo.ManagementApiBaseUrl}/authorize?client_id={client_id}" +
                   $"&response_type={response_type}&scope={scope}&redirect_uri={redirect_uri}&state={state}";
 
@@ -424,8 +435,34 @@ namespace CcsSso.Security.Services
 
       if (!string.IsNullOrEmpty(prompt))
       {
-        uri = uri + "&prompt=none";
+        uri = uri + $"&prompt={prompt}";
       }
+
+      if (!string.IsNullOrEmpty(nonce))
+      {
+        uri = uri + $"&nonce={nonce}";
+      }
+
+      if (!string.IsNullOrEmpty(display))
+      {
+        uri = uri + $"&display={display}";
+      }
+
+      if (!string.IsNullOrEmpty(login_hint))
+      {
+        uri = uri + $"&login_hint={login_hint}";
+      }
+
+      if (max_age.HasValue)
+      {
+        uri = uri + $"&max_age={max_age}";
+      }
+
+      if (!string.IsNullOrEmpty(acr_values))
+      {
+        uri = uri + $"&acr_values={acr_values}";
+      }
+
       return uri;
     }
 
@@ -522,7 +559,7 @@ namespace CcsSso.Security.Services
 
       var url = "/api/v2/tickets/password-change";
 
-      var userActivationLinkTTLInSeconds = _appConfigInfo.CcsEmailConfigurationInfo.UserActivationLinkTTLInMinutes * 60;
+      var userActivationLinkTTLInSeconds = _appConfigInfo.CcsEmailConfigurationInfo.ResetPasswordLinkTTLInMinutes * 60;
 
       var list = new List<KeyValuePair<string, string>>();
       list.Add(new KeyValuePair<string, string>("email", userName));
@@ -569,7 +606,7 @@ namespace CcsSso.Security.Services
       var httpClient = _httpClientFactory.CreateClient();
       httpClient.BaseAddress = new Uri(_appConfigInfo.UserExternalApiDetails.Url);
       httpClient.DefaultRequestHeaders.Add("X-API-Key", _appConfigInfo.UserExternalApiDetails.ApiKey);
-      var result = await httpClient.GetAsync($"users/?userId={email}");
+      var result = await httpClient.GetAsync($"?userId={email}");
       var userJsonString = await result.Content.ReadAsStringAsync();
       if (!string.IsNullOrEmpty(userJsonString))
       {
@@ -581,15 +618,24 @@ namespace CcsSso.Security.Services
 
     private string GetAccessToken(string clientId, string email, UserProfileInfo userDetails)
     {
-      var roles = userDetails.Detail.RoleNames.Concat(userDetails.Detail.UserGroups.Select(r => r.AccessRole)).Distinct();
-      var rolesSerialized = JsonConvert.SerializeObject(roles);
-      var accesstokenClaims = new List<KeyValuePair<string, string>>();
-      accesstokenClaims.Add(new KeyValuePair<string, string>("uid", userDetails.Detail.Id.ToString()));
-      accesstokenClaims.Add(new KeyValuePair<string, string>("ciiOrgId", userDetails.OrganisationId));
-      accesstokenClaims.Add(new KeyValuePair<string, string>("roles", rolesSerialized));
-      accesstokenClaims.Add(new KeyValuePair<string, string>("sub", email));
-      var accessToken = _jwtTokenHandler.CreateToken(clientId, accesstokenClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
-      return accessToken;
+      var rolesFromUserRoles = userDetails.Detail.RolePermissionInfo.Where(rp => rp.ServiceClientId == clientId).ToList();
+      var rolesFromUserGroups = userDetails.Detail.UserGroups.Where(ug => ug.ServiceClientId == clientId).ToList();
+      if (rolesFromUserRoles.Any() || rolesFromUserGroups.Any())
+      {
+        var roles = rolesFromUserRoles.Select(r => r.RoleKey).Concat(rolesFromUserGroups.Select(r => r.AccessRole)).Distinct();
+        var accesstokenClaims = new List<ClaimInfo>();
+        accesstokenClaims.Add(new ClaimInfo("uid", userDetails.Detail.Id.ToString()));
+        accesstokenClaims.Add(new ClaimInfo("ciiOrgId", userDetails.OrganisationId));
+        foreach (var role in roles)
+        {
+          accesstokenClaims.Add(new ClaimInfo("roles", role));
+        }
+
+        accesstokenClaims.Add(new ClaimInfo("sub", email));
+        var accessToken = _jwtTokenHandler.CreateToken(clientId, accesstokenClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
+        return accessToken;
+      }
+      throw new UnauthorizedAccessException();
     }
 
     public async Task SendNominateEmailAsync(Domain.Dtos.UserInfo userInfo)
@@ -629,9 +675,9 @@ namespace CcsSso.Security.Services
       }
     }
 
-    private async Task<TokenResponseInfo> GetTokensAsync(string clientId, string idTokenAuth0, string refreshToken, string sid = null)
+    private async Task<TokenResponseInfo> GetTokensAsync(string clientId, AccessTokenResponse accessTokenResponse, string sid = null)
     {
-      var tokenDecoded = _jwtTokenHandler.DecodeToken(idTokenAuth0);
+      var tokenDecoded = _jwtTokenHandler.DecodeToken(accessTokenResponse.IdToken);
       var email = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
       if (string.IsNullOrEmpty(email))
       {
@@ -646,36 +692,58 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException("INVALID_CONNECTION");
       }
 
-      var cutomClaims = GetCustomClaimsForIdToken(email, sid, userDetails);
-      var idToken = _jwtTokenHandler.CreateToken(clientId, cutomClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
+      var customClaims = GetCustomClaimsForIdToken(tokenDecoded, clientId, email, sid, userDetails);
+      var idToken = _jwtTokenHandler.CreateToken(clientId, customClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
 
       var accessToken = GetAccessToken(clientId, email, userDetails);
 
       return new TokenResponseInfo
       {
         IdToken = idToken,
-        RefreshToken = refreshToken,
-        AccessToken = accessToken
+        TokenType = accessTokenResponse.TokenType,
+        RefreshToken = accessTokenResponse.RefreshToken,
+        AccessToken = accessToken,
+        ExpiresInSeconds = _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes * 60
       };
     }
 
-    private List<KeyValuePair<string, string>> GetCustomClaimsForIdToken(string email, string sid, UserProfileInfo userProfileInfo)
+    private List<ClaimInfo> GetCustomClaimsForIdToken(JwtSecurityToken tokenDecoded, string clientId, string email, string sid, UserProfileInfo userProfileInfo)
     {
-      var cutomClaims = new List<KeyValuePair<string, string>>();
+      var customClaims = new List<ClaimInfo>();
       // Standard claims https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-      cutomClaims.Add(new KeyValuePair<string, string>("email", email));
+      customClaims.Add(new ClaimInfo("email", email));
 
       if (!string.IsNullOrEmpty(sid))
       {
-        cutomClaims.Add(new KeyValuePair<string, string>("sid", sid));
+        customClaims.Add(new ClaimInfo("sid", sid));
       }
 
-      cutomClaims.Add(new KeyValuePair<string, string>("sub", email));
-      cutomClaims.Add(new KeyValuePair<string, string>("name", string.Concat(userProfileInfo.FirstName, " ", userProfileInfo.LastName)));
-      cutomClaims.Add(new KeyValuePair<string, string>("given_name", userProfileInfo.FirstName));
-      cutomClaims.Add(new KeyValuePair<string, string>("family_name", userProfileInfo.LastName));
-      cutomClaims.Add(new KeyValuePair<string, string>("email_verified", "true")); //Since user can log in to the system
-      return cutomClaims;
+      customClaims.Add(new ClaimInfo("sub", email));
+      customClaims.Add(new ClaimInfo("azp", clientId));
+      customClaims.Add(new ClaimInfo("name", string.Concat(userProfileInfo.FirstName, " ", userProfileInfo.LastName)));
+      customClaims.Add(new ClaimInfo("given_name", userProfileInfo.FirstName));
+      customClaims.Add(new ClaimInfo("family_name", userProfileInfo.LastName));
+      customClaims.Add(new ClaimInfo("amr", "pwd")); // At the moment it's only password based https://tools.ietf.org/html/rfc8176. Revisit for Phase1
+
+
+      var authTime = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "auth_time")?.Value;
+      if (!string.IsNullOrEmpty(authTime))
+      {
+        customClaims.Add(new ClaimInfo("auth_time", authTime, ClaimValueTypes.Integer64));
+      }
+
+      var nonce = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "nonce")?.Value;
+      if (!string.IsNullOrEmpty(nonce))
+      {
+        customClaims.Add(new ClaimInfo("nonce", nonce));
+      }
+
+      var email_verified = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "email_verified")?.Value;
+      if (!string.IsNullOrEmpty(email_verified))
+      {
+        customClaims.Add(new ClaimInfo("email_verified", email_verified, ClaimValueTypes.Boolean));
+      }
+      return customClaims;
     }
   }
 }

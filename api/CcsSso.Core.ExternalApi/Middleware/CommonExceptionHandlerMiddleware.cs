@@ -47,9 +47,9 @@ namespace CcsSso.ExternalApi.Middleware
       catch (Exception ex)
       {
 #if DEBUG
-        await HandleException(context, ex.Message, ex, HttpStatusCode.BadRequest);
+        await HandleException(context, ex.Message, ex, HttpStatusCode.InternalServerError);
 # else
-        await HandleException(context, "ERROR", ex, HttpStatusCode.BadRequest);
+        await HandleException(context, "ERROR", ex, HttpStatusCode.InternalServerError);
 #endif
       }
     }

@@ -19,6 +19,39 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63)
                 .HasAnnotation("ProductVersion", "5.0.2");
 
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .UseIdentityByDefaultColumn();
+
+                    b.Property<string>("Application")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Device")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Event")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("EventTimeUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReferenceData")
+                        .HasColumnType("text");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLog");
+                });
+
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.CcsService", b =>
                 {
                     b.Property<int>("Id")
@@ -34,8 +67,11 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -43,10 +79,19 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ServiceClientId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ServiceCode")
+                        .HasColumnType("text");
+
                     b.Property<string>("ServiceName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ServiceUrl")
                         .HasColumnType("text");
 
                     b.Property<long>("TimeOutLength")
@@ -75,7 +120,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("IdamUserLoginId")
@@ -87,7 +132,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("TimedOut")
@@ -126,7 +171,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("DeviceType")
@@ -141,7 +186,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Location")
@@ -180,7 +225,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int?>("IdamUserLoginId")
@@ -192,7 +237,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("UserId")
@@ -224,7 +269,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("IdentityProviderId")
@@ -236,7 +281,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("OrganisationId")
@@ -269,7 +314,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -278,7 +323,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("OrganisationId")
@@ -308,7 +353,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -317,7 +362,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("OrganisationEligibleRoleId")
@@ -353,7 +398,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -362,7 +407,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("ServicePermissionName")
@@ -393,7 +438,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -402,7 +447,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("ServicePermissionId")
@@ -438,7 +483,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -447,7 +492,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -481,7 +526,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -490,7 +535,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("OrgTypeEligibility")
@@ -522,7 +567,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("EffectiveFrom")
@@ -537,7 +582,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -566,7 +611,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -578,7 +623,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("PartyId")
@@ -618,7 +663,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
@@ -630,7 +675,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Name")
@@ -656,7 +701,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("EnterpriseTypeName")
@@ -668,7 +713,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -691,7 +736,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("ExternalIdpFlag")
@@ -712,7 +757,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -741,7 +786,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsActivated")
@@ -759,7 +804,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("LegalName")
@@ -802,7 +847,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -811,7 +856,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("OrganisationAccessRoleDescription")
@@ -845,7 +890,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("EnterpriseTypeId")
@@ -857,7 +902,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("OrganisationId")
@@ -887,7 +932,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -896,7 +941,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("OrganisationId")
@@ -930,7 +975,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -939,7 +984,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("PartyTypeId")
@@ -967,7 +1012,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -976,7 +1021,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("PartyTypeName")
@@ -1002,7 +1047,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("FirstName")
@@ -1017,7 +1062,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("OrganisationId")
@@ -1060,7 +1105,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -1069,7 +1114,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Locality")
@@ -1110,7 +1155,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -1119,7 +1164,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("OrganisationId")
@@ -1147,7 +1192,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -1156,7 +1201,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("OrganisationId")
@@ -1187,7 +1232,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -1199,7 +1244,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("OrganisationEligibleIdentityProviderId")
@@ -1241,7 +1286,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -1250,7 +1295,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("OrganisationEligibleRoleId")
@@ -1283,7 +1328,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -1292,7 +1337,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("MembershipEndDate")
@@ -1331,7 +1376,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -1340,7 +1385,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("UserId")
@@ -1376,7 +1421,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -1385,7 +1430,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("UserSettingName")
@@ -1414,7 +1459,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
@@ -1423,7 +1468,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<int>("VirtualAddressTypeId")
@@ -1456,7 +1501,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("CreatedPartyId")
+                    b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
@@ -1468,7 +1513,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<DateTime>("LastUpdatedOnUtc")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LastUpdatedPartyId")
+                    b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Name")

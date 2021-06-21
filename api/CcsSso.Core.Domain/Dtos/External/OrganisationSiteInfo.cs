@@ -9,8 +9,12 @@ namespace CcsSso.Core.Domain.Dtos.External
     public OrganisationAddress Address { get; set; }
   }
 
-  public class OrganisationSite : OrganisationSiteInfo
+  public class OrganisationSite
   {
+    public string SiteName { get; set; }
+
+    public OrganisationAddressResponse Address { get; set; }
+
     public SiteDetail Details { get; set; }
   }
 

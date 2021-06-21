@@ -11,5 +11,7 @@ namespace CcsSso.Core.Domain.Contracts.External
   {
     Task<List<IdentityProviderDetail>> GetIdentityProvidersAsync();
     Task<List<OrganisationRole>> GetRolesAsync();
+
+    Task<List<CcsServiceInfo>> GetCcsServicesAsync();
   }
 }

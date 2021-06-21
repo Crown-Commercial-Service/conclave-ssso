@@ -30,6 +30,8 @@ namespace CcsSso.Dtos.Domain.Models
   public class OrganisationRollbackDto
   {
     public string OrganisationId { get; set; }
+    public string SchemeName { get; set; }
+    public string SchemeNumber { get; set; }
 
     public string CiiOrganisationId { get; set; }
 

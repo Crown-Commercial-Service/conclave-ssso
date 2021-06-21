@@ -6,7 +6,7 @@ namespace CcsSso.Domain.Contracts.External
 {
   public interface IUserContactService
   {
-    Task<int> CreateUserContactAsync(string userName, ContactInfo contactInfo);
+    Task<int> CreateUserContactAsync(string userName, ContactRequestInfo contactInfo);
 
     Task DeleteUserContactAsync(string userName, int contactId);
 
@@ -14,6 +14,6 @@ namespace CcsSso.Domain.Contracts.External
 
     Task<UserContactInfoList> GetUserContactsListAsync(string userName, string contactType = null);
 
-    Task UpdateUserContactAsync(string userName, int contactId, ContactInfo contactInfo);
+    Task UpdateUserContactAsync(string userName, int contactId, ContactRequestInfo contactInfo);
   }
 }

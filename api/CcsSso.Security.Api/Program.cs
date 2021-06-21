@@ -17,13 +17,24 @@ namespace CcsSso.Security.Api
         Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((hostingContext, config) =>
             {
-              config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+              var configBuilder = new ConfigurationBuilder()
+                         .AddJsonFile("appsettings.json", optional: false)
+                         .Build();
               var builtConfig = config.Build();
-              config.AddVault(options =>
+              var vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
+              if(!vaultEnabled)
               {
-                var vaultOptions = builtConfig.GetSection("Vault");
-                options.Address = vaultOptions["Address"];
-              });
+                config.AddJsonFile("appsecrets.json", optional: false, reloadOnChange: true);
+              }
+              else
+              {
+                config.AddVault(options =>
+                {
+                  var vaultOptions = builtConfig.GetSection("Vault");
+                  options.Address = vaultOptions["Address"];
+                });
+              }
+              config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
             })
             .UseApplicationLog() //Registers the Logger. This could depend on the actual configurations unique to each logger
             .ConfigureWebHostDefaults(webBuilder =>

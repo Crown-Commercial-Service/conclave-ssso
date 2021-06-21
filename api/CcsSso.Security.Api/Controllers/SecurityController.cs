@@ -1,8 +1,12 @@
+using CcsSso.Security.Api.Models;
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
+using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Contracts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.Extensions.Primitives;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
@@ -11,22 +15,24 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Security.Api.Controllers
 {
-  //[Route("[controller]")]
   [ApiController]
   public class SecurityController : ControllerBase
   {
 
     private readonly ISecurityService _securityService;
     private readonly IUserManagerService _userManagerService;
-    private readonly ILocalCacheService _localCacheService;
+    private readonly ISecurityCacheService _securityCacheService;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
+    private readonly ICryptographyService _cryptographyService;
     public SecurityController(ISecurityService securityService, IUserManagerService userManagerService,
-      ApplicationConfigurationInfo applicationConfigurationInfo, ILocalCacheService localCacheService)
+      ApplicationConfigurationInfo applicationConfigurationInfo,
+      ISecurityCacheService securityCacheService, ICryptographyService cryptographyService)
     {
       _securityService = securityService;
       _userManagerService = userManagerService;
       _applicationConfigurationInfo = applicationConfigurationInfo;
-      _localCacheService = localCacheService;
+      _securityCacheService = securityCacheService;
+      _cryptographyService = cryptographyService;
     }
 
     /// <summary>
@@ -67,55 +73,72 @@ namespace CcsSso.Security.Api.Controllers
     [HttpGet("security/authorize")]
     [ProducesResponseType(302)]
     [SwaggerOperation(Tags = new[] { "security" })]
-    public IActionResult Authorize(string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt = null)
+    public async Task<IActionResult> Authorize(string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method,
+      string code_challenge, string prompt, string state, string nonce, string display, string login_hint, int? max_age, string acr_values)
     {
-      var (sid, opbs) = GenerateCookies(client_id);
+      // At the moment Security Api only supports Authorisation code flow
+      if (!string.IsNullOrEmpty(response_type) && response_type != "code")
+      {
+        var errorUrl = redirect_uri + "?error=request_not_supported&error_description=response_type not supported";
+        return Redirect(errorUrl);
+      }
 
-      var url = _securityService.GetAuthenticationEndPoint(sid, scope, response_type, client_id, redirect_uri, code_challenge_method, code_challenge, prompt);
+      var (sid, opbs) = await GenerateCookiesAsync(client_id);
+
+      var url = await _securityService.GetAuthenticationEndPointAsync(sid, scope, response_type, client_id, redirect_uri,
+        code_challenge_method, code_challenge, prompt, state, nonce, display, login_hint, max_age, acr_values);
       return Redirect(url);
     }
 
     /// <summary>
-    /// Issues new security tokens when provide any type of following (auth code, refresh token) 
+    /// Issues new security tokens when provide any type of following (auth code, refresh token)
     /// </summary>
-    /// <response code="200">When grant type is "authorization_code" returns id token,refresh token and access token.
-    /// When grant type is "refresh_token" returns id token and access token</response>
+    /// client_id     - REQUIRED. Client Identifier valid at the Sercurity Service.
+    /// client_secret - REQUIRED for Web applications but NOT for single page applications
+    /// grant_type    - REQUIRED (refresh_token | authorization_code)
+    /// code          - REQUIRED when grant_type = authorization_code
+    /// refresh_token - REQUIRED when grant_type = refresh_token
+    /// redirect_uri  - REQUIRED (Redirection URI to which the response will be sent)
+    /// state         - RECOMMENDED. Opaque value used to maintain state between the request and the callback
+    /// code_verifier - Code verifier when use Authorization code flow with PKCE. 
+    /// <response code="200">When grant type is "authorization_code" returns id token,refresh token and access token.When grant type is "refresh_token" returns id token and access token</response>
+    /// <response  code="404">User not found</response>
+    /// <response  code="401">User does not have permissions for the client</response>
     /// <response  code="400">
-    /// Code: INVALID_TOKEN (Refresh token and auth code are empty),
-    /// Code: UNSUPPORTED_GRANT_TYPE (Invalid grant type)
+    /// error: invalid_request (The request is missing a required parameter, includes an unsupported parameter value(other than grant type), repeats a parameter, includes multiple credentials, utilizes more than one mechanism for authenticating the client, or is otherwise malformed
+    /// error: invalid_client (Client authentication failed (e.g., unknown client, no client authentication included, or unsupported authentication method))
+    /// error: invalid_grant (The provided authorization grant (e.g., authorization code, resource owner credentials) or refresh token is invalid, expired, revoked, does not match the redirection URI used in the authorization request, or was issued to another client)
+    /// error: unauthorized_client (The authenticated client is not authorized to use this authorization grant type)
+    /// error: unsupported_grant_type (The authorization grant type is not supported by the authorization server)
+    /// "INVALID_CONNECTION" User is not allowed to sign-in using the provider
     /// </response>
     /// <remarks>
     /// Sample requests:
-    ///
-    ///     POST /token
-    ///     {
-    ///        "code": "abcs123",
-    ///        "refreshtoken": null,
-    ///        "granttype:"authorization_code",
-    ///        "client_secret":"xxx"
-    ///        "redirect_uri":"http://redirect_url/"
-    ///     }
-    ///
-    ///     POST /token
-    ///     {
-    ///        "code": null,
-    ///        "refreshtoken": "abcs123",
-    ///        "granttype:"refresh_token",
-    ///        "client_secret":"xxx"
-    ///        "redirect_uri":"http://redirect_url/"
-    ///     }
-    ///
+    /// POST client_id=abdgt refreshtoken=abcs123 granttype=refresh_token client_secret=xxx redirect_uri=http://redirect_url state=123"
     /// </remarks>
     [HttpPost("security/token")]
+    [Consumes("application/x-www-form-urlencoded")]
+    [Produces("application/json")]
     [SwaggerOperation(Tags = new[] { "security" })]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
-    public async Task<TokenResponseInfo> Token(TokenRequestInfo tokenRequestInfo)
+    public async Task<TokenResponseInfo> Token([FromForm] TokenRequest tokenRequest)
     {
+      var tokenRequestInfo = new TokenRequestInfo()
+      {
+        ClientId = tokenRequest.ClientId,
+        ClientSecret = tokenRequest.ClientSecret,
+        Code = tokenRequest.Code,
+        CodeVerifier = tokenRequest.CodeVerifier,
+        GrantType = tokenRequest.GrantType,
+        RedirectUrl = tokenRequest.RedirectUrl,
+        RefreshToken = tokenRequest.RefreshToken,
+        State = tokenRequest.State
+      };
       // Sessions are handled in two places for a user and they are as Auth0 & Security api (aka CCS-SSO session cookie).
       // Auth0 session is given the highest priority as it used to generate tokens. Hence, CCS-SSO session will be
       // extented for valid Auth0 sessions.
-      var (sid, opbsValue) = GenerateCookies(tokenRequestInfo.ClientId, tokenRequestInfo.State);
+      var (sid, opbsValue) = await GenerateCookiesAsync(tokenRequestInfo.ClientId, tokenRequestInfo.State);
       var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
       var host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
       var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
@@ -133,7 +156,11 @@ namespace CcsSso.Security.Api.Controllers
     public async Task<ContentResult> CheckSession()
     {
       var path = "./Static/OPIFrame.html";
+      this.Request.Headers.TryGetValue("Referer", out var origin);
       var fileContents = await System.IO.File.ReadAllTextAsync(path);
+      Response.Headers.Add(
+            "Content-Security-Policy",
+            "frame-ancestors " + origin);
       return new ContentResult
       {
         Content = fileContents,
@@ -393,10 +420,10 @@ namespace CcsSso.Security.Api.Controllers
     /// Revoke refresh token
     /// </summary>
     /// <response code="302">Successfully redirect the user</response>
-    [HttpGet("security/revoke")]
-    [ProducesResponseType(302)]
+    [HttpPost("security/revoke")]
+    [ProducesResponseType(201)]
     [SwaggerOperation(Tags = new[] { "security" })]
-    public async Task RevokeToken(string refreshToken)
+    public async Task RevokeToken([FromBody]string refreshToken)
     {
       await _securityService.RevokeTokenAsync(refreshToken);
     }
@@ -477,10 +504,18 @@ namespace CcsSso.Security.Api.Controllers
       await _userManagerService.NominateUserAsync(userInfo);
     }
 
-    private (string, string) GenerateCookies(string clientId, string state = null)
+    [HttpPost("security/useractivationemail")]
+    [Consumes("application/x-www-form-urlencoded")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    public async Task SendUserActivationEmail(IFormCollection userDetails)
     {
-      string sid = string.Empty;
-      string opbsValue = string.Empty;
+      userDetails.TryGetValue("email", out StringValues email);
+      await _userManagerService.SendUserActivationEmailAsync(email);
+    }
+
+    private async Task<(string, string)> GenerateCookiesAsync(string clientId, string state = null)
+    {
+      clientId = clientId ?? string.Empty;
       string opbsCookieName = "opbs";
       DateTime expiresOnUTC = DateTime.UtcNow.AddMinutes(_applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes);
 
@@ -497,6 +532,7 @@ namespace CcsSso.Security.Api.Controllers
         //          SameSite = SameSiteMode.Lax    // Need to verify
         //#endif
       };
+      string opbsValue;
       // Generate OPBS cookie if not exists in request
       if (!Request.Cookies.ContainsKey(opbsCookieName))
       {
@@ -520,10 +556,12 @@ namespace CcsSso.Security.Api.Controllers
       };
       string sessionCookie = "ccs-sso";
 
+      string sid;
       if (!Request.Cookies.ContainsKey(sessionCookie) && string.IsNullOrEmpty(state))
       {
         sid = Guid.NewGuid().ToString();
-        Response.Cookies.Append(sessionCookie, sid, httpCookieOptions);
+        var sidEncrypted = _cryptographyService.EncryptString(sid, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
+        Response.Cookies.Append(sessionCookie, sidEncrypted, httpCookieOptions);
       }
       else
       {
@@ -533,7 +571,8 @@ namespace CcsSso.Security.Api.Controllers
         }
         else
         {
-          sid = _localCacheService.GetValue<string>(state);
+          var sidCache = await _securityCacheService.GetValueAsync<string>(state);
+          sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
         }
         //Re-assign the same session id with new expiration time
         Response.Cookies.Delete(sessionCookie);

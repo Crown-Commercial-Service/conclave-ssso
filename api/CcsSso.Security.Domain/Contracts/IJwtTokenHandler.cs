@@ -6,7 +6,7 @@ namespace CcsSso.Security.Domain.Contracts
 {
   public interface IJwtTokenHandler
   {
-    string CreateToken(string audience, List<KeyValuePair<string, string>> customClaims, int tokenExpirationTimeInMinutes);
+    string CreateToken(string audience, List<ClaimInfo> customClaims, int tokenExpirationTimeInMinutes);
 
     JwtSecurityToken DecodeToken(string token);
   }

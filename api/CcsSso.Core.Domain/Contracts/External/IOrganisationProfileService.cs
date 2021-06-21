@@ -20,12 +20,10 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task<List<OrganisationRole>> GetOrganisationRolesAsync(string ciiOrganisationId);
 
-    Task<List<OrganisationRole>> GetEligableRolesAsync(string ciiOrganisationId);
-
     Task UpdateOrganisationAsync(string ciiOrganisationId, OrganisationProfileInfo organisationProfileInfo);
 
-    Task UpdateIdentityProviderAsync(string ciiOrganisationId, string idpName, bool enabled);
+    Task UpdateIdentityProviderAsync(OrgIdentityProviderSummary orgIdentityProviderSummary);
 
-    Task UpdateOrganisationAsync(string ciiOrganisationId, bool isBuyer, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete);
+    Task UpdateOrganisationEligibleRolesAsync(string ciiOrganisationId, bool isBuyer, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete);
   }
 }

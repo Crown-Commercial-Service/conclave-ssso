@@ -18,9 +18,9 @@ namespace CcsSso.Security.Tests
       public void GeneratesJsonWebKeyTokens()
       {
         var service = GetJwtTokenHandler();
-        var result = service.CreateToken("brickendon", new List<KeyValuePair<string, string>>() {
-        new KeyValuePair<string, string>("name","Ann"),
-        new KeyValuePair<string, string>("email","Ann@brickendon.com")
+        var result = service.CreateToken("brickendon", new List<ClaimInfo>() {
+        new ClaimInfo("name","Ann"),
+        new ClaimInfo("email","Ann@brickendon.com")
         }, 10);
         Assert.NotNull(result);
         var tokenDecoded = service.DecodeToken(result);
@@ -37,9 +37,9 @@ namespace CcsSso.Security.Tests
       public void DecodeToken_WhenProvideValidToken()
       {
         var service = GetJwtTokenHandler();
-        var result = service.CreateToken("brickendon", new List<KeyValuePair<string, string>>() {
-        new KeyValuePair<string, string>("name","Ann"),
-        new KeyValuePair<string, string>("email","Ann@brickendon.com")
+        var result = service.CreateToken("brickendon", new List<ClaimInfo>() {
+        new ClaimInfo("name","Ann"),
+        new ClaimInfo("email","Ann@brickendon.com")
         }, 10);
         Assert.NotNull(result);
         var tokenDecoded = service.DecodeToken(result);

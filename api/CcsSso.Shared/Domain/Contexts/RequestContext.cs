@@ -9,5 +9,9 @@ namespace CcsSso.Shared.Domain.Contexts
     public int UserId { get; set; }
 
     public string CiiOrganisationId { get; set; }
+
+    public string IpAddress { get; set; }
+
+    public string Device { get; set; }
   }
 }

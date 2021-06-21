@@ -380,17 +380,17 @@ namespace CcsSso.Security.Services
       await _provider.AdminResetUserPasswordAsync(adminResetUserPasswordRequest);
     }
 
-    public string GetAuthenticationEndPoint(string state, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt)
+    public string GetAuthenticationEndPoint(string state, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt, string nonce, string display, string login_hint, int? max_age, string acr_values)
     {
       throw new NotImplementedException();
     }
 
-      /// <summary>
-      /// validates verification code and reset password
-      /// </summary>
-      /// <param name="resetPasswordDto"></param>
-      /// <returns></returns>
-      public async Task ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
+    /// <summary>
+    /// validates verification code and reset password
+    /// </summary>
+    /// <param name="resetPasswordDto"></param>
+    /// <returns></returns>
+    public async Task ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
     {
 
       CognitoUser user = new CognitoUser(resetPasswordDto.UserName, _appConfigInfo.AwsCognitoConfigurationInfo.AWSAppClientId, _userPool, _provider);
@@ -431,7 +431,7 @@ namespace CcsSso.Security.Services
         adminUserGlobalSignOutRequest.UserPoolId = _appConfigInfo.AwsCognitoConfigurationInfo.AWSPoolId;
         await _provider.AdminUserGlobalSignOutAsync(adminUserGlobalSignOutRequest);
       }
-      catch(UserNotFoundException)
+      catch (UserNotFoundException)
       {
         throw new CcsSsoException("USER_NOT_EXISTS");
       }
@@ -480,7 +480,12 @@ namespace CcsSso.Security.Services
 
     public async Task SendNominateEmailAsync(Domain.Dtos.UserInfo userInfo)
     {
+      throw new NotImplementedException();
+    }
 
+    public async Task SendUserActivationEmailAsync(string email, string managementApiToken = null)
+    {
+      throw new NotImplementedException();
     }
   }
 }

@@ -7,6 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CcsSso.Core.Service;
+using CcsSso.Service;
+using CcsSso.Domain.Contracts;
 
 namespace CcsSso.Api
 {
@@ -20,13 +23,24 @@ namespace CcsSso.Api
         public static IHostBuilder CreateHostBuilder(string[] args) => Host.CreateDefaultBuilder(args)
         .ConfigureAppConfiguration((hostingContext, config) =>
         {
-          config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+          var configBuilder = new ConfigurationBuilder()
+                         .AddJsonFile("appsettings.json", optional: false)
+                         .Build();
           var builtConfig = config.Build();
-          config.AddVault(options =>
+          var vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
+          if (!vaultEnabled)
           {
-            var vaultOptions = builtConfig.GetSection("Vault");
-            options.Address = vaultOptions["Address"];
-          });
+            config.AddJsonFile("appsecrets.json", optional: false, reloadOnChange: true);
+          }
+          else
+          {
+            config.AddVault(options =>
+            {
+              var vaultOptions = builtConfig.GetSection("Vault");
+              options.Address = vaultOptions["Address"];
+            });
+          }
+          config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
         })
         .ConfigureWebHostDefaults(webBuilder =>
         {

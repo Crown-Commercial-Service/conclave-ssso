@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using static CcsSso.Security.Domain.Constants.Constants;
 
 namespace CcsSso.Security.Tests
 {
@@ -37,6 +38,19 @@ namespace CcsSso.Security.Tests
         var result = await service.CreateUserAsync(userInfo);
         Assert.NotNull(result);
       }
+
+      [Theory]
+      [MemberData(nameof(ValidData))]
+      public async Task ThrowsException_WhenNotPassrequiredData(UserInfo userInfo)
+      {
+        var mockIdentityProviderService = new Mock<IIdentityProviderService>();
+        mockIdentityProviderService.Setup(m => m.CreateUserAsync(It.IsAny<UserInfo>())).ReturnsAsync(new UserRegisterResult());
+
+        var service = GetUserManagerService(mockIdentityProviderService);
+        var ex = await Assert.ThrowsAsync<CcsSsoException>(async () => await service.SendUserActivationEmailAsync(null));
+        Assert.Equal(ErrorCodes.EmailRequired, ex.Message);
+      }
+      
 
       public static IEnumerable<object[]> InvalidData =>
               new List<object[]>

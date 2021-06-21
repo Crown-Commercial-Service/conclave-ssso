@@ -6,6 +6,7 @@ namespace CcsSso.Domain.Constants
     public const string DAApiRequestContentType = "application/json";
     public const string ConclaveIdamConnectionName = "Username-Password-Authentication";
     public const string OrgAdminRoleNameKey = "ORG_ADMINISTRATOR";
+    public const string DefaultUserRoleNameKey = "ORG_DEFAULT_USER";
   }
 
   public static class ErrorConstant
@@ -43,6 +44,9 @@ namespace CcsSso.Domain.Constants
     public const string ErrorInvalidGroupName = "INVALID_GROUP_NAME"; 
     public const string ErrorInvalidRoleInfo = "INVALID_ROLE_INFO";
     public const string ErrorInvalidUserInfo = "INVALID_USER_INFO";
+    public const string ErrorInvalidContactType = "INVALID_CONTACT_TYPE";
+    public const string ErrorInvalidContactValue = "INVALID_CONTACT_VALUE";
+    public const string ErrorInvalidCountryCode = "INVALID_COUNTRY_CODE";
   }
 
   public static class VirtualContactTypeName
@@ -79,5 +83,80 @@ namespace CcsSso.Domain.Constants
     public const string Branch = "BRANCH";
     public const string Site = "SITE";
     public const string Unspecified = "UNSPECIFIED";
+  }
+
+  public static class ConclaveEntityNames
+  {
+    public const string UserProfile = "UserProfile";
+    public const string OrgProfile = "OrgProfile";
+    public const string Site = "SiteProfile";
+    public const string UserContact = "UserContact";
+    public const string OrgContact = "OrgContact";
+    public const string SiteContact = "SiteContact";
+    public const string Contact = "Contact";
+  }
+
+  public static class QueueConstant
+  {
+    public const string OperationName = "OperationName";
+    public const string OperationEntity = "OperationEntity";
+    public const string OrganisationIdAttribute = "OrganisationId";
+    public const string UserNameAttribute = "UserName";
+    public const string ContactIdAttribute = "ContactId";
+    public const string SiteIdAttribute = "SiteId";
+  }
+
+  public static class OperationType
+  {
+    public const string Create = "CREATE";
+    public const string Update = "UPDATE";
+    public const string Delete = "DELETE";
+  }
+
+  public static class CacheKeys
+  {
+    public const string CcsServices = "LOCAL_CACHE_CCS_SERVICES";
+  }
+
+  public static class AuditLogEvent
+  {
+    public const string UserCreate = "User-create";
+    public const string UserDelete = "User-delete";
+    public const string UserUpdate = "User-update";
+    public const string UserIdpUpdate = "User-idp-update";
+    public const string UserGroupUpdate = "User-group-update";
+    public const string UserRoleUpdate = "User-role-update";
+    public const string MyAccountUpdate = "My-account-update";
+    public const string UserContactCreate = "User-contact-create";
+    public const string UserContactDelete= "User-contact-delete";
+    public const string UserContactUpdate = "User-contact-update";
+    public const string OrgContactCreate = "Org-contact-create";
+    public const string OrgContactDelete = "Org-contact-delete";
+    public const string OrgContactUpdate = "Org-contact-update";
+    public const string OrgSiteCreate = "Org-site-create";
+    public const string OrgSiteDelete = "Org-site-delete";
+    public const string OrgSiteUpdate = "Org-site-update";
+    public const string GroupeCreate = "Group-create";
+    public const string GroupeDelete = "Group-delete";
+    public const string GroupeNameChange = "Group-name-changed";
+    public const string GroupeRoleAdd = "Group-role-add";
+    public const string GroupeRoleRemove = "Group-role-remove";
+    public const string GroupeUserAdd = "Group-user-add";
+    public const string GroupeUserRemove = "Group-user-remove";
+    public const string OrgRegistryAdd = "Org-registry-add";
+    public const string OrgRegistryRemove = "Org-registry-remove";
+    public const string UserPasswordChange = "User-password-change";
+    public const string AdminResetPassword = "Admin-reset-user-password";
+    public const string RemoveUserAdminRoles = "Admin-remove-user-admin-roles";
+    public const string AddUserAdminRole = "Admin-add-user-admin-role";
+  }
+
+  public static class AuditLogApplication
+  {
+    public const string ManageMyAccount = "Manage-my-account";
+    public const string ManageUserAccount = "Manage-user-account";
+    public const string ManageOrganisation= "Manage-organisation";
+    public const string ManageGroup = "Manage-group";
+    public const string OrgUserSupport = "Org-user-support";
   }
 }

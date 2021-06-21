@@ -124,26 +124,6 @@ namespace CcsSso.Core.Tests.External
                 },
                 new object[]
                 {
-                  DtoHelper.GetUserProfileRequestInfo("UserFN1UP", "UserLN1UP", "usernew@mail.com", "CiiOrg1", 1, UserTitle.Doctor, null, null),
-                  ErrorConstant.ErrorInvalidUserGroupRole
-                },
-                new object[]
-                {
-                  DtoHelper.GetUserProfileRequestInfo("UserFN1UP", "UserLN1UP", "usernew@mail.com", "CiiOrg1", 1, UserTitle.Doctor, new List<int> { }, new List<int> { }),
-                  ErrorConstant.ErrorInvalidUserGroupRole
-                },
-                new object[]
-                {
-                  DtoHelper.GetUserProfileRequestInfo("UserFN1UP", "UserLN1UP", "usernew@mail.com", "CiiOrg1", 1, UserTitle.Doctor, null, new List<int> { }),
-                  ErrorConstant.ErrorInvalidUserGroupRole
-                },
-                new object[]
-                {
-                  DtoHelper.GetUserProfileRequestInfo("UserFN1UP", "UserLN1UP", "usernew@mail.com", "CiiOrg1", 1, UserTitle.Doctor, new List<int> { }, null),
-                  ErrorConstant.ErrorInvalidUserGroupRole
-                },
-                new object[]
-                {
                   DtoHelper.GetUserProfileRequestInfo("UserFN1UP", "UserLN1UP", "usernew@mail.com", "CiiOrg1", 1, UserTitle.Doctor, new List<int> {0, 1, 2 }, null),
                   ErrorConstant.ErrorInvalidUserGroup
                 },
@@ -742,30 +722,6 @@ namespace CcsSso.Core.Tests.External
                 new object[]
                 {
                   "user1@mail.com", 1,
-                  DtoHelper.GetUserProfileRequestInfo("UserFN1UP", "UserLN1UP", "user1@mail.com", "CiiOrg1", 1, UserTitle.Doctor, null, null),
-                  false, ErrorConstant.ErrorInvalidUserGroupRole
-                },
-                new object[]
-                {
-                  "user1@mail.com", 1,
-                  DtoHelper.GetUserProfileRequestInfo("UserFN1UP", "UserLN1UP", "user1@mail.com", "CiiOrg1", 1, UserTitle.Doctor, new List<int> { }, new List<int> { }),
-                  false, ErrorConstant.ErrorInvalidUserGroupRole
-                },
-                new object[]
-                {
-                  "user1@mail.com", 1,
-                  DtoHelper.GetUserProfileRequestInfo("UserFN1UP", "UserLN1UP", "user1@mail.com", "CiiOrg1", 1, UserTitle.Doctor, null, new List<int> { }),
-                  false, ErrorConstant.ErrorInvalidUserGroupRole
-                },
-                new object[]
-                {
-                  "user1@mail.com", 1,
-                  DtoHelper.GetUserProfileRequestInfo("UserFN1UP", "UserLN1UP", "user1@mail.com", "CiiOrg1", 1, UserTitle.Doctor, new List<int> { }, null),
-                  false, ErrorConstant.ErrorInvalidUserGroupRole
-                },
-                new object[]
-                {
-                  "user1@mail.com", 1,
                   DtoHelper.GetUserProfileRequestInfo("UserFN1UP", "UserLN1UP", "user1@mail.com", "CiiOrg1", 1, UserTitle.Doctor, new List<int> {0, 1, 2 }, null),
                   false, ErrorConstant.ErrorInvalidUserGroup
                 },
@@ -859,8 +815,12 @@ namespace CcsSso.Core.Tests.External
       requestContext ??= new RequestContext();
 
       mockEmailService ??= new Mock<ICcsSsoEmailService>();
+      Mock<IAdaptorNotificationService> mockAdapterNotificationService = new Mock<IAdaptorNotificationService>();
+      var mockWrapperCacheService = new Mock<IWrapperCacheService>();
+      var mockAuditLoginService = new Mock<IAuditLoginService>();
 
-      var service = new UserProfileService(dataContext, userProfileHelperService, requestContext, mockIdamService.Object, mockEmailService.Object);
+      var service = new UserProfileService(dataContext, userProfileHelperService, requestContext, mockIdamService.Object,
+        mockEmailService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object, mockAuditLoginService.Object);
       return service;
     }
 
@@ -880,8 +840,8 @@ namespace CcsSso.Core.Tests.External
       dataContext.IdentityProvider.Add(new IdentityProvider { Id = 2, IdpName = "Google", IdpConnectionName = "google", IdpUri = "IDP_google" });
       dataContext.IdentityProvider.Add(new IdentityProvider { Id = 3, IdpName = "Microsoft 365", IdpConnectionName = "microsoft365", IdpUri = "IDP_microsoft" });
 
-      dataContext.CcsAccessRole.Add(new CcsAccessRole { Id = 1, CcsAccessRoleName = "Organisation Administrator", CcsAccessRoleNameKey = "ORG_ADMINISTRATOR" });
-      dataContext.CcsAccessRole.Add(new CcsAccessRole { Id = 2, CcsAccessRoleName = "Organisation User", CcsAccessRoleNameKey = "DEFAULT_ORG_USER" });
+      dataContext.CcsAccessRole.Add(new CcsAccessRole { Id = 1, CcsAccessRoleName = "Organisation Administrator", CcsAccessRoleNameKey = Contstant.OrgAdminRoleNameKey });
+      dataContext.CcsAccessRole.Add(new CcsAccessRole { Id = 2, CcsAccessRoleName = "Organisation User", CcsAccessRoleNameKey = Contstant.DefaultUserRoleNameKey });
       dataContext.CcsAccessRole.Add(new CcsAccessRole { Id = 3, CcsAccessRoleName = "Other", CcsAccessRoleNameKey = "OTHER" });
 
       #region Org1

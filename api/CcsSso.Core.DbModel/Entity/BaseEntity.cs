@@ -8,9 +8,9 @@ namespace CcsSso.DbModel.Entity
 {
   public class BaseEntity
   {
-    public int CreatedPartyId { get; set; }
+    public int CreatedUserId { get; set; }
 
-    public int LastUpdatedPartyId { get; set; }
+    public int LastUpdatedUserId { get; set; }
 
     public DateTime CreatedOnUtc { get; set; }
 

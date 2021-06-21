@@ -8,7 +8,7 @@
         href="https://res.cloudinary.com/ccssiteimage/image/upload/v1613109629/site/favicon_gfqibc.ico">
     <link rel="stylesheet"
         href="https://res.cloudinary.com/ccssiteimage/raw/upload/v1615958142/site/toolkit.styles.min_u9tzyw.css">
-    <title>Crown Commercial Service - CCS</title>
+    <title>Sign In - CCS</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous"> -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -242,7 +242,7 @@
     <header class="header-global">
         <div class="ccs-width-container">
             <div class="nav-wrapper">
-                <a href="/" class="logo"><img
+                <a href="https://www.crowncommercial.gov.uk" class="logo"><img
                         src="https://res.cloudinary.com/ccssiteimage/image/upload/v1613028512/site/CCS_WHITE_SML_AW_space-01_p3dj6u.png"
                         alt="Go to the CCS homepage"></a>
                 <button class="global-navigation__toggler" data-toggler="nav" aria-expanded="true">
@@ -356,6 +356,11 @@
                         <button type="button" id="btn-microsoft" style="width: 400px;"
                             class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button">
                             Log In with Microsoft
+                        </button>
+						<br />
+                        <button type="button" id="btn-linkedin" style="width: 400px;"
+                            class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button">
+                            Log In with LinkedIn
                         </button>
 
                         <div class="align-right">
@@ -676,6 +681,14 @@
                     if (err) displayErrorSummary(false, false, err);
                 });
             }
+			
+			function loginWithLinkedIn() {
+                webAuth.authorize({
+                    connection: 'linkedin'
+                }, function (err) {
+                    if (err) displayErrorSummary(false, false, err);
+                });
+            }
 
             function displayErrorSummary(isEmailValidationError, isPasswordValidationError, backendValidationError) {
                 captcha.reload();
@@ -716,6 +729,7 @@
             document.getElementById('btn-google').addEventListener('click', loginWithGoogle);
             document.getElementById('btn-facebook').addEventListener('click', loginWithFacebook);
             document.getElementById('btn-microsoft').addEventListener('click', loginWithMicrosoft);
+			document.getElementById('btn-linkedin').addEventListener('click', loginWithLinkedIn);
         });
     </script>
 </body>

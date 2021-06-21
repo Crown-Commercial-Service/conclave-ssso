@@ -6,7 +6,7 @@ namespace CcsSso.Domain.Contracts.External
 {
   public interface IOrganisationContactService
   {
-    Task<int> CreateOrganisationContactAsync(string ciiOrganisationId, ContactInfo contactInfo);
+    Task<int> CreateOrganisationContactAsync(string ciiOrganisationId, ContactRequestInfo contactInfo);
 
     Task DeleteOrganisationContactAsync(string ciiOrganisationId, int contactId);
 
@@ -14,6 +14,6 @@ namespace CcsSso.Domain.Contracts.External
 
     Task<OrganisationContactInfo> GetOrganisationContactAsync(string ciiOrganisationId, int contactId);
 
-    Task UpdateOrganisationContactAsync(string ciiOrganisationId, int contactId, ContactInfo contactInfo);
+    Task UpdateOrganisationContactAsync(string ciiOrganisationId, int contactId, ContactRequestInfo contactInfo);
   }
 }

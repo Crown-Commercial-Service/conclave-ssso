@@ -14,7 +14,5 @@ namespace CcsSso.Shared.Cache.Contracts
     Task SetValueAsync<TValue>(string key, TValue value, TimeSpan expiration);
 
     Task RemoveAsync(params string[] keys);
-
-    Task<bool> KeyExistsAsync(string key);
   }
 }

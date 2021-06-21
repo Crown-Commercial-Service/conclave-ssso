@@ -140,20 +140,33 @@ namespace CcsSso.ExternalApi.Controllers
       await _userProfileService.DeleteUserAsync(userId);
     }
 
-    [HttpPut("UpdateUserRoles")]
+    /// <summary>
+    /// Reset user password
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    [HttpPut("change-password")]
     [SwaggerOperation(Tags = new[] { "User" })]
-    [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
-    public async Task<UserEditResponseInfo> UpdateUserRoles(string userId, UserProfileEditRequestInfo userProfileRequestInfo)
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task ResetUserPassword(string userId, string? component)
     {
-      return await _userProfileService.UpdateUserRolesAsync(userId, userProfileRequestInfo);
+      await _userProfileService.ResetUserPasswodAsync(userId, component);
     }
 
-    [HttpPut("AddAdminRole")]
+    [HttpPut("remove-admin-roles")]
     [SwaggerOperation(Tags = new[] { "User" })]
-    [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
-    public async Task<UserEditResponseInfo> AddAdminRole(string userId, UserProfileEditRequestInfo userProfileRequestInfo)
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task RemoveAdminRoles(string userId)
     {
-      return await _userProfileService.AddAdminRoleAsync(userId, userProfileRequestInfo);
+      await _userProfileService.RemoveAdminRolesAsync(userId);
+    }
+
+    [HttpPut("add-admin-role")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task AddAdminRole(string userId)
+    {
+      await _userProfileService.AddAdminRoleAsync(userId);
     }
     #endregion
 
@@ -165,27 +178,41 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="401">Unauthorised</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_USER_ID, INSUFFICIENT_DETAILS, INVALID_EMAIL, INVALID_PHONE_NUMBER
+    /// Error Codes: INVALID_USER_ID, INSUFFICIENT_DETAILS, INVALID_EMAIL, INVALID_PHONE_NUMBER, INVALID_CONTACT_TYPE
     /// </response>
     /// <remarks>
     /// Sample request:
     ///
-    ///     POST /users/contact?userId=user@mail.com
+    ///     POST /users/contacts?userId=user@mail.com
     ///     {
-    ///        "contactReason": "BILLING/SHIPPING",
-    ///        "name": "Test User",
-    ///        "email": "testuser@mail.com",
-    ///        "phoneNumber": "+551155256325",
-    ///        "fax": "9123453",
-    ///        "webUrl": "testuser.com"
+    ///        "contactPointReason": "BILLING/SHIPPING",
+    ///        "contactPointName": "Test User",
+    ///        "contacts": [
+    ///           {
+    ///             contactType: "EMAIL",
+    ///             contactValue: "testuser@mail.com"
+    ///           },
+    ///           {
+    ///             contactType: "PHONE",
+    ///             contactValue: "+551155256325"
+    ///           },
+    ///           {
+    ///             contactType: "FAX",
+    ///             contactValue: "+551155256325"
+    ///           },
+    ///           {
+    ///             contactType: "WEB_ADDRESS",
+    ///             contactValue: "test.com"
+    ///           },
+    ///        ]
     ///     }
     ///     
     ///
     /// </remarks>
-    [HttpPost("contact")]
+    [HttpPost("contacts")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(int), 200)]
-    public async Task<int> CreateUserContact(string userId, ContactInfo contactInfo)
+    public async Task<int> CreateUserContact(string userId, ContactRequestInfo contactInfo)
     {
       return await _contactService.CreateUserContactAsync(userId, contactInfo);
     }
@@ -202,12 +229,12 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /user-profile/users/contact?userId=user@mail.com
+    ///     GET /user-profile/users/contacts?userId=user@mail.com
     ///     
     ///     
     ///
     /// </remarks>
-    [HttpGet("contact")]
+    [HttpGet("contacts")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(UserContactInfoList), 200)]
     public async Task<UserContactInfoList> GetUserContactsList(string userId, [FromQuery] string contactType)
@@ -227,11 +254,11 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /users/contact/1?userId=user@mail.com
+    ///     GET /users/contacts/1?userId=user@mail.com
     ///     
     ///
     /// </remarks>
-    [HttpGet("contact/{contactId}")]
+    [HttpGet("contacts/{contactId}")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(UserContactInfo), 200)]
     public async Task<UserContactInfo> GetUserContact(string userId, int contactId)
@@ -247,27 +274,41 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="401">Unauthorised</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_USER_ID, INSUFFICIENT_DETAILS, INVALID_EMAIL, INVALID_PHONE_NUMBER
+    /// Error Codes: INVALID_USER_ID, INSUFFICIENT_DETAILS, INVALID_EMAIL, INVALID_PHONE_NUMBER, INVALID_CONTACT_TYPE
     /// </response>
     /// <remarks>
     /// Sample request:
     ///
-    ///     PUT /users/contact/1?userId=user@mail.com
+    ///     PUT /users/contacts/1?userId=user@mail.com
     ///     {
-    ///        "contactReason": "BILLING/SHIPPING",
-    ///        "name": "Test User",
-    ///        "email": "testuser@mail.com",
-    ///        "phoneNumber": "+551155256325",
-    ///        "fax": "9123453",
-    ///        "webUrl": "testuser.com"
+    ///        "contactPointReason": "BILLING/SHIPPING",
+    ///        "contactPointName": "Test User",
+    ///        "contacts": [
+    ///           {
+    ///             contactType: "EMAIL",
+    ///             contactValue: "testuser@mail.com"
+    ///           },
+    ///           {
+    ///             contactType: "PHONE",
+    ///             contactValue: "+551155256325"
+    ///           },
+    ///           {
+    ///             contactType: "FAX",
+    ///             contactValue: "+551155256325"
+    ///           },
+    ///           {
+    ///             contactType: "WEB_ADDRESS",
+    ///             contactValue: "test.com"
+    ///           },
+    ///        ]
     ///     }
     ///     
     ///
     /// </remarks>
-    [HttpPut("contact/{contactId}")]
+    [HttpPut("contacts/{contactId}")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task UpdateUserContact(string userId, int contactId, ContactInfo contactInfo)
+    public async Task UpdateUserContact(string userId, int contactId, ContactRequestInfo contactInfo)
     {
       await _contactService.UpdateUserContactAsync(userId, contactId, contactInfo);
     }
@@ -284,11 +325,11 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     DELETE /users/contact/1?userId=user@mail.com
+    ///     DELETE /users/contacts/1?userId=user@mail.com
     ///     
     ///
     /// </remarks>
-    [HttpDelete("contact/{contactId}")]
+    [HttpDelete("contacts/{contactId}")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task DeleteUserContact(string userId, int contactId)

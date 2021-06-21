@@ -3,7 +3,9 @@ using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
 using CcsSso.Security.Services.Helpers;
+using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -29,10 +31,10 @@ namespace CcsSso.Security.Services
     private readonly IDataContext _dataContext;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
-    private readonly ILocalCacheService _localCacheService;
+    private readonly ISecurityCacheService _securityCacheService;
     public SecurityService(IIdentityProviderService awsIdentityProviderService, IJwtTokenHandler jwtTokenHandler,
       IHttpClientFactory httpClientFactory, IDataContext dataContext, ApplicationConfigurationInfo applicationConfigurationInfo,
-      ICcsSsoEmailService ccsSsoEmailService, ILocalCacheService localCacheService)
+      ICcsSsoEmailService ccsSsoEmailService, ISecurityCacheService securityCacheService)
     {
       _identityProviderService = awsIdentityProviderService;
       _jwtTokenHandler = jwtTokenHandler;
@@ -40,7 +42,7 @@ namespace CcsSso.Security.Services
       _dataContext = dataContext;
       _applicationConfigurationInfo = applicationConfigurationInfo;
       _ccsSsoEmailService = ccsSsoEmailService;
-      _localCacheService = localCacheService;
+      _securityCacheService = securityCacheService;
     }
 
     public async Task<AuthResultDto> LoginAsync(string clientId, string secret, string userName, string userPassword)
@@ -51,17 +53,10 @@ namespace CcsSso.Security.Services
 
     public async Task<TokenResponseInfo> GetRenewedTokenAsync(TokenRequestInfo tokenRequestInfo, string opbsValue, string host, string sid)
     {
-      if (string.IsNullOrEmpty(tokenRequestInfo.Code) && string.IsNullOrEmpty(tokenRequestInfo.GrantType))
-      {
-        throw new CcsSsoException("INVALID_TOKEN");
-      }
       TokenResponseInfo tokenResponseInfo;
       if (tokenRequestInfo.GrantType == "authorization_code")
       {
-        if (string.IsNullOrEmpty(tokenRequestInfo.Code))
-        {
-          throw new CcsSsoException("CODE_REQUIRED");
-        }
+        tokenResponseInfo = await _identityProviderService.GetTokensAsync(tokenRequestInfo, sid);
 
         Random rnd = new Random();
         var salt = rnd.Next(1, 6);
@@ -69,21 +64,19 @@ namespace CcsSso.Security.Services
         var sessionState = tokenRequestInfo.ClientId + " " + host + " " + opbsValue + " " + salt;
         var sessionHash = CryptoProvider.GenerateSaltedHash(sessionState);
         var sessionStateHashWithSalt = sessionHash + "." + salt;
-        tokenResponseInfo = await _identityProviderService.GetTokensAsync(tokenRequestInfo, sid);
-
         tokenResponseInfo.SessionState = sessionStateHashWithSalt;
       }
       else if (tokenRequestInfo.GrantType == "refresh_token")
       {
-        if (string.IsNullOrEmpty(tokenRequestInfo.RefreshToken))
-        {
-          throw new CcsSsoException("REFRESH_TOKEN_REQUIRED");
-        }
         tokenResponseInfo = await _identityProviderService.GetRenewedTokensAsync(tokenRequestInfo.ClientId, tokenRequestInfo.ClientSecret, tokenRequestInfo.RefreshToken, sid);
       }
       else
       {
-        throw new CcsSsoException("UNSUPPORTED_GRANT_TYPE");
+        var errorInfo = new ErrorInfo()
+        {
+          Error = "invalid_grant"
+        };
+        throw new SecurityException(errorInfo);
       }
       return tokenResponseInfo;
     }
@@ -142,7 +135,7 @@ namespace CcsSso.Security.Services
       {
         throw new CcsSsoException("USERNAME_REQUIRED");
       }
-      await _identityProviderService.InitiateResetPasswordAsync(userName);
+      await _identityProviderService.InitiateResetPasswordAsync(userName.ToLower());
     }
 
     public async Task ResetPasswordAsync(ResetPasswordDto resetPassword)
@@ -187,10 +180,10 @@ namespace CcsSso.Security.Services
       {
         try
         {
-          var claims = new List<KeyValuePair<string, string>>();
-          claims.Add(new KeyValuePair<string, string>("sid", sid));
+          var claims = new List<ClaimInfo>();
+          claims.Add(new ClaimInfo("sid", sid));
           // Indicate this as a logout token.
-          claims.Add(new KeyValuePair<string, string>("events", "{http://schemas.openid.net/event/backchannel-logout}"));
+          claims.Add(new ClaimInfo("events", "{http://schemas.openid.net/event/backchannel-logout}"));
           var logoutToken = _jwtTokenHandler.CreateToken(rp.ClientId, claims, _applicationConfigurationInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
 
           var client = _httpClientFactory.CreateClient();
@@ -210,29 +203,16 @@ namespace CcsSso.Security.Services
       return successRps;
     }
 
-    public string GetAuthenticationEndPoint(string sid, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt)
+    public async Task<string> GetAuthenticationEndPointAsync(string sid, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt, string state, string nonce, string display, string login_hint, int? max_age, string acr_values)
     {
-      if (string.IsNullOrEmpty(client_id))
-      {
-        throw new CcsSsoException("CLIENT_ID_REQUIRED");
-      }
-      if (string.IsNullOrEmpty(response_type))
-      {
-        throw new CcsSsoException("RESPONSE_TYPE_REQUIRED");
-      }
-      if (string.IsNullOrEmpty(redirect_uri))
-      {
-        throw new CcsSsoException("REDIRECT_URI_REQUIRED");
-      }
-      if (string.IsNullOrEmpty(scope))
-      {
-        throw new CcsSsoException("SCOPE_REQUIRED");
-      }
       //Generate new state and associate with sid
-      var state = Guid.NewGuid().ToString();
-      //store in the Memory (preffered in Redis but for now will store in memory)
-      _localCacheService.SetValue(state, sid);
-      return _identityProviderService.GetAuthenticationEndPoint(state, scope, response_type, client_id, redirect_uri, code_challenge_method, code_challenge, prompt);
+      if (string.IsNullOrEmpty(state))
+      {
+        state = Guid.NewGuid().ToString();
+      }
+      await _securityCacheService.SetValueAsync(state, sid, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.StateExpirationInMinutes, 0));
+      return _identityProviderService.GetAuthenticationEndPoint(state, scope, response_type, client_id, redirect_uri,
+        code_challenge_method, code_challenge, prompt, nonce, display, login_hint, max_age, acr_values);
     }
 
     public async Task RevokeTokenAsync(string refreshToken)
@@ -244,7 +224,7 @@ namespace CcsSso.Security.Services
       await _identityProviderService.RevokeTokenAsync(refreshToken);
     }
 
-    public JsonWebKeySet GetJsonWebKeyTokens()
+    public JsonWebKeySetInfo GetJsonWebKeyTokens()
     {
       using (var textReader = new StringReader(_applicationConfigurationInfo.JwtTokenConfiguration.RsaPublicKey))
       {
@@ -259,14 +239,17 @@ namespace CcsSso.Security.Services
                 };
         var hash = SHA256.Create();
         Byte[] hashBytes = hash.ComputeHash(System.Text.Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(dict)));
-        JsonWebKey jsonWebKey = new JsonWebKey()
+        JsonWebKeyInfo jsonWebKey = new JsonWebKeyInfo()
         {
           Kid = Base64UrlEncoder.Encode(hashBytes),
           Kty = "RSA",
+          Use = "sig",
           E = e,
-          N = n
+          N = n,
+          Alg = "RS256"
         };
-        JsonWebKeySet jsonWebKeySet = new JsonWebKeySet();
+        JsonWebKeySetInfo jsonWebKeySet = new JsonWebKeySetInfo();
+        jsonWebKeySet.Keys = new List<JsonWebKeyInfo>();
         jsonWebKeySet.Keys.Add(jsonWebKey);
         return jsonWebKeySet;
       }
@@ -286,9 +269,15 @@ namespace CcsSso.Security.Services
 
       var jwks = GetJsonWebKeyTokens();
       var jwk = jwks.Keys.First();
+      var signingKey = new JsonWebKey()
+      {
+        Kty = jwk.Kty,
+        E = jwk.E,
+        N = jwk.N,
+      };
       var validationParameters = new TokenValidationParameters
       {
-        IssuerSigningKey = jwk,
+        IssuerSigningKey = signingKey,
         ValidateIssuer = true,
         ValidateAudience = true,
         RequireExpirationTime = true,

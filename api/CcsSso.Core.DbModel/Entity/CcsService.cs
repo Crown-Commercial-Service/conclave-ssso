@@ -9,6 +9,14 @@ namespace CcsSso.Core.DbModel.Entity
 
     public string ServiceName { get; set; }
 
+    public string Description { get; set; }
+
+    public string ServiceCode { get; set; }
+
+    public string ServiceUrl { get; set; }
+
+    public string ServiceClientId { get; set; }
+
     public long TimeOutLength { get; set; }
 
     public List<ServicePermission> ServicePermissions { get; set; }

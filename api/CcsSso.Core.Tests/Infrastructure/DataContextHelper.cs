@@ -1,5 +1,6 @@
 using CcsSso.DbPersistence;
 using CcsSso.Domain.Contracts;
+using CcsSso.Shared.Domain.Contexts;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -20,7 +21,7 @@ namespace CcsSso.Core.Tests.Infrastructure
             .UseSqlite(dbConnection)
             .Options;
 
-        using (var dataContext = new DataContext(options))
+        using (var dataContext = new DataContext(options, new RequestContext { UserId = 0 }))
         {
           dataContext.Database.EnsureCreated();
           await action(dataContext);

@@ -27,13 +27,13 @@ namespace CcsSso.Security.Services
         var tokenDecoded = tokenStream.ReadToken(token) as JwtSecurityToken;
         return tokenDecoded;
       }
-      catch(Exception)
+      catch (Exception)
       {
         throw new CcsSsoException("INVALID_TOKEN");
       }
     }
 
-    public string CreateToken(string audience, List<KeyValuePair<string, string>> customClaims, int tokenExpirationTimeInMinutes)
+    public string CreateToken(string audience, List<ClaimInfo> customClaims, int tokenExpirationTimeInMinutes)
     {
       var privateKey = _applicationConfigurationInfo.JwtTokenConfiguration.RsaPrivateKey.ToByteArray();
 

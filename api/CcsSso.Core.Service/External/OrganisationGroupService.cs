@@ -1,4 +1,5 @@
 using CcsSso.Core.DbModel.Entity;
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Core.Domain.Dtos.External;
@@ -19,10 +20,14 @@ namespace CcsSso.Core.Service.External
   {
     private readonly IDataContext _dataContext;
     private readonly IUserProfileHelperService _userProfileHelperService;
-    public OrganisationGroupService(IDataContext dataContext, IUserProfileHelperService userProfileHelperService)
+    private readonly IAuditLoginService _auditLoginService;
+
+    public OrganisationGroupService(IDataContext dataContext, IUserProfileHelperService userProfileHelperService,
+      IAuditLoginService auditLoginService)
     {
       _dataContext = dataContext;
       _userProfileHelperService = userProfileHelperService;
+      _auditLoginService = auditLoginService;
     }
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
@@ -58,6 +63,9 @@ namespace CcsSso.Core.Service.External
 
       await _dataContext.SaveChangesAsync();
 
+      // Log
+      await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeCreate, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, GroupName:{group.UserGroupName}, OrganisationId:{ciiOrganisationId}");
+
       return group.Id;
     }
 
@@ -78,6 +86,9 @@ namespace CcsSso.Core.Service.External
       group.UserGroupMemberships.ForEach((groupMembership) => { groupMembership.IsDeleted = true; });
 
       await _dataContext.SaveChangesAsync();
+
+      // Log
+      await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeDelete, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, GroupName:{group.UserGroupName}, OrganisationId:{ciiOrganisationId}");
     }
 
     public async Task<OrganisationGroupResponseInfo> GetGroupAsync(string ciiOrganisationId, int groupId)
@@ -131,7 +142,7 @@ namespace CcsSso.Core.Service.External
           GroupId = g.Id,
           GroupName = g.UserGroupName,
           CreatedDate = g.CreatedOnUtc.Date.ToString(DateTimeFormat.DateFormatShortMonth)
-        }).ToList();
+        }).OrderBy(g => g.GroupName).ToList();
 
       return new OrganisationGroupList
       {
@@ -152,6 +163,14 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
+      string newName = string.Empty;
+      string previousName = group.UserGroupName;
+      bool hasNameChanged = false;
+      List<int> addedRoleIds = new();
+      List<int> removedRoleIds = new();
+      List<int> addedUserIds = new();
+      List<int> removedUserIds = new();
+
       if (!string.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName))
       {
 
@@ -161,7 +180,10 @@ namespace CcsSso.Core.Service.External
           throw new ResourceAlreadyExistsException();
         }
 
-        group.UserGroupName = organisationGroupRequestInfo.GroupName.Trim();
+        newName = organisationGroupRequestInfo.GroupName.Trim();
+        hasNameChanged = newName != previousName;
+
+        group.UserGroupName = newName;
         group.UserGroupNameKey = organisationGroupRequestInfo.GroupName.Trim().ToUpper();
       }
 
@@ -190,12 +212,13 @@ namespace CcsSso.Core.Service.External
           // Remove roles
           if (organisationGroupRequestInfo.RoleInfo.RemovedRoleIds != null)
           {
-            group.GroupEligibleRoles.RemoveAll(ga => organisationGroupRequestInfo.RoleInfo.RemovedRoleIds.Contains(ga.OrganisationEligibleRoleId));
+            removedRoleIds = organisationGroupRequestInfo.RoleInfo.RemovedRoleIds.Distinct().ToList();  // for logs
+            group.GroupEligibleRoles.RemoveAll(ga => removedRoleIds.Contains(ga.OrganisationEligibleRoleId));
           }
           // Add roles
           if (organisationGroupRequestInfo.RoleInfo.AddedRoleIds != null)
           {
-            var addedRoleIds = organisationGroupRequestInfo.RoleInfo.AddedRoleIds.Distinct().ToList(); // Remove duplicates
+            addedRoleIds = organisationGroupRequestInfo.RoleInfo.AddedRoleIds.Distinct().ToList(); // for logs
             addedRoleIds.ForEach((addedRoleId) =>
               {
                 // Add the role if not already exists
@@ -242,28 +265,58 @@ namespace CcsSso.Core.Service.External
           throw new CcsSsoException(ErrorConstant.ErrorInvalidUserInfo);
         }
 
-        // Remove user group memebership
+        // Remove user group membership
         group.UserGroupMemberships.RemoveAll(ugm => removedUserNameList.Contains(ugm.User.UserName));
+        removedUserIds.AddRange(groupUpdatingUsers.Where(u => removedUserNameList.Contains(u.UserName)).Select(u => u.Id).Distinct().ToList());
 
-        // Add user group memebership
+        // Add user group membership
         addedUserNameList = addedUserNameList.Distinct().ToList(); // Avoid duplicates
         addedUserNameList.ForEach((addedUserName) =>
         {
           // Add group for user if not already exists
           if (!group.UserGroupMemberships.Any(ugm => !ugm.IsDeleted && ugm.User!= null && ugm.User.UserName == addedUserName))
           {
+            var addedUserId = groupUpdatingUsers.First(u => u.UserName == addedUserName).Id;
             var userGroupMembership = new UserGroupMembership
             {
-              UserId = groupUpdatingUsers.First(u => u.UserName == addedUserName).Id,
+              UserId = addedUserId,
               OrganisationUserGroupId = group.Id
             };
 
+            addedUserIds.Add(addedUserId); // for logs
             group.UserGroupMemberships.Add(userGroupMembership);
           }
         });
       }
 
       await _dataContext.SaveChangesAsync();
+
+      //Log
+      if (hasNameChanged)
+      {
+        await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeNameChange, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, OrganisationId:{ciiOrganisationId}" +
+          $", NewGroupName:{newName}, PreviousGroupName:{previousName}"); 
+      }
+      if (addedRoleIds.Any())
+      {
+        await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeRoleAdd, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, OrganisationId:{ciiOrganisationId}" +
+          $", AddedRoleIds:{string.Join(",", addedRoleIds)}");
+      }
+      if (removedRoleIds.Any())
+      {
+        await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeRoleRemove, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, OrganisationId:{ciiOrganisationId}" +
+          $", RemovedRoleIds:{string.Join(",", removedRoleIds)}");
+      }
+      if (addedUserIds.Any())
+      {
+        await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeUserAdd, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, OrganisationId:{ciiOrganisationId}" +
+          $", AddedUserIds:{string.Join(",", addedUserIds)}");
+      }
+      if (removedUserIds.Any())
+      {
+        await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeUserRemove, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, OrganisationId:{ciiOrganisationId}" +
+          $", RemovedUserIds:{string.Join(",", removedUserIds)}");
+      }
     }
   }
 }

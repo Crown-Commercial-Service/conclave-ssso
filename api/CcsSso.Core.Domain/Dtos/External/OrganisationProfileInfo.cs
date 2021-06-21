@@ -24,7 +24,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public List<OrganisationIdentifier> AdditionalIdentifiers { get; set; }
 
-    public OrganisationAddress Address { get; set; }
+    public OrganisationAddressResponse Address { get; set; }
 
     // Commented since this is still not available from CII service
     //public OrganisationContactPoint ContactPoint { get; set; }
@@ -41,6 +41,21 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string Uri { get; set; }
 
     public string Scheme { get; set; }
+  }
+
+  public class OrganisationAddressResponse
+  {
+    public string StreetAddress { get; set; }
+
+    public string Locality { get; set; }
+
+    public string Region { get; set; }
+
+    public string PostalCode { get; set; }
+
+    public string CountryCode { get; set; }
+
+    public string CountryName { get; set; }
   }
 
   public class OrganisationAddress

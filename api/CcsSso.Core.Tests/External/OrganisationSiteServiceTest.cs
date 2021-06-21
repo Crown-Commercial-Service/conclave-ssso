@@ -1,4 +1,5 @@
 using CcsSso.Core.DbModel.Entity;
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Service.External;
 using CcsSso.Core.Tests.Infrastructure;
@@ -9,6 +10,7 @@ using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Service.External;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +30,7 @@ namespace CcsSso.Core.Tests.External
                 new object[]
                 {
                   "1",
-                  DtoHelper.GetOrganisationSiteInfo("Org1Site2", "street3", "local3", "region3", "pcode3", "ccode3")
+                  DtoHelper.GetOrganisationSiteInfo("Org1Site2", "street3", "local3", "region3", "pcode3", "GB")
                 }
             };
 
@@ -100,6 +102,12 @@ namespace CcsSso.Core.Tests.External
                   DtoHelper.GetOrganisationSiteInfo("site1", null, null, null, null, null),
                   ErrorConstant.ErrorInsufficientDetails
                 },
+                new object[]
+                {
+                  "1",
+                  DtoHelper.GetOrganisationSiteInfo("asda", "street3", "local3", "region3", "pcode3", "ccode3"),
+                  ErrorConstant.ErrorInvalidCountryCode
+                },
             };
 
       [Theory]
@@ -123,7 +131,7 @@ namespace CcsSso.Core.Tests.External
                 new object[]
                 {
                   "4",
-                  DtoHelper.GetOrganisationSiteInfo("Org3Site1", "street3", "local3", "region3", "pcode3", "ccode3"),
+                  DtoHelper.GetOrganisationSiteInfo("Org3Site1", "street3", "local3", "region3", "pcode3", "GB"),
                   ErrorConstant.ErrorInvalidSiteName
                 },
             };
@@ -279,7 +287,7 @@ namespace CcsSso.Core.Tests.External
                 {
                   "1",
                   2,
-                  DtoHelper.GetOrganisationSiteInfo("Org1Site1up", "street3up", "local3up", "region3up", "pcode3up", "ccode3up")
+                  DtoHelper.GetOrganisationSiteInfo("Org1Site1up", "street3up", "local3up", "region3up", "pcode3up", "GB")
                 }
             };
 
@@ -335,6 +343,13 @@ namespace CcsSso.Core.Tests.External
                   DtoHelper.GetOrganisationSiteInfo(" ", "street3", "local3", "region3", "pcode3", "ccode3"),
                   ErrorConstant.ErrorInvalidSiteName
                 },
+                new object[]
+                {
+                  "2",
+                  2,
+                  DtoHelper.GetOrganisationSiteInfo("asda", "street3", "local3", "region3", "pcode3", "ccode3"),
+                  ErrorConstant.ErrorInvalidCountryCode
+                },
            };
 
       [Theory]
@@ -356,29 +371,29 @@ namespace CcsSso.Core.Tests.External
            new List<object[]>
            {
              new object[]
-                {
-                  "1",
-                  1,
-                  DtoHelper.GetOrganisationSiteInfo("Org1Site1", "street3", "local3", "region3", "pcode3", "ccode3"),
-                },
-                new object[]
-                {
-                  "2",
-                  2,
-                  DtoHelper.GetOrganisationSiteInfo("Org1Site1", "street3", "local3", "region3", "pcode3", "ccode3"),
-                },
-                new object[]
-                {
-                  "3",
-                  2,
-                  DtoHelper.GetOrganisationSiteInfo("Org1Site1", "street3", "local3", "region3", "pcode3", "ccode3"),
-                },
-                new object[]
-                {
-                  "4",
-                  2,
-                  DtoHelper.GetOrganisationSiteInfo("Org1Site1", "street3", "local3", "region3", "pcode3", "ccode3"),
-                }
+              {
+                "1",
+                1,
+                DtoHelper.GetOrganisationSiteInfo("Org1Site1", "street3", "local3", "region3", "pcode3", "GB"),
+              },
+              new object[]
+              {
+                "2",
+                2,
+                DtoHelper.GetOrganisationSiteInfo("Org1Site1", "street3", "local3", "region3", "pcode3", "GB"),
+              },
+              new object[]
+              {
+                "3",
+                2,
+                DtoHelper.GetOrganisationSiteInfo("Org1Site1", "street3", "local3", "region3", "pcode3", "GB"),
+              },
+              new object[]
+              {
+                "4",
+                2,
+                DtoHelper.GetOrganisationSiteInfo("Org1Site1", "street3", "local3", "region3", "pcode3", "GB"),
+              }
            };
 
       [Theory]
@@ -398,7 +413,9 @@ namespace CcsSso.Core.Tests.External
     public static OrganisationSiteService OrganisationSiteService(IDataContext dataContext)
     {
       IContactsHelperService contactsHelperService = new ContactsHelperService(dataContext);
-      var service = new OrganisationSiteService(dataContext, contactsHelperService);
+      var mockWrapperCacheService = new Mock<IWrapperCacheService>();
+      var mockAuditLoginService = new Mock<IAuditLoginService>();
+      var service = new OrganisationSiteService(dataContext, contactsHelperService, mockWrapperCacheService.Object, mockAuditLoginService.Object);
       return service;
     }
 

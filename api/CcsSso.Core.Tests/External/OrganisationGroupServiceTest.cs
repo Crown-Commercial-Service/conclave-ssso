@@ -966,8 +966,9 @@ namespace CcsSso.Core.Tests.External
     public static OrganisationGroupService UserService(IDataContext dataContext)
     {
       UserProfileHelperService userProfileHelperService = new UserProfileHelperService();
+      var mockAuditLoginService = new Mock<IAuditLoginService>();
 
-      var service = new OrganisationGroupService(dataContext, userProfileHelperService);
+      var service = new OrganisationGroupService(dataContext, userProfileHelperService, mockAuditLoginService.Object);
       return service;
     }
 

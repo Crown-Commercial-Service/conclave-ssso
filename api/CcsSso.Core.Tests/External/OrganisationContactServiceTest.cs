@@ -1,4 +1,5 @@
 using CcsSso.Core.DbModel.Entity;
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Tests.Infrastructure;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
@@ -8,6 +9,7 @@ using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Service.External;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,7 +45,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(CorrectContactData))]
-      public async Task CreateContactSuccessfully_WhenCorrectData(string ciiOrganisationId, ContactInfo contactInfo)
+      public async Task CreateContactSuccessfully_WhenCorrectData(string ciiOrganisationId, ContactRequestInfo contactInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -63,7 +65,7 @@ namespace CcsSso.Core.Tests.External
             .FirstOrDefaultAsync();
 
           Assert.NotNull(createdContactData);
-          var name = contactInfo.Name;
+          var name = contactInfo.ContactPointName;
           var personContactPoint = createdContactData.ContactDetail.ContactPoints.First(cp => cp.PartyTypeId == personPartyTypeId);
           if (!string.IsNullOrEmpty(name))
           {
@@ -98,7 +100,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(ContactDataInvalidOrganisation))]
-      public async Task ThrowsException_WhenOrganisationDoesntExists(string ciiOrganisationId, ContactInfo contactInfo)
+      public async Task ThrowsException_WhenOrganisationDoesntExists(string ciiOrganisationId, ContactRequestInfo contactInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -120,22 +122,55 @@ namespace CcsSso.Core.Tests.External
                 {
                   "1",
                   1,
-                  new OrganisationContactInfo { ContactId = 1, OrganisationId = "1", ContactReason = ContactReasonType.Shipping,
-                    Name = "PesronFN1 LN1", Email = "email1@mail.com", PhoneNumber = "+94112345671", Fax = string.Empty, WebUrl = string.Empty}
+                  new OrganisationContactInfo { ContactPointId = 1,
+                    Detail = new OrganisationDetailInfo
+                    {
+                      OrganisationId = "1",
+                    },
+                    ContactPointReason = ContactReasonType.Shipping,
+                    ContactPointName = "PesronFN1 LN1",
+                    Contacts = new List<ContactResponseDetail>
+                      {
+                        new ContactResponseDetail { ContactId = 1, ContactType = VirtualContactTypeName.Email, ContactValue = "email1@mail.com" },
+                        new ContactResponseDetail { ContactId = 2, ContactType = VirtualContactTypeName.Phone, ContactValue = "+94112345671" },
+                      }
+                  }
                 },
                 new object[]
                 {
                   "2",
                   5,
-                  new OrganisationContactInfo { ContactId = 5, OrganisationId = "2", ContactReason = ContactReasonType.Shipping,
-                    Name = "O2PesronFN1 O2LN1", Email = "emailO2C1@mail.com", PhoneNumber = "+941123456721", Fax = string.Empty, WebUrl = string.Empty}
+                  new OrganisationContactInfo { ContactPointId = 5,
+                    Detail = new OrganisationDetailInfo
+                    {
+                      OrganisationId = "2",
+                    },
+                    ContactPointReason = ContactReasonType.Shipping,
+                    ContactPointName = "O2PesronFN1 O2LN1",
+                    Contacts = new List<ContactResponseDetail>
+                      {
+                        new ContactResponseDetail { ContactId = 1, ContactType = VirtualContactTypeName.Email, ContactValue = "emailO2C1@mail.com" },
+                        new ContactResponseDetail { ContactId = 2, ContactType = VirtualContactTypeName.Phone, ContactValue = "+941123456721" },
+                      }
+                  }
                 },
                 new object[]
                 {
                   "2",
                   7,
-                  new OrganisationContactInfo { ContactId = 7, OrganisationId = "2", ContactReason = ContactReasonType.Billing,
-                    Name = "O2PesronFN2 O2LN2", Email = "emailO2C2@mail.com", PhoneNumber = "+941123456722", Fax = string.Empty, WebUrl = string.Empty}
+                  new OrganisationContactInfo { ContactPointId = 7,
+                    Detail = new OrganisationDetailInfo
+                    {
+                      OrganisationId = "2",
+                    },
+                    ContactPointReason = ContactReasonType.Billing,
+                    ContactPointName = "O2PesronFN2 O2LN2",
+                    Contacts = new List<ContactResponseDetail>
+                      {
+                        new ContactResponseDetail { ContactId = 1, ContactType = VirtualContactTypeName.Email, ContactValue = "emailO2C2@mail.com" },
+                        new ContactResponseDetail { ContactId = 2, ContactType = VirtualContactTypeName.Phone, ContactValue = "+941123456722" },
+                      }
+                  }
                 }
             };
 
@@ -151,14 +186,32 @@ namespace CcsSso.Core.Tests.External
           var result = await contactService.GetOrganisationContactAsync(ciiOrganisationId, contactId);
 
           Assert.NotNull(result);
-          Assert.Equal(expectedOrgContact.ContactId, result.ContactId);
-          Assert.Equal(expectedOrgContact.OrganisationId, result.OrganisationId);
-          Assert.Equal(expectedOrgContact.ContactReason, result.ContactReason);
-          Assert.Equal(expectedOrgContact.Name, result.Name);
-          Assert.Equal(expectedOrgContact.Email, result.Email);
-          Assert.Equal(expectedOrgContact.PhoneNumber, result.PhoneNumber);
-          Assert.Equal(expectedOrgContact.Fax, result.Fax);
-          Assert.Equal(expectedOrgContact.WebUrl, result.WebUrl);
+          Assert.Equal(expectedOrgContact.ContactPointId, result.ContactPointId);
+          Assert.Equal(expectedOrgContact.Detail.OrganisationId, result.Detail.OrganisationId);
+          Assert.Equal(expectedOrgContact.ContactPointReason, result.ContactPointReason);
+          Assert.Equal(expectedOrgContact.ContactPointName, result.ContactPointName);
+
+          var expectedEmailContact = expectedOrgContact.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Email);
+          var expectedPhoneContact = expectedOrgContact.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Phone);
+          var expectedFaxContact = expectedOrgContact.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Fax);
+          var expectedUrlContact = expectedOrgContact.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Url);
+
+          if (expectedEmailContact != null)
+          {
+            Assert.Equal(expectedEmailContact.ContactValue, result.Contacts.First(c => c.ContactType == VirtualContactTypeName.Email).ContactValue);
+          }
+          if (expectedPhoneContact != null)
+          {
+            Assert.Equal(expectedPhoneContact.ContactValue, result.Contacts.First(c => c.ContactType == VirtualContactTypeName.Phone).ContactValue);
+          }
+          if (expectedFaxContact != null)
+          {
+            Assert.Equal(expectedFaxContact.ContactValue, result.Contacts.First(c => c.ContactType == VirtualContactTypeName.Fax).ContactValue);
+          }
+          if (expectedUrlContact != null)
+          {
+            Assert.Equal(expectedUrlContact.ContactValue, result.Contacts.First(c => c.ContactType == VirtualContactTypeName.Url).ContactValue);
+          }
 
         });
       }
@@ -197,7 +250,7 @@ namespace CcsSso.Core.Tests.External
 
           var result = await contactService.GetOrganisationContactsListAsync(ciiOrganisationId);
 
-          Assert.Equal(expectedCount, result.ContactsList.Count);
+          Assert.Equal(expectedCount, result.ContactPoints.Count);
 
         });
       }
@@ -213,7 +266,7 @@ namespace CcsSso.Core.Tests.External
 
           var result = await contactService.GetOrganisationContactsListAsync(ciiOrganisationId);
 
-          Assert.Empty(result.ContactsList);
+          Assert.Empty(result.ContactPoints);
 
         });
       }
@@ -284,7 +337,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(CorrectContactData))]
-      public async Task UpdateContactSuccessfully_WhenCorrectData(string ciiOrganisationId, int contactId, ContactInfo contactInfo)
+      public async Task UpdateContactSuccessfully_WhenCorrectData(string ciiOrganisationId, int contactId, ContactRequestInfo contactInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -303,7 +356,7 @@ namespace CcsSso.Core.Tests.External
             .FirstOrDefaultAsync();
 
           Assert.NotNull(updatedContactData);
-          var name = contactInfo.Name;
+          var name = contactInfo.ContactPointName;
           var personContactPoint = updatedContactData.ContactDetail.ContactPoints.First(cp => cp.PartyTypeId == personPartyTypeId);
           if (!string.IsNullOrEmpty(name))
           {
@@ -324,8 +377,8 @@ namespace CcsSso.Core.Tests.External
             Assert.Empty(personContactPoint.Party.Person.LastName);
           }
 
-          Assert.Equal(contactInfo.Email, personContactPoint.ContactDetail.VirtualAddresses.First(va => va.VirtualAddressTypeId == 1).VirtualAddressValue);
-          Assert.Equal(contactInfo.PhoneNumber, personContactPoint.ContactDetail.VirtualAddresses.First(va => va.VirtualAddressTypeId == 2).VirtualAddressValue);
+          Assert.Equal(contactInfo.Contacts.First(c => c.ContactType == VirtualContactTypeName.Email).ContactValue, personContactPoint.ContactDetail.VirtualAddresses.First(va => va.VirtualAddressTypeId == 1).VirtualAddressValue);
+          Assert.Equal(contactInfo.Contacts.First(c => c.ContactType == VirtualContactTypeName.Phone).ContactValue, personContactPoint.ContactDetail.VirtualAddresses.First(va => va.VirtualAddressTypeId == 2).VirtualAddressValue);
         });
       }
 
@@ -342,7 +395,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(ContactDataInvalidOrganisation))]
-      public async Task ThrowsException_WhenOrganisationDoesntExists(string ciiOrganisationId, int contactId, ContactInfo contactInfo)
+      public async Task ThrowsException_WhenOrganisationDoesntExists(string ciiOrganisationId, int contactId, ContactRequestInfo contactInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -358,7 +411,11 @@ namespace CcsSso.Core.Tests.External
     public static OrganisationContactService ContactService(IDataContext dataContext)
     {
       IContactsHelperService contactsHelperService = new ContactsHelperService(dataContext);
-      var service = new OrganisationContactService(dataContext, contactsHelperService);
+      var mockAdaptorNotificationService = new Mock<IAdaptorNotificationService>();
+      var mockWrapperCacheService = new Mock<IWrapperCacheService>();
+      var mockAuditLoginService = new Mock<IAuditLoginService>();
+      var service = new OrganisationContactService(dataContext, contactsHelperService, mockAdaptorNotificationService.Object, mockWrapperCacheService.Object,
+        mockAuditLoginService.Object);
       return service;
     }
 
@@ -369,6 +426,8 @@ namespace CcsSso.Core.Tests.External
       dataContext.PartyType.Add(new PartyType { Id = 3, PartyTypeName = PartyTypeName.User });
       dataContext.VirtualAddressType.Add(new VirtualAddressType { Id = 1, Name = VirtualContactTypeName.Email, Description = "email" });
       dataContext.VirtualAddressType.Add(new VirtualAddressType { Id = 2, Name = VirtualContactTypeName.Phone, Description = "phone" });
+      dataContext.VirtualAddressType.Add(new VirtualAddressType { Id = 3, Name = VirtualContactTypeName.Fax, Description = "fax" });
+      dataContext.VirtualAddressType.Add(new VirtualAddressType { Id = 4, Name = VirtualContactTypeName.Url, Description = "url" });
       dataContext.ContactPointReason.Add(new ContactPointReason { Id = 1, Name = ContactReasonType.Other, Description = "Other" });
       dataContext.ContactPointReason.Add(new ContactPointReason { Id = 2, Name = ContactReasonType.Shipping, Description = "Shipping" });
       dataContext.ContactPointReason.Add(new ContactPointReason { Id = 3, Name = ContactReasonType.Billing, Description = "Billing" });
@@ -430,13 +489,13 @@ namespace CcsSso.Core.Tests.External
 
       // Org2 site
       dataContext.ContactDetail.Add(new ContactDetail { Id = 5, EffectiveFrom = DateTime.UtcNow });
-      dataContext.PhysicalAddress.Add(new PhysicalAddress {Id =1, ContactDetailId = 5, StreetAddress = "Site Street" });
+      dataContext.PhysicalAddress.Add(new PhysicalAddress { Id = 1, ContactDetailId = 5, StreetAddress = "Site Street" });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 10, PartyId = 2, PartyTypeId = 2, ContactPointReasonId = 4, ContactDetailId = 5, IsSite = true });
 
       // Org2 Registered address
       dataContext.ContactDetail.Add(new ContactDetail { Id = 6, EffectiveFrom = DateTime.UtcNow });
       dataContext.PhysicalAddress.Add(new PhysicalAddress { Id = 2, ContactDetailId = 6, StreetAddress = "Registered Street" });
-      dataContext.ContactPoint.Add(new ContactPoint { Id = 11, PartyId = 2, PartyTypeId = 2, ContactPointReasonId = 1, ContactDetailId = 6});
+      dataContext.ContactPoint.Add(new ContactPoint { Id = 11, PartyId = 2, PartyTypeId = 2, ContactPointReasonId = 1, ContactDetailId = 6 });
 
       // Org3 no contacts
       dataContext.Party.Add(new Party { Id = 8, PartyTypeId = 1 });

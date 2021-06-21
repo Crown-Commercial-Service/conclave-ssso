@@ -4,6 +4,7 @@ using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
 using CcsSso.Security.Services;
 using CcsSso.Security.Tests.Helpers;
+using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Contracts;
 using Moq;
 using System;
@@ -43,7 +44,7 @@ namespace CcsSso.Security.Tests
         {
           Code = "123"
         };
-        await Assert.ThrowsAsync<CcsSsoException>(async () => await service.GetRenewedTokenAsync(tokenRequest, string.Empty, string.Empty, string.Empty));
+        await Assert.ThrowsAsync<SecurityException>(async () => await service.GetRenewedTokenAsync(tokenRequest, string.Empty, string.Empty, string.Empty));
       }
 
       [Fact]
@@ -86,6 +87,7 @@ namespace CcsSso.Security.Tests
         var service = GetSecurityService(mockIdentityProviderService);
         var changePasswordRequest = new ChangePasswordDto()
         {
+          UserName = "123",
           NewPassword = "abc",
           OldPassword = "def"
         };
@@ -378,9 +380,9 @@ XfpE78ZNmRoLpF5k61uHRBafBlKloM73jyoZwQtBFfPqptFLwbw=",
 
       var jwtTokenHandler = new JwtTokenHandler(applicationConfigurationInfo);
       Mock<ICcsSsoEmailService> mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
-      var mockLocalCacheService = new Mock<ILocalCacheService>();
+      var mockSecurityCacheService = new Mock<ISecurityCacheService>();
       var service = new SecurityService(mockIdentityProviderService.Object, jwtTokenHandler, mockHttpClientFactory.Object,
-        mockIDataContext, applicationConfigurationInfo, mockCcsSsoEmailService.Object, mockLocalCacheService.Object);
+        mockIDataContext, applicationConfigurationInfo, mockCcsSsoEmailService.Object, mockSecurityCacheService.Object);
       return service;
     }
   }

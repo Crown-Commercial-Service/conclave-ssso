@@ -8,15 +8,17 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Dtos.External;
+using CcsSso.Shared.Domain.Contexts;
 
 namespace CcsSso.DbPersistence
 {
   public class DataContext : DbContext, IDataContext
   {
-    public DataContext(DbContextOptions<DataContext> options)
+    private readonly RequestContext _requestContext;
+    public DataContext(DbContextOptions<DataContext> options, RequestContext requestContext)
             : base(options)
     {
-
+      _requestContext= requestContext;
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -104,6 +106,8 @@ namespace CcsSso.DbPersistence
 
       return result;
     }
+
+    public DbSet<AuditLog> AuditLog { get; set; }
 
     public DbSet<Party> Party { get; set; }
 
@@ -205,12 +209,12 @@ namespace CcsSso.DbPersistence
         if (entry.State == EntityState.Added)
         {
           entry.Entity.CreatedOnUtc = entry.Entity.LastUpdatedOnUtc = DateTime.UtcNow;
-          entry.Entity.CreatedPartyId = entry.Entity.LastUpdatedPartyId = 0; // TODO after resolving context
+          entry.Entity.CreatedUserId = entry.Entity.LastUpdatedUserId = _requestContext.UserId;
         }
         else
         {
           entry.Entity.LastUpdatedOnUtc = DateTime.UtcNow;
-          entry.Entity.LastUpdatedPartyId = 0; // TODO after resolving context
+          entry.Entity.LastUpdatedUserId = _requestContext.UserId;
         }
       }
     }

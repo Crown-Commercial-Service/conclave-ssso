@@ -7,17 +7,19 @@ namespace CcsSso.Domain.Contracts.External
 {
   public interface IContactsHelperService
   {
-    Task AssignVirtualContactsToContactPointAsync(ContactInfo contactInfo, ContactPoint contactPoint);
+    Task AssignVirtualContactsToContactPointAsync(ContactRequestInfo contactInfo, ContactPoint contactPoint);
 
     void AssignVirtualContactsToContactResponse(ContactPoint contactPoint, List<VirtualAddressType> virtualContactTypes,
       ContactResponseInfo contactResponseInfo);
 
-    (string firstName, string lastName) GetContactPersonNameTuple(ContactInfo contactInfo);
+    (string firstName, string lastName) GetContactPersonNameTuple(ContactRequestInfo contactInfo);
 
     Task<int> GetContactPointReasonIdAsync(string reason);
 
-    Task<List<ContactReasonInfo>> GetContactPointReasonsForUIAsync();
+    Task<List<ContactReasonInfo>> GetContactPointReasonsAsync();
 
-    void ValidateContacts(ContactInfo contactInfo);
+    Task<List<string>> GetContactTypesAsync();
+
+    Task ValidateContactsAsync(ContactRequestInfo contactInfo);
   }
 }

@@ -25,16 +25,51 @@ namespace CcsSso.Core.Tests.Infrastructure
       };
     }
 
-    public static ContactInfo GetContactInfo(string contactReason, string name, string email, string phoneNumber, string fax, string webUrl)
+    public static ContactRequestInfo GetContactInfo(string contactReason, string name, string email, string phoneNumber, string fax, string webUrl)
     {
-      return new ContactInfo
+      var contactRequestInfo =  new ContactRequestInfo
       {
-        ContactReason = contactReason,
-        Name = name,
-        Email = email,
-        PhoneNumber = phoneNumber,
-        Fax = fax,
-        WebUrl = webUrl
+        ContactPointReason = contactReason,
+        ContactPointName = name,
+        Contacts = new List<ContactRequestDetail>()
+      };
+
+      if (!string.IsNullOrWhiteSpace(email))
+      {
+        contactRequestInfo.Contacts.Add(new ContactRequestDetail { ContactType = VirtualContactTypeName.Email, ContactValue = email });
+      }
+      if (!string.IsNullOrWhiteSpace(phoneNumber))
+      {
+        contactRequestInfo.Contacts.Add(new ContactRequestDetail { ContactType = VirtualContactTypeName.Phone, ContactValue = phoneNumber });
+      }
+      if (!string.IsNullOrWhiteSpace(fax))
+      {
+        contactRequestInfo.Contacts.Add(new ContactRequestDetail { ContactType = VirtualContactTypeName.Fax, ContactValue = fax });
+      }
+      if (!string.IsNullOrWhiteSpace(webUrl))
+      {
+        contactRequestInfo.Contacts.Add(new ContactRequestDetail { ContactType = VirtualContactTypeName.Url, ContactValue = webUrl });
+      }
+
+      return contactRequestInfo;
+    }
+
+    public static ContactRequestDetail GetContactRequestDetail(string contactType, string contactValue)
+    {
+      return new ContactRequestDetail
+      {
+        ContactType = contactType,
+        ContactValue = contactValue
+      };
+    }
+
+    public static ContactResponseDetail GetContactResponseDetail(int contactId, string contactType, string contactValue)
+    {
+      return new ContactResponseDetail
+      {
+        ContactId = contactId,
+        ContactType = contactType,
+        ContactValue = contactValue
       };
     }
 

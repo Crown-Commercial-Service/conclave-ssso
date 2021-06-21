@@ -16,25 +16,19 @@ namespace CcsSso.Security.Domain.Dtos
 
   public class PasswordChallengeDto
   {
-    [Required]
     public string UserName { get; set; }
 
-    [Required]
     public string SessionId { get; set; }
 
-    [Required]
     public string NewPassword { get; set; }
   }
 
   public class ResetPasswordDto
   {
-    [Required]
     public string UserName { get; set; }
 
-    [Required]
     public string VerificationCode { get; set; }
 
-    [Required]
     public string NewPassword { get; set; }
 
   }

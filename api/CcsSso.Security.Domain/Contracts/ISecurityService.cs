@@ -1,4 +1,5 @@
 using CcsSso.Security.Domain.Dtos;
+using CcsSso.Shared.Domain;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ namespace CcsSso.Security.Domain.Contracts
   {
     Task<AuthResultDto> LoginAsync(string clientId, string secret, string userName, string userPassword);
 
-    string GetAuthenticationEndPoint(string sid, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt);
+    Task<string> GetAuthenticationEndPointAsync(string sid, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt, string state, string nonce, string display, string login_hint, int? max_age, string acr_values);
 
     Task<TokenResponseInfo> GetRenewedTokenAsync(TokenRequestInfo tokenRequestInfo, string opbsValue, string host, string sid);
 
@@ -31,7 +32,7 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task RevokeTokenAsync(string refreshToken);
 
-    JsonWebKeySet GetJsonWebKeyTokens();
+    JsonWebKeySetInfo GetJsonWebKeyTokens();
 
     bool ValidateToken(string clientId, string token);
 

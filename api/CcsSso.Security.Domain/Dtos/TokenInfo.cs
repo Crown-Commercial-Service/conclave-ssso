@@ -1,48 +1,46 @@
 using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace CcsSso.Security.Domain.Dtos
 {
   public class TokenRequestInfo
   {
-    [JsonPropertyName("code")]
     public string Code { get; set; }
 
-    [JsonPropertyName("refresh_token")]
     public string RefreshToken { get; set; }
 
-    [Required]
-    [JsonPropertyName("grant_type")]
     public string GrantType { get; set; }
 
-    [Required]
-    [JsonPropertyName("redirect_uri")]
     public string RedirectUrl { get; set; }
 
-    [Required]
-    [JsonPropertyName("client_id")]
     public string ClientId { get; set; }
 
-    [JsonPropertyName("code_verifier")]
     public string CodeVerifier { get; set; }
 
-    [JsonPropertyName("client_secret")]
     public string ClientSecret { get; set; }
 
-    [JsonPropertyName("state")]
     public string State { get; set; }
   }
 
   public class TokenResponseInfo
   {
+    [JsonPropertyName("access_token")]
     public string AccessToken { get; set; }
 
+    [JsonPropertyName("id_token")]
     public string IdToken { get; set; }
 
+    [JsonPropertyName("refresh_token")]
     public string RefreshToken { get; set; }
 
+    [JsonPropertyName("token_type")]
+    public string TokenType { get; set; }
+
+    [JsonPropertyName("session_state")]
     public string SessionState { get; set; }
+
+    [JsonPropertyName("expires_in")]
+    public int ExpiresInSeconds { get; set; }
   }
 
   public class Tokencontent

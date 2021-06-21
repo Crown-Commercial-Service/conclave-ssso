@@ -29,7 +29,7 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       _vcapSettings = JsonConvert.DeserializeObject<VCapSettings>(vault.ToString());
 
       IAuthMethodInfo authMethod = new TokenAuthMethodInfo(vaultToken: _vcapSettings.credentials.auth.token);
-      var vaultClientSettings = new VaultClientSettings("https://dev.vault.ai-cloud.uk:8443", authMethod)
+      var vaultClientSettings = new VaultClientSettings(_vcapSettings.credentials.address, authMethod)
       {
         ContinueAsyncTasksOnCapturedContext = false
       };
@@ -51,20 +51,36 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       var _secrets = await _client.V1.Secrets.Cubbyhole.ReadSecretAsync(secretPath: "brickendon/core");
       var _dbConnection = _secrets.Data["DbConnection"].ToString();
       var _key = _secrets.Data["ApiKey"].ToString();
-      var _cors = _secrets.Data["CorsDomains"].ToString(); 
+      var _isApiGatewayEnabled = _secrets.Data["IsApiGatewayEnabled"].ToString();
+
+      if (_secrets.Data.ContainsKey("CorsDomains"))
+      {
+        var corsList = JsonConvert.DeserializeObject<List<string>>(_secrets.Data["CorsDomains"].ToString());
+        int index = 0;
+        foreach (var cors in corsList)
+        {
+          Data.Add($"CorsDomains:{index++}", cors);
+        }
+      }
       var _conclaveLoginUrl = _secrets.Data["ConclaveLoginUrl"].ToString(); 
+      var _inMemoryCacheExpirationInMinutes = _secrets.Data["InMemoryCacheExpirationInMinutes"].ToString(); 
+      var _dashboardServiceClientId = _secrets.Data["DashboardServiceClientId"].ToString();
 
       Data.Add("DbConnection", _dbConnection);
       Data.Add("ApiKey", _key);
-      Data.Add("CorsDomains", _cors);
+      Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
       Data.Add("ConclaveLoginUrl", _conclaveLoginUrl);
+      Data.Add("InMemoryCacheExpirationInMinutes", _inMemoryCacheExpirationInMinutes);
+      Data.Add("DashboardServiceClientId", _dashboardServiceClientId);
 
       if (_secrets.Data.ContainsKey("JwtTokenValidationInfo"))
       {
         var jwtTokenValidationInfoVault = JsonConvert.DeserializeObject<JwtTokenValidationInfoVault>(_secrets.Data["JwtTokenValidationInfo"].ToString());
         Data.Add("JwtTokenValidationInfo:IdamClienId", jwtTokenValidationInfoVault.IdamClienId);
         Data.Add("JwtTokenValidationInfo:Issuer", jwtTokenValidationInfoVault.Issuer);
-        Data.Add("JwtTokenValidationInfo:JwksUrl", jwtTokenValidationInfoVault.JwksUrl);
+        Data.Add("JwtTokenValidationInfo:ApiGatewayEnabledJwksUrl", jwtTokenValidationInfoVault.ApiGatewayEnabledJwksUrl);
+        Data.Add("JwtTokenValidationInfo:ApiGatewayDisabledJwksUrl", jwtTokenValidationInfoVault.ApiGatewayDisabledJwksUrl);
+        Data.Add("Cii:Client_ID", jwtTokenValidationInfoVault.IdamClienId);
       }
 
       if (_secrets.Data.ContainsKey("SecurityApiSettings"))
@@ -89,8 +105,29 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       if (_secrets.Data.ContainsKey("Cii"))
       {
         var _cii = JsonConvert.DeserializeObject<Cii>(_secrets.Data["Cii"].ToString());
-        Data.Add("Cii:Url", _cii.Url);
-        Data.Add("Cii:Token", _cii.Token);
+        Data.Add("Cii:Url", _cii.url);
+        Data.Add("Cii:Token", _cii.token);
+        Data.Add("Cii:Delete_Token", _cii.token_delete);
+      }
+
+      if (_secrets.Data.ContainsKey("QueueInfo"))
+      {
+        var queueInfo = JsonConvert.DeserializeObject<QueueInfoVault>(_secrets.Data["QueueInfo"].ToString());
+        Data.Add("QueueInfo:AccessKeyId", queueInfo.AccessKeyId);
+        Data.Add("QueueInfo:AccessSecretKey", queueInfo.AccessSecretKey); 
+        Data.Add("QueueInfo:ServiceUrl", queueInfo.ServiceUrl);
+        Data.Add("QueueInfo:RecieveMessagesMaxCount", queueInfo.RecieveMessagesMaxCount);
+        Data.Add("QueueInfo:RecieveWaitTimeInSeconds", queueInfo.RecieveWaitTimeInSeconds);
+        Data.Add("QueueInfo:EnableAdaptorNotifications", queueInfo.EnableAdaptorNotifications);
+        Data.Add("QueueInfo:AdaptorNotificationQueueUrl", queueInfo.AdaptorNotificationQueueUrl);
+      }
+
+      if (_secrets.Data.ContainsKey("RedisCacheSettings"))
+      {
+        var redisCacheSettingsVault = JsonConvert.DeserializeObject<RedisCacheSettingsVault>(_secrets.Data["RedisCacheSettings"].ToString());
+        Data.Add("RedisCacheSettings:ConnectionString", redisCacheSettingsVault.ConnectionString);
+        Data.Add("RedisCacheSettings:IsEnabled", redisCacheSettingsVault.IsEnabled);
+        Data.Add("RedisCacheSettings:CacheExpirationInMinutes", redisCacheSettingsVault.CacheExpirationInMinutes);
       }
     }
   }
@@ -117,7 +154,9 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
 
     public string Issuer { get; set; }
 
-    public string JwksUrl { get; set; }
+    public string ApiGatewayEnabledJwksUrl { get; set; }
+
+    public string ApiGatewayDisabledJwksUrl { get; set; }
   }
 
   public class SecurityApiSettingsVault
@@ -146,8 +185,36 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
 
   public class Cii
   {
-    public string Url { get; set; }
-    public string Token { get; set; }
+    public string url { get; set; }
+    public string token { get; set; }
+    public string token_delete { get; set; }
+    public string client_id { get; set; }
+  }
+
+  public class QueueInfoVault
+  {
+    public string AccessKeyId { get; set; } //AWSAccessKeyId
+
+    public string AccessSecretKey { get; set; } //AWSAccessSecretKey
+
+    public string ServiceUrl { get; set; } //AWSServiceUrl
+
+    public string RecieveMessagesMaxCount { get; set; }
+
+    public string RecieveWaitTimeInSeconds { get; set; }
+
+    public string EnableAdaptorNotifications { get; set; }
+
+    public string AdaptorNotificationQueueUrl { get; set; }
+  }
+
+  public class RedisCacheSettingsVault
+  {
+    public string ConnectionString { get; set; }
+
+    public string IsEnabled { get; set; }
+
+    public string CacheExpirationInMinutes { get; set; }
   }
 
   public class VaultOptions

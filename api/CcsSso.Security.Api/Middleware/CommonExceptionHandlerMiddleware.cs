@@ -1,5 +1,6 @@
 using CcsSso.Security.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 using System;
 using System.Net;
 using System.Security.Authentication;
@@ -34,19 +35,35 @@ namespace CcsSso.Security.Api.Middleware
       {
         await HandleException(context, ex.Message, ex, HttpStatusCode.BadRequest);
       }
-#if DEBUG
+      catch (SecurityException ex)
+      {
+        await HandleException(context, "SECURITY_ERROR", ex, HttpStatusCode.BadRequest);
+      }
       catch (Exception ex)
       {
-        await context.Response.WriteAsync(ex.ToString());
-        throw;
-      }
+#if DEBUG
+        await HandleException(context, ex.Message, ex, HttpStatusCode.InternalServerError);
+#else
+        await HandleException(context, "SECURITY_API_ERROR", ex, HttpStatusCode.InternalServerError);
 #endif
+      }
     }
 
     private async Task HandleException(HttpContext context, string displayError, Exception ex, HttpStatusCode statusCode)
     {
       context.Response.StatusCode = (int)statusCode;
-      await context.Response.WriteAsync(displayError);
+
+      if (displayError == "SECURITY_ERROR")
+      {
+        var errorInfo = JsonConvert.DeserializeObject<ErrorInfo>(ex.Message);
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(errorInfo);
+      }
+      else
+      {
+        await context.Response.WriteAsync(displayError);
+      }
+
     }
   }
 }

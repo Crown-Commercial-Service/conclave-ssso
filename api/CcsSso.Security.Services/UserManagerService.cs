@@ -4,6 +4,7 @@ using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
 using CcsSso.Security.Services.Helpers;
 using System.Threading.Tasks;
+using static CcsSso.Security.Domain.Constants.Constants;
 
 namespace CcsSso.Security.Services
 {
@@ -17,6 +18,7 @@ namespace CcsSso.Security.Services
 
     public async Task<UserRegisterResult> CreateUserAsync(UserInfo userInfo)
     {
+      userInfo.Email = userInfo.Email.ToLower();
       ValidateUser(userInfo);
       return await _identityProviderService.CreateUserAsync(userInfo);
     }
@@ -61,12 +63,22 @@ namespace CcsSso.Security.Services
 
     public async Task NominateUserAsync(UserInfo userInfo)
     {
+      userInfo.Email = userInfo.Email.ToLower();
       await _identityProviderService.SendNominateEmailAsync(userInfo);
     }
 
     public async Task<IdamUser> GetUserAsync(string email)
     {
       return await _identityProviderService.GetUser(email);
+    }
+
+    public async Task SendUserActivationEmailAsync(string email)
+    {
+      if(string.IsNullOrEmpty(email))
+      {
+        throw new CcsSsoException(ErrorCodes.EmailRequired);
+      }
+      await _identityProviderService.SendUserActivationEmailAsync(email.ToLower());
     }
   }
 }

@@ -11,14 +11,10 @@ namespace CcsSso.Security.Domain.Dtos
 
     public string UserName { get; set; }
 
-    [Required(ErrorMessage = Constants.Constants.ErrorCodes.EmailRequired)]
-    [EmailAddressAttribute(ErrorMessage = Constants.Constants.ErrorCodes.EmailFormatError)]
     public string Email { get; set; }
 
-    [Required(ErrorMessage = Constants.Constants.ErrorCodes.FirstNameRequired)]
     public string FirstName { get; set; }
 
-    [Required(ErrorMessage = Constants.Constants.ErrorCodes.LastNameRequired)]
     public string LastName { get; set; }
 
     public string Role { get; set; }
@@ -42,8 +38,6 @@ namespace CcsSso.Security.Domain.Dtos
   {
     public UserDetail Detail { get; set; }
 
-    public string UserName { get; set; }
-
     public string FirstName { get; set; }
 
     public string LastName { get; set; }
@@ -59,13 +53,20 @@ namespace CcsSso.Security.Domain.Dtos
 
     public List<GroupAccessRole> UserGroups { get; set; }
 
-    public List<string> RoleNames { get; set; }
+    public List<RolePermissionInfo> RolePermissionInfo { get; set; }
+  }
+
+  public class RolePermissionInfo
+  {
+    public string RoleKey { get; set; }
+
+    public string ServiceClientId { get; set; }
   }
 
   public class GroupAccessRole
   {
     public string AccessRole { get; set; }
 
-    public string Group { get; set; }
+    public string ServiceClientId { get; set; }
   }
 }

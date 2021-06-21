@@ -6,11 +6,21 @@ namespace CcsSso.Domain.Dtos
 
     public string ConclaveLoginUrl { get; set; }
 
+    public bool EnableAdapterNotifications { get; set; }
+
+    public int InMemoryCacheExpirationInMinutes { get; set; }
+
+    public string DashboardServiceClientId { get; set; }
+
     public JwtTokenValidationConfigurationInfo JwtTokenValidationInfo { get; set; }
 
     public SecurityApiDetails SecurityApiDetails { get; set; }
 
     public CcsEmailInfo EmailInfo { get; set; }
+
+    public QueueUrlInfo QueueUrlInfo { get; set; }
+
+    public RedisCacheSetting RedisCacheSettings { get; set; }
   }
 
   public class JwtTokenValidationConfigurationInfo
@@ -42,5 +52,19 @@ namespace CcsSso.Domain.Dtos
     public string UserPermissionUpdateNotificationTemplateId { get; set; }
 
     public bool SendNotificationsEnabled { get; set; }
+  }
+
+  public class QueueUrlInfo
+  {
+    public string AdaptorNotificationQueueUrl { get; set; }
+  }
+
+  public class RedisCacheSetting
+  {
+    public string ConnectionString { get; set; }
+
+    public bool IsEnabled { get; set; }
+
+    public int CacheExpirationInMinutes { get; set; }
   }
 }

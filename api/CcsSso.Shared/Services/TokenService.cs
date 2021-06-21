@@ -43,7 +43,8 @@ namespace CcsSso.Shared.Services
         RequireExpirationTime = true,
         ValidateLifetime = true,
         ValidAudience = audience,
-        ValidIssuer = issuer
+        ValidIssuer = issuer,
+        ValidateIssuerSigningKey = true
       };
 
       var tokenHandler = new JwtSecurityTokenHandler();
@@ -64,7 +65,7 @@ namespace CcsSso.Shared.Services
           result.ClaimValues = resolvedClaims;
         }
       }
-      catch (Exception)
+      catch (Exception e)
       {
         result.IsValid = false;
       }

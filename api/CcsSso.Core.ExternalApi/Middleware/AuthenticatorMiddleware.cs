@@ -1,6 +1,7 @@
 using CcsSso.Domain.Dtos;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Contexts;
+using CcsSso.Shared.Extensions;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -27,8 +28,9 @@ namespace CcsSso.ExternalApi.Middleware
     public async Task Invoke(HttpContext context, RequestContext requestContext)
     {
       var apiKey = context.Request.Headers["X-API-Key"];
-      var authHeader = context.Request.Headers["Authorize"].ToString();
       var bearerToken = context.Request.Headers["Authorization"].FirstOrDefault();
+      requestContext.IpAddress = context.GetRemoteIPAddress();
+      requestContext.Device = context.Request.Headers["User-Agent"];
 
       if (string.IsNullOrWhiteSpace(bearerToken) && (string.IsNullOrEmpty(apiKey) || apiKey != _appConfig.ApiKey))
       {

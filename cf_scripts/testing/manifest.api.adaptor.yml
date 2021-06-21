@@ -1,0 +1,56 @@
+---
+applications:
+- name: test-api-wrapper
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Core.ExternalApi/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: test-api-wrapper.london.cloudapps.digital
+  services:
+    - test-sso-pg-service
+    - test-vault
+    - test-adaptor-sqs-service
+    - test-data-redis-service
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: test-api-core
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Core.Api/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: test-api-core.london.cloudapps.digital
+  services:
+    - test-sso-pg-service
+    - test-vault
+    - test-data-redis-service
+    - test-adaptor-sqs-service
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: test-api-adaptor
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Adaptor.Api/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: test-api-adaptor.london.cloudapps.digital
+  services:
+    - test-adaptor-pg-service
+    - test-data-redis-service
+    - test-adaptor-sqs-service
+    - test-vault   
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: test-adaptor-sqs-listener
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Adaptor.SqsListener/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  no-route: true
+  health-check-type: none
+  services:
+    - test-vault
+    - test-adaptor-sqs-service
+  env:
+    CACHE_NUGET_PACKAGES: false

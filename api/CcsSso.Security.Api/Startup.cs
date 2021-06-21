@@ -6,6 +6,8 @@ using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Services;
 using CcsSso.Security.Services.Helpers;
+using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Shared.Cache.Services;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
 using CcsSso.Shared.Services;
@@ -20,6 +22,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -58,6 +61,12 @@ namespace CcsSso.Security.Api
           sessionTimeOut = 2; //default hardcoded value
         }
 
+        int.TryParse(Configuration["SessionConfig:StateExpirationInMinutes"], out int stateExpirationInMinutes);
+        if (stateExpirationInMinutes <= 0)
+        {
+          stateExpirationInMinutes = 10; //default hardcoded value
+        }
+
         int.TryParse(Configuration["JwtTokenConfig:IDTokenExpirationTimeInMinutes"], out int tokenExpirationTimeInMinutes);
         if (tokenExpirationTimeInMinutes <= 0)
         {
@@ -79,7 +88,8 @@ namespace CcsSso.Security.Api
         }
 
         int.TryParse(Configuration["PasswordPolicy:RequiredUniqueChars"], out int requiredUniqueChars);
-
+        bool.TryParse(Configuration["RedisCacheSettings:IsEnabled"], out bool isRedisEnabled);
+        bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
 
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
@@ -106,6 +116,7 @@ namespace CcsSso.Security.Api
           {
             UserActivationEmailTemplateId = Configuration["Email:UserActivationEmailTemplateId"],
             UserActivationLinkTTLInMinutes = int.Parse(Configuration["Email:UserActivationLinkTTLInMinutes"]),
+            ResetPasswordLinkTTLInMinutes = int.Parse(Configuration["Email:ResetPasswordLinkTTLInMinutes"]),
             ResetPasswordEmailTemplateId = Configuration["Email:ResetPasswordEmailTemplateId"],
             NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
             ChangePasswordNotificationTemplateId = Configuration["Email:ChangePasswordNotificationTemplateId"],
@@ -118,7 +129,8 @@ namespace CcsSso.Security.Api
           },
           SessionConfig = new SessionConfig()
           {
-            SessionTimeoutInMinutes = sessionTimeOut
+            SessionTimeoutInMinutes = sessionTimeOut,
+            StateExpirationInMinutes = stateExpirationInMinutes
           },
           JwtTokenConfiguration = new JwtTokenConfiguration()
           {
@@ -131,7 +143,7 @@ namespace CcsSso.Security.Api
           UserExternalApiDetails = new UserExternalApiDetails()
           {
             ApiKey = Configuration["UserExternalApiDetails:ApiKey"],
-            Url = Configuration["UserExternalApiDetails:Url"]
+            Url = isApiGatewayEnabled ? Configuration["UserExternalApiDetails:ApiGatewayEnabledUrl"] : Configuration["UserExternalApiDetails:ApiGatewayDisabledUrl"]
           },
           PasswordPolicy = new PasswordPolicy()
           {
@@ -141,8 +153,17 @@ namespace CcsSso.Security.Api
           },
           SecurityApiKeySettings = new SecurityApiKeySettings()
           {
-            SecurityApiKey = Configuration["SecurityApiKeySettings.SecurityApiKey"],
-            ApiKeyValidationExcludedRoutes = Configuration["SecurityApiKeySettings.ApiKeyValidationExcludedRoutes"].Split(',').ToList()
+            SecurityApiKey = Configuration["SecurityApiKeySettings:SecurityApiKey"],
+            ApiKeyValidationExcludedRoutes = Configuration.GetSection("SecurityApiKeySettings:ApiKeyValidationExcludedRoutes").Get<List<string>>()
+          },
+          RedisCacheSettings = new RedisCacheSettings()
+          {
+            ConnectionString = Configuration["RedisCacheSettings:ConnectionString"],
+            IsEnabled = isRedisEnabled
+          },
+          CryptoSettings = new CryptoSettings()
+          {
+            CookieEncryptionKey = Configuration["Crypto:CookieEncryptionKey"]
           }
         };
         return appConfigInfo;
@@ -176,15 +197,18 @@ namespace CcsSso.Security.Api
         services.AddSingleton<IIdentityProviderService, AwsIdentityProviderService>();
       }
       services.AddSingleton<TokenHelper>();
+
+      services.AddSingleton<ISecurityCacheService, SecurityCacheService>();
       services.AddSingleton<IJwtTokenHandler, JwtTokenHandler>();
       services.AddSingleton<IEmailProviderService, EmailProviderService>();
       services.AddSingleton<ICcsSsoEmailService, CcsSsoEmailService>();
       services.AddSingleton<ILocalCacheService, InMemoryCacheService>();
       services.AddMemoryCache();
-      //services.AddSingleton<IRemoteCacheService, RedisCacheService>();
-      //services.AddSingleton<RedisConnectionPoolService>(_ =>
-      //  new RedisConnectionPoolService("dd")
-      //);
+      services.AddSingleton<IRemoteCacheService, RedisCacheService>();
+      services.AddSingleton<ICryptographyService, CryptographyService>();
+      services.AddSingleton<RedisConnectionPoolService>(_ =>
+        new RedisConnectionPoolService(Configuration["RedisCacheSettings:ConnectionString"])
+      );
       services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(Configuration["SecurityDbConnection"]));
       services.AddScoped<ISecurityService, SecurityService>();
       services.AddScoped<IUserManagerService, UserManagerService>();
@@ -246,6 +270,19 @@ namespace CcsSso.Security.Api
     {
 
       app.AddLoggerMiddleware();// Registers the logger configured on the core library
+
+      app.Use(async (context, next) =>
+      {
+        context.Response.Headers.Add(
+            "Cache-Control",
+            "no-cache");
+        context.Response.Headers.Add(
+            "Pragma",
+            "no-cache");
+        context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+        await next();
+      });
+
       if (!string.IsNullOrEmpty(Configuration["RollBarLogger:Token"]) && !string.IsNullOrEmpty(Configuration["RollBarLogger:Environment"]))
       {
         app.AddRollbarMiddleware();
@@ -255,8 +292,8 @@ namespace CcsSso.Security.Api
 
       app.UseHttpsRedirection();
       app.UseRouting();
-
-      app.UseCors(builder => builder.WithOrigins(JsonConvert.DeserializeObject<string[]>(Configuration["CorsDomains"]))
+      var _cors = Configuration.GetSection("CorsDomains").Get<string[]>();
+      app.UseCors(builder => builder.WithOrigins(_cors)
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials()

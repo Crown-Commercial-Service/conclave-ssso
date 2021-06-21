@@ -46,12 +46,17 @@ namespace CcsSso.Core.Tests.External
                 {
                   "user3@mail.com",
                   DtoHelper.GetContactInfo("OTHER", "Test", "tuser@mail.com", "+551155256325", null, null)
+                },
+                new object[]
+                {
+                  "user3@mail.com",
+                  DtoHelper.GetContactInfo("OTHER", "Test", null, null, null, null)
                 }
             };
 
       [Theory]
       [MemberData(nameof(CorrectContactData))]
-      public async Task CreateContactSuccessfully_WhenCorrectData(string userName, ContactInfo contactInfo)
+      public async Task CreateContactSuccessfully_WhenCorrectData(string userName, ContactRequestInfo contactInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -71,7 +76,7 @@ namespace CcsSso.Core.Tests.External
             .FirstOrDefaultAsync();
 
           Assert.NotNull(createdContactData);
-          var name = contactInfo.Name;
+          var name = contactInfo.ContactPointName;
           if (!string.IsNullOrEmpty(name))
           {
             var nameArray = name.Split(" ");
@@ -104,7 +109,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(ContactDataInvalidUser))]
-      public async Task ThrowsException_WhenUserDoesnotExists(string userName, ContactInfo contactInfo)
+      public async Task ThrowsException_WhenUserDoesnotExists(string userName, ContactRequestInfo contactInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -165,7 +170,7 @@ namespace CcsSso.Core.Tests.External
 
           var result = await contactService.GetUserContactsListAsync(userName);
 
-          Assert.Equal(expectedCount, result.ContactsList.Count);
+          Assert.Equal(expectedCount, result.ContactPoints.Count);
 
         });
       }
@@ -240,7 +245,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(CorrectContactData))]
-      public async Task UpdateContactSuccessfully_WhenCorrectData(string userName, int contactId, ContactInfo contactInfo)
+      public async Task UpdateContactSuccessfully_WhenCorrectData(string userName, int contactId, ContactRequestInfo contactInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -263,7 +268,7 @@ namespace CcsSso.Core.Tests.External
 
           Assert.NotNull(updatedContactData);
 
-          var name = contactInfo.Name;
+          var name = contactInfo.ContactPointName;
           if (!string.IsNullOrEmpty(name))
           {
             var nameArray = name.Split(" ");
@@ -303,7 +308,7 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(ContactDataInvalidUser))]
-      public async Task ThrowsException_WhenUserDoesnotExists(string userName, int contactId, ContactInfo contactInfo)
+      public async Task ThrowsException_WhenUserDoesnotExists(string userName, int contactId, ContactRequestInfo contactInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
         {
@@ -321,7 +326,11 @@ namespace CcsSso.Core.Tests.External
       IContactsHelperService contactsHelperService = new ContactsHelperService(dataContext);
       IUserProfileHelperService userProfileHelperService = new UserProfileHelperService();
       Mock<ICcsSsoEmailService> mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
-      var service = new UserContactService(dataContext, contactsHelperService, userProfileHelperService, mockCcsSsoEmailService.Object);
+      var mockAdaptorNotificationService = new Mock<IAdaptorNotificationService>();
+      var mockWrapperCacheService = new Mock<IWrapperCacheService>();
+      var mockAuditLoginService = new Mock<IAuditLoginService>();
+      var service = new UserContactService(dataContext, contactsHelperService, userProfileHelperService, mockCcsSsoEmailService.Object, mockAdaptorNotificationService.Object,
+        mockWrapperCacheService.Object, mockAuditLoginService.Object);
       return service;
     }
 
@@ -332,6 +341,8 @@ namespace CcsSso.Core.Tests.External
       dataContext.PartyType.Add(new PartyType { Id = 3, PartyTypeName = PartyTypeName.User });
       dataContext.VirtualAddressType.Add(new VirtualAddressType { Id = 1, Name = VirtualContactTypeName.Email, Description = "email" });
       dataContext.VirtualAddressType.Add(new VirtualAddressType { Id = 2, Name = VirtualContactTypeName.Phone, Description = "phone" });
+      dataContext.VirtualAddressType.Add(new VirtualAddressType { Id = 3, Name = VirtualContactTypeName.Fax, Description = "fax" });
+      dataContext.VirtualAddressType.Add(new VirtualAddressType { Id = 4, Name = VirtualContactTypeName.Url, Description = "url" });
       dataContext.ContactPointReason.Add(new ContactPointReason { Id = 1, Name = ContactReasonType.Other, Description = "Other" });
       dataContext.ContactPointReason.Add(new ContactPointReason { Id = 2, Name = ContactReasonType.Shipping, Description = "Shipping" });
       dataContext.ContactPointReason.Add(new ContactPointReason { Id = 3, Name = ContactReasonType.Billing, Description = "Billing" });

@@ -2,71 +2,90 @@ using System.Collections.Generic;
 
 namespace CcsSso.Domain.Dtos.External
 {
-  public class ContactInfo
+  public class ContactRequestDetail
   {
-    public string ContactReason { get; set; }
+    public string ContactType { get; set; }
 
-    public string Name { get; set; }
-
-    public string Email { get; set; }
-
-    public string PhoneNumber { get; set; }
-
-    public string Fax { get; set; }
-
-    public string WebUrl { get; set; }
+    public string ContactValue { get; set; }
   }
 
-  public class ContactResponseInfo : ContactInfo
+  public class ContactResponseDetail : ContactRequestDetail
   {
     public int ContactId { get; set; }
   }
 
-  public class OrganisationContactInfo : ContactResponseInfo
+  public class ContactPointInfo
+  {
+    public string ContactPointReason { get; set; }
+
+    public string ContactPointName { get; set; }
+  }
+
+  public class ContactRequestInfo : ContactPointInfo
+  {
+    public List<ContactRequestDetail> Contacts { get; set; }
+  }
+
+  public class ContactResponseInfo : ContactPointInfo
+  {
+    public int ContactPointId { get; set; }
+
+    public List<ContactResponseDetail> Contacts { get; set; }
+  }
+
+  public class OrganisationDetailInfo
   {
     public string OrganisationId { get; set; }
+  }
+
+  public class OrganisationContactInfo : ContactResponseInfo
+  {
+    public OrganisationDetailInfo Detail { get; set; }
   }
 
   public class OrganisationContactInfoList
   {
-    public string OrganisationId { get; set; }
+    public OrganisationDetailInfo Detail { get; set; }
 
-    public List<ContactResponseInfo> ContactsList { get; set; }
+    public List<ContactResponseInfo> ContactPoints { get; set; }
+  }
+
+  public class UserDetailInfo
+  {
+    public string UserId { get; set; }
+
+    public string OrganisationId { get; set; }
   }
 
   public class UserContactInfo : ContactResponseInfo
   {
-    public string UserId { get; set; }
-
-    public string OrganisationId { get; set; }
+    public UserDetailInfo Detail { get; set; }
   }
 
   public class UserContactInfoList
   {
-    public string UserId { get; set; }
+    public UserDetailInfo Detail { get; set; }
 
-    public string OrganisationId { get; set; }
-
-    public List<ContactResponseInfo> ContactsList { get; set; }
+    public List<ContactResponseInfo> ContactPoints { get; set; }
   }
 
-  public class OrganisationSiteContactResponse : ContactResponseInfo
+  public class SiteDetailInfo
   {
     public int SiteId { get; set; }
+
+    public string OrganisationId { get; set; }
   }
 
-  public class OrganisationSiteContactInfo : OrganisationSiteContactResponse
+  public class OrganisationSiteContactInfo : ContactResponseInfo
   {
-    public string OrganisationId { get; set; }
+    public SiteDetailInfo Detail { get; set; }
   }
 
   public class OrganisationSiteContactInfoList
   {
-    public string OrganisationId { get; set; }
+    public SiteDetailInfo Detail { get; set; }
 
-    public int SiteId { get; set; }
-
-    public List<ContactResponseInfo> SiteContacts { get; set; }
+    public List<ContactResponseInfo> ContactPoints { get; set; }
   }
 
   public class ContactReasonInfo

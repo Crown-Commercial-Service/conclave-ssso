@@ -1,8 +1,10 @@
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Dtos;
+using CcsSso.Domain.Constants;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain.Contexts;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -19,12 +21,17 @@ namespace CcsSso.Core.Service
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private readonly ITokenService _tokenService;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IAuditLoginService _auditLoginService;
+    private readonly RequestContext _requestContext;
 
-    public AuthService(ApplicationConfigurationInfo applicationConfigurationInfo, ITokenService tokenService, IHttpClientFactory httpClientFactory)
+    public AuthService(ApplicationConfigurationInfo applicationConfigurationInfo, ITokenService tokenService, IHttpClientFactory httpClientFactory,
+      IAuditLoginService auditLoginService, RequestContext requestContext)
     {
       _applicationConfigurationInfo = applicationConfigurationInfo;
       _tokenService = tokenService;
       _httpClientFactory = httpClientFactory;
+      _auditLoginService = auditLoginService;
+      _requestContext = requestContext;
     }
 
     public async Task<bool> ValidateBackChannelLogoutTokenAsync(string backChanelLogoutToken)
@@ -55,7 +62,9 @@ namespace CcsSso.Core.Service
       {
         var errorMessage = await result.Content.ReadAsStringAsync();
         throw new CcsSsoException(errorMessage);
-      }      
+      }
+      
+      await _auditLoginService.CreateLogAsync(AuditLogEvent.UserPasswordChange, AuditLogApplication.ManageMyAccount, $"UserId:{_requestContext.UserId}");
     }
   }
 }

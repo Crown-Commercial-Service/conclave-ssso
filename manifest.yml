@@ -1,14 +1,81 @@
 ---
 applications:
-- name: dev-api-wrapper
+- name: preprod-api-security
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Security.Api/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: preprod-api-security.london.cloudapps.digital
+  services:
+    - preprod-security-pg-service
+    - preprod-vault 
+    - preprod-security-redis-service
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: preprod-api-wrapper
   instances: 1
   memory: 512M
   path: api/CcsSso.Core.ExternalApi/bin/Debug/net5.0
   buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
   routes:
-  - route: dev-api-wrapper.london.cloudapps.digital 
+    - route: preprod-api-wrapper.london.cloudapps.digital
   services:
-    - dev3-sso-pg-service
-    - dev-vault
+    - preprod-sso-pg-service
+    - preprod-vault
+    - preprod-adaptor-sqs-service
+    - preprod-data-redis-service
   env:
-    CACHE_NUGET_PACKAGES: false   
+    CACHE_NUGET_PACKAGES: false
+- name: preprod-api-core
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Core.Api/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: preprod-api-core.london.cloudapps.digital
+  services:
+    - preprod-sso-pg-service
+    - preprod-vault
+    - preprod-data-redis-service
+    - preprod-adaptor-sqs-service
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: preprod-api-adaptor
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Adaptor.Api/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: preprod-api-adaptor.london.cloudapps.digital
+  services:
+    - preprod-adaptor-pg-service
+    - preprod-data-redis-service
+    - preprod-adaptor-sqs-service
+    - preprod-vault   
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: preprod-adaptor-sqs-listener
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Adaptor.SqsListener/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  no-route: true
+  health-check-type: none
+  services:
+    - preprod-vault
+    - preprod-adaptor-sqs-service
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: preprod-org-dereg-job
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Core.JobScheduler/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  no-route: true
+  health-check-type: none
+  services:
+    - preprod-sso-pg-service
+    - preprod-vault
+  env:
+    CACHE_NUGET_PACKAGES: false

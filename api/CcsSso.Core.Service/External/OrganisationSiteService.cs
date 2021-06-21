@@ -1,3 +1,4 @@
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.DbModel.Entity;
@@ -5,6 +6,8 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Shared.Domain.Constants;
+using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -17,10 +20,16 @@ namespace CcsSso.Core.Service.External
   {
     private readonly IDataContext _dataContext;
     private readonly IContactsHelperService _contactsHelper;
-    public OrganisationSiteService(IDataContext dataContext, IContactsHelperService contactsHelper)
+    private readonly IWrapperCacheService _wrapperCacheService;
+    private readonly IAuditLoginService _auditLoginService;
+
+    public OrganisationSiteService(IDataContext dataContext, IContactsHelperService contactsHelper, IWrapperCacheService wrapperCacheService,
+      IAuditLoginService auditLoginService)
     {
       _dataContext = dataContext;
       _contactsHelper = contactsHelper;
+      _wrapperCacheService = wrapperCacheService;
+      _auditLoginService = auditLoginService;
     }
 
     /// <summary>
@@ -63,6 +72,12 @@ namespace CcsSso.Core.Service.External
 
         await _dataContext.SaveChangesAsync();
 
+        // Log
+        await _auditLoginService.CreateLogAsync(AuditLogEvent.OrgSiteCreate, AuditLogApplication.ManageOrganisation, $"OrgId:{ciiOrganisationId}, SiteId:{contactPoint.Id}");
+
+        //Invalidate redis
+        await _wrapperCacheService.RemoveCacheAsync($"{CacheKeyConstant.OrgSites}-{ciiOrganisationId}");
+
         return contactPoint.Id;
       }
 
@@ -103,6 +118,12 @@ namespace CcsSso.Core.Service.External
         }
 
         await _dataContext.SaveChangesAsync();
+
+        // Log
+        await _auditLoginService.CreateLogAsync(AuditLogEvent.OrgSiteDelete, AuditLogApplication.ManageOrganisation, $"OrgId:{ciiOrganisationId}, SiteId:{siteId}");
+
+        //Invalidate redis
+        await _wrapperCacheService.RemoveCacheAsync($"{CacheKeyConstant.OrgSites}-{ciiOrganisationId}", $"{CacheKeyConstant.Site}-{ciiOrganisationId}-{siteId}");
       }
       else
       {
@@ -139,7 +160,7 @@ namespace CcsSso.Core.Service.External
             SiteId = organisationSiteContactPoint.Id,
           },
           SiteName = organisationSiteContactPoint.SiteName,
-          Address = new OrganisationAddress
+          Address = new OrganisationAddressResponse
           {
             StreetAddress = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.StreetAddress ?? string.Empty,
             Locality = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.Locality ?? string.Empty,
@@ -149,6 +170,10 @@ namespace CcsSso.Core.Service.External
           }
         };
 
+        if (!string.IsNullOrEmpty(organisationSiteContactPoint.ContactDetail.PhysicalAddress?.CountryCode))
+        {
+          organisationSite.Address.CountryName = CultureSupport.GetCountryNameByCode(organisationSiteContactPoint.ContactDetail.PhysicalAddress.CountryCode);
+        }
         sites.Add(organisationSite);
       }
 
@@ -183,7 +208,7 @@ namespace CcsSso.Core.Service.External
             SiteId = siteId
           },
           SiteName = organisationSiteContactPoint.SiteName,
-          Address = new OrganisationAddress
+          Address = new OrganisationAddressResponse
           {
             StreetAddress = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.StreetAddress ?? string.Empty,
             Locality = organisationSiteContactPoint.ContactDetail.PhysicalAddress?.Locality ?? string.Empty,
@@ -193,11 +218,16 @@ namespace CcsSso.Core.Service.External
           }
         };
 
+        if (!string.IsNullOrEmpty(organisationSiteContactPoint.ContactDetail.PhysicalAddress?.CountryCode))
+        {
+          organisationSiteResponse.Address.CountryName = CultureSupport.GetCountryNameByCode(organisationSiteContactPoint.ContactDetail.PhysicalAddress.CountryCode);
+        }
+
         return organisationSiteResponse;
       }
       else
       {
-        throw new ResourceNotFoundException(); 
+        throw new ResourceNotFoundException();
       }
     }
 
@@ -227,6 +257,12 @@ namespace CcsSso.Core.Service.External
         AssignSitePhysicalContactsDetailsToContactPoint(organisationSiteInfo, organisationSiteContactPoint);
 
         await _dataContext.SaveChangesAsync();
+
+        // Log
+        await _auditLoginService.CreateLogAsync(AuditLogEvent.OrgSiteUpdate, AuditLogApplication.ManageOrganisation, $"OrgId:{ciiOrganisationId}, SiteId:{siteId}");
+
+        //Invalidate redis
+        await _wrapperCacheService.RemoveCacheAsync($"{CacheKeyConstant.OrgSites}-{ciiOrganisationId}", $"{CacheKeyConstant.Site}-{ciiOrganisationId}-{siteId}");
       }
       else
       {
@@ -268,6 +304,11 @@ namespace CcsSso.Core.Service.External
         || string.IsNullOrWhiteSpace(organisationSiteInfo.Address.CountryCode))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
+      }
+
+      if (!string.IsNullOrWhiteSpace(organisationSiteInfo.Address.CountryCode) && !CultureSupport.IsValidCountryCode(organisationSiteInfo.Address.CountryCode))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidCountryCode);
       }
     }
   }

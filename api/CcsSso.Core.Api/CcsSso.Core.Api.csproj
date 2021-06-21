@@ -24,4 +24,10 @@
     <ProjectReference Include="..\CcsSso.Core.Service\CcsSso.Core.Service.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="appsecrets.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

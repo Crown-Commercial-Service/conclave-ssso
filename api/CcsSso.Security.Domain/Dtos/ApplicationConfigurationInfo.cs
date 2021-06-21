@@ -21,6 +21,10 @@ namespace CcsSso.Security.Domain.Dtos
     public PasswordPolicy PasswordPolicy { get; set; }
 
     public SecurityApiKeySettings SecurityApiKeySettings { get; set; }
+
+    public RedisCacheSettings RedisCacheSettings { get; set; }
+
+    public CryptoSettings CryptoSettings { get; set; }
   }
 
   public class SecurityApiKeySettings
@@ -28,6 +32,18 @@ namespace CcsSso.Security.Domain.Dtos
     public string SecurityApiKey { get; set; }
 
     public List<string> ApiKeyValidationExcludedRoutes { get; set; }
+  }
+
+  public class RedisCacheSettings
+  {
+    public string ConnectionString { get; set; }
+
+    public bool IsEnabled { get; set; }
+  }
+
+  public class CryptoSettings
+  {
+    public string CookieEncryptionKey { get; set; }
   }
 
   public class Auth0Configuration
@@ -74,6 +90,8 @@ namespace CcsSso.Security.Domain.Dtos
 
     public int UserActivationLinkTTLInMinutes { get; set; }
 
+    public int ResetPasswordLinkTTLInMinutes { get; set; }
+
     public bool SendNotificationsEnabled { get; set; }
   }
 
@@ -87,6 +105,8 @@ namespace CcsSso.Security.Domain.Dtos
   public class SessionConfig
   {
     public int SessionTimeoutInMinutes { get; set; }
+
+    public int StateExpirationInMinutes { get; set; }
   }
 
   public class JwtTokenConfiguration

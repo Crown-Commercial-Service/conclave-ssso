@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Scripts\20210506115542_InitialMigration.sql" />
+    <None Remove="Scripts\ConclaveEntityAttributeDataScript.sql" />
+    <None Remove="Scripts\Sprint12\20210513051809_AddClientIdForConsumer.sql" />
+    <None Remove="Scripts\Sprint12\20210517065032_AddSubscriptionFormat.sql" />
+    <None Remove="Scripts\Sprint12\OrgUserEntityAttributeDataScript.sql" />
+    <None Remove="Scripts\Sprint13Dev\Create_Attrbiute_Mappings.sql" />
+    <None Remove="Scripts\Sprint13\20210614063127_AddUniqueConstrainToAdapterConsumerEntity.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts\ConclaveEntityAttributeDataScript.sql" />
+    <EmbeddedResource Include="Scripts\20210506115542_InitialMigration.sql" />
+    <EmbeddedResource Include="Scripts\Sprint12\20210517065032_AddSubscriptionFormat.sql" />
+    <EmbeddedResource Include="Scripts\Sprint12\20210513051809_AddClientIdForConsumer.sql" />
+    <EmbeddedResource Include="Scripts\Sprint12\OrgUserEntityAttributeDataScript.sql" />
+    <EmbeddedResource Include="Scripts\Sprint13Dev\Create_Attrbiute_Mappings.sql" />
+    <EmbeddedResource Include="Scripts\Sprint13\20210614063127_AddUniqueConstrainToAdapterConsumerEntity.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="5.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="5.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CcsSso.Adaptor.DbPersistence\CcsSso.Adaptor.DbPersistence.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

@@ -8,9 +8,14 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Dtos.Domain.Models;
+using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Shared.Domain.Constants;
+using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,14 +29,21 @@ namespace CcsSso.Core.Service.External
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
     private readonly ICiiService _ciiService;
     private readonly IOrganisationService _organisationHelperService;
+    private readonly IAdaptorNotificationService _adapterNotificationService;
+    private readonly IWrapperCacheService _wrapperCacheService;
+    private readonly ILocalCacheService _localCacheService;
     public OrganisationProfileService(IDataContext dataContext, IContactsHelperService contactsHelper, ICcsSsoEmailService ccsSsoEmailService,
-      ICiiService ciiService, IOrganisationService organisationHelperService)
+      ICiiService ciiService, IOrganisationService organisationHelperService, IAdaptorNotificationService adapterNotificationService,
+      IWrapperCacheService wrapperCacheService, ILocalCacheService localCacheService)
     {
       _dataContext = dataContext;
       _contactsHelper = contactsHelper;
       _ccsSsoEmailService = ccsSsoEmailService;
       _ciiService = ciiService;
       _organisationHelperService = organisationHelperService;
+      _adapterNotificationService = adapterNotificationService;
+      _wrapperCacheService = wrapperCacheService;
+      _localCacheService = localCacheService;
     }
 
     /// <summary>
@@ -99,6 +111,9 @@ namespace CcsSso.Core.Service.External
 
       _dataContext.Party.Add(party);
       await _dataContext.SaveChangesAsync();
+
+      // Notify the adapter
+      await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Create, organisation.CiiOrganisationId);
 
       return organisation.CiiOrganisationId;
     }
@@ -184,7 +199,7 @@ namespace CcsSso.Core.Service.External
       if (organisation != null)
       {
 
-        var ciiOrganisation = (await _ciiService.GetOrgsAsync(ciiOrganisationId)).FirstOrDefault();
+        var ciiOrganisation = (await _ciiService.GetOrgsAsync(ciiOrganisationId, "")).FirstOrDefault();
 
         if (ciiOrganisation == null)
         {
@@ -206,6 +221,7 @@ namespace CcsSso.Core.Service.External
             IsActive = organisation.IsActivated,
             IsSme = organisation.IsSme,
             IsVcse = organisation.IsVcse,
+            RightToBuy = organisation.RightToBuy ?? false,
             SupplierBuyerType = organisation.SupplierBuyerType != null ? (int)organisation.SupplierBuyerType : 0,
             CreationDate = organisation.CreatedOnUtc.ToString(DateTimeFormat.DateFormat)
           },
@@ -218,7 +234,7 @@ namespace CcsSso.Core.Service.External
 
           if (contactPoint != null)
           {
-            var address = new OrganisationAddress
+            var address = new OrganisationAddressResponse
             {
               StreetAddress = contactPoint.ContactDetail.PhysicalAddress.StreetAddress ?? string.Empty,
               Region = contactPoint.ContactDetail.PhysicalAddress.Region ?? string.Empty,
@@ -226,13 +242,18 @@ namespace CcsSso.Core.Service.External
               PostalCode = contactPoint.ContactDetail.PhysicalAddress.PostalCode ?? string.Empty,
               CountryCode = contactPoint.ContactDetail.PhysicalAddress.CountryCode ?? string.Empty,
             };
+
+            if (!string.IsNullOrEmpty(contactPoint.ContactDetail.PhysicalAddress?.CountryCode))
+            {
+              address.CountryName = CultureSupport.GetCountryNameByCode(contactPoint.ContactDetail.PhysicalAddress.CountryCode);
+            }
             organisationInfo.Address = address;
           }
         }
 
         if (ciiOrganisation?.additionalIdentifiers != null)
         {
-          foreach(var ciiAdditionalIdentifier in ciiOrganisation.additionalIdentifiers)
+          foreach (var ciiAdditionalIdentifier in ciiOrganisation.additionalIdentifiers)
           {
             var identifier = new OrganisationIdentifier
             {
@@ -276,12 +297,13 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
-      var identityProviders = organisation.OrganisationEligibleIdentityProviders.Where(x => !x.IsDeleted).Select(i => new IdentityProviderDetail
-      {
-        Id = i.Id,
-        ConnectionName = i.IdentityProvider.IdpConnectionName,
-        Name = i.IdentityProvider.IdpName
-      }).ToList();
+      var identityProviders = organisation.OrganisationEligibleIdentityProviders.Where(x => !x.IsDeleted)
+        .OrderBy(idp => idp.IdentityProviderId).Select(i => new IdentityProviderDetail
+        {
+          Id = i.Id,
+          ConnectionName = i.IdentityProvider.IdpConnectionName,
+          Name = i.IdentityProvider.IdpName
+        }).ToList();
 
       return identityProviders;
     }
@@ -297,92 +319,88 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
-      var roles = organisation.OrganisationEligibleRoles.Where(x => !x.IsDeleted).Select(or => new OrganisationRole
-      {
-        RoleId = or.Id,
-        RoleName = or.CcsAccessRole.CcsAccessRoleName,
-        OrgTypeEligibility = or.CcsAccessRole.OrgTypeEligibility,
-        SubscriptionTypeEligibility = or.CcsAccessRole.SubscriptionTypeEligibility,
-        TradeEligibility = or.CcsAccessRole.TradeEligibility
-      }).ToList();
-
-      return roles;
-    }
-
-    public async Task<List<OrganisationRole>> GetEligableRolesAsync(string ciiOrganisationId)
-    {
-      var organisation = await _dataContext.Organisation
-      .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
-      .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
-
-      if (organisation == null)
-      {
-        return new List<OrganisationRole>();
-      }
-
-      var roles = organisation.OrganisationEligibleRoles.Where(x => !x.IsDeleted).Select(or => new OrganisationRole
-      {
-        RoleId = or.Id,
-        RoleName = or.CcsAccessRole.CcsAccessRoleName,
-        OrgTypeEligibility = or.CcsAccessRole.OrgTypeEligibility,
-        SubscriptionTypeEligibility = or.CcsAccessRole.SubscriptionTypeEligibility,
-        TradeEligibility = or.CcsAccessRole.TradeEligibility,
-      }).ToList();
-
-      return roles;
-    }
-
-    public async Task UpdateIdentityProviderAsync(string ciiOrganisationId, string idpName, bool enabled)
-    {
-      var identityProvider = await _dataContext.IdentityProvider.FirstOrDefaultAsync(x => x.IsDeleted == false && x.IdpConnectionName.Equals(idpName));
-      var organisationIdps = await _dataContext.OrganisationEligibleIdentityProvider
-        .Include(o => o.Organisation)
-        .Include(o => o.IdentityProvider)
-        .Where(x => x.Organisation.CiiOrganisationId == ciiOrganisationId && x.Organisation.IsDeleted == false)
-        .ToListAsync();
-      var organisation = await _dataContext.Organisation
-        .Where(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId)
-        .FirstOrDefaultAsync();
-
-      if (organisationIdps.Any())
-      {
-        organisationIdps.ForEach((idp) =>
+      var roles = organisation.OrganisationEligibleRoles.Where(x => !x.IsDeleted)
+        .OrderBy(r => r.CcsAccessRoleId).Select(or => new OrganisationRole
         {
-          if (idp.IdentityProvider.IdpConnectionName == idpName)
+          RoleId = or.Id,
+          RoleName = or.CcsAccessRole.CcsAccessRoleName,
+          OrgTypeEligibility = or.CcsAccessRole.OrgTypeEligibility,
+          SubscriptionTypeEligibility = or.CcsAccessRole.SubscriptionTypeEligibility,
+          TradeEligibility = or.CcsAccessRole.TradeEligibility
+        }).ToList();
+
+      return roles;
+    }
+
+    public async Task UpdateIdentityProviderAsync(OrgIdentityProviderSummary orgIdentityProviderSummary)
+    {
+      if (orgIdentityProviderSummary.ChangedOrgIdentityProviders != null && orgIdentityProviderSummary.ChangedOrgIdentityProviders.Any() && !string.IsNullOrEmpty(orgIdentityProviderSummary.CiiOrganisationId))
+      {
+        var organisation = await _dataContext.Organisation
+                                .Where(o => !o.IsDeleted && o.CiiOrganisationId == orgIdentityProviderSummary.CiiOrganisationId)
+                                .FirstOrDefaultAsync();
+
+        if (organisation != null)
+        {
+          // This will include all idps including "none"
+          var identityProviderList = await _dataContext.IdentityProvider.Where(idp => !idp.IsDeleted).ToListAsync();
+
+          var organisationIdps = await _dataContext.OrganisationEligibleIdentityProvider
+            .Include(o => o.IdentityProvider)
+            .Where(oeidp => !oeidp.IsDeleted && oeidp.Organisation.CiiOrganisationId == orgIdentityProviderSummary.CiiOrganisationId)
+            .ToListAsync();
+
+          var noneOrgIdentityProvider = organisationIdps.FirstOrDefault(ip => ip.IdentityProvider.IdpConnectionName == "none");
+
+          foreach (var idp in orgIdentityProviderSummary.ChangedOrgIdentityProviders.Where(ip => identityProviderList.Select(tl => tl.Id).Contains(ip.Id)))
           {
-            idp.IsDeleted = !enabled;
-            if (enabled == false)
+            if (!idp.Enabled)
             {
-              var noneIdentityProvider = _dataContext.OrganisationEligibleIdentityProvider
-              .Include(o => o.IdentityProvider)
-              .FirstOrDefault(x => x.IsDeleted == false && x.IdentityProvider.IdpConnectionName == "none");
-              var users = _dataContext.User
-                .Include(o => o.OrganisationEligibleIdentityProvider)
-                .Where(x => x.OrganisationEligibleIdentityProvider.Id == idp.Id)
-                .ToList();
-              if (users.Any() && noneIdentityProvider != null)
+              //delete the idp provider from the list
+              var orgIdpToDelete = organisationIdps.FirstOrDefault(oidp => oidp.IdentityProvider.Id == idp.Id);
+              orgIdpToDelete.IsDeleted = true;
+
+              //Update the users to none
+              var users = await _dataContext.User
+                    .Where(u => u.OrganisationEligibleIdentityProvider.IdentityProviderId == idp.Id)
+                    .ToListAsync();
+              users.ForEach((u) =>
               {
-                users.ForEach((u) =>
-                {
-                  u.OrganisationEligibleIdentityProvider = noneIdentityProvider;
-                });
-              }
+                //u.OrganisationEligibleIdentityProvider.IdentityProviderId = noneIdentityProvider.Id;
+                u.OrganisationEligibleIdentityProviderId = noneOrgIdentityProvider.Id;
+              });
+
+              //Invalidate redis
+              var invalidatingCacheKeyList = users.Select(u => $"{CacheKeyConstant.User}-{u.UserName}").ToArray();
+              await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeyList);
+
+              // Notify the adapter
+              var notifyTaskList = new List<Task>();
+              users.ForEach((u) =>
+              {
+                notifyTaskList.Add(_adapterNotificationService.NotifyUserChangeAsync(OperationType.Update, u.UserName, organisation.CiiOrganisationId));
+              });
+              await Task.WhenAll(notifyTaskList);
+            }
+            else
+            {
+              var addedOrganisationEligibleIdentityProvider = new OrganisationEligibleIdentityProvider
+              {
+                OrganisationId = organisation.Id,
+                IdentityProviderId = idp.Id
+              };
+              _dataContext.OrganisationEligibleIdentityProvider.Add(addedOrganisationEligibleIdentityProvider);
             }
           }
-        });
-        await _dataContext.SaveChangesAsync();
-      }
-      else
-      {
-        var e = new OrganisationEligibleIdentityProvider
+          await _dataContext.SaveChangesAsync();
+        }
+        else
         {
-          IdentityProvider = identityProvider,
-          Organisation = organisation
-        };
-        _dataContext.OrganisationEligibleIdentityProvider.Add(e);
-        await _dataContext.SaveChangesAsync();
+          throw new ResourceNotFoundException();
+        }
       }
     }
+
     /// <summary>
     /// Update the organisation and its physical address
     /// </summary>
@@ -423,6 +441,12 @@ namespace CcsSso.Core.Service.External
 
         await _dataContext.SaveChangesAsync();
 
+        //Invalidate redis
+        await _wrapperCacheService.RemoveCacheAsync($"{CacheKeyConstant.Organisation}-{ciiOrganisationId}");
+
+        // Notify the adapter
+        await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Update, ciiOrganisationId);
+
         // Get org admins and send emails
         var orgAdmins = await GetOrganisationAdmins(organisation.Id);
         foreach (var admin in orgAdmins)
@@ -460,83 +484,76 @@ namespace CcsSso.Core.Service.External
     /// <param name="rolesToAdd"></param>
     /// <param name="rolesToDelete"></param>
     /// <returns></returns>
-    public async Task UpdateOrganisationAsync(string ciiOrganisationId, bool isBuyer, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete)
+    public async Task UpdateOrganisationEligibleRolesAsync(string ciiOrganisationId, bool isBuyer, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete)
     {
       var organisation = await _dataContext.Organisation
         .Include(er => er.OrganisationEligibleRoles)
-        .ThenInclude(r => r.CcsAccessRole)
        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
 
       if (organisation != null)
       {
         organisation.RightToBuy = isBuyer;
 
-        if (rolesToAdd != null)
+        if (rolesToAdd != null && rolesToAdd.Any())
         {
-          rolesToAdd.ForEach(async (x) => {
-            var roleEntity = _dataContext.CcsAccessRole.FirstOrDefault(r => !r.IsDeleted && r.Id == x.RoleId);
-            if (roleEntity != null)
-            {
-              _dataContext.OrganisationEligibleRole.Add(new OrganisationEligibleRole
-              {
-                Organisation = organisation,
-                CcsAccessRole = roleEntity
-              });
+          var ccsAccessRoles = await _dataContext.CcsAccessRole.ToListAsync();
 
-            }
-          });
-        }
-        if (rolesToDelete != null)
-        {
-          rolesToDelete.ForEach(async (x) =>
+          if (!rolesToAdd.All(ar => ccsAccessRoles.Any(r => r.Id == ar.RoleId)))
           {
-            var role = organisation.OrganisationEligibleRoles.FirstOrDefault(r => !r.IsDeleted && r.CcsAccessRoleId == x.RoleId);
-            if (role != null)
+            throw new CcsSsoException("INVALID_ROLES_TO_ADD");
+          }
+
+          List<OrganisationEligibleRole> addedEligibleRoles = new List<OrganisationEligibleRole>();
+
+          rolesToAdd.ForEach((addedRole) =>
+          {
+            addedEligibleRoles.Add(new OrganisationEligibleRole
             {
-              role.IsDeleted = true;
+              OrganisationId = organisation.Id,
+              CcsAccessRoleId = addedRole.RoleId
+            });
+          });
+          _dataContext.OrganisationEligibleRole.AddRange(addedEligibleRoles);
+        }
+        if (rolesToDelete != null && rolesToDelete.Any())
+        {
+          var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
 
-              //var groupsUgm = await _dataContext.UserGroupMembership
-              //  .Include(i => i.OrganisationUserGroup)
-              //  .ThenInclude(i => i.GroupEligibleRoles)
-              //  .ThenInclude(i => i.OrganisationEligibleRole)
-              //  .ThenInclude(i => i.CcsAccessRole)
-              //  .Where(u => u.OrganisationUserGroup.OrganisationId == organisation.Id)
-              //  .SelectMany(r => r.OrganisationUserGroup.GroupEligibleRoles.Where(d => d.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == role.CcsAccessRole.CcsAccessRoleNameKey))
-              //  .ToListAsync();
+          if (!deletingRoleIds.All(dr => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == dr)))
+          {
+            throw new CcsSsoException("INVALID_ROLES_TO_DELETE");
+          }
 
-              //groupsUgm.ForEach(async (g) =>
-              //{
-              //  g.IsDeleted = true;
-              //});
+          var deletingOrgEligibleRoles = organisation.OrganisationEligibleRoles.Where(oer => deletingRoleIds.Contains(oer.CcsAccessRoleId)).ToList();
 
-              // Groups
-              var groupsOger = await _dataContext.OrganisationGroupEligibleRole
-              .Include(i => i.OrganisationEligibleRole)
-              .ThenInclude(i => i.CcsAccessRole)
-              .Where(r => r.OrganisationEligibleRole.OrganisationId == organisation.Id && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == role.CcsAccessRole.CcsAccessRoleNameKey)
-              .ToListAsync();
+          var orgGroupRolesWithDeletedRoles = await _dataContext.OrganisationGroupEligibleRole
+            .Where(oger => !oger.IsDeleted && oger.OrganisationEligibleRole.OrganisationId == organisation.Id && deletingRoleIds.Contains(oger.OrganisationEligibleRole.CcsAccessRoleId))
+            .ToListAsync();
 
-              groupsOger.ForEach(async (g) =>
-              {
-                g.IsDeleted = true;
-              });
+          var userAccessRolesWithDeletedRoles = await _dataContext.UserAccessRole
+            .Where(uar => !uar.IsDeleted && uar.OrganisationEligibleRole.OrganisationId == organisation.Id && deletingRoleIds.Contains(uar.OrganisationEligibleRole.CcsAccessRoleId))
+            .ToListAsync();
 
-              // Users
-              var usersOger = await _dataContext.UserAccessRole
-              .Include(i => i.OrganisationEligibleRole)
-              .ThenInclude(i => i.CcsAccessRole)
-              .Where(r => r.OrganisationEligibleRole.OrganisationId == organisation.Id && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == role.CcsAccessRole.CcsAccessRoleNameKey)
-              .ToListAsync();
+          deletingOrgEligibleRoles.ForEach((deletingOrgEligibleRole) =>
+          {
+            deletingOrgEligibleRole.IsDeleted = true;
+          });
 
-              usersOger.ForEach(async (g) =>
-              {
-                g.IsDeleted = true;
-              });
-            }
+          orgGroupRolesWithDeletedRoles.ForEach((orgGroupRolesWithDeletedRole) =>
+          {
+            orgGroupRolesWithDeletedRole.IsDeleted = true;
+          });
+
+          userAccessRolesWithDeletedRoles.ForEach((userAccessRolesWithDeletedRole) =>
+          {
+            userAccessRolesWithDeletedRole.IsDeleted = true;
           });
         }
 
         await _dataContext.SaveChangesAsync();
+
+        // Remove service client id inmemory cache since role update
+        _localCacheService.Remove($"ORGANISATION_SERVICE_CLIENT_IDS-{ciiOrganisationId}");
       }
       else
       {
@@ -581,13 +598,19 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidOrganisationUri);
       }
 
-      // TODO - finalize this in the Org wrapper review
-      //if (organisationProfileInfo.Address == null || (string.IsNullOrWhiteSpace(organisationProfileInfo.Address.StreetAddress) && string.IsNullOrWhiteSpace(organisationProfileInfo.Address.Locality)
-      //  && string.IsNullOrWhiteSpace(organisationProfileInfo.Address.Region) && string.IsNullOrWhiteSpace(organisationProfileInfo.Address.PostalCode)
-      //  && string.IsNullOrWhiteSpace(organisationProfileInfo.Address.CountryCode)))
-      //{
-      //  throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
-      //}
+      if (organisationProfileInfo.Address != null) // Address is not mandatory for an organisation
+      {
+        if (string.IsNullOrWhiteSpace(organisationProfileInfo.Address.StreetAddress) || string.IsNullOrWhiteSpace(organisationProfileInfo.Address.PostalCode)
+        || string.IsNullOrWhiteSpace(organisationProfileInfo.Address.CountryCode))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
+        }
+
+        if (!string.IsNullOrWhiteSpace(organisationProfileInfo.Address.CountryCode) && !CultureSupport.IsValidCountryCode(organisationProfileInfo.Address.CountryCode))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidCountryCode);
+        } 
+      }
     }
 
   }

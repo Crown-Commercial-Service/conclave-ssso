@@ -15,8 +15,10 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task<UserEditResponseInfo> UpdateUserAsync(string userName, UserProfileEditRequestInfo userProfileRequestInfo);
 
-    Task<UserEditResponseInfo> UpdateUserRolesAsync(string userName, UserProfileEditRequestInfo userProfileRequestInfo);
+    Task ResetUserPasswodAsync(string userName, string? component);
 
-    Task<UserEditResponseInfo> AddAdminRoleAsync(string userName, UserProfileEditRequestInfo userProfileRequestInfo);
+    Task RemoveAdminRolesAsync(string userName);
+
+    Task AddAdminRoleAsync(string userName);
   }
 }

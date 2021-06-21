@@ -22,7 +22,7 @@ namespace CcsSso.Core.Tests.Jobs
     {
       await DataContextHelper.ScopeAsync(async dataContext =>
       {
-        var dateTimeMock = new Mock<IDataTimeService>();
+        var dateTimeMock = new Mock<IDateTimeService>();
         dateTimeMock.Setup(d => d.GetUTCNow()).Returns(new DateTime(2021, 01, 01, 1, 0, 0));
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         var appSettings = new AppSettings()
@@ -39,7 +39,7 @@ namespace CcsSso.Core.Tests.Jobs
       });
     }
 
-    private static async Task<OrganisationDeleteForInactiveRegistrationJob> GetOrganisationDeleteForInactiveRegistrationServiceAsync(IDataContext dataContext, IDataTimeService dateTimeService,
+    private static async Task<OrganisationDeleteForInactiveRegistrationJob> GetOrganisationDeleteForInactiveRegistrationServiceAsync(IDataContext dataContext, IDateTimeService dateTimeService,
       AppSettings appSettings, IHttpClientFactory httpClientFactory)
     {
       await SetupTestDataAsync(dataContext);

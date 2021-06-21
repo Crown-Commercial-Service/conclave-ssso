@@ -3,25 +3,25 @@ using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Service;
 using CcsSso.Core.Service.External;
 using CcsSso.DbPersistence;
-using CcsSso.Domain;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos;
 using CcsSso.ExternalApi.Middleware;
 using CcsSso.Service;
 using CcsSso.Service.External;
+using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Shared.Cache.Services;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
 using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Services;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -41,21 +41,40 @@ namespace CcsSso.ExternalApi
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
-
+      services.AddCors();
       services.AddControllers();
       services.AddSingleton<ITokenService, TokenService>();
       services.AddSingleton(s =>
       {
         bool.TryParse(Configuration["Email:SendNotificationsEnabled"], out bool sendNotificationsEnabled);
+        bool.TryParse(Configuration["QueueInfo:EnableAdaptorNotifications"], out bool enableAdaptorNotifications);
+        bool.TryParse(Configuration["RedisCacheSettings:IsEnabled"], out bool isRedisEnabled);
+        int.TryParse(Configuration["RedisCacheSettings:CacheExpirationInMinutes"], out int cacheExpirationInMinutes);
+        int.TryParse(Configuration["InMemoryCacheExpirationInMinutes"], out int inMemoryCacheExpirationInMinutes);
+        bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
+
+        if (cacheExpirationInMinutes == 0)
+        {
+          cacheExpirationInMinutes = 10;
+        }
+
+        if (inMemoryCacheExpirationInMinutes == 0)
+        {
+          inMemoryCacheExpirationInMinutes = 10;
+        }
+
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
           ApiKey = Configuration["ApiKey"],
           ConclaveLoginUrl = Configuration["ConclaveLoginUrl"],
+          EnableAdapterNotifications = enableAdaptorNotifications,
+          InMemoryCacheExpirationInMinutes = inMemoryCacheExpirationInMinutes,
+          DashboardServiceClientId = Configuration["DashboardServiceClientId"],
           JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
           {
             IdamClienId = Configuration["JwtTokenValidationInfo:IdamClienId"],
             Issuer = Configuration["JwtTokenValidationInfo:Issuer"],
-            JwksUrl = Configuration["JwtTokenValidationInfo:JwksUrl"]
+            JwksUrl = isApiGatewayEnabled ? Configuration["JwtTokenValidationInfo:ApiGatewayEnabledJwksUrl"] : Configuration["JwtTokenValidationInfo:ApiGatewayDisabledJwksUrl"]
           },
           SecurityApiDetails = new SecurityApiDetails
           {
@@ -70,11 +89,20 @@ namespace CcsSso.ExternalApi
             UserContactUpdateNotificationTemplateId = Configuration["Email:UserContactUpdateNotificationTemplateId"],
             UserPermissionUpdateNotificationTemplateId = Configuration["Email:UserPermissionUpdateNotificationTemplateId"],
             SendNotificationsEnabled = sendNotificationsEnabled,
+          },
+          QueueUrlInfo = new QueueUrlInfo
+          {
+            AdaptorNotificationQueueUrl = Configuration["QueueInfo:AdaptorNotificationQueueUrl"]
+          },
+          RedisCacheSettings = new RedisCacheSetting()
+          {
+            ConnectionString = Configuration["RedisCacheSettings:ConnectionString"],
+            IsEnabled = isRedisEnabled,
+            CacheExpirationInMinutes = cacheExpirationInMinutes
           }
         };
         return appConfigInfo;
       });
-
       services.AddSingleton(s =>
       {
         EmailConfigurationInfo emailConfigurationInfo = new()
@@ -84,16 +112,51 @@ namespace CcsSso.ExternalApi
 
         return emailConfigurationInfo;
       });
+      services.AddSingleton(s =>
+      {
+        Dtos.Domain.Models.CiiConfig ciiConfigInfo = new Dtos.Domain.Models.CiiConfig()
+        {
+          url = Configuration["Cii:Url"],
+          token = Configuration["Cii:Token"],
+          deleteToken = Configuration["Cii:Delete_Token"],
+          clientId = Configuration["JwtTokenValidationInfo:IdamClienId"]
+        };
+        return ciiConfigInfo;
+      });
+      services.AddSingleton(s =>
+      {
+        int.TryParse(Configuration["QueueInfo:RecieveMessagesMaxCount"], out int recieveMessagesMaxCount);
+        recieveMessagesMaxCount = recieveMessagesMaxCount == 0 ? 10 : recieveMessagesMaxCount;
 
+        int.TryParse(Configuration["QueueInfo:RecieveWaitTimeInSeconds"], out int recieveWaitTimeInSeconds); // Default value 0
+
+        var sqsConfiguration = new SqsConfiguration
+        {
+          ServiceUrl = Configuration["QueueInfo:ServiceUrl"],
+          AccessKeyId = Configuration["QueueInfo:AccessKeyId"],
+          AccessSecretKey = Configuration["QueueInfo:AccessSecretKey"],
+          RecieveMessagesMaxCount = recieveMessagesMaxCount,
+          RecieveWaitTimeInSeconds = recieveWaitTimeInSeconds
+        };
+
+        return sqsConfiguration;
+      });
+      services.AddSingleton<IAwsSqsService, AwsSqsService>();
       services.AddSingleton<IEmailProviderService, EmailProviderService>();
       services.AddSingleton<ICcsSsoEmailService, CcsSsoEmailService>();
-
       services.AddDbContext<DataContext>(options => options.UseNpgsql(Configuration["DbConnection"]));
-      services.AddScoped<IDataContext>(s => s.GetRequiredService<DataContext>());
+      services.AddSingleton<IRemoteCacheService, RedisCacheService>();
+      services.AddSingleton<RedisConnectionPoolService>(_ =>
+        new RedisConnectionPoolService(Configuration["RedisCacheSettings:ConnectionString"])
+      );
+      services.AddSingleton<IWrapperCacheService, WrapperCacheService>();
+      services.AddSingleton<ILocalCacheService, InMemoryCacheService>();
+      services.AddMemoryCache();
 
+      services.AddScoped<IDataContext>(s => s.GetRequiredService<DataContext>());
       services.AddScoped<RequestContext>();
-      services.AddScoped<IOrganisationProfileService, OrganisationProfileService>(); 
-      services.AddScoped<IOrganisationService, OrganisationService>(); 
+      services.AddScoped<IOrganisationProfileService, OrganisationProfileService>();
+      services.AddScoped<IOrganisationService, OrganisationService>();
       services.AddScoped<IOrganisationContactService, OrganisationContactService>();
       services.AddScoped<IOrganisationSiteService, OrganisationSiteService>();
       services.AddScoped<IOrganisationSiteContactService, OrganisationSiteContactService>();
@@ -101,17 +164,16 @@ namespace CcsSso.ExternalApi
       services.AddScoped<IUserContactService, UserContactService>();
       services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
       services.AddScoped<IContactsHelperService, ContactsHelperService>();
+      services.AddScoped<IContactExternalService, ContactExternalService>();
       services.AddScoped<IConfigurationDetailService, ConfigurationDetailService>();
       services.AddScoped<IOrganisationGroupService, OrganisationGroupService>();
       services.AddScoped<IIdamService, IdamService>();
       services.AddScoped<ICiiService, CiiService>();
-      services.AddHttpClient<ICiiService, CiiService>().ConfigureHttpClient((serviceProvider, httpClient) =>
-      {
-        httpClient.BaseAddress = new Uri(Configuration["Cii:Url"]);
-        httpClient.DefaultRequestHeaders.Add("Apikey", Configuration["Cii:Token"]);
-      });
+      services.AddScoped<IAdaptorNotificationService, AdaptorNotificationService>();
+      services.AddScoped<IAuditLoginService, AuditLoginService>();
+      services.AddScoped<IDateTimeService, DateTimeService>();
       services.AddHttpClient();
-
+      services.AddHttpContextAccessor();
       services.AddSwaggerGen(c =>
       {
         c.SwaggerDoc("v1", new OpenApiInfo { Title = "CcsSso.WrapperApi", Version = "v1" });
@@ -149,17 +211,35 @@ namespace CcsSso.ExternalApi
       app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.ExternalApi v1"));
       app.UseHttpsRedirection();
 
-      app.UseRouting();
+      app.Use(async (context, next) =>
+      {
+        context.Response.Headers.Add(
+            "Cache-Control",
+            "no-cache");
+        context.Response.Headers.Add(
+            "Pragma",
+            "no-cache");
+        context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+        await next();
+      });
 
-      app.UseCors(builder => builder.WithOrigins(JsonConvert.DeserializeObject<string[]>(Configuration["CorsDomains"]))
+      app.UseRouting();
+      var _cors = Configuration.GetSection("CorsDomains").Get<string[]>();
+      app.UseCors(builder => builder.WithOrigins(_cors)
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials()
       );
 
+      app.UseForwardedHeaders(new ForwardedHeadersOptions
+      {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor
+      });
+
       app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseMiddleware<AuthenticatorMiddleware>();
 
+      app.UseAuthentication();
       app.UseAuthorization();
 
       app.UseEndpoints(endpoints =>
