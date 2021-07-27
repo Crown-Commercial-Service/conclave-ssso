@@ -90,6 +90,13 @@ namespace CcsSso.Adaptor.Api.CustomOptions
         Data.Add("QueueInfo:RecieveWaitTimeInSeconds", queueInfo.RecieveWaitTimeInSeconds);
         Data.Add("QueueInfo:PushDataQueueUrl", queueInfo.PushDataQueueUrl);
       }
+
+      if (_secrets.Data.ContainsKey("CiiApiSettings"))
+      {
+        var _cii = JsonConvert.DeserializeObject<CiiVault>(_secrets.Data["CiiApiSettings"].ToString());
+        Data.Add("CiiApiSettings:Url", _cii.Url);
+        Data.Add("CiiApiSettings:SpecialToken", _cii.SpecialToken);
+      }
     }
   }
 
@@ -152,6 +159,13 @@ namespace CcsSso.Adaptor.Api.CustomOptions
     public string RecieveWaitTimeInSeconds { get; set; }
 
     public string PushDataQueueUrl { get; set; }
+  }
+
+  public class CiiVault
+  {
+    public string Url { get; set; }
+
+    public string SpecialToken { get; set; }
   }
 
   public class VaultOptions

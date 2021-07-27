@@ -29,25 +29,25 @@ CREATE OR REPLACE FUNCTION create_digit_role_service_permissions() RETURNS integ
     BEGIN
 
     INSERT INTO public."CcsAccessRole"(
-			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
+			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
 			VALUES ('ACCESS_DIGITS_CLIENT', 'Access DigiTS', 'Access DigiTS', 0, 0, now(), now(), false, 1, 0, 2);
 		INSERT INTO public."CcsAccessRole"(
-			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
+			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
 			VALUES ('SERVICE_ADMIN', 'DigiTS API Administrator', 'DigiTS API Administrator', 0, 0, now(), now(), false, 1, 0, 2);
 		INSERT INTO public."CcsAccessRole"(
-			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
+			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
 			VALUES ('PROVIDER_APP', 'DigiTS API User', 'DigiTS API User', 0, 0, now(), now(), false, 1, 0, 2);
 		INSERT INTO public."CcsAccessRole"(
-			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
+			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
 			VALUES ('DIGITS_DEPARTMENT_ADMIN', 'DigiTS Department Admin', 'DigiTS Department Admin', 0, 0, now(), now(), false, 1, 0, 2);
 		INSERT INTO public."CcsAccessRole"(
-			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
+			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
 			VALUES ('DIGITS_CONTRACT_OWNER', 'DigiTS Super Admin', 'DigiTS Super Admin', 0, 0, now(), now(), false, 1, 0, 2);
     INSERT INTO public."CcsAccessRole"(
-			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
+			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
 			VALUES ('DIGITS_MI', 'DigiTS MI', 'DigiTS MI', 0, 0, now(), now(), false, 1, 0, 2);
       INSERT INTO public."CcsAccessRole"(
-			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
+			"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility")
 			VALUES ('USER', 'DigiTS User', 'DigiTS User', 0, 0, now(), now(), false, 1, 0, 2);
 
 		SELECT "Id" into digitsEnableInDashboardAccessRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'ACCESS_DIGITS_CLIENT' LIMIT 1;
@@ -59,32 +59,32 @@ CREATE OR REPLACE FUNCTION create_digit_role_service_permissions() RETURNS integ
 		SELECT "Id" into digitsUserAccessRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'USER' LIMIT 1;
 		
 		INSERT INTO public."CcsService"(
-			"ServiceName", "TimeOutLength", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "ServiceClientId", "ServiceUrl")
+			"ServiceName", "TimeOutLength", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "ServiceClientId", "ServiceUrl")
 			VALUES (serviceName, 0, 0, 0, now(), now(), false, serviceClientId, serviceUrl);
 			
 		SELECT "Id" into digitServiceId From public."CcsService" WHERE "ServiceName" = serviceName LIMIT 1;
 		SELECT "Id" into dashboardServiceId From public."CcsService" WHERE "ServiceName" = dashboardServiceName LIMIT 1;
 		
 		INSERT INTO public."ServicePermission"(
-			"ServicePermissionName", "CcsServiceId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES ('ACCESS_DIGITS_CLIENT', dashboardServiceId, 0, 0, now(), now(), false);
     INSERT INTO public."ServicePermission"(
-			"ServicePermissionName", "CcsServiceId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES ('SERVICE_ADMIN', digitServiceId, 0, 0, now(), now(), false);
 		INSERT INTO public."ServicePermission"(
-			"ServicePermissionName", "CcsServiceId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES ('PROVIDER_APP', digitServiceId, 0, 0, now(), now(), false);
 		INSERT INTO public."ServicePermission"(
-			"ServicePermissionName", "CcsServiceId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES ('DIGITS_DEPARTMENT_ADMIN', digitServiceId, 0, 0, now(), now(), false);
 		INSERT INTO public."ServicePermission"(
-			"ServicePermissionName", "CcsServiceId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES ('DIGITS_CONTRACT_OWNER', digitServiceId, 0, 0, now(), now(), false);
 		INSERT INTO public."ServicePermission"(
-			"ServicePermissionName", "CcsServiceId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES ('DIGITS_MI', digitServiceId, 0, 0, now(), now(), false);
     INSERT INTO public."ServicePermission"(
-			"ServicePermissionName", "CcsServiceId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES ('USER', digitServiceId, 0, 0, now(), now(), false);
 			
 		SELECT "Id" into digitsEnableInDashboardPermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'ACCESS_DIGITS_CLIENT' LIMIT 1;
@@ -96,25 +96,25 @@ CREATE OR REPLACE FUNCTION create_digit_role_service_permissions() RETURNS integ
 		SELECT "Id" into digitsUserPermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'USER' LIMIT 1;
 		
 		INSERT INTO public."ServiceRolePermission"(
-			"CcsAccessRoleId", "ServicePermissionId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"CcsAccessRoleId", "ServicePermissionId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES (digitsEnableInDashboardAccessRoleId, digitsEnableInDashboardPermissionId, 0, 0, now(), now(), false);
     INSERT INTO public."ServiceRolePermission"(
-			"CcsAccessRoleId", "ServicePermissionId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"CcsAccessRoleId", "ServicePermissionId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES (digitsApiAdminAccessRoleId, digitsApiAdminPermissionId, 0, 0, now(), now(), false);
 		INSERT INTO public."ServiceRolePermission"(
-			"CcsAccessRoleId", "ServicePermissionId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"CcsAccessRoleId", "ServicePermissionId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES (digitsApiUserAccessRoleId, digitsApiUserPermissionId, 0, 0, now(), now(), false);
 		INSERT INTO public."ServiceRolePermission"(
-			"CcsAccessRoleId", "ServicePermissionId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"CcsAccessRoleId", "ServicePermissionId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES (digitsDepartmentAdminAccessRoleId, digitsDepartmentAdminPermissionId, 0, 0, now(), now(), false);
 		INSERT INTO public."ServiceRolePermission"(
-			"CcsAccessRoleId", "ServicePermissionId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"CcsAccessRoleId", "ServicePermissionId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES (digitsContractOwnerAccessRoleId, digitsContractOwnerPermissionId, 0, 0, now(), now(), false);
 		INSERT INTO public."ServiceRolePermission"(
-			"CcsAccessRoleId", "ServicePermissionId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"CcsAccessRoleId", "ServicePermissionId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES (digitsMIAccessRoleId, digitsMIPermissionId, 0, 0, now(), now(), false);
     INSERT INTO public."ServiceRolePermission"(
-			"CcsAccessRoleId", "ServicePermissionId", "CreatedPartyId", "LastUpdatedPartyId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+			"CcsAccessRoleId", "ServicePermissionId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 			VALUES (digitsUserAccessRoleId, digitsUserPermissionId, 0, 0, now(), now(), false);
 
 		RETURN 1;

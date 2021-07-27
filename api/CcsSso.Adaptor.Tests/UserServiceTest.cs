@@ -2,6 +2,7 @@ using CcsSso.Adaptor.DbDomain;
 using CcsSso.Adaptor.DbDomain.Entity;
 using CcsSso.Adaptor.Domain;
 using CcsSso.Adaptor.Domain.Constants;
+using CcsSso.Adaptor.Domain.Contracts.Cii;
 using CcsSso.Adaptor.Domain.Contracts.Wrapper;
 using CcsSso.Adaptor.Domain.Dtos.Wrapper;
 using CcsSso.Adaptor.Service;
@@ -326,7 +327,7 @@ namespace CcsSso.Adaptor.Tests
 
     public static UserService UserService(IDataContext dataContext, AdaptorRequestContext requestContext = null,
       Mock<IWrapperUserService> mockWrapperUserService = null, Mock<IWrapperOrganisationService> mockWrapperOrgService = null,
-      Mock<IWrapperUserContactService> mockWrapperUserContactService = null)
+      Mock<IWrapperUserContactService> mockWrapperUserContactService = null, Mock<ICiiService> mockCiiService = null)
     {
       requestContext ??= new AdaptorRequestContext
       {
@@ -337,8 +338,9 @@ namespace CcsSso.Adaptor.Tests
       mockWrapperUserService ??= new Mock<IWrapperUserService>();
       mockWrapperOrgService ??= new Mock<IWrapperOrganisationService>();
       mockWrapperUserContactService ??= new Mock<IWrapperUserContactService>();
+      mockCiiService ??= new Mock<ICiiService>();
 
-      var service = new UserService(atrributeMappingService, mockWrapperUserService.Object, mockWrapperOrgService.Object, mockWrapperUserContactService.Object);
+      var service = new UserService(atrributeMappingService, mockWrapperUserService.Object, mockWrapperOrgService.Object, mockWrapperUserContactService.Object, mockCiiService.Object);
       return service;
     }
 

@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -33,5 +34,10 @@ namespace CcsSso.DbModel.Entity
     public bool IsSite { get; set; }
 
     public List<SiteContact> SiteContacts { get; set; }
+
+    // Original contact point id of assigned contact. Value is 0 for non assigned contacts
+    public int OriginalContactPointId { get; set; }
+
+    public AssignedContactType AssignedContactType { get; set; }
   }
 }

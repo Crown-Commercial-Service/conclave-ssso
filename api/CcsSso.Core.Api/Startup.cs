@@ -1,5 +1,6 @@
 using CcsSso.Api.Middleware;
 using CcsSso.Core.Api.Middleware;
+using CcsSso.Core.Authorisation;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Service;
 using CcsSso.DbPersistence;
@@ -13,6 +14,7 @@ using CcsSso.Shared.Domain;
 using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Services;
 using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -110,6 +112,7 @@ namespace CcsSso.Api
         new RedisConnectionPoolService(Configuration["RedisCacheSettings:ConnectionString"])
       );
       services.AddSingleton<ILocalCacheService, InMemoryCacheService>();
+      services.AddSingleton<IAuthorizationPolicyProvider, ClaimAuthorisationPolicyProvider>();
       services.AddMemoryCache();
       services.AddSingleton<IWrapperCacheService, WrapperCacheService>();
       services.AddDbContext<DataContext>(options => options.UseNpgsql(Configuration["DbConnection"]), ServiceLifetime.Transient);
@@ -150,6 +153,7 @@ namespace CcsSso.Api
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IAntiforgery antiforgery)
     {
+      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseSwagger();
       app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.Api v1"));
       app.UseHttpsRedirection();
@@ -186,9 +190,9 @@ namespace CcsSso.Api
         ForwardedHeaders = ForwardedHeaders.XForwardedFor
       });
 
-      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseMiddleware<AuthenticationMiddleware>();
 
+      app.UseAuthorization();
 
       app.UseEndpoints(endpoints =>
       {

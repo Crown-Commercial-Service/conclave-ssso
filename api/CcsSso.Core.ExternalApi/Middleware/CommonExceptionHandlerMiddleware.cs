@@ -26,7 +26,11 @@ namespace CcsSso.ExternalApi.Middleware
       }
       catch (UnauthorizedAccessException ex)
       {
-        await HandleException(context, ex.Message, ex, HttpStatusCode.Unauthorized);
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Unauthorized);
+      }
+      catch (ForbiddenException ex)
+      {
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Forbidden);
       }
       catch (ResourceNotFoundException ex)
       {
@@ -38,7 +42,7 @@ namespace CcsSso.ExternalApi.Middleware
       }
       catch (DbUpdateConcurrencyException ex)
       {
-        await HandleException(context, ex.Message, ex, HttpStatusCode.Conflict);
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Conflict);
       }
       catch (CcsSsoException ex)
       {

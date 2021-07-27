@@ -129,13 +129,13 @@ namespace CcsSso.Security.Services
       return await _identityProviderService.RespondToNewPasswordRequiredAsync(passwordChallengeDto);
     }
 
-    public async Task InitiateResetPasswordAsync(string userName)
+    public async Task InitiateResetPasswordAsync(ChangePasswordInitiateRequest changePasswordInitiateRequest)
     {
-      if (string.IsNullOrEmpty(userName))
+      if (string.IsNullOrEmpty(changePasswordInitiateRequest.UserName))
       {
         throw new CcsSsoException("USERNAME_REQUIRED");
       }
-      await _identityProviderService.InitiateResetPasswordAsync(userName.ToLower());
+      await _identityProviderService.InitiateResetPasswordAsync(changePasswordInitiateRequest);
     }
 
     public async Task ResetPasswordAsync(ResetPasswordDto resetPassword)

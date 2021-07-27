@@ -145,6 +145,16 @@ namespace CcsSso.Core.Service.External
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidPhoneNumber);
       }
+
+      if (contactRequestDetail.ContactType == VirtualContactTypeName.Fax && !UtilitiesHelper.IsPhoneNumberValid(contactRequestDetail.ContactValue))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidFaxNumber);
+      }
+
+      if (contactRequestDetail.ContactType == VirtualContactTypeName.Mobile && !UtilitiesHelper.IsPhoneNumberValid(contactRequestDetail.ContactValue))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidMobileNumber);
+      }
     }
   }
 }

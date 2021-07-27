@@ -20,6 +20,8 @@ namespace CcsSso.Adaptor.SqsListener
 {
   public class Program
   {
+    private static bool vaultEnabled;
+
     public static void Main(string[] args)
     {
       CreateHostBuilder(args).Build().Run();
@@ -33,7 +35,7 @@ namespace CcsSso.Adaptor.SqsListener
                              .AddJsonFile("appsettings.json", optional: false)
                              .Build();
               var builtConfig = config.Build();
-              var vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
+              vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
               if (!vaultEnabled)
               {
                 config.AddJsonFile("appsecrets.json", optional: false, reloadOnChange: true);
@@ -41,8 +43,6 @@ namespace CcsSso.Adaptor.SqsListener
             })
             .ConfigureServices((hostContext, services) =>
             {
-              var appSettings = ConfigurationManager.AppSettings;
-              bool.TryParse(appSettings["VaultEnabled"], out bool vaultEnabled);
               AdaptorApiSetting adaptorApiSettings;
               SqsListnerJobSettingVault sqsJobSettingsVault;
               QueueInfoVault queueInfoVault;

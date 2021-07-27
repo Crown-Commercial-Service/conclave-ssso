@@ -1,3 +1,5 @@
+using CcsSso.Core.DbModel.Constants;
+using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
@@ -5,6 +7,7 @@ using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Services.Helpers;
+using CcsSso.Shared.Cache.Contracts;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,9 +18,11 @@ namespace CcsSso.Service.External
   public class ContactsHelperService : IContactsHelperService
   {
     private readonly IDataContext _dataContext;
-    public ContactsHelperService(IDataContext dataContext)
+    private readonly ILocalCacheService _localCacheService;
+    public ContactsHelperService(IDataContext dataContext, ILocalCacheService localCacheService)
     {
       _dataContext = dataContext;
+      _localCacheService = localCacheService;
     }
 
     /// <summary>
@@ -86,7 +91,7 @@ namespace CcsSso.Service.External
               ContactType = contactType,
               ContactValue = virtualAddress.VirtualAddressValue
             };
-            contactResponseInfo.Contacts.Add(contactResponseDetail); 
+            contactResponseInfo.Contacts.Add(contactResponseDetail);
           }
         }
       }
@@ -95,6 +100,96 @@ namespace CcsSso.Service.External
       {
         contactResponseInfo.ContactPointName = $"{contactPoint.Party.Person.FirstName} {contactPoint.Party.Person.LastName}";
       }
+    }
+
+    /// <summary>
+    /// Check for existency of assignable site contact points
+    /// </summary>
+    /// <param name="organisationId"></param>
+    /// <param name="siteId"></param>
+    /// <param name="contactPointIds"></param>
+    /// <returns></returns>
+    public async Task CheckAssignableSiteContactPointsExistenceAsync(string organisationId, int siteId, List<int> contactPointIds)
+    {
+      contactPointIds = contactPointIds.Distinct().ToList();
+
+      // Site (which is also a contact point)
+      var organisationSiteId = await _dataContext.ContactPoint
+        .Where(cp => !cp.IsDeleted && cp.IsSite && cp.Id == siteId && cp.Party.Organisation.CiiOrganisationId == organisationId)
+        .Select(cp => cp.Id)
+        .FirstOrDefaultAsync();
+
+      // Check whether there is a site, organisation with given ids.
+      if (organisationSiteId == 0)
+      {
+        throw new ResourceNotFoundException();
+      }
+
+      // Get site assignable(original) contacts Ids
+      var siteContactIds = await _dataContext.SiteContact
+        .Where(c => !c.IsDeleted && c.ContactPointId == siteId && c.AssignedContactType == AssignedContactType.None).Select(c => c.Id).ToListAsync();
+
+      var invalidContactIds = contactPointIds.Where(id => !siteContactIds.Contains(id));
+
+      // Has done this way rather than directly checking the existance in DB, since in future there will be a change to the error messages and
+      // there may be an option to provide the incorrect ids
+      if (invalidContactIds.Any())
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidAssigningContactIds);
+      }
+    }
+
+    /// <summary>
+    /// Check for existency of assignable user contact points
+    /// </summary>
+    /// <param name="organisationId"></param>
+    /// <param name="userName"></param>
+    /// <param name="contactPointIds"></param>
+    /// <returns></returns>
+    public async Task CheckAssignableUserContactPointsExistenceAsync(string organisationId, string userName, List<int> contactPointIds)
+    {
+      contactPointIds = contactPointIds.Distinct().ToList();
+
+      var userId = await _dataContext.User.Where(u => !u.IsDeleted && u.UserName == userName && u.Party.Person.Organisation.CiiOrganisationId == organisationId)
+        .Select(u => u.Id)
+        .FirstOrDefaultAsync();
+
+      if (userId == 0)
+      {
+        throw new ResourceNotFoundException();
+      }
+
+      // Get the user's assignable(orginal contacts) contact points with party type USER
+      var userContactPointIds = await _dataContext.ContactPoint
+        .Where(c => !c.IsDeleted && !c.ContactDetail.IsDeleted && c.Party.User.UserName == userName
+          && c.AssignedContactType == AssignedContactType.None && c.PartyType.PartyTypeName == PartyTypeName.User)
+        .Select(c => c.Id)
+        .ToListAsync();
+
+      var invalidContactIds = contactPointIds.Where(id => !userContactPointIds.Contains(id));
+
+      // Has done this way rather than directly checking the existence in DB, since in future there will be a change to the error messages and
+      // there may be an option to provide the incorrect ids
+      if (invalidContactIds.Any())
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidAssigningContactIds);
+      }
+    }
+
+    /// <summary>
+    /// Delete assigned contacts (when deleting the original contact)
+    /// </summary>
+    /// <param name="contactPointId"></param>
+    /// <returns></returns>
+    public async Task DeleteAssignedContactsAsync(int contactPointId)
+    {
+      var assignedToContactPoints = await _dataContext.ContactPoint.Where(cp => cp.OriginalContactPointId == contactPointId).ToListAsync();
+      var assignedToSiteContacts = await _dataContext.SiteContact.Where(sc => sc.OriginalContactId == contactPointId).ToListAsync();
+
+      assignedToContactPoints.ForEach((contactPoint) => contactPoint.IsDeleted = true);
+      assignedToSiteContacts.ForEach((siteContact) => siteContact.IsDeleted = true);
+
+      await _dataContext.SaveChangesAsync();
     }
 
     /// <summary>
@@ -117,8 +212,24 @@ namespace CcsSso.Service.External
     }
 
     /// <summary>
+    /// Get all the contact points for UI
+    /// Exclude the internally used reasons
+    /// </summary>
+    /// <returns></returns>
+    public async Task<List<ContactReasonInfo>> GetContactPointReasonsAsync()
+    {
+      var excludingContactReasons = new List<string> { "OTHER", "SITE", "UNSPECIFIED" };
+
+      var contactPointReasons = await GetContactPointReasonsListAsync();
+      var contactReasonInfoList = contactPointReasons.Where(r => !excludingContactReasons.Contains(r.Name)).OrderBy(r => r.Name)
+        .Select(r => new ContactReasonInfo { Key = r.Name, Value = r.Description }).ToList();
+
+      return contactReasonInfoList;
+    }
+
+    /// <summary>
     /// Get the contact point reason id for the reason provided.
-    /// If not return the id for OTHER reason option.
+    /// If reason null returns the id for UNSPECIFIED reason id.
     /// </summary>
     /// <param name="reason"></param>
     /// <returns></returns>
@@ -126,7 +237,8 @@ namespace CcsSso.Service.External
     {
       var reasonString = string.IsNullOrWhiteSpace(reason) ? ContactReasonType.Unspecified : reason.ToUpper();
 
-      var contactPointReason = await _dataContext.ContactPointReason.FirstOrDefaultAsync(r => r.Name == reasonString);
+      var contactPointReasons = await GetContactPointReasonsListAsync();
+      var contactPointReason = contactPointReasons.FirstOrDefault(r => r.Name == reasonString);
 
       if (contactPointReason != null)
       {
@@ -138,14 +250,16 @@ namespace CcsSso.Service.External
       }
     }
 
-    public async Task<List<ContactReasonInfo>> GetContactPointReasonsAsync()
+    /// <summary>
+    /// Get contact point reason by id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public async Task<string> GetContactPointReasonNameAsync(int id)
     {
-      var excludingContactReasons = new List<string> { "OTHER", "SITE", "UNSPECIFIED" };
-      var contactPointReasons = await _dataContext.ContactPointReason.Where(r => !excludingContactReasons.Contains(r.Name)).OrderBy(r => r.Name).ToListAsync();
-
-      var contactReasonInfoList = contactPointReasons.Select(r => new ContactReasonInfo { Key = r.Name, Value = r.Description }).ToList();
-
-      return contactReasonInfoList;
+      var contactPointReasons = await GetContactPointReasonsListAsync();
+      var contactPointReason = contactPointReasons.FirstOrDefault(r => r.Id == id);
+      return contactPointReason?.Name;
     }
 
     public async Task<List<string>> GetContactTypesAsync()
@@ -189,8 +303,76 @@ namespace CcsSso.Service.External
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidPhoneNumber);
       }
+
+      var faxNumber = contactInfo.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Fax)?.ContactValue;
+
+      // Validate the fax number for the E.164 standard
+      if (!string.IsNullOrEmpty(faxNumber) && !UtilitiesHelper.IsPhoneNumberValid(faxNumber))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidFaxNumber);
+      }
+
+      var mobileNumber = contactInfo.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Mobile)?.ContactValue;
+
+      // Validate the mobile number for the E.164 standard
+      if (!string.IsNullOrEmpty(mobileNumber) && !UtilitiesHelper.IsPhoneNumberValid(mobileNumber))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidMobileNumber);
+      }
     }
 
+    /// <summary>
+    /// Validate for contact assginements
+    /// </summary>
+    /// <param name="organisationId"></param>
+    /// <param name="contactAssignmentInfo"></param>
+    /// <returns></returns>
+    public async Task ValidateContactAssignmentAsync(string organisationId, ContactAssignmentInfo contactAssignmentInfo, List<AssignedContactType> allowedContactTypes)
+    {
+      if (contactAssignmentInfo.AssigningContactPointIds == null || !contactAssignmentInfo.AssigningContactPointIds.Any())
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidAssigningContactIds);
+      }
+
+      if (!allowedContactTypes.Contains(contactAssignmentInfo.AssigningContactType))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidContactAssignmentType);
+      }
+
+      switch (contactAssignmentInfo.AssigningContactType)
+      {
+        case AssignedContactType.User:
+          if (string.IsNullOrWhiteSpace(contactAssignmentInfo.AssigningContactsUserId))
+          {
+            throw new CcsSsoException(ErrorConstant.ErrorInvalidUserIdForContactAssignment);
+          }
+          await CheckAssignableUserContactPointsExistenceAsync(organisationId, contactAssignmentInfo.AssigningContactsUserId, contactAssignmentInfo.AssigningContactPointIds);
+          break;
+        case AssignedContactType.Site:
+          if (contactAssignmentInfo.AssigningContactsSiteId == null || contactAssignmentInfo.AssigningContactsSiteId == 0)
+          {
+            throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteIdForContactAssignment);
+          }
+          await CheckAssignableSiteContactPointsExistenceAsync(organisationId, contactAssignmentInfo.AssigningContactsSiteId ?? 0, contactAssignmentInfo.AssigningContactPointIds);
+          break;
+        default:
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidContactAssignmentType);
+      }
+    }
+
+    /// <summary>
+    /// Get all the contact points in the db with inmemory cache
+    /// </summary>
+    /// <returns></returns>
+    private async Task<List<ContactPointReason>> GetContactPointReasonsListAsync()
+    {
+      var contactPointReasons = await _localCacheService.GetOrSetValueAsync<List<ContactPointReason>>("CONTACT_POINT_REASONS", async () =>
+      {
+        return await _dataContext.ContactPointReason.ToListAsync();
+      }, 30);
+
+      return contactPointReasons;
+    }
 
     /// <summary>
     /// Get the virtual addresses entities for contacts

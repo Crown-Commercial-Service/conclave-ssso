@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
 using Microsoft.AspNetCore.Http;
+using CcsSso.Core.Authorisation;
 
 namespace CcsSso.Api.Controllers
 {
@@ -30,27 +31,6 @@ namespace CcsSso.Api.Controllers
     }
 
     /// <summary>
-    /// Method to delete an organisation.
-    /// </summary>
-    /// <response  code="200">Successfully deleted</response>
-    /// <response  code="401">Authentication fails</response>
-    /// <remarks>
-    /// Sample request:
-    ///
-    ///     DELETE /organisation/1
-    ///     
-    ///
-    /// </remarks>
-    [HttpDelete("{id}")]
-    [SwaggerOperation(Tags = new[] { "organisation" })]
-    [ProducesResponseType(typeof(int), 200)]
-    [ProducesResponseType(401)]
-    public async Task Delete(int id)
-    {
-      await _organisationService.DeleteAsync(id);
-    }
-
-    /// <summary>
     /// Method to get a organisation by its id.
     /// </summary>
     /// <response  code="200">organisation details</response>
@@ -70,6 +50,7 @@ namespace CcsSso.Api.Controllers
     }
 
     [HttpGet("getAll")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
     [SwaggerOperation(Tags = new[] { "organisation" })]
     [ProducesResponseType(typeof(OrganisationDto), 200)]
     [ProducesResponseType(204)]
@@ -104,16 +85,8 @@ namespace CcsSso.Api.Controllers
       return await _organisationService.CreateAsync(model);
     }
 
-    [HttpPut]
-    [SwaggerOperation(Tags = new[] { "organisation" })]
-    [ProducesResponseType(typeof(int), 200)]
-    [ProducesResponseType(401)]
-    public async Task Put(OrganisationDto model)
-    {
-      await _organisationService.PutAsync(model);
-    }
-
     [HttpGet("getUsers")]
+    [ClaimAuthorise("ORG_USER_SUPPORT")]
     [SwaggerOperation(Tags = new[] { "organisation" })]
     public async Task<List<OrganisationUserDto>> GetUsers(string name)
     {

@@ -1,4 +1,5 @@
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.ExternalApi.Authorisation;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +26,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <remarks>
     /// Sample request:
     ///
@@ -33,6 +35,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
     ///  
     /// </remarks>
     [HttpGet("contact-types")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
     [SwaggerOperation(Tags = new[] { "Contact" })]
     [ProducesResponseType(typeof(ContactResponseDetail), 200)]
     public async Task<List<string>> GetContactTypes()
@@ -45,6 +48,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <remarks>
     /// Sample request:
     ///
@@ -53,6 +57,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet("contact-reasons")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
     [SwaggerOperation(Tags = new[] { "Contact" })]
     [ProducesResponseType(typeof(List<ContactReasonInfo>), 200)]
     public async Task<List<ContactReasonInfo>> GetContactReasonInfoList()

@@ -22,25 +22,6 @@ namespace CcsSso.Api.Controllers
     }
 
     /// <summary>
-    /// Get user details
-    /// </summary>
-    /// <response  code="200">Successfully returns user</response>
-    /// <response  code="404">Requested user is not found</response>
-    /// <remarks>
-    /// Sample request:
-    /// User/123
-    /// </remarks>
-    [HttpGet("{id}")]
-    [Produces("application/json")]
-    [SwaggerOperation(Tags = new[] { "user" })]
-    [ProducesResponseType(200)]
-    [ProducesResponseType(404)]
-    public async Task<UserDetails> Get(string id)
-    {
-      return await _userService.GetAsync(id);
-    }
-
-    /// <summary>
     /// Get user basic details
     /// </summary>
     /// <response  code="200">Successfully returns user</response>

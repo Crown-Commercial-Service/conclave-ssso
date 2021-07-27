@@ -1,3 +1,4 @@
+using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -25,23 +26,23 @@ namespace CcsSso.Api.Middleware
       }
       catch (UnauthorizedAccessException ex)
       {
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.Unauthorized);
-      }
-      catch (ResourceNotFoundException ex)
-      {
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.NotFound);
-      }
-      catch (DbUpdateConcurrencyException ex)
-      {
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.Conflict);
-      }
-      catch(MethodNotAllowedException ex)
-      {
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.MethodNotAllowed);
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Unauthorized);
       }
       catch (ForbiddenException ex)
       {
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.Forbidden);
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Forbidden);
+      }
+      catch (ResourceNotFoundException ex)
+      {
+        await HandleException(context, string.Empty, ex, HttpStatusCode.NotFound);
+      }
+      catch (ResourceAlreadyExistsException ex)
+      {
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Conflict);
+      }
+      catch (DbUpdateConcurrencyException ex)
+      {
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Conflict);
       }
       catch (CcsSsoException ex)
       {

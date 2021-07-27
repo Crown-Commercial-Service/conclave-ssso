@@ -9,7 +9,7 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task DeleteSiteAsync(string ciiOrganisationId, int siteId);
 
-    Task<OrganisationSiteInfoList> GetOrganisationSitesAsync(string ciiOrganisationId);
+    Task<OrganisationSiteInfoList> GetOrganisationSitesAsync(string ciiOrganisationId, string siteNameSerachString = null);
 
     Task<OrganisationSiteResponse> GetSiteAsync(string ciiOrganisationId, int siteId);
 

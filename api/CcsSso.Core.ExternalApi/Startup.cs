@@ -1,5 +1,6 @@
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.ExternalApi.Authorisation;
 using CcsSso.Core.Service;
 using CcsSso.Core.Service.External;
 using CcsSso.DbPersistence;
@@ -15,6 +16,7 @@ using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
 using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -151,6 +153,7 @@ namespace CcsSso.ExternalApi
       );
       services.AddSingleton<IWrapperCacheService, WrapperCacheService>();
       services.AddSingleton<ILocalCacheService, InMemoryCacheService>();
+      services.AddSingleton<IAuthorizationPolicyProvider, ClaimAuthorisationPolicyProvider>();
       services.AddMemoryCache();
 
       services.AddScoped<IDataContext>(s => s.GetRequiredService<DataContext>());
@@ -171,7 +174,9 @@ namespace CcsSso.ExternalApi
       services.AddScoped<ICiiService, CiiService>();
       services.AddScoped<IAdaptorNotificationService, AdaptorNotificationService>();
       services.AddScoped<IAuditLoginService, AuditLoginService>();
-      services.AddScoped<IDateTimeService, DateTimeService>();
+      services.AddScoped<IDateTimeService, DateTimeService>(); 
+      services.AddScoped<IUserService, UserService>(); 
+      services.AddScoped<IAuthService, AuthService>(); 
       services.AddHttpClient();
       services.AddHttpContextAccessor();
       services.AddSwaggerGen(c =>
@@ -207,6 +212,7 @@ namespace CcsSso.ExternalApi
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseSwagger();
       app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.ExternalApi v1"));
       app.UseHttpsRedirection();
@@ -236,7 +242,6 @@ namespace CcsSso.ExternalApi
         ForwardedHeaders = ForwardedHeaders.XForwardedFor
       });
 
-      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseMiddleware<AuthenticatorMiddleware>();
 
       app.UseAuthentication();

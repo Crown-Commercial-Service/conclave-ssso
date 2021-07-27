@@ -44,7 +44,8 @@ namespace CcsSso.Shared.Services
         ValidateLifetime = true,
         ValidAudience = audience,
         ValidIssuer = issuer,
-        ValidateIssuerSigningKey = true
+        ValidateIssuerSigningKey = true,
+        ClockSkew = TimeSpan.Zero
       };
 
       var tokenHandler = new JwtSecurityTokenHandler();
@@ -57,10 +58,15 @@ namespace CcsSso.Shared.Services
         if (claims != null)
         {
           Dictionary<string, string> resolvedClaims = new Dictionary<string, string>();
-          foreach (var claim in claims)
+          foreach (var claim in claims.Where(c => c != "roles"))
           {
             var claimValue = jwtSecurityToken.Claims.First(c => c.Type == claim).Value;
             resolvedClaims.Add(claim, claimValue);
+          }
+          if (claims.Contains("roles"))
+          {
+            var roleList = jwtSecurityToken.Claims.Where(c => c.Type == "roles").Select(c => c.Value);
+            resolvedClaims.Add("roles", string.Join(',', roleList));
           }
           result.ClaimValues = resolvedClaims;
         }

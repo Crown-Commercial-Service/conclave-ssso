@@ -109,6 +109,8 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string RoleName { get; set; }
 
+    public string ServiceName { get; set; }
+
     public RoleEligibleOrgType OrgTypeEligibility { get; set; }
 
     public RoleEligibleSubscriptionType SubscriptionTypeEligibility { get; set; }

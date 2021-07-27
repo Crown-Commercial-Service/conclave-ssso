@@ -80,6 +80,8 @@ namespace CcsSso.Domain.Dtos
     public string FirstName { get; set; }
 
     public string LastName { get; set; }
+
+    public bool MfaEnabled { get; set; }
   }
 
   public class UserRolePermissionInfo

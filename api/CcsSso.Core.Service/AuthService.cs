@@ -1,13 +1,16 @@
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Dtos;
 using CcsSso.Domain.Constants;
+using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Contexts;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -23,15 +26,17 @@ namespace CcsSso.Core.Service
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IAuditLoginService _auditLoginService;
     private readonly RequestContext _requestContext;
+    private readonly IDataContext _dataContext;
 
     public AuthService(ApplicationConfigurationInfo applicationConfigurationInfo, ITokenService tokenService, IHttpClientFactory httpClientFactory,
-      IAuditLoginService auditLoginService, RequestContext requestContext)
+      IAuditLoginService auditLoginService, RequestContext requestContext, IDataContext dataContext)
     {
       _applicationConfigurationInfo = applicationConfigurationInfo;
       _tokenService = tokenService;
       _httpClientFactory = httpClientFactory;
       _auditLoginService = auditLoginService;
       _requestContext = requestContext;
+      _dataContext = dataContext;
     }
 
     public async Task<bool> ValidateBackChannelLogoutTokenAsync(string backChanelLogoutToken)
@@ -63,8 +68,84 @@ namespace CcsSso.Core.Service
         var errorMessage = await result.Content.ReadAsStringAsync();
         throw new CcsSsoException(errorMessage);
       }
-      
+
       await _auditLoginService.CreateLogAsync(AuditLogEvent.UserPasswordChange, AuditLogApplication.ManageMyAccount, $"UserId:{_requestContext.UserId}");
+    }
+
+    public async Task ResetMfaByTicketAsync(MfaResetInfo mfaResetInfo)
+    {
+      var client = _httpClientFactory.CreateClient();
+      client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
+      client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
+      var url = "/security/resetmfa_ticket";
+
+      if (!string.IsNullOrEmpty(mfaResetInfo.Ticket))
+      {
+        Dictionary<string, string> requestData = new Dictionary<string, string>
+      {
+        { "ticket", mfaResetInfo.Ticket}
+      };
+
+        HttpContent data = new StringContent(JsonConvert.SerializeObject(requestData, new JsonSerializerSettings
+        { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
+
+        var result = await client.PostAsync(url, data);
+        if (result.StatusCode == HttpStatusCode.BadRequest)
+        {
+          var errorMessage = await result.Content.ReadAsStringAsync();
+          throw new CcsSsoException(errorMessage);
+        }
+      }
+      else
+      {
+        throw new CcsSsoException("MFA_RESET_FAILED");
+      }
+    }
+
+    public bool AuthorizeUser(string[] claimList)
+    {
+
+      var isAuthorized = _requestContext.Roles.Any(r => claimList.Any(c => r == c));
+
+      if (!isAuthorized)
+      {
+        throw new ForbiddenException();
+      }
+
+      return isAuthorized;
+    }
+
+    public async Task SendResetMfaNotificationAsync(MfaResetInfo mfaResetInfo)
+    {
+      var mfaEnabled = await _dataContext.User.Where(u => u.UserName == mfaResetInfo.UserName && !u.IsDeleted).
+                        AnyAsync(u => u.MfaEnabled);
+
+      if (mfaEnabled)
+      {
+        var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
+        client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
+        var url = "/security/send_reset_mfa_notification";
+
+        Dictionary<string, string> requestData = new Dictionary<string, string>
+      {
+        { "userName", mfaResetInfo.UserName}
+      };
+
+        HttpContent data = new StringContent(JsonConvert.SerializeObject(requestData, new JsonSerializerSettings
+        { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
+
+        var result = await client.PostAsync(url, data);
+        if (result.StatusCode == HttpStatusCode.BadRequest)
+        {
+          var errorMessage = await result.Content.ReadAsStringAsync();
+          throw new CcsSsoException(errorMessage);
+        }
+      }
+      else
+      {
+        throw new CcsSsoException("USER_MFA_NOT_ENABLED");
+      }
     }
   }
 }

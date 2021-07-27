@@ -10,6 +10,7 @@ using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Service.External;
+using CcsSso.Shared.Cache.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using System;
@@ -323,7 +324,16 @@ namespace CcsSso.Core.Tests.External
 
     public static UserContactService ContactService(IDataContext dataContext)
     {
-      IContactsHelperService contactsHelperService = new ContactsHelperService(dataContext);
+      Mock<ILocalCacheService> mockLocalCacheService = new();
+      mockLocalCacheService.Setup(s => s.GetOrSetValueAsync<List<ContactPointReason>>("CONTACT_POINT_REASONS", It.IsAny<Func<Task<List<ContactPointReason>>>>(), It.IsAny<int>()))
+        .ReturnsAsync(new List<ContactPointReason> {
+          new ContactPointReason { Id = 1, Name = ContactReasonType.Other, Description = "Other" },
+          new ContactPointReason { Id = 2, Name = ContactReasonType.Shipping, Description = "Shipping" },
+          new ContactPointReason { Id = 3, Name = ContactReasonType.Site, Description = "Billing" },
+          new ContactPointReason { Id = 4, Name = ContactReasonType.Site, Description = "Site" },
+          new ContactPointReason { Id = 5, Name = ContactReasonType.Unspecified, Description = "Unspecified" }
+        });
+      IContactsHelperService contactsHelperService = new ContactsHelperService(dataContext, mockLocalCacheService.Object);
       IUserProfileHelperService userProfileHelperService = new UserProfileHelperService();
       Mock<ICcsSsoEmailService> mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
       var mockAdaptorNotificationService = new Mock<IAdaptorNotificationService>();

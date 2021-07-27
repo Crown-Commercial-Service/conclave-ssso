@@ -32,4 +32,11 @@ namespace CcsSso.Security.Domain.Dtos
     public string NewPassword { get; set; }
 
   }
+
+  public class ChangePasswordInitiateRequest
+  {
+    public string UserName { get; set; }
+
+    public bool ForceLogout { get; set; }
+  }
 }

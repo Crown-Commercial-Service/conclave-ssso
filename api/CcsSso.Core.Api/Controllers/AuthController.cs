@@ -1,3 +1,4 @@
+using CcsSso.Core.Authorisation;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
@@ -33,8 +34,8 @@ namespace CcsSso.Core.Api.Controllers
       }
     }
 
-    [HttpPost("save_refresh_token")]
-    public void SaveRefreshToken(TokenDetails tokenDetails)
+    [HttpPost("create_session")]
+    public void CreateSession(TokenDetails tokenDetails)
     {
       if (!string.IsNullOrEmpty(tokenDetails.RefreshToken))
       {
@@ -44,7 +45,7 @@ namespace CcsSso.Core.Api.Controllers
           Secure = true,
           HttpOnly = true
         };
-        string cookieName = "refreshToken";
+        string cookieName = "conclave";
         if (!Request.Cookies.ContainsKey(cookieName))
         {
           Response.Cookies.Append(cookieName, tokenDetails.RefreshToken, cookieOptions);
@@ -64,16 +65,16 @@ namespace CcsSso.Core.Api.Controllers
     [HttpPost("sign_out")]
     public void Signout()
     {
-      if (Request.Cookies.ContainsKey("refreshToken"))
+      if (Request.Cookies.ContainsKey("conclave"))
       {
-        Response.Cookies.Delete("refreshToken");
+        Response.Cookies.Delete("conclave");
       }
     }
 
     [HttpGet("get_refresh_token")]
     public string GetRefreshToken()
     {
-      string cookieName = "refreshToken";
+      string cookieName = "conclave";
       if (Request.Cookies.ContainsKey(cookieName))
       {
         Request.Cookies.TryGetValue(cookieName, out string refreshToken);
@@ -83,9 +84,22 @@ namespace CcsSso.Core.Api.Controllers
     }
 
     [HttpPost("change_password")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
     public async Task ChangePassword(ChangePasswordDto changePassword)
     {
       await _authService.ChangePasswordAsync(changePassword);
+    }
+
+    [HttpPost("send_reset_mfa_Notification")]
+    public async Task SendResetMfaNotification(MfaResetInfo mfaResetInfo)
+    {
+      await _authService.SendResetMfaNotificationAsync(mfaResetInfo);
+    }
+
+    [HttpPost("reset_mfa_by_ticket")]
+    public async Task ResetMfaByTicket(MfaResetInfo mfaResetInfo)
+    {
+      await _authService.ResetMfaByTicketAsync(mfaResetInfo);
     }
   }
 }

@@ -73,6 +73,12 @@ namespace CcsSso.Security.Api
           tokenExpirationTimeInMinutes = 30; //default hardcoded value
         }
 
+        int.TryParse(Configuration["MfaSettings:TicketExpirationInMinutes"], out int ticketExpirationInMinutes);
+        if (ticketExpirationInMinutes <= 0)
+        {
+          ticketExpirationInMinutes = 30; //default hardcoded value
+        }
+
         int.TryParse(Configuration["JwtTokenConfig:LogoutTokenExpireTimeInMinutes"], out int logoutTokenExpirationTimeInMinutes);
         if (logoutTokenExpirationTimeInMinutes <= 0)
         {
@@ -120,6 +126,7 @@ namespace CcsSso.Security.Api
             ResetPasswordEmailTemplateId = Configuration["Email:ResetPasswordEmailTemplateId"],
             NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
             ChangePasswordNotificationTemplateId = Configuration["Email:ChangePasswordNotificationTemplateId"],
+            MfaResetEmailTemplateId = Configuration["Email:MfaResetEmailTemplateId"],
             SendNotificationsEnabled = sendNotificationsEnabled
           },
           RollBarConfigurationInfo = new RollBarConfigurationInfo()
@@ -164,6 +171,11 @@ namespace CcsSso.Security.Api
           CryptoSettings = new CryptoSettings()
           {
             CookieEncryptionKey = Configuration["Crypto:CookieEncryptionKey"]
+          } ,
+          MfaSetting = new MfaSetting()
+          {
+            TicketExpirationInMinutes = ticketExpirationInMinutes,
+            MfaResetRedirectUri = Configuration["MfaSettings:MfaResetRedirectUri"]
           }
         };
         return appConfigInfo;
@@ -267,8 +279,7 @@ namespace CcsSso.Security.Api
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-    {
-
+    {      
       app.AddLoggerMiddleware();// Registers the logger configured on the core library
 
       app.Use(async (context, next) =>
@@ -298,7 +309,6 @@ namespace CcsSso.Security.Api
         .AllowAnyMethod()
         .AllowCredentials()
       );
-
       app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseMiddleware<AuthenticatorMiddleware>();
       app.UseAuthorization();

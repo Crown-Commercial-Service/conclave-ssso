@@ -1,3 +1,4 @@
+using CcsSso.Core.Authorisation;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos;
@@ -81,24 +82,8 @@ namespace CcsSso.Api.Controllers
       return await _ciiService.PutAsync(model, accessToken);
     }
 
-    [HttpDelete]
-    [SwaggerOperation(Tags = new[] { "cii" })]
-    public async Task Delete(CiiDto model)
-    {
-      var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
-      await _ciiService.DeleteAsync(model.identifier.id, accessToken);
-      // await _ciiService.DeleteAsyncWithBody(model);
-    }
-
-    [HttpDelete("DeleteOrg")]
-    [SwaggerOperation(Tags = new[] { "cii" })]
-    public async Task DeleteOrg(string id)
-    {
-      var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
-      await _ciiService.DeleteOrgAsync(id, accessToken);
-    }
-
     [HttpDelete("DeleteScheme")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
     [SwaggerOperation(Tags = new[] { "cii" })]
     public async Task DeleteScheme(string orgId, [System.Web.Http.FromUri] string scheme, [System.Web.Http.FromUri] string id)
     {

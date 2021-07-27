@@ -23,6 +23,8 @@ namespace CcsSso.DbModel.Entity
     [ForeignKey("PartyId")]
     public int PartyId { get; set; }
 
+    public bool MfaEnabled { get; set; }
+
     public OrganisationEligibleIdentityProvider OrganisationEligibleIdentityProvider { get; set; }
 
     [ForeignKey("OrganisationEligibleIdentityProviderId")]

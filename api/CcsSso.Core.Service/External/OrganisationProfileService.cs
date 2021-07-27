@@ -1,6 +1,7 @@
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
@@ -55,6 +56,11 @@ namespace CcsSso.Core.Service.External
     {
       Validate(organisationProfileInfo);
 
+      if (await _dataContext.Organisation.AnyAsync(org => !org.IsDeleted && org.CiiOrganisationId == organisationProfileInfo.Detail.OrganisationId))
+      {
+        throw new ResourceAlreadyExistsException();
+      }
+
       var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(t => t.PartyTypeName == PartyTypeName.ExternalOrgnaisation)).Id;
       var contactPointReasonId = await _contactsHelper.GetContactPointReasonIdAsync(ContactReasonType.Other);
 
@@ -62,7 +68,7 @@ namespace CcsSso.Core.Service.External
       {
         CiiOrganisationId = organisationProfileInfo.Detail.OrganisationId,
         LegalName = organisationProfileInfo.Identifier.LegalName.Trim(),
-        OrganisationUri = organisationProfileInfo.Identifier.Uri.Trim()
+        OrganisationUri = organisationProfileInfo.Identifier.Uri?.Trim()
       };
 
       organisation.IsSme = organisationProfileInfo.Detail.IsSme;
@@ -98,7 +104,10 @@ namespace CcsSso.Core.Service.External
         }
       };
 
-      AssignPhysicalContactsToContactPoint(organisationProfileInfo.Address, contactPoint);
+      if (organisationProfileInfo.Address != null)
+      {
+        AssignPhysicalContactsToContactPoint(organisationProfileInfo.Address, contactPoint);
+      }
 
       var party = new Party
       {
@@ -310,20 +319,25 @@ namespace CcsSso.Core.Service.External
 
     public async Task<List<OrganisationRole>> GetOrganisationRolesAsync(string ciiOrganisationId)
     {
-      var organisation = await _dataContext.Organisation
+      // Read org table to find the Org and then include all roles (FirstOrDefaultAsync get the Org)
+      var orgEligibleRoles = await _dataContext.Organisation
        .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
-       .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
+        .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
+        .Where(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId)
+        .Select(o => o.OrganisationEligibleRoles)
+       .FirstOrDefaultAsync();
 
-      if (organisation == null)
+      if (orgEligibleRoles == null)
       {
         throw new ResourceNotFoundException();
       }
 
-      var roles = organisation.OrganisationEligibleRoles.Where(x => !x.IsDeleted)
+      var roles = orgEligibleRoles.Where(x => !x.IsDeleted)
         .OrderBy(r => r.CcsAccessRoleId).Select(or => new OrganisationRole
         {
           RoleId = or.Id,
           RoleName = or.CcsAccessRole.CcsAccessRoleName,
+          ServiceName = or.CcsAccessRole?.ServiceRolePermissions?.FirstOrDefault()?.ServicePermission.CcsService.ServiceName,
           OrgTypeEligibility = or.CcsAccessRole.OrgTypeEligibility,
           SubscriptionTypeEligibility = or.CcsAccessRole.SubscriptionTypeEligibility,
           TradeEligibility = or.CcsAccessRole.TradeEligibility
@@ -419,7 +433,7 @@ namespace CcsSso.Core.Service.External
       if (organisation != null)
       {
         organisation.LegalName = organisationProfileInfo.Identifier.LegalName.Trim();
-        organisation.OrganisationUri = organisationProfileInfo.Identifier.Uri.Trim();
+        organisation.OrganisationUri = organisationProfileInfo.Identifier.Uri?.Trim();
 
         if (organisationProfileInfo.Detail != null)
         {
@@ -593,11 +607,6 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidOrganisationName);
       }
 
-      if (string.IsNullOrWhiteSpace(organisationProfileInfo.Identifier.Uri))
-      {
-        throw new CcsSsoException(ErrorConstant.ErrorInvalidOrganisationUri);
-      }
-
       if (organisationProfileInfo.Address != null) // Address is not mandatory for an organisation
       {
         if (string.IsNullOrWhiteSpace(organisationProfileInfo.Address.StreetAddress) || string.IsNullOrWhiteSpace(organisationProfileInfo.Address.PostalCode)
@@ -609,7 +618,7 @@ namespace CcsSso.Core.Service.External
         if (!string.IsNullOrWhiteSpace(organisationProfileInfo.Address.CountryCode) && !CultureSupport.IsValidCountryCode(organisationProfileInfo.Address.CountryCode))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidCountryCode);
-        } 
+        }
       }
     }
 

@@ -123,15 +123,23 @@ namespace CcsSso.Security.Tests
         var mockIdentityProviderService = new Mock<IIdentityProviderService>();
         var service = GetSecurityService(mockIdentityProviderService);
         var userName = "smith@gmail.com";
-        await service.InitiateResetPasswordAsync(userName);
-        mockIdentityProviderService.Verify(p => p.InitiateResetPasswordAsync(userName));
+        ChangePasswordInitiateRequest changePasswordInitiateRequest = new ChangePasswordInitiateRequest()
+        {
+          UserName = userName
+        };
+        await service.InitiateResetPasswordAsync(changePasswordInitiateRequest);
+        mockIdentityProviderService.Verify(p => p.InitiateResetPasswordAsync(changePasswordInitiateRequest));
       }
 
       [Fact]
       public async Task ThrowsException_WhenMandatoryFieldsAreNotProvided()
       {
         var service = GetSecurityService();
-        var ex = await Assert.ThrowsAsync<CcsSsoException>(async () => await service.InitiateResetPasswordAsync(string.Empty));
+        ChangePasswordInitiateRequest changePasswordInitiateRequest = new ChangePasswordInitiateRequest()
+        {
+          UserName = string.Empty
+        };
+        var ex = await Assert.ThrowsAsync<CcsSsoException>(async () => await service.InitiateResetPasswordAsync(changePasswordInitiateRequest));
         Assert.Equal("USERNAME_REQUIRED", ex.Message);
       }
     }

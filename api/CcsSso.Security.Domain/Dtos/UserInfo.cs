@@ -19,6 +19,8 @@ namespace CcsSso.Security.Domain.Dtos
 
     public string Role { get; set; }
 
+    public bool MfaEnabled { get; set; }
+
     public List<string> Groups { get; set; }
 
     public string ProfilePageUrl { get; set; }

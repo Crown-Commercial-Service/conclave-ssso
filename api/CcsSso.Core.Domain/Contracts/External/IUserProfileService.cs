@@ -11,7 +11,7 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task<UserProfileResponseInfo> GetUserAsync(string userName);
 
-    Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null);
+    Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null, bool includeSelf = false);
 
     Task<UserEditResponseInfo> UpdateUserAsync(string userName, UserProfileEditRequestInfo userProfileRequestInfo);
 

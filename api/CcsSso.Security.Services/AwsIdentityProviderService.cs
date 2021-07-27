@@ -151,6 +151,16 @@ namespace CcsSso.Security.Services
       }
     }
 
+    public async Task UpdateUserMfaFlagAsync(Domain.Dtos.UserInfo userInfo)
+    {
+      throw new NotImplementedException();
+    }
+
+    public async Task ResetMfaAsync(string ticket)
+    {
+      throw new NotImplementedException();
+    }
+
     /// <summary>
     /// Update User
     /// </summary>
@@ -370,11 +380,11 @@ namespace CcsSso.Security.Services
     /// </summary>
     /// <param name="userName"></param>
     /// <returns></returns>
-    public async Task InitiateResetPasswordAsync(string userName)
+    public async Task InitiateResetPasswordAsync(ChangePasswordInitiateRequest changePasswordInitiateRequest)
     {
       AdminResetUserPasswordRequest adminResetUserPasswordRequest = new AdminResetUserPasswordRequest()
       {
-        Username = userName,
+        Username = changePasswordInitiateRequest.UserName,
         UserPoolId = _appConfigInfo.AwsCognitoConfigurationInfo.AWSPoolId
       };
       await _provider.AdminResetUserPasswordAsync(adminResetUserPasswordRequest);

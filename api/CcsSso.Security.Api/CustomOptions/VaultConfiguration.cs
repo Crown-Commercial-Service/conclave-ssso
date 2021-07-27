@@ -140,6 +140,13 @@ namespace CcsSso.Security.Api.CustomOptions
         Data.Add("Crypto:CookieEncryptionKey", cryptoVault.CookieEncryptionKey);
       }
 
+      if (_secrets.Data.ContainsKey("MfaSettings"))
+      {
+        var mfaSettingVault = JsonConvert.DeserializeObject<MfaSettingVault>(_secrets.Data["MfaSettings"].ToString());
+        Data.Add("MfaSettings:TicketExpirationInMinutes", mfaSettingVault.TicketExpirationInMinutes);
+        Data.Add("MfaSettings:MfaResetRedirectUri", mfaSettingVault.MfaResetRedirectUri);        
+      }
+
       Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
       Data.Add("Auth0:ClientId", _auth0.ClientId);
       Data.Add("Auth0:Secret", _auth0.Secret);
@@ -160,6 +167,7 @@ namespace CcsSso.Security.Api.CustomOptions
       Data.Add("Email:UserActivationEmailTemplateId", _email.UserActivationEmailTemplateId);
       Data.Add("Email:ResetPasswordEmailTemplateId", _email.ResetPasswordEmailTemplateId);
       Data.Add("Email:NominateEmailTemplateId", _email.NominateEmailTemplateId);
+      Data.Add("Email:MfaResetEmailTemplateId", _email.MfaResetEmailTemplateId);
       Data.Add("Email:UserActivationLinkTTLInMinutes", _email.UserActivationLinkTTLInMinutes);
       Data.Add("Email:ChangePasswordNotificationTemplateId", _email.ChangePasswordNotificationTemplateId);
       Data.Add("Email:ResetPasswordLinkTTLInMinutes", _email.ResetPasswordLinkTTLInMinutes);
@@ -215,6 +223,8 @@ namespace CcsSso.Security.Api.CustomOptions
     public string ResetPasswordEmailTemplateId { get; set; }
 
     public string NominateEmailTemplateId { get; set; }
+
+    public string MfaResetEmailTemplateId { get; set; }
 
     public string UserActivationLinkTTLInMinutes { get; set; }
 
@@ -282,6 +292,13 @@ namespace CcsSso.Security.Api.CustomOptions
   public class CryptoVault
   {
     public string CookieEncryptionKey { get; set; }
+  }
+
+  public class MfaSettingVault
+  {
+    public string TicketExpirationInMinutes { get; set; }
+
+    public string MfaResetRedirectUri { get; set; }
   }
 
   public class VaultOptions

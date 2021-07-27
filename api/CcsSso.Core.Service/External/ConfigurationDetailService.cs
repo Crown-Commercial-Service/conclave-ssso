@@ -34,14 +34,17 @@ namespace CcsSso.Core.Service.External
 
     public async Task<List<OrganisationRole>> GetRolesAsync()
     {
-      var roles = await _dataContext.CcsAccessRole.Select(i => new OrganisationRole
-      {
-        RoleId = i.Id,
-        RoleName = i.CcsAccessRoleName,
-        OrgTypeEligibility = i.OrgTypeEligibility,
-        SubscriptionTypeEligibility = i.SubscriptionTypeEligibility,
-        TradeEligibility = i.TradeEligibility
-      }).ToListAsync();
+      var roles = await _dataContext.CcsAccessRole
+                          .Include(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
+                          .Select(i => new OrganisationRole
+                          {
+                            RoleId = i.Id,
+                            RoleName = i.CcsAccessRoleName,
+                            ServiceName = i.ServiceRolePermissions.FirstOrDefault().ServicePermission.CcsService.ServiceName,
+                            OrgTypeEligibility = i.OrgTypeEligibility,
+                            SubscriptionTypeEligibility = i.SubscriptionTypeEligibility,
+                            TradeEligibility = i.TradeEligibility
+                          }).ToListAsync();
 
       return roles;
     }

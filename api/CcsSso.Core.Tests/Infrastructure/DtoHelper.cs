@@ -25,7 +25,7 @@ namespace CcsSso.Core.Tests.Infrastructure
       };
     }
 
-    public static ContactRequestInfo GetContactInfo(string contactReason, string name, string email, string phoneNumber, string fax, string webUrl)
+    public static ContactRequestInfo GetContactInfo(string contactReason, string name, string email, string phoneNumber, string fax, string webUrl, string mobile = null)
     {
       var contactRequestInfo =  new ContactRequestInfo
       {
@@ -50,7 +50,10 @@ namespace CcsSso.Core.Tests.Infrastructure
       {
         contactRequestInfo.Contacts.Add(new ContactRequestDetail { ContactType = VirtualContactTypeName.Url, ContactValue = webUrl });
       }
-
+      if (!string.IsNullOrWhiteSpace(mobile))
+      {
+        contactRequestInfo.Contacts.Add(new ContactRequestDetail { ContactType = VirtualContactTypeName.Mobile, ContactValue = mobile });
+      }
       return contactRequestInfo;
     }
 

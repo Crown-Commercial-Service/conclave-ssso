@@ -137,6 +137,7 @@ namespace CcsSso.Service
         CreatedOnUtc = System.DateTime.UtcNow,
         LastUpdatedOnUtc = System.DateTime.UtcNow,
         IsDeleted = false,
+        MfaEnabled = true // For default org admin. Assume this only call when creating an org
       };
       _dataContext.User.Add(user);
       var role = await _dataContext.OrganisationEligibleRole.FirstOrDefaultAsync(x => x.CcsAccessRole.CcsAccessRoleNameKey == "ORG_ADMINISTRATOR" && x.OrganisationId == model.OrganisationId);

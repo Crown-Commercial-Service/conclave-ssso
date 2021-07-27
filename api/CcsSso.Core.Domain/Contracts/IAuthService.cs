@@ -12,5 +12,11 @@ namespace CcsSso.Core.Domain.Contracts
     Task<bool> ValidateBackChannelLogoutTokenAsync(string backChanelLogoutToken);
 
     Task ChangePasswordAsync(ChangePasswordDto changePassword);
+
+    Task SendResetMfaNotificationAsync(MfaResetInfo mfaResetInfo);
+
+    Task ResetMfaByTicketAsync(MfaResetInfo mfaResetInfo);
+
+    bool AuthorizeUser(string[] claimList);
   }
 }

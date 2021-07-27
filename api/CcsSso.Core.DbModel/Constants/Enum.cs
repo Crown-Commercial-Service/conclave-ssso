@@ -19,4 +19,11 @@ namespace CcsSso.Core.DbModel.Constants
     Buyer,
     Both
   }
+
+  public enum AssignedContactType
+  {
+    None,
+    User,
+    Site
+  }
 }

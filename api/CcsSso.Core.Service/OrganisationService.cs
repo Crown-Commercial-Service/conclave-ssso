@@ -1,6 +1,7 @@
 using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
@@ -38,6 +39,11 @@ namespace CcsSso.Service
     /// <returns></returns>
     public async Task<int> CreateAsync(OrganisationDto model)
     {
+      if (await _dataContext.Organisation.AnyAsync(org => !org.IsDeleted && org.CiiOrganisationId == model.CiiOrganisationId))
+      {
+        throw new ResourceAlreadyExistsException();
+      }
+
       var partyType = (await _dataContext.PartyType.FirstOrDefaultAsync(t => t.PartyTypeName == "EXTERNAL_ORGANISATION"));
       var party = new CcsSso.DbModel.Entity.Party
       {
@@ -191,6 +197,7 @@ namespace CcsSso.Service
           RightToBuy = organisation.RightToBuy,
           PartyId = organisation.PartyId,
           LegalName = organisation.LegalName,
+          SupplierBuyerType = organisation.SupplierBuyerType ?? 0
         };
         var contactPoint = await _dataContext.ContactPoint
           .Include(c => c.ContactDetail)
@@ -346,7 +353,8 @@ namespace CcsSso.Service
           var eligibleRole = new OrganisationEligibleRole
           {
             CcsAccessRole = role,
-            Organisation = org
+            Organisation = org,
+            MfaEnabled = role.MfaEnabled
           };
           eligibleRoles.Add(eligibleRole);
         });
@@ -363,7 +371,8 @@ namespace CcsSso.Service
           var eligibleRole = new OrganisationEligibleRole
           {
             CcsAccessRole = role,
-            Organisation = org
+            Organisation = org,
+            MfaEnabled = role.MfaEnabled
           };
           eligibleRoles.Add(eligibleRole);
         });
@@ -380,7 +389,8 @@ namespace CcsSso.Service
           var eligibleRole = new OrganisationEligibleRole
           {
             CcsAccessRole = role,
-            Organisation = org
+            Organisation = org,
+            MfaEnabled = role.MfaEnabled
           };
           eligibleRoles.Add(eligibleRole);
         });

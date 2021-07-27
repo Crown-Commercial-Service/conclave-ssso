@@ -46,6 +46,22 @@ namespace CcsSso.Security.Services
       await _emaillProviderService.SendEmailAsync(emailInfo);
     }
 
+    public async Task SendResetMfaEmailAsync(string email, string link)
+    {
+      var data = new Dictionary<string, dynamic>
+      {
+        { "mfaresetlink", link },
+        { "emailaddress", email }
+      };
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.CcsEmailConfigurationInfo.MfaResetEmailTemplateId,
+        BodyContent = data
+      };
+      await _emaillProviderService.SendEmailAsync(emailInfo);
+    }
+
     public async Task SendNominateEmailAsync(string email, string link)
     {
       var data = new Dictionary<string, dynamic>

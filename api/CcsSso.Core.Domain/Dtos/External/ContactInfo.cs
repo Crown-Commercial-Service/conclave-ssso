@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using System.Collections.Generic;
 
 namespace CcsSso.Domain.Dtos.External
@@ -29,6 +30,10 @@ namespace CcsSso.Domain.Dtos.External
   public class ContactResponseInfo : ContactPointInfo
   {
     public int ContactPointId { get; set; }
+
+    public int OriginalContactPointId { get; set; }
+
+    public AssignedContactType AssignedContactType { get; set; }
 
     public List<ContactResponseDetail> Contacts { get; set; }
   }
