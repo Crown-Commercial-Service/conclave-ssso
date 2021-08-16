@@ -24,6 +24,9 @@
     <None Remove="Scripts\Sprint13Dev\20210615142223_InsertURDemoPemissions.sql" />
     <None Remove="Scripts\Sprint13\20210603063941_AddAuditLoginTable.sql" />
     <None Remove="Scripts\Sprint13\20210608135113_RemoveAuditFieldsFromAuditLogTable.sql" />
+    <None Remove="Scripts\Sprint14\20210621134357_AddOriginalContactId.sql" />
+    <None Remove="Scripts\Sprint14\20210623055402_AddAssignedContactType.sql" />
+    <None Remove="Scripts\Sprint14\AddMfaFlag.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\20210401142220_DropTable.sql" />
@@ -38,6 +41,9 @@
     <EmbeddedResource Include="Scripts\Sprint13Dev\20210615142223_InsertURDemoPemissions.sql" />
     <EmbeddedResource Include="Scripts\Sprint13\20210608135113_RemoveAuditFieldsFromAuditLogTable.sql" />
     <EmbeddedResource Include="Scripts\Sprint13\20210603063941_AddAuditLoginTable.sql" />
+    <EmbeddedResource Include="Scripts\Sprint14\AddMfaFlag.sql" />
+    <EmbeddedResource Include="Scripts\Sprint14\20210623055402_AddAssignedContactType.sql" />
+    <EmbeddedResource Include="Scripts\Sprint14\20210621134357_AddOriginalContactId.sql" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.2" />

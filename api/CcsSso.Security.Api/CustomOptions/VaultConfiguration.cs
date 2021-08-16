@@ -1,9 +1,11 @@
 using CcsSso.Logs;
+using CcsSso.Shared.Domain;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using VaultSharp;
 using VaultSharp.V1.AuthMethods;
@@ -48,7 +50,8 @@ namespace CcsSso.Security.Api.CustomOptions
 
     public async Task GetSecrets()
     {
-      var _secrets = await _client.V1.Secrets.Cubbyhole.ReadSecretAsync(secretPath: "brickendon");
+      var mountPathValue = _vcapSettings.credentials.backends_shared.space.Split("/secret").FirstOrDefault();
+      var _secrets = await _client.V1.Secrets.KeyValue.V1.ReadSecretAsync("secret/security", mountPathValue);
       var _isApiGatewayEnabled = _secrets.Data["IsApiGatewayEnabled"].ToString();
       var _identityProvider = _secrets.Data["IdentityProvider"].ToString();
 
@@ -140,6 +143,14 @@ namespace CcsSso.Security.Api.CustomOptions
         Data.Add("Crypto:CookieEncryptionKey", cryptoVault.CookieEncryptionKey);
       }
 
+      if (_secrets.Data.ContainsKey("MfaSettings"))
+      {
+        var mfaSettingVault = JsonConvert.DeserializeObject<MfaSettingVault>(_secrets.Data["MfaSettings"].ToString());
+        Data.Add("MfaSettings:TicketExpirationInMinutes", mfaSettingVault.TicketExpirationInMinutes);
+        Data.Add("MfaSettings:MfaResetRedirectUri", mfaSettingVault.MfaResetRedirectUri);
+        Data.Add("MfaSettings:MFAResetPersistentTicketListExpirationInDays", mfaSettingVault.MFAResetPersistentTicketListExpirationInDays);
+      }
+
       Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
       Data.Add("Auth0:ClientId", _auth0.ClientId);
       Data.Add("Auth0:Secret", _auth0.Secret);
@@ -160,6 +171,7 @@ namespace CcsSso.Security.Api.CustomOptions
       Data.Add("Email:UserActivationEmailTemplateId", _email.UserActivationEmailTemplateId);
       Data.Add("Email:ResetPasswordEmailTemplateId", _email.ResetPasswordEmailTemplateId);
       Data.Add("Email:NominateEmailTemplateId", _email.NominateEmailTemplateId);
+      Data.Add("Email:MfaResetEmailTemplateId", _email.MfaResetEmailTemplateId);
       Data.Add("Email:UserActivationLinkTTLInMinutes", _email.UserActivationLinkTTLInMinutes);
       Data.Add("Email:ChangePasswordNotificationTemplateId", _email.ChangePasswordNotificationTemplateId);
       Data.Add("Email:ResetPasswordLinkTTLInMinutes", _email.ResetPasswordLinkTTLInMinutes);
@@ -215,6 +227,8 @@ namespace CcsSso.Security.Api.CustomOptions
     public string ResetPasswordEmailTemplateId { get; set; }
 
     public string NominateEmailTemplateId { get; set; }
+
+    public string MfaResetEmailTemplateId { get; set; }
 
     public string UserActivationLinkTTLInMinutes { get; set; }
 
@@ -284,43 +298,18 @@ namespace CcsSso.Security.Api.CustomOptions
     public string CookieEncryptionKey { get; set; }
   }
 
+  public class MfaSettingVault
+  {
+    public string TicketExpirationInMinutes { get; set; }
+
+    public string MfaResetRedirectUri { get; set; }
+
+    public string MFAResetPersistentTicketListExpirationInDays { get; set; }
+  }
+
   public class VaultOptions
   {
     public string Address { get; set; }
-  }
-
-  public class VCapSettings
-  {
-    public string binding_name { get; set; }
-    public Credentials credentials { get; set; }
-    public Array backends { get; set; }
-    public Array transit { get; set; }
-    public Backend backends_shared { get; set; }
-    public string instance_name { get; set; }
-    public string label { get; set; }
-    public string name { get; set; }
-    public string plan { get; set; }
-    public string provider { get; set; }
-    public string syslog_drain_url { get; set; }
-
-    public class Credentials
-    {
-      public string address { get; set; }
-      public Auth auth { get; set; }
-
-      public class Auth
-      {
-        public string accessor { get; set; }
-        public string token { get; set; }
-      }
-    }
-
-    public class Backend
-    {
-      public string application { get; set; }
-      public string organization { get; set; }
-      public string space { get; set; }
-    }
   }
 
   public static class VaultExtensions

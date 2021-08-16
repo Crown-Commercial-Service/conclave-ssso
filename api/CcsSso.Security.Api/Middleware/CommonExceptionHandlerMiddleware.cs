@@ -25,11 +25,11 @@ namespace CcsSso.Security.Api.Middleware
       }
       catch (UnauthorizedAccessException ex)
       {
-        await HandleException(context, ex.Message, ex, HttpStatusCode.Unauthorized);
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Unauthorized);
       }
       catch (RecordNotFoundException ex)
       {
-        await HandleException(context, ex.Message, ex, HttpStatusCode.NotFound);
+        await HandleException(context, string.Empty, ex, HttpStatusCode.NotFound);
       }
       catch (CcsSsoException ex)
       {

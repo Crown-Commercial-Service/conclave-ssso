@@ -14,10 +14,11 @@ namespace CcsSso.Security.Tests.Helpers
       };
     }
 
-    public static ChangePasswordDto GetChangePasswordDto(string accessToken, string newPassword, string oldPassword)
+    public static ChangePasswordDto GetChangePasswordDto(string userName, string newPassword, string oldPassword)
     {
       var changePasswordRequest = new ChangePasswordDto()
       {
+        UserName = userName,
         NewPassword = newPassword,
         OldPassword = oldPassword
       };

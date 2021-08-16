@@ -1,7 +1,6 @@
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Dtos.External;
-using CcsSso.Dtos.Domain.Models;
 using System;
 using System.Collections.Generic;
 
@@ -9,23 +8,7 @@ namespace CcsSso.Core.Tests.Infrastructure
 {
   internal static class DtoHelper
   {
-    public static ContactDetailDto GetContactDetailDto(int contactId, int partyId, int organisationId, ContactType contactType,
-      string name, string email, string phone, Address address = null)
-    {
-      return new ContactDetailDto
-      {
-        ContactId = contactId,
-        PartyId = partyId,
-        OrganisationId = organisationId,
-        ContactType = contactType,
-        Name = name,
-        Email = email,
-        PhoneNumber = phone,
-        Address = address
-      };
-    }
-
-    public static ContactRequestInfo GetContactInfo(string contactReason, string name, string email, string phoneNumber, string fax, string webUrl)
+    public static ContactRequestInfo GetContactInfo(string contactReason, string name, string email, string phoneNumber, string fax, string webUrl, string mobile = null)
     {
       var contactRequestInfo =  new ContactRequestInfo
       {
@@ -50,7 +33,10 @@ namespace CcsSso.Core.Tests.Infrastructure
       {
         contactRequestInfo.Contacts.Add(new ContactRequestDetail { ContactType = VirtualContactTypeName.Url, ContactValue = webUrl });
       }
-
+      if (!string.IsNullOrWhiteSpace(mobile))
+      {
+        contactRequestInfo.Contacts.Add(new ContactRequestDetail { ContactType = VirtualContactTypeName.Mobile, ContactValue = mobile });
+      }
       return contactRequestInfo;
     }
 

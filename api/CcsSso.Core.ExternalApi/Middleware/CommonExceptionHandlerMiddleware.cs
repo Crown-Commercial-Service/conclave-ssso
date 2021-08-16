@@ -2,6 +2,7 @@ using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Net;
 using System.Security.Authentication;
@@ -12,9 +13,10 @@ namespace CcsSso.ExternalApi.Middleware
   public class CommonExceptionHandlerMiddleware
   {
     private RequestDelegate _next;
-
-    public CommonExceptionHandlerMiddleware(RequestDelegate next)
+    private readonly ILogger<CommonExceptionHandlerMiddleware> _logger;
+    public CommonExceptionHandlerMiddleware(RequestDelegate next, ILogger<CommonExceptionHandlerMiddleware> logger)
     {
+      _logger = logger;
       _next = next;
     }
 
@@ -26,7 +28,11 @@ namespace CcsSso.ExternalApi.Middleware
       }
       catch (UnauthorizedAccessException ex)
       {
-        await HandleException(context, ex.Message, ex, HttpStatusCode.Unauthorized);
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Unauthorized);
+      }
+      catch (ForbiddenException ex)
+      {
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Forbidden);
       }
       catch (ResourceNotFoundException ex)
       {
@@ -38,7 +44,7 @@ namespace CcsSso.ExternalApi.Middleware
       }
       catch (DbUpdateConcurrencyException ex)
       {
-        await HandleException(context, ex.Message, ex, HttpStatusCode.Conflict);
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Conflict);
       }
       catch (CcsSsoException ex)
       {
@@ -56,6 +62,8 @@ namespace CcsSso.ExternalApi.Middleware
 
     private async Task HandleException(HttpContext context, string displayError, Exception ex, HttpStatusCode statusCode)
     {
+      _logger.LogError(ex, displayError);
+
       context.Response.StatusCode = (int)statusCode;
       await context.Response.WriteAsync(displayError);
     }

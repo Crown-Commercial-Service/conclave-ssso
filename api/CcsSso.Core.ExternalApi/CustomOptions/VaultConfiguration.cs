@@ -10,6 +10,8 @@ using VaultSharp.V1.AuthMethods;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Linq;
+using CcsSso.Shared.Domain;
 
 namespace CcsSso.ExternalApi.Api.CustomOptions
 {
@@ -48,7 +50,8 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
 
     public async Task GetSecrets()
     {
-      var _secrets = await _client.V1.Secrets.Cubbyhole.ReadSecretAsync(secretPath: "brickendon/core");
+      var mountPathValue = _vcapSettings.credentials.backends_shared.space.Split("/secret").FirstOrDefault();
+      var _secrets = await _client.V1.Secrets.KeyValue.V1.ReadSecretAsync("secret/wrapper", mountPathValue);
       var _dbConnection = _secrets.Data["DbConnection"].ToString();
       var _key = _secrets.Data["ApiKey"].ToString();
       var _isApiGatewayEnabled = _secrets.Data["IsApiGatewayEnabled"].ToString();
@@ -220,40 +223,6 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
   public class VaultOptions
   {
     public string Address { get; set; }
-  }
-
-  public class VCapSettings
-  {
-    public string binding_name { get; set; }
-    public Credentials credentials { get; set; }
-    public Array backends { get; set; }
-    public Array transit { get; set; }
-    public Backend backends_shared { get; set; }
-    public string instance_name { get; set; }
-    public string label { get; set; }
-    public string name { get; set; }
-    public string plan { get; set; }
-    public string provider { get; set; }
-    public string syslog_drain_url { get; set; }
-
-    public class Credentials
-    {
-      public string address { get; set; }
-      public Auth auth { get; set; }
-
-      public class Auth
-      {
-        public string accessor { get; set; }
-        public string token { get; set; }
-      }
-    }
-
-    public class Backend
-    {
-      public string application { get; set; }
-      public string organization { get; set; }
-      public string space { get; set; }
-    }
   }
 
   public static class VaultExtensions

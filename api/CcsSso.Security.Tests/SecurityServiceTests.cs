@@ -88,7 +88,7 @@ namespace CcsSso.Security.Tests
         var changePasswordRequest = new ChangePasswordDto()
         {
           UserName = "123",
-          NewPassword = "abc",
+          NewPassword = "Monday@123",
           OldPassword = "def"
         };
         await service.ChangePasswordAsync(changePasswordRequest);
@@ -102,7 +102,42 @@ namespace CcsSso.Security.Tests
                     {
                         DtoHelper.GetChangePasswordDto("", "", ""),
                         "USER_NAME_REQUIRED"
-                    }
+                    },
+                    new object[]
+                    {
+                        DtoHelper.GetChangePasswordDto("test@yopmail.com", "", ""),
+                        "NEW_PASSWORD_REQUIRED"
+                    },
+                    new object[]
+                    {
+                        DtoHelper.GetChangePasswordDto("test@yopmail.com", "Monday@12345", ""),
+                        "OLD_PASSWORD_REQUIRED"
+                    },
+                    new object[]
+                    {
+                        DtoHelper.GetChangePasswordDto("test@yopmail.com", "monday@12345", "Monday@12345"),
+                        "ERROR_PASSWORD_TOO_WEAK"
+                    },
+                    new object[]
+                    {
+                        DtoHelper.GetChangePasswordDto("test@yopmail.com", "MONDAY@12345", "Monday@12345"),
+                        "ERROR_PASSWORD_TOO_WEAK"
+                    },
+                    new object[]
+                    {
+                        DtoHelper.GetChangePasswordDto("test@yopmail.com", "Monday12345", "Monday@12345"),
+                        "ERROR_PASSWORD_TOO_WEAK"
+                    },
+                    new object[]
+                    {
+                        DtoHelper.GetChangePasswordDto("test@yopmail.com", "Monday@OneTwo", "Monday@12345"),
+                        "ERROR_PASSWORD_TOO_WEAK"
+                    },
+                new object[]
+                    {
+                        DtoHelper.GetChangePasswordDto("test@yopmail.com", "Mon@12345", "Monday@12345"),
+                        "ERROR_PASSWORD_TOO_WEAK"
+                    },
               };
 
       [Theory]
@@ -123,15 +158,23 @@ namespace CcsSso.Security.Tests
         var mockIdentityProviderService = new Mock<IIdentityProviderService>();
         var service = GetSecurityService(mockIdentityProviderService);
         var userName = "smith@gmail.com";
-        await service.InitiateResetPasswordAsync(userName);
-        mockIdentityProviderService.Verify(p => p.InitiateResetPasswordAsync(userName));
+        ChangePasswordInitiateRequest changePasswordInitiateRequest = new ChangePasswordInitiateRequest()
+        {
+          UserName = userName
+        };
+        await service.InitiateResetPasswordAsync(changePasswordInitiateRequest);
+        mockIdentityProviderService.Verify(p => p.InitiateResetPasswordAsync(changePasswordInitiateRequest));
       }
 
       [Fact]
       public async Task ThrowsException_WhenMandatoryFieldsAreNotProvided()
       {
         var service = GetSecurityService();
-        var ex = await Assert.ThrowsAsync<CcsSsoException>(async () => await service.InitiateResetPasswordAsync(string.Empty));
+        ChangePasswordInitiateRequest changePasswordInitiateRequest = new ChangePasswordInitiateRequest()
+        {
+          UserName = string.Empty
+        };
+        var ex = await Assert.ThrowsAsync<CcsSsoException>(async () => await service.InitiateResetPasswordAsync(changePasswordInitiateRequest));
         Assert.Equal("USERNAME_REQUIRED", ex.Message);
       }
     }
@@ -375,6 +418,11 @@ XfpE78ZNmRoLpF5k61uHRBafBlKloM73jyoZwQtBFfPqptFLwbw=",
                             ZQIDAQAB
                             -----END PUBLIC KEY-----
                             "
+        },
+        PasswordPolicy = new PasswordPolicy
+        {
+          LowerAndUpperCaseWithDigits = true,
+          RequiredLength = 10
         }
       };
 

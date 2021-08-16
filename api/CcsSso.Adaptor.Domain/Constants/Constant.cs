@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace CcsSso.Adaptor.Domain.Constants
 {
   public static class ConclaveEntityNames
@@ -16,6 +10,7 @@ namespace CcsSso.Adaptor.Domain.Constants
     public const string SiteContact = "SiteContact";
     public const string Contact = "Contact";
     public const string OrgUser = "OrgUser";
+    public const string OrgIdentifiers = "CiiOrgIdentifiers";
   }
 
   public static class ConsumerEntityNames
@@ -43,6 +38,7 @@ namespace CcsSso.Adaptor.Domain.Constants
   {
     public const string Email = "EMAIL";
     public const string Phone = "PHONE";
+    public const string Mobile = "MOBILE";
     public const string Fax = "FAX";
     public const string Url = "WEB_ADDRESS";
   }

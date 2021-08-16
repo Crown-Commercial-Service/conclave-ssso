@@ -9,6 +9,12 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task UpdateUserAsync(UserInfo userInfo);
 
+    Task UpdateUserMfaFlagAsync(UserInfo userInfo);
+
+    Task ResetMfaAsync(string ticket, string userName);
+
+    Task SendResetMfaNotificationAsync(MfaResetRequest mfaResetRequest);
+
     Task DeleteUserAsync(string email);
 
     Task<IdamUser> GetUserAsync(string email);

@@ -1,3 +1,4 @@
+using CcsSso.Core.Authorisation;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos;
@@ -25,7 +26,7 @@ namespace CcsSso.Api.Controllers
     }
 
     [HttpGet("{scheme}")]
-    [SwaggerOperation(Tags = new[] { "cii" })]
+    [SwaggerOperation(Tags = new[] { "Cii" })]
     public async Task<CiiDto> Get(string scheme, [System.Web.Http.FromUri] string companyNumber)
     {
       var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
@@ -33,23 +34,15 @@ namespace CcsSso.Api.Controllers
     }
 
     [HttpGet("GetSchemes")]
-    [SwaggerOperation(Tags = new[] { "cii" })]
+    [SwaggerOperation(Tags = new[] { "Cii" })]
     public async Task<CiiSchemeDto[]> GetSchemes()
     {
       var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
       return await _ciiService.GetSchemesAsync(accessToken);
     }
 
-    [HttpGet("GetOrg")]
-    [SwaggerOperation(Tags = new[] { "cii" })]
-    public async Task<CiiDto> GetOrg(string id)
-    {
-      var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
-      return await _ciiService.GetOrgAsync(id, accessToken);
-    }
-
     [HttpGet("GetOrgs")]
-    [SwaggerOperation(Tags = new[] { "cii" })]
+    [SwaggerOperation(Tags = new[] { "Cii" })]
     public async Task<CiiDto[]> GetOrgs(string id)
     {
       var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
@@ -57,49 +50,25 @@ namespace CcsSso.Api.Controllers
     }
 
     [HttpGet("GetIdentifiers")]
-    [SwaggerOperation(Tags = new[] { "cii" })]
+    [SwaggerOperation(Tags = new[] { "Cii" })]
     public async Task<CiiDto> GetIdentifiers(string orgId, [System.Web.Http.FromUri] string scheme, [System.Web.Http.FromUri] string id)
     {
       var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
       return await _ciiService.GetIdentifiersAsync(orgId, scheme, id, accessToken);
     }
 
-    [HttpPost]
-    [SwaggerOperation(Tags = new[] { "cii" })]
-    public async Task<CiiOrg> Post(CiiDto model)
+    [HttpPut("add-scheme")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [SwaggerOperation(Tags = new[] { "Cii" })]
+    public async Task Put(CiiPutDto model)
     {
       var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
-      var test = _ciiService.PostAsync(model, accessToken).Result;
-      return Newtonsoft.Json.JsonConvert.DeserializeObject<CiiOrg[]>(test)[0];
+      await _ciiService.PutAsync(model, accessToken);
     }
 
-    [HttpPut]
-    [SwaggerOperation(Tags = new[] { "cii" })]
-    public async Task<string> Put(CiiPutDto model)
-    {
-      var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
-      return await _ciiService.PutAsync(model, accessToken);
-    }
-
-    [HttpDelete]
-    [SwaggerOperation(Tags = new[] { "cii" })]
-    public async Task Delete(CiiDto model)
-    {
-      var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
-      await _ciiService.DeleteAsync(model.identifier.id, accessToken);
-      // await _ciiService.DeleteAsyncWithBody(model);
-    }
-
-    [HttpDelete("DeleteOrg")]
-    [SwaggerOperation(Tags = new[] { "cii" })]
-    public async Task DeleteOrg(string id)
-    {
-      var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
-      await _ciiService.DeleteOrgAsync(id, accessToken);
-    }
-
-    [HttpDelete("DeleteScheme")]
-    [SwaggerOperation(Tags = new[] { "cii" })]
+    [HttpDelete("delete-scheme")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [SwaggerOperation(Tags = new[] { "Cii" })]
     public async Task DeleteScheme(string orgId, [System.Web.Http.FromUri] string scheme, [System.Web.Http.FromUri] string id)
     {
       var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();

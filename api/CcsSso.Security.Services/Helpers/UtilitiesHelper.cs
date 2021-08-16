@@ -17,6 +17,13 @@ namespace CcsSso.Security.Services.Helpers
       return match.Success;
     }
 
+    public static bool IsPasswordValidForRequiredCharactors(string password)
+    {
+      Regex regex = new Regex(RegexExpressions.VALID_PASSWORD_FORMAT_REGEX);
+      Match match = regex.Match(password);
+      return match.Success;
+    }
+
     /// <summary>
     /// Generates a Random Password
     /// respecting the given strength requirements.

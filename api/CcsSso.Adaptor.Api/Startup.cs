@@ -3,8 +3,10 @@ using CcsSso.Adaptor.DbDomain;
 using CcsSso.Adaptor.DbPersistence;
 using CcsSso.Adaptor.Domain;
 using CcsSso.Adaptor.Domain.Contracts;
+using CcsSso.Adaptor.Domain.Contracts.Cii;
 using CcsSso.Adaptor.Domain.Contracts.Wrapper;
 using CcsSso.Adaptor.Service;
+using CcsSso.Adaptor.Service.Cii;
 using CcsSso.Adaptor.Service.Wrapper;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Cache.Services;
@@ -99,6 +101,16 @@ namespace CcsSso.Adaptor.Api
         new RedisConnectionPoolService(Configuration["RedisCacheSettings:ConnectionString"])
       );
       services.AddSingleton<IAwsSqsService, AwsSqsService>();
+      services.AddSingleton<IWrapperContactService, WrapperContactService>();
+      services.AddSingleton<IWrapperOrganisationService, WrapperOrganisationService>();
+      services.AddSingleton<IWrapperUserService, WrapperUserService>();
+      services.AddSingleton<IWrapperOrganisationContactService, WrapperOrganisationContactService>();
+      services.AddSingleton<IWrapperUserContactService, WrapperUserContactService>();
+      services.AddSingleton<IWrapperSiteService, WrapperSiteService>();
+      services.AddSingleton<IWrapperSiteContactService, WrapperSiteContactService>();
+      services.AddSingleton<IWrapperApiService, WrapperApiService>();
+      services.AddSingleton<ICiiApiService, CiiApiService>();
+      services.AddSingleton<ICiiService, CiiService>();
 
       services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(Configuration["DbConnection"]));
       services.AddScoped<AdaptorRequestContext>();
@@ -107,14 +119,6 @@ namespace CcsSso.Adaptor.Api
       services.AddScoped<IOrganisationService, OrganisationService>();
       services.AddScoped<IUserService, UserService>();
       services.AddScoped<IContactService, ContactService>();
-      services.AddScoped<IWrapperContactService, WrapperContactService>();
-      services.AddScoped<IWrapperOrganisationService, WrapperOrganisationService>();
-      services.AddScoped<IWrapperUserService, WrapperUserService>();
-      services.AddScoped<IWrapperOrganisationContactService, WrapperOrganisationContactService>();
-      services.AddScoped<IWrapperUserContactService, WrapperUserContactService>();
-      services.AddScoped<IWrapperSiteService, WrapperSiteService>();
-      services.AddScoped<IWrapperSiteContactService, WrapperSiteContactService>();
-      services.AddScoped<IWrapperApiService, WrapperApiService>();
       services.AddScoped<IPushService, PushService>();
 
       bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
@@ -135,6 +139,12 @@ namespace CcsSso.Adaptor.Api
       {
         c.BaseAddress = new Uri(isApiGatewayEnabled ? Configuration["WrapperApiSettings:ApiGatewayEnabledContactUrl"] : Configuration["WrapperApiSettings:ApiGatewayDisabledContactUrl"]);
         c.DefaultRequestHeaders.Add("X-API-Key", Configuration["WrapperApiSettings:ContactApiKey"]);
+      });
+
+      services.AddHttpClient("CiiApi", c =>
+      {
+        c.BaseAddress = new Uri(Configuration["CiiApiSettings:Url"]);
+        c.DefaultRequestHeaders.Add("X-API-Key", Configuration["CiiApiSettings:SpecialToken"]);
       });
 
       services.AddSwaggerGen(c =>
@@ -186,13 +196,27 @@ namespace CcsSso.Adaptor.Api
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseSwagger();
       app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.Adaptor.Api v1"));
+      app.UseHsts();
       app.UseHttpsRedirection();
+
+      app.Use(async (context, next) =>
+      {
+        context.Response.Headers.Add(
+            "Cache-Control",
+            "no-cache");
+        context.Response.Headers.Add(
+            "Pragma",
+            "no-cache");
+        context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+        context.Response.Headers.Add("X-Xss-Protection", "1");
+        await next();
+      });
 
       app.UseRouting();
 
-      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseMiddleware<AuthenticationMiddleware>();
 
       app.UseAuthorization();

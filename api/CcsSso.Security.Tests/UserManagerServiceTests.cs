@@ -1,3 +1,4 @@
+using CcsSso.Security.Domain.Constants;
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
@@ -50,7 +51,7 @@ namespace CcsSso.Security.Tests
         var ex = await Assert.ThrowsAsync<CcsSsoException>(async () => await service.SendUserActivationEmailAsync(null));
         Assert.Equal(ErrorCodes.EmailRequired, ex.Message);
       }
-      
+
 
       public static IEnumerable<object[]> InvalidData =>
               new List<object[]>
@@ -99,6 +100,58 @@ namespace CcsSso.Security.Tests
         var service = GetUserManagerService();
         var ex = await Assert.ThrowsAsync<CcsSsoException>(async () => await service.CreateUserAsync(userInfo));
         Assert.Equal(expectedError, ex.Message);
+      }
+    }
+
+    public class ResetMfa
+    {
+      [Theory]
+      [InlineData("123", Constants.ErrorCodes.InvalidTicket)]
+      [InlineData(null, Constants.ErrorCodes.UserIdRequired)]
+      public async Task ThrowsException_WhenInvalidTicket(string ticket, string errorCode)
+      {
+        var mockSecurityCacheService = new Mock<ISecurityCacheService>();
+        var mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
+        var applicationConfigurationInfo = new ApplicationConfigurationInfo();
+        mockSecurityCacheService.Setup(m => m.GetValueAsync<string>(It.IsAny<string>())).ReturnsAsync(string.Empty);
+        var service = GetUserManagerService(null, mockSecurityCacheService, applicationConfigurationInfo, mockCcsSsoEmailService);
+
+        var ex = await Assert.ThrowsAsync<CcsSsoException>(async () => await service.ResetMfaAsync(ticket, null));
+        Assert.Equal(errorCode, ex.Message);
+      }
+
+      [Fact]
+      public async Task ResetMfa_WhenProvideValidTicket()
+      {
+        var mockIdentityProviderService = new Mock<IIdentityProviderService>();
+        var mockSecurityCacheService = new Mock<ISecurityCacheService>();
+        var mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
+        var applicationConfigurationInfo = new ApplicationConfigurationInfo();
+        mockSecurityCacheService.Setup(m => m.GetValueAsync<string>(It.IsAny<string>())).ReturnsAsync("tom@yopmail.com");
+        var service = GetUserManagerService(mockIdentityProviderService, mockSecurityCacheService, applicationConfigurationInfo, mockCcsSsoEmailService);
+        await service.ResetMfaAsync("1234", null);
+        mockIdentityProviderService.Verify(a => a.ResetMfaAsync("tom@yopmail.com"));
+        mockSecurityCacheService.Verify(a => a.RemoveAsync(Constants.CacheKey.MFA_RESET + "1234"));
+      }
+    }
+
+    public class SendResetMfaNotification
+    {
+      [Fact]
+      public async Task SendEmail_WhenProvideValidTicket()
+      {
+        var mockIdentityProviderService = new Mock<IIdentityProviderService>();
+        var mockSecurityCacheService = new Mock<ISecurityCacheService>();
+        var mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
+        var applicationConfigurationInfo = new ApplicationConfigurationInfo()
+        {
+          MfaSetting = new MfaSetting()
+        };
+        mockSecurityCacheService.Setup(m => m.GetValueAsync<string>(It.IsAny<string>())).ReturnsAsync("tom@yopmail.com");
+        var service = GetUserManagerService(mockIdentityProviderService, mockSecurityCacheService, applicationConfigurationInfo, mockCcsSsoEmailService);
+        await service.SendResetMfaNotificationAsync(new MfaResetRequest { UserName = "tom@yopmail.com" });
+        mockSecurityCacheService.Verify(a => a.SetValueAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>()));
+        mockCcsSsoEmailService.Verify(a => a.SendResetMfaEmailAsync("tom@yopmail.com", It.IsAny<string>()));
       }
     }
 
@@ -157,13 +210,31 @@ namespace CcsSso.Security.Tests
       }
     }
 
-    public static UserManagerService GetUserManagerService(Mock<IIdentityProviderService> mockIdentityProviderService = null)
+    public static UserManagerService GetUserManagerService(Mock<IIdentityProviderService> mockIdentityProviderService = null,
+      Mock<ISecurityCacheService> mockSecurityCacheService = null,
+      ApplicationConfigurationInfo applicationConfigurationInfo = null, Mock<ICcsSsoEmailService> mockCcsSsoEmailService = null)
     {
       if (mockIdentityProviderService == null)
       {
         mockIdentityProviderService = new Mock<IIdentityProviderService>();
       }
-      var service = new UserManagerService(mockIdentityProviderService.Object);
+
+      if (mockSecurityCacheService == null)
+      {
+        mockSecurityCacheService = new Mock<ISecurityCacheService>();
+      }
+
+      if (mockCcsSsoEmailService == null)
+      {
+        mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
+      }
+
+      if (applicationConfigurationInfo == null)
+      {
+        applicationConfigurationInfo = new ApplicationConfigurationInfo();
+      }
+
+      var service = new UserManagerService(mockIdentityProviderService.Object, mockSecurityCacheService.Object, applicationConfigurationInfo, mockCcsSsoEmailService.Object);
       return service;
     }
   }

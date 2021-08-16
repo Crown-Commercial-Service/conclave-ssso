@@ -69,17 +69,31 @@ namespace CcsSso.Core.Service
       }
     }
 
+    public async Task UpdateUserMfaInIdamAsync(SecurityApiUserInfo securityApiUserInfo)
+    {
+      var client = _httpClientFactory.CreateClient();
+      client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
+      client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
+      var byteContent = new ByteArrayContent(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(securityApiUserInfo)));
+      byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+      var response = await client.PostAsync("security/updateuser_mfa", byteContent);
+
+      if (!response.IsSuccessStatusCode)
+      {
+        throw new CcsSsoException("ERROR_USER_MFA_UPDATE");
+      }
+    }
+
     public async Task ResetUserPasswordAsync(string userName)
     {
       var client = _httpClientFactory.CreateClient();
       client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
       client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
-      var content = new StringContent("\"" + userName + "\"", Encoding.UTF8, "application/json");
-
-      var byteContent = new ByteArrayContent(Encoding.UTF8.GetBytes(userName));
+      
+      var content = new { UserName = userName, ForceLogout = true };
+      var byteContent = new ByteArrayContent(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(content)));
       byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
-      var response = await client.PostAsync($"security/passwordresetrequest", content);
+      var response = await client.PostAsync($"security/passwordresetrequest", byteContent);
 
       if (response.StatusCode == HttpStatusCode.BadRequest)
       {

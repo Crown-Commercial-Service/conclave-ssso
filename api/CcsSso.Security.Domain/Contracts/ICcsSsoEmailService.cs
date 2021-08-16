@@ -13,6 +13,8 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task SendNominateEmailAsync(string email, string link);
 
+    Task SendResetMfaEmailAsync(string email, string link);
+
     Task SendChangePasswordNotificationAsync(string email);
   }
 }

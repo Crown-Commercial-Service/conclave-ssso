@@ -19,6 +19,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string LastName { get; set; }
 
     public UserTitle? Title { get; set; }
+
+    public bool MfaEnabled { get; set; }
   }
 
   public class UserRequestDetail
@@ -58,6 +60,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string RoleKey { get; set; }
 
     public string ServiceClientId { get; set; }
+
+    public string ServiceClientName { get; set; }
   }
 
   public class UserProfileEditRequestInfo : UserDetail
@@ -95,6 +99,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string Group { get; set; }
 
     public string ServiceClientId { get; set; }
+
+    public string ServiceClientName { get; set; }
   }
 
   public class UserEditResponseInfo

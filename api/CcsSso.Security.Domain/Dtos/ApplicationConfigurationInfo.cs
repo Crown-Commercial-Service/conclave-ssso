@@ -25,6 +25,8 @@ namespace CcsSso.Security.Domain.Dtos
     public RedisCacheSettings RedisCacheSettings { get; set; }
 
     public CryptoSettings CryptoSettings { get; set; }
+
+    public MfaSetting MfaSetting { get; set; }
   }
 
   public class SecurityApiKeySettings
@@ -86,6 +88,8 @@ namespace CcsSso.Security.Domain.Dtos
 
     public string NominateEmailTemplateId { get; set; }
 
+    public string MfaResetEmailTemplateId { get; set; }
+
     public string ChangePasswordNotificationTemplateId { get; set; }
 
     public int UserActivationLinkTTLInMinutes { get; set; }
@@ -131,5 +135,14 @@ namespace CcsSso.Security.Domain.Dtos
     public int RequiredLength { get; set; }
     public int RequiredUniqueChars { get; set; }
     public bool LowerAndUpperCaseWithDigits { get; set; }
+  }
+
+  public class MfaSetting
+  {
+    public int TicketExpirationInMinutes { get; set; }
+
+    public string MfaResetRedirectUri { get; set; }
+
+    public int MFAResetPersistentTicketListExpirationInDays { get; set; }
   }
 }

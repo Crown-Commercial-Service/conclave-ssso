@@ -12,6 +12,12 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task UpdateUserAsync(UserInfo userInfo);
 
+    Task UpdateUserMfaFlagAsync(Domain.Dtos.UserInfo userInfo);
+
+    Task UpdatePendingMFAVerifiedFlagAsync(string userName, bool mfaResetVerified);
+
+    Task ResetMfaAsync(string userName);
+
     Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string clientSecret, string refreshToken, string sid);
 
     Task<TokenResponseInfo> GetTokensAsync(TokenRequestInfo tokenRequestInfo, string sid);
@@ -24,7 +30,7 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task<AuthResultDto> RespondToNewPasswordRequiredAsync(PasswordChallengeDto passwordChallengeDto);
 
-    Task InitiateResetPasswordAsync(string userName);
+    Task InitiateResetPasswordAsync(ChangePasswordInitiateRequest changePasswordInitiateRequest);
 
     Task ResetPasswordAsync(ResetPasswordDto resetPassword);
 

@@ -132,16 +132,18 @@ namespace CcsSso.Core.Service.External
     }
 
     /// <summary>
-    /// Get all the sites in organisation
+    /// Get all the sites in organisation or search sites of an organisation by site name
     /// </summary>
     /// <param name="ciiOrganisationId"></param>
+    /// <param name="siteNameSerachString"></param>
     /// <returns></returns>
-    public async Task<OrganisationSiteInfoList> GetOrganisationSitesAsync(string ciiOrganisationId)
+    public async Task<OrganisationSiteInfoList> GetOrganisationSitesAsync(string ciiOrganisationId, string siteNameSerachString = null)
     {
       var organisationSiteContactPoints = await _dataContext.ContactPoint
         .Include(cp => cp.ContactPointReason)
         .Include(cp => cp.ContactDetail).ThenInclude(cd => cd.PhysicalAddress)
-        .Where(cp => !cp.IsDeleted && cp.IsSite && cp.Party.Organisation.CiiOrganisationId == ciiOrganisationId)
+        .Where(cp => !cp.IsDeleted && cp.IsSite && cp.Party.Organisation.CiiOrganisationId == ciiOrganisationId
+          && (string.IsNullOrWhiteSpace(siteNameSerachString) || cp.SiteName.ToLower().Contains(siteNameSerachString.Trim().ToLower())))
         .ToListAsync();
 
       if (!organisationSiteContactPoints.Any() && !await _dataContext.Organisation.AnyAsync(o => o.CiiOrganisationId == ciiOrganisationId))

@@ -22,9 +22,24 @@ namespace CcsSso.Dtos.Domain.Models
 
     public int PartyId { get; set; }
 
-    public ContactDetailDto ContactPoint { get; set; }
-
     public Address Address { get; set; }
+  }
+
+  public class OrganisationRegistrationDto
+  {
+    public CiiDto CiiDetails { get; set; }
+
+    public bool RightToBuy { get; set; }
+
+    public string BusinessType { get; set; }
+
+    public int SupplierBuyerType { get; set; }
+
+    public string AdminUserName { get; set; }
+
+    public string AdminUserFirstName { get; set; }
+
+    public string AdminUserLastName { get; set; }
   }
 
   public class OrganisationRollbackDto
@@ -48,6 +63,8 @@ namespace CcsSso.Dtos.Domain.Models
     public string Name { get; set; }
 
     public int OrganisationId { get; set; }
+
+    public string CiiOrganisationId { get; set; }
 
     public string OrganisationLegalName { get; set; }
   }

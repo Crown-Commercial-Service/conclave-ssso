@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace CcsSso.Adaptor.Domain.Dtos.Wrapper
@@ -45,6 +46,8 @@ namespace CcsSso.Adaptor.Domain.Dtos.Wrapper
     public string RoleName { get; set; }
 
     public string RoleKey { get; set; }
+
+    public string ServiceClientName { get; set; }
   }
 
   public class GroupAccessRole
@@ -56,6 +59,8 @@ namespace CcsSso.Adaptor.Domain.Dtos.Wrapper
     public string AccessRoleName { get; set; }
 
     public string Group { get; set; }
+
+    public string ServiceClientName { get; set; }
   }
 
   public class WrapperUserRequest

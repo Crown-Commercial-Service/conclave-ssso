@@ -1,5 +1,5 @@
 -- Create consumer mappings
--- Set the "type_consumer_conclave_mapping" array with consumer attribute name and conclave attribute id
+-- Set the mappings array ("type_consumer_conclave_mapping[]") with consumer attribute name and conclave attribute id
 -- Configured for Digits user scenario
 CREATE TYPE type_consumer_conclave_mapping  AS (
         consumerAttributeName text,
@@ -16,23 +16,25 @@ CREATE OR REPLACE FUNCTION create_consumer_mappings() RETURNS integer AS $$
   DECLARE attributeMapping type_consumer_conclave_mapping;
   DECLARE consumerEntityAttributeId int;
 
-  DECLARE mappings type_consumer_conclave_mapping[] = array[('userName', 22), ('organisationId', 23), ('firstName', 24), ('lastName', 25), ('title', 26 ), ('userDetailId', 28), ('identityProviderId', 29), ('identityProviderDisplayName', 30), ('rolePermissionInfo', 32), ('userGroups', 36), ('organisationIdentifier', 1), ('organisationAdditionalIdentifiers', 6), ('organisationAddress', 7),  ('organisationDetail', 13), ('userContactPoints', 60)];
+  DECLARE mappings type_consumer_conclave_mapping[] = array[('userName', 22), ('organisationId', 23), ('firstName', 24), ('lastName', 25), ('title', 26 ), ('userDetailId', 28), ('identityProviderId', 29), ('identityProviderDisplayName', 30), ('rolePermissionInfo', 32), ('additionalRoles', 39), ('organisationIdentifier', 85), ('organisationAdditionalIdentifiers', 86), ('organisationAddress', 7),  ('organisationDetail', 13), ('userContactPoints', 60)];
 
-    BEGIN
+   BEGIN
 	
-	IF NOT EXISTS (SELECT "Id" FROM public."AdapterConsumer" WHERE "Name" = consumerName and "ClientId" = consumerClientId LIMIT 1) THEN
+	  IF NOT EXISTS (SELECT "Id" FROM public."AdapterConsumer" WHERE "Name" = consumerName and "ClientId" = consumerClientId LIMIT 1) THEN
       INSERT INTO public."AdapterConsumer"(
 	    "Id", "Name", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "ClientId")
 	    VALUES ( DEFAULT, consumerName,  now(), now(), false, consumerClientId);
    	END IF;
 
-	SELECT "Id" into consumerId FROM public."AdapterConsumer" WHERE "Name" = consumerName and "ClientId" = consumerClientId LIMIT 1;
+	  SELECT "Id" into consumerId FROM public."AdapterConsumer" WHERE "Name" = consumerName and "ClientId" = consumerClientId LIMIT 1;
+
+    DELETE FROM public."AdapterConsumerEntity" WHERE "Name" = consumerEntityName and "AdapterConsumerId" = consumerId;
 
     INSERT INTO public."AdapterConsumerEntity"(
 	    "Id", "Name", "AdapterConsumerId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 	    VALUES ( DEFAULT, consumerEntityName, consumerId, now(), now(), false);
 
-	SELECT "Id" into consumerEntityId FROM public."AdapterConsumerEntity" WHERE "Name" = consumerEntityName and "AdapterConsumerId" = consumerId LIMIT 1;
+	  SELECT "Id" into consumerEntityId FROM public."AdapterConsumerEntity" WHERE "Name" = consumerEntityName and "AdapterConsumerId" = consumerId LIMIT 1;
 
      FOREACH attributeMapping IN ARRAY mappings
      LOOP

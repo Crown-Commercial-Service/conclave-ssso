@@ -109,6 +109,10 @@ namespace CcsSso.Security.Services
           FirstName = userInfo.FirstName,
           LastName = userInfo.LastName,
           EmailVerified = false,
+          UserMetadata = new
+          {
+            use_mfa = userInfo.MfaEnabled
+          },
           Connection = _appConfigInfo.Auth0ConfigurationInfo.DBConnectionName
         };
 
@@ -145,8 +149,8 @@ namespace CcsSso.Security.Services
       {
         managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
       }
-
-      var ticket = await GetResetPasswordTicketAsync(email, managementApiToken);
+      
+      var ticket = await GetResetPasswordTicketAsync(email, managementApiToken, _appConfigInfo.CcsEmailConfigurationInfo.UserActivationLinkTTLInMinutes);
 
       if (!string.IsNullOrEmpty(ticket))
       {
@@ -172,6 +176,111 @@ namespace CcsSso.Security.Services
         using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
         {
           var result = await _managementApiClient.Users.UpdateAsync(userInfo.Id, userUpdateRequest);
+        }
+      }
+      catch (ErrorApiException e)
+      {
+        if (e.ApiError.ErrorCode == "invalid_uri")
+        {
+          throw new RecordNotFoundException();
+        }
+        else
+        {
+          throw new CcsSsoException("USER_UPDATE_FAILED");
+        }
+      }
+    }
+
+    public async Task ResetMfaAsync(string userName)
+    {
+      try
+      {
+        var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
+        using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
+        {
+          var user = (await _managementApiClient.Users.GetUsersByEmailAsync(userName)).FirstOrDefault();
+          if (user != null)
+          {
+            var enrollments = await _managementApiClient.Users.GetEnrollmentsAsync(user.UserId);
+            foreach (var enrollment in enrollments)
+            {
+              await _managementApiClient.Guardian.DeleteEnrollmentAsync(enrollment.Id);
+            }
+          }
+          else
+          {
+            throw new RecordNotFoundException();
+          }
+        }
+      }
+      catch (ErrorApiException e)
+      {
+        if (e.ApiError.ErrorCode == "invalid_uri")
+        {
+          throw new RecordNotFoundException();
+        }
+        else
+        {
+          throw new CcsSsoException("MFA_RESET_FAILED");
+        }
+      }
+    }
+
+    public async Task UpdateUserMfaFlagAsync(Domain.Dtos.UserInfo userInfo)
+    {
+      try
+      {
+        var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
+        using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
+        {
+          var user = (await _managementApiClient.Users.GetUsersByEmailAsync(userInfo.Email)).FirstOrDefault();
+          if (user != null)
+          {
+            UserUpdateRequest userUpdateRequest = new UserUpdateRequest
+            {
+              UserMetadata = new
+              {
+                use_mfa = userInfo.MfaEnabled
+              }
+            };
+
+            await _managementApiClient.Users.UpdateAsync(user.UserId, userUpdateRequest);
+          }
+        }
+      }
+      catch (ErrorApiException e)
+      {
+        if (e.ApiError.ErrorCode == "invalid_uri")
+        {
+          throw new RecordNotFoundException();
+        }
+        else
+        {
+          throw new CcsSsoException("USER_UPDATE_FAILED");
+        }
+      }
+    }
+
+    public async Task UpdatePendingMFAVerifiedFlagAsync(string userName, bool mfaResetVerified)
+    {
+      try
+      {
+        var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
+        using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
+        {
+          var user = (await _managementApiClient.Users.GetUsersByEmailAsync(userName)).FirstOrDefault();
+          if (user != null)
+          {
+            UserUpdateRequest userUpdateRequest = new UserUpdateRequest
+            {
+              UserMetadata = new
+              {
+                mfa_reset_verified = mfaResetVerified
+              }
+            };
+
+            await _managementApiClient.Users.UpdateAsync(user.UserId, userUpdateRequest);
+          }
         }
       }
       catch (ErrorApiException e)
@@ -370,16 +479,23 @@ namespace CcsSso.Security.Services
       throw new NotImplementedException();
     }
 
-    public async Task InitiateResetPasswordAsync(string userName)
+    public async Task InitiateResetPasswordAsync(ChangePasswordInitiateRequest changePasswordInitiateRequest)
     {
       var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
       using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
       {
-        var ticket = await GetResetPasswordTicketAsync(userName, managementApiToken);
-
+        var ticket = await GetResetPasswordTicketAsync(changePasswordInitiateRequest.UserName, managementApiToken, _appConfigInfo.CcsEmailConfigurationInfo.ResetPasswordLinkTTLInMinutes);
         if (!string.IsNullOrEmpty(ticket))
         {
-          await _ccsSsoEmailService.SendResetPasswordAsync(userName, ticket);
+          var users = await _managementApiClient.Users.GetUsersByEmailAsync(changePasswordInitiateRequest.UserName);
+          var userId = users.Select(u => u.UserId).FirstOrDefault();
+
+          UserUpdateRequest userUpdateRequest = new UserUpdateRequest
+          {
+            EmailVerified = !changePasswordInitiateRequest.ForceLogout
+          };
+          await _managementApiClient.Users.UpdateAsync(userId, userUpdateRequest);
+          await _ccsSsoEmailService.SendResetPasswordAsync(changePasswordInitiateRequest.UserName, ticket);
         }
         else
         {
@@ -551,7 +667,7 @@ namespace CcsSso.Security.Services
       return null;
     }
 
-    private async Task<string> GetResetPasswordTicketAsync(string userName, string managementApiToken)
+    private async Task<string> GetResetPasswordTicketAsync(string userName, string managementApiToken, int expirationTimeInMinutes)
     {
       var client = _httpClientFactory.CreateClient();
       client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", managementApiToken);
@@ -559,7 +675,7 @@ namespace CcsSso.Security.Services
 
       var url = "/api/v2/tickets/password-change";
 
-      var userActivationLinkTTLInSeconds = _appConfigInfo.CcsEmailConfigurationInfo.ResetPasswordLinkTTLInMinutes * 60;
+      var userActivationLinkTTLInSeconds = expirationTimeInMinutes * 60;
 
       var list = new List<KeyValuePair<string, string>>();
       list.Add(new KeyValuePair<string, string>("email", userName));
@@ -684,9 +800,8 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException("TOKEN_GENERATION_FAILED");
       }
 
-      var connection = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "http://ccs-sso/connection")?.Value;
+      var connection = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/connection")?.Value;
       var userDetails = await GetUserAsync(email);
-      // This will be uncommented after idp configuration is finalized
       if (userDetails.Detail.IdentityProvider != connection)
       {
         throw new CcsSsoException("INVALID_CONNECTION");

@@ -60,6 +60,18 @@
         text-decoration: none;
     }
 
+    .right-content {
+        text-align: end;
+    }
+
+    .footer-global:after {
+        height: 20rem;
+    }
+
+    .govuk-footer__meta-item {
+        margin-bottom: -15px;
+    }
+
     /* Gov UK Styles */
     .footer-global {
         background-color: #2F2F2F;
@@ -258,7 +270,8 @@
                     data-app-pathinfo="/contact/sendToSalesforce" aria-hidden="false">
                     <ul class="nav-list nav-list--primary">
                         <li class="nav-list__item">
-                            <a class="nav-list__link">Help and support</a>
+                            <a class="nav-list__link"
+                                href="https://dev-ccs-sso.london.cloudapps.digital/help-support">Help and support</a>
                         </li>
                     </ul>
                 </nav>
@@ -269,7 +282,7 @@
         <div class="govuk-phase-banner">
             <p class="govuk-phase-banner__content">
                 <strong class="govuk-tag govuk-phase-banner__content__tag ">
-                    beta
+                    alpha
                 </strong>
                 <span class="govuk-phase-banner__text">This is a new service – your <a class="govuk-link"
                         href="https://www.smartsurvey.co.uk/s/QWDZX/">feedback</a> will help us to improve it.</span>
@@ -323,13 +336,13 @@
                             <span style="display: none" id="password-error" class="govuk-error-message">
                                 <span class="govuk-visually-hidden">Error:</span> Password is required
                             </span>
-                            <input type="password" class="govuk-input" id="password" placeholder="Enter your password">
+                            <input type="password" autocomplete="off" class="govuk-input" id="password" placeholder="Enter your password">
                         </div>
                         <div class="captcha-container govuk-form-group"></div>
                         <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
                             style="margin-top:25px;" type="submit" id="btn-login">
                             Sign in
-                        </button>                        
+                        </button>
                         <div style="margin-top:20px;" class="form-group">
                             <div style="display:inline-block">
                                 <hr>
@@ -357,7 +370,7 @@
                             class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button">
                             Log In with Microsoft
                         </button>
-						<br />
+                        <br />
                         <button type="button" id="btn-linkedin" style="width: 400px;"
                             class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button">
                             Log In with LinkedIn
@@ -365,10 +378,12 @@
 
                         <div class="align-right">
                             <h2 class="govuk-heading-ml">Problem signing in?</h2>
-                            <a style="margin-bottom: 15px;" class="govuk-link" href="http://dev-ccs-sso.london.cloudapps.digital/forgot-password">I have forgotten my
+                            <a style="margin-bottom: 15px;" class="govuk-link"
+                                href="https://dev-ccs-sso.london.cloudapps.digital/forgot-password">I have forgotten my
                                 password</a>
                             <br />
-                            <a class="govuk-link" href="#">Help and support for
+                            <a class="govuk-link" href="https://dev-ccs-sso.london.cloudapps.digital/help-support">Help
+                                and support for
                                 signing in </a>
                         </div>
                     </form>
@@ -376,183 +391,64 @@
             </div>
         </div>
     </div>
-    <footer class="govuk-footer footer-global">
+    <footer class="govuk-footer footer-global footer" role="contentinfo">
         <div class="govuk-width-container ">
-            <div class="govuk-footer__navigation">
-                <div class="govuk-footer__section">
+            <div class="govuk-footer__meta">
+                <div class="govuk-footer__meta-item">
                     <a class="govuk-footer__link logo" href="/"><img
                             src="https://res.cloudinary.com/ccssiteimage/image/upload/v1613028512/site/CCS_WHITE_SML_AW_space-01_p3dj6u.png"
                             alt="Go to the CCS homepage"></a>
-                    <ul class="list list--inline social-links">
-                        <li>
-                            <a href="https://twitter.com/gov_procurement" class="govuk-footer__link">
-                                <span class="icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                        <path fill="currentColor"
-                                            d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z">
-                                        </path>
-                                    </svg>
-                                </span>
-                                <span class="visuallyhidden">Follow us on Twitter</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://www.linkedin.com/company/government-procurement-service/"
-                                class="govuk-footer__link">
-                                <span class="icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                        <path fill="currentColor"
-                                            d="M4.98 3.5c0 1.381-1.11 2.5-2.48 2.5s-2.48-1.119-2.48-2.5c0-1.38 1.11-2.5 2.48-2.5s2.48 1.12 2.48 2.5zm.02 4.5h-5v16h5v-16zm7.982 0h-4.968v16h4.969v-8.399c0-4.67 6.029-5.052 6.029 0v8.399h4.988v-10.131c0-7.88-8.922-7.593-11.018-3.714v-2.155z">
-                                        </path>
-                                    </svg>
-                                </span>
-                                <span class="visuallyhidden">Connect with us on LinkedIn</span>
-                            </a>
-                        </li>
-                    </ul>
-                    <a class="govuk-footer__link"
-                        href="https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/">©Crown
-                        copyright</a>
                 </div>
-                <div class="govuk-footer__section">
-                    <h2 class="govuk-footer__heading govuk-!-font-size-22">Sitemap</h2>
-                    <ul class="govuk-list govuk-!-font-size-18">
+                <div class="govuk-footer__meta-item govuk-footer__meta-item--grow right-content">
+                    <ul class="govuk-list">
                         <li>
-                            <a class="govuk-footer__link" href="https://www.crowncommercial.gov.uk/agreements">Search
-                                agreements</a>
+                            <h2 class="govuk-visually-hidden">Social links</h2>
+                            <ul class="govuk-footer__inline-list">
+                                <li class="govuk-footer__inline-list-item">
+                                    <a href="https://twitter.com/gov_procurement" class="govuk-footer__link">
+                                        <span class="icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                                <path fill="currentColor"
+                                                    d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z">
+                                                </path>
+                                            </svg>
+                                        </span>
+                                        <span class="visuallyhidden">Follow us on Twitter</span>
+                                    </a>
+                                </li>
+                                <li class="govuk-footer__inline-list-item">
+                                    <a href="https://www.linkedin.com/company/government-procurement-service/"
+                                        class="govuk-footer__link">
+                                        <span class="icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                                <path fill="currentColor"
+                                                    d="M4.98 3.5c0 1.381-1.11 2.5-2.48 2.5s-2.48-1.119-2.48-2.5c0-1.38 1.11-2.5 2.48-2.5s2.48 1.12 2.48 2.5zm.02 4.5h-5v16h5v-16zm7.982 0h-4.968v16h4.969v-8.399c0-4.67 6.029-5.052 6.029 0v8.399h4.988v-10.131c0-7.88-8.922-7.593-11.018-3.714v-2.155z">
+                                                </path>
+                                            </svg>
+                                        </span>
+                                        <span class="visuallyhidden">Connect with us on LinkedIn</span>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         <li>
-                            <a class="govuk-footer__link" href="https://www.crowncommercial.gov.uk/suppliers">Search
-                                suppliers</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.crowncommercial.gov.uk/agreements/upcoming">Upcoming deals</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.crowncommercial.gov.uk/buy-and-supply/how-to-buy/">Buy through CCS</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link" href="https://www.crowncommercial.gov.uk/buy-and-supply/">Buy
-                                and supply</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link" href="https://www.crowncommercial.gov.uk/about-ccs/">About
-                                CCS</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link" href="https://www.crowncommercial.gov.uk/contact">Contact
-                                us</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link" href="https://www.crowncommercial.gov.uk/news">News</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.crowncommercial.gov.uk/about-ccs/press-office/">Press Office</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="govuk-footer__section">
-                    <h2 class="govuk-footer__heading govuk-!-font-size-22">Quick links</h2>
-                    <ul class="govuk-list govuk-!-font-size-18">
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://purchasingplatform.crowncommercial.gov.uk/mp-welcome">Purchasing
-                                platform</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link" href="https://www.digitalmarketplace.service.gov.uk/">Digital
-                                marketplace</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://buyers.procserveonline.com/admin/login/auth?marketplace=bootstrap-gem">eMarketplace</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://fleetportal.crowncommercial.gov.uk/login.mth">Fleet</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link" href="https://travel.crowncommercial.gov.uk/">Travel</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link" href="https://www.gov.uk/contracts-finder">Contracts
-                                Finder</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.crowncommercial.gov.uk/esourcing-register">eSourcing</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.crowncommercial.gov.uk/esourcing-training">Register for eSourcing
-                                training</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link" href="http://ted.europa.eu/TED/main/HomePage.do">Tenders
-                                Electronic Daily (TED)</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link" href="https://www.reportmi.crowncommercial.gov.uk/">Submit
-                                your MI returns</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link" href="https://status.crowncommercial.gov.uk/">Service
-                                Status</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="govuk-footer__section">
-                    <h2 class="govuk-footer__heading govuk-!-font-size-22">About and contact</h2>
-                    <ul class="govuk-list govuk-!-font-size-18">
-                        <li>
-                            <a class="govuk-footer__link" href="https://www.crowncommercial.gov.uk/about-ccs/">About
-                                CCS</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link" href="https://www.crowncommercial.gov.uk/contact">Contact
-                                CCS</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.crowncommercial.gov.uk/make-a-complaint/">Make a complaint</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.crowncommercial.gov.uk/careers-with-ccs/">Careers with CCS</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.crowncommercial.gov.uk/terms-and-conditions/">Terms and conditions</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.crowncommercial.gov.uk/cookie-policy/">Cookie policy</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.crowncommercial.gov.uk/cookie-settings/">Cookie settings</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.gov.uk/government/organisations/crown-commercial-service">Corporate
-                                information</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.gov.uk/government/publications/crown-commercial-service-privacy-notice">Privacy
-                                notice</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.crowncommercial.gov.uk/accessibility-statement">Accessibility</a>
-                        </li>
-                        <li>
-                            <a class="govuk-footer__link"
-                                href="https://www.crowncommercial.gov.uk/public-sector-equality-duty-psed/">Public
-                                Sector Equality Duty (PSED)</a>
+                            <h2 class="govuk-visually-hidden">Support links</h2>
+                            <ul class="govuk-footer__inline-list">
+                                <li class="govuk-footer__inline-list-item">
+                                    <a class="govuk-footer__link"
+                                        href="https://www.crowncommercial.gov.uk/cookie-policy">Cookies</a>
+                                </li>
+                                <li class="govuk-footer__inline-list-item">
+                                    <a class="govuk-footer__link"
+                                        href="https://www.gov.uk/government/publications/crown-commercial-service-privacy-notice">Privacy
+                                        Policy</a>
+                                </li>
+                                <li class="govuk-footer__inline-list-item">
+                                    <a class="govuk-footer__link"
+                                        href="https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/">©
+                                        Crown copyright</a>
+                                </li>
+                            </ul>
                         </li>
                     </ul>
                 </div>
@@ -615,14 +511,18 @@
             function login(e) {
                 e.preventDefault();
                 var button = this;
-                var username = document.getElementById('email').value;
-                var password = document.getElementById('password').value;
+                var userNameField = document.getElementById('email');
+                var username = userNameField.value;
+                var passwordField = document.getElementById('password');
+                var password = passwordField.value;
 
                 debugger;
                 let emailFG = document.getElementById('email-form-group');
                 let passwordFG = document.getElementById('password-form-group');
                 emailFG.classList.remove("invalid");
                 passwordFG.classList.remove("invalid");
+                userNameField.classList.remove("govuk-input--error");
+                passwordField.classList.remove("govuk-input--error");
 
                 let userNameEmpty = username === '';
                 let passwordEmpty = password === '';
@@ -631,10 +531,12 @@
 
                     if (userNameEmpty) {
                         emailFG.classList.add("invalid");
+                        userNameField.classList.add("govuk-input--error");
                     }
 
                     if (passwordEmpty) {
                         passwordFG.classList.add("invalid");
+                        passwordField.classList.add("govuk-input--error");
                     }
 
                     displayErrorSummary(userNameEmpty, passwordEmpty);
@@ -681,8 +583,8 @@
                     if (err) displayErrorSummary(false, false, err);
                 });
             }
-			
-			function loginWithLinkedIn() {
+
+            function loginWithLinkedIn() {
                 webAuth.authorize({
                     connection: 'linkedin'
                 }, function (err) {
@@ -722,6 +624,10 @@
                     errorEmailSummary.style.display = 'block';
                     let emailFG = document.getElementById('email-form-group');
                     emailFG.classList.add("invalid");
+                    var userNameField = document.getElementById('email');
+                    userNameField.classList.remove("govuk-input--error");
+                    userNameField.classList.add("govuk-input--error");
+
                 }
             }
 
@@ -729,7 +635,7 @@
             document.getElementById('btn-google').addEventListener('click', loginWithGoogle);
             document.getElementById('btn-facebook').addEventListener('click', loginWithFacebook);
             document.getElementById('btn-microsoft').addEventListener('click', loginWithMicrosoft);
-			document.getElementById('btn-linkedin').addEventListener('click', loginWithLinkedIn);
+            document.getElementById('btn-linkedin').addEventListener('click', loginWithLinkedIn);
         });
     </script>
 </body>

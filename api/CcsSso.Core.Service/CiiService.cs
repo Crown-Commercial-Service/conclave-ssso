@@ -1,22 +1,15 @@
-using CcsSso.DbModel.Entity;
+using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
-using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Dtos.Domain.Models;
-using CcsSso.Services.Helpers;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Net.Http.Headers;
+using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
-using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
-using CcsSso.Core.Domain.Contracts;
 
 namespace CcsSso.Service
 {
@@ -27,21 +20,15 @@ namespace CcsSso.Service
   }
   public class CiiService : ICiiService
   {
-    private HttpClient _client;
     private readonly CiiConfig _config;
     private readonly IAuditLoginService _auditLoginService;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    //IConfiguration configuration
-    //public CiiService(HttpClient client, IOptions<Cii> appSettings)
-    public CiiService(HttpClient client, CiiConfig config, IAuditLoginService auditLoginService)
+    public CiiService(CiiConfig config, IAuditLoginService auditLoginService, IHttpClientFactory httpClientFactory)
     {
-      _client = client;
       _config = config;
       _auditLoginService = auditLoginService;
-
-      _client.DefaultRequestHeaders.Add("Apikey", config.token);
-      _client.DefaultRequestHeaders.Add("x-api-key", config.token);
-      _client.BaseAddress = new Uri(config.url);
+      _httpClientFactory = httpClientFactory;
     }
 
     /// <summary>
@@ -49,26 +36,29 @@ namespace CcsSso.Service
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>  
-    public async Task<string> PostAsync(CiiDto model, string token)
+    public async Task<string> PostAsync(CiiDto model)
     {
-      try
+      var client = _httpClientFactory.CreateClient("CiiApi");
+      var body = JsonConvert.SerializeObject(model);
+      var response = await client.PostAsync("/identities/schemes/organisation", new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+
+      if (response.IsSuccessStatusCode)
       {
-        var body = Newtonsoft.Json.JsonConvert.SerializeObject(model);
-        var response = await _client.PostAsync("/identities/schemes/organisation", new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
-        return await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonConvert.DeserializeObject<CiiPostResponceDto[]>(content);
+        return result.First().CcsOrgId;
       }
-      catch (Exception ex)
+      else if (response.StatusCode == HttpStatusCode.NotFound)
       {
-        Console.Write(ex);
-        if (ex.Message == "Response status code does not indicate success: 405 (Method Not Allowed).")
-        {
-          throw new MethodNotAllowedException(ex);
-        }
-        if (ex.Message == "Response status code does not indicate success: 404 (Not Found).")
-        {
-          throw new ResourceNotFoundException();
-        }
-        throw;
+        throw new ResourceNotFoundException();
+      }
+      else if (response.StatusCode == HttpStatusCode.MethodNotAllowed)
+      {
+        throw new ResourceAlreadyExistsException();
+      }
+      else
+      {
+        throw new CcsSsoException("ERROR_CREATING_ORGANISATION");
       }
     }
 
@@ -77,32 +67,27 @@ namespace CcsSso.Service
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>
-    public async Task<string> PutAsync(CiiPutDto model, string token)
+    public async Task PutAsync(CiiPutDto model, string token)
     {
-      try
+      var client = _httpClientFactory.CreateClient("CiiApi");
+      if (!String.IsNullOrEmpty(token))
       {
-        if (!String.IsNullOrEmpty(token))
-        {
-          _client.DefaultRequestHeaders.Add("Authorization", token);
-        }
-        _client.DefaultRequestHeaders.Add("clientid", _config.clientId);
-        var body = Newtonsoft.Json.JsonConvert.SerializeObject(model);
-        var response = await _client.PutAsync("/identities/schemes/organisation" + "?clientid=" + _config.clientId, new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
-        await _auditLoginService.CreateLogAsync(AuditLogEvent.OrgRegistryAdd, AuditLogApplication.ManageOrganisation, $"OrgId:{model.ccsOrgId}, Scheme:{model.identifier.scheme}, Id:{model.identifier.id}");
-        return await response.Content.ReadAsStringAsync();
+        client.DefaultRequestHeaders.Add("Authorization", token);
       }
-      catch (Exception ex)
+      client.DefaultRequestHeaders.Add("clientid", _config.clientId);
+      var body = JsonConvert.SerializeObject(model);
+      var response = await client.PutAsync("/identities/schemes/organisation" + "?clientid=" + _config.clientId, new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+      if (response.IsSuccessStatusCode)
       {
-        Console.Write(ex);
-        if (ex.Message == "Response status code does not indicate success: 405 (Method Not Allowed).")
-        {
-          throw new MethodNotAllowedException(ex);
-        }
-        if (ex.Message == "Response status code does not indicate success: 404 (Not Found).")
-        {
-          throw new ResourceNotFoundException();
-        }
-        throw;
+        await _auditLoginService.CreateLogAsync(AuditLogEvent.OrgRegistryAdd, AuditLogApplication.ManageOrganisation, $"OrgId:{model.ccsOrgId}, Scheme:{model.identifier.Scheme}, Id:{model.identifier.Id}");
+      }
+      else if (response.StatusCode == HttpStatusCode.NotFound)
+      {
+        throw new ResourceNotFoundException();
+      }
+      else
+      {
+        throw new CcsSsoException("ERROR_ADDING_IDENTIFIER");
       }
     }
 
@@ -111,31 +96,19 @@ namespace CcsSso.Service
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>
-    public async Task<string> DeleteAsync(string id, string token)
+    public async Task DeleteOrgAsync(string id)
     {
-      try
+      var client = _httpClientFactory.CreateClient("CiiApi");
+      client.DefaultRequestHeaders.Remove("x-api-key");
+      client.DefaultRequestHeaders.Add("x-api-key", _config.deleteToken);
+      var response = await client.DeleteAsync("/identities/organisation?ccs_org_id=" + id);
+      if (response.StatusCode == HttpStatusCode.NotFound)
       {
-        if (!String.IsNullOrEmpty(token))
-        {
-          _client.DefaultRequestHeaders.Add("Authorization", token);
-        }
-        _client.DefaultRequestHeaders.Add("x-api-key", _config.deleteToken);
-        _client.DefaultRequestHeaders.Add("clientid", _config.clientId);
-        var response = await _client.DeleteAsync("/api/v1/testing/identities/schemes/organisation?org_ccs_id=" + id + "&clientid=" + _config.clientId);
-        return await response.Content.ReadAsStringAsync();
+        throw new ResourceNotFoundException();
       }
-      catch (Exception ex)
+      else if (!response.IsSuccessStatusCode)
       {
-        Console.Write(ex);
-        if (ex.Message == "Response status code does not indicate success: 405 (Method Not Allowed).")
-        {
-          throw new MethodNotAllowedException(ex);
-        }
-        if (ex.Message == "Response status code does not indicate success: 404 (Not Found).")
-        {
-          throw new ResourceNotFoundException();
-        }
-        throw;
+        throw new CcsSsoException("ERROR_DELETING_CII_ORGANISATION");
       }
     }
 
@@ -144,96 +117,26 @@ namespace CcsSso.Service
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>
-    public async Task<string> DeleteOrgAsync(string id, string token)
+    public async Task DeleteSchemeAsync(string orgId, string scheme, string id, string token)
     {
-      try
+      var client = _httpClientFactory.CreateClient("CiiApi");
+      if (!String.IsNullOrEmpty(token))
       {
-        _client.DefaultRequestHeaders.Add("x-api-key", _config.deleteToken);
-        var response = await _client.DeleteAsync("/identities/organisation?ccs_org_id=" + id);
-        return await response.Content.ReadAsStringAsync();
+        client.DefaultRequestHeaders.Add("Authorization", token);
       }
-      catch (Exception ex)
+      client.DefaultRequestHeaders.Add("clientid", _config.clientId);
+      var response = await client.DeleteAsync("/identities/schemes/organisation?ccs_org_id=" + orgId + "&identifier[scheme]=" + scheme + "&identifier[id]=" + id + "&clientid=" + _config.clientId);
+      if (response.IsSuccessStatusCode)
       {
-        Console.Write(ex);
-        if (ex.Message == "Response status code does not indicate success: 405 (Method Not Allowed).")
-        {
-          throw new MethodNotAllowedException(ex);
-        }
-        if (ex.Message == "Response status code does not indicate success: 404 (Not Found).")
-        {
-          throw new ResourceNotFoundException();
-        }
-        throw;
-      }
-    }
-
-    /// <summary>
-    /// Submits a json payload to CII via http delete
-    /// </summary>
-    /// <param name="model"></param>
-    /// <returns></returns>
-    public async Task<string> DeleteSchemeAsync(string orgId, string scheme, string id, string token)
-    {
-      try
-      {
-        if (!String.IsNullOrEmpty(token))
-        {
-          _client.DefaultRequestHeaders.Add("Authorization", token);
-        }
-        _client.DefaultRequestHeaders.Add("clientid", _config.clientId);
-        var response = await _client.DeleteAsync("/identities/schemes/organisation?ccs_org_id=" + orgId + "&identifier[scheme]=" + scheme + "&identifier[id]=" + id + "&clientid=" + _config.clientId);
         await _auditLoginService.CreateLogAsync(AuditLogEvent.OrgRegistryRemove, AuditLogApplication.ManageOrganisation, $"OrgId:{orgId}, Scheme:{scheme}, Id:{id}");
-        return await response.Content.ReadAsStringAsync();
       }
-      catch (Exception ex)
+      else if (response.StatusCode == HttpStatusCode.NotFound)
       {
-        Console.Write(ex);
-        if (ex.Message == "Response status code does not indicate success: 405 (Method Not Allowed).")
-        {
-          throw new MethodNotAllowedException(ex);
-        }
-        if (ex.Message == "Response status code does not indicate success: 404 (Not Found).")
-        {
-          throw new ResourceNotFoundException();
-        }
-        throw;
+        throw new ResourceNotFoundException();
       }
-    }
-
-    /// <summary>
-    /// Submits a json payload to CII via http delete
-    /// </summary>
-    /// <param name="model"></param>
-    /// <returns></returns>
-    public async Task<string> DeleteAsyncWithBody(CiiDto model, string token)
-    {
-      try
+      else
       {
-        if (!String.IsNullOrEmpty(token))
-        {
-          _client.DefaultRequestHeaders.Add("Authorization", token);
-        }
-        _client.DefaultRequestHeaders.Add("x-api-key", _config.deleteToken);
-        var request = new HttpRequestMessage  {
-          Method = HttpMethod.Delete,
-          RequestUri = new Uri("/api/v1/testing/identities/schemes/organisation?org_ccs_id=" + model.identifier.id),
-          Content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(model), System.Text.Encoding.UTF8, "application/json")
-        };
-        var response = await _client.SendAsync(request);
-        return await response.Content.ReadAsStringAsync();
-      }
-      catch (Exception ex)
-      {
-        Console.Write(ex);
-        if (ex.Message == "Response status code does not indicate success: 405 (Method Not Allowed).")
-        {
-          throw new MethodNotAllowedException(ex);
-        }
-        if (ex.Message == "Response status code does not indicate success: 404 (Not Found).")
-        {
-          throw new ResourceNotFoundException();
-        }
-        throw;
+        throw new CcsSsoException("ERROR_DELETING_IDENTIFIER");
       }
     }
 
@@ -247,23 +150,21 @@ namespace CcsSso.Service
     /// <returns></returns>
     public async Task<CiiDto> GetAsync(string scheme, string companyNumber, string token)
     {
-      try
+      var client = _httpClientFactory.CreateClient("CiiApi");
+      var response = await client.GetAsync("/identities/schemes/organisation?scheme=" + scheme + "&id=" + companyNumber);
+      if (response.IsSuccessStatusCode)
       {
-        using var responseStream = await _client.GetStreamAsync("/identities/schemes/organisation?scheme=" + scheme + "&id=" + companyNumber);
-        return await JsonSerializer.DeserializeAsync<CiiDto>(responseStream);
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonConvert.DeserializeObject<CiiDto>(content);
+        return result;
       }
-      catch (Exception ex)
+      else if (response.StatusCode == HttpStatusCode.NotFound)
       {
-        Console.Write(ex);
-        if (ex.Message == "Response status code does not indicate success: 405 (Method Not Allowed).")
-        {
-          throw new MethodNotAllowedException(ex);
-        }
-        if(ex.Message == "Response status code does not indicate success: 404 (Not Found).")
-        {
-          throw new ResourceNotFoundException();
-        }
-        throw;
+        throw new ResourceNotFoundException();
+      }
+      else
+      {
+        throw new CcsSsoException("ERROR_RETRIEVING_ORGANISATIONS_BY_COMPANY_NUMBER");
       }
     }
 
@@ -273,114 +174,84 @@ namespace CcsSso.Service
     /// <returns></returns>
     public async Task<CiiSchemeDto[]> GetSchemesAsync(string token)
     {
-      try
+      var client = _httpClientFactory.CreateClient("CiiApi");
+      if (!String.IsNullOrEmpty(token))
       {
-        if (!String.IsNullOrEmpty(token))
-        {
-          _client.DefaultRequestHeaders.Add("Authorization", token);
-        }
-        _client.DefaultRequestHeaders.Add("clientid", _config.clientId);
-        using var responseStream = await _client.GetStreamAsync("/identities/schemes" + "?clientid=" + _config.clientId);
-        var result = await JsonSerializer.DeserializeAsync<CiiSchemeDto[]>(responseStream);
+        client.DefaultRequestHeaders.Add("Authorization", token);
+      }
+      client.DefaultRequestHeaders.Add("clientid", _config.clientId);
+      var response = await client.GetAsync("/identities/schemes" + "?clientid=" + _config.clientId);
+      if (response.IsSuccessStatusCode)
+      {
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonConvert.DeserializeObject<CiiSchemeDto[]>(content);
         return result;
       }
-      catch (Exception ex)
+      else
       {
-        Console.Write(ex);
-        throw;
+        throw new CcsSsoException("ERROR_RETRIEVING_SCHEMES");
       }
     }
 
     /// <summary>
-    /// Retrieves a payload from CII
+    /// Get cii details by org id (CII returns a list)
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="token"></param>
     /// <returns></returns>
-    public async Task<CiiDto> GetOrgAsync(string id, string token)
-    {
-      try
-      {
-        if (!String.IsNullOrEmpty(token))
-        {
-          _client.DefaultRequestHeaders.Add("Authorization", token);
-        }
-        using var responseStream = await _client.GetStreamAsync("/api/v1/testing/search/identities/schemes/organisation?id=" + id);
-        return await JsonSerializer.DeserializeAsync<CiiDto>(responseStream);
-      }
-      catch (Exception ex)
-      {
-        Console.Write(ex);
-        if (ex.Message == "Response status code does not indicate success: 405 (Method Not Allowed).")
-        {
-          throw new MethodNotAllowedException(ex);
-        }
-        if (ex.Message == "Response status code does not indicate success: 404 (Not Found).")
-        {
-          throw new ResourceNotFoundException();
-        }
-        throw;
-      }
-    }
-
     public async Task<CiiDto[]> GetOrgsAsync(string id, string token)
     {
-      try
+      var client = _httpClientFactory.CreateClient("CiiApi");
+      if (!String.IsNullOrEmpty(token))
       {
-        if (!String.IsNullOrEmpty(token))
-        {
-          _client.DefaultRequestHeaders.Add("Authorization", token);
-        }
-        _client.DefaultRequestHeaders.Add("clientid", _config.clientId);
-        using var responseStream = await _client.GetStreamAsync("/identities/schemes/organisations?ccs_org_id=" + id + "&clientid=" + _config.clientId);
-        var result = await JsonSerializer.DeserializeAsync<CiiDto[]>(responseStream);
+        client.DefaultRequestHeaders.Add("Authorization", token);
+      }
+      client.DefaultRequestHeaders.Add("clientid", _config.clientId);
+      using var response = await client.GetAsync("/identities/schemes/organisations?ccs_org_id=" + id + "&clientid=" + _config.clientId);
+      if (response.IsSuccessStatusCode)
+      {
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonConvert.DeserializeObject<CiiDto[]>(content);
         return result;
       }
-      catch (Exception ex)
+      else if (response.StatusCode == HttpStatusCode.NotFound)
       {
-        Console.Write(ex);
-        if (ex.Message == "Response status code does not indicate success: 405 (Method Not Allowed).")
-        {
-          throw new MethodNotAllowedException(ex);
-        }
-        if (ex.Message == "Response status code does not indicate success: 404 (Not Found).")
-        {
-          throw new ResourceNotFoundException();
-        }
-        throw;
+        throw new ResourceNotFoundException();
+      }
+      else
+      {
+        throw new CcsSsoException("ERROR_RETRIEVING_ORGANISATIONS");
       }
     }
 
     /// <summary>
-    /// Retrieves a payload from CII
+    /// Retrieves org info using scheme and id from CII
     /// </summary>
     /// <param name="scheme"></param>
     /// <param name="id"></param>
     /// <returns></returns>
     public async Task<CiiDto> GetIdentifiersAsync(string orgId, string scheme, string id, string token)
     {
-      try
+      var client = _httpClientFactory.CreateClient("CiiApi");
+      if (!String.IsNullOrEmpty(token))
       {
-        if (!String.IsNullOrEmpty(token))
-        {
-          _client.DefaultRequestHeaders.Add("Authorization", token);
-        }
-        _client.DefaultRequestHeaders.Add("clientid", _config.clientId);
-        using var responseStream = await _client.GetStreamAsync("/identities/schemes/manageidentifiers?ccs_org_id=" + orgId + "&scheme=" + scheme + "&id=" + id + "&clientid=" + _config.clientId);
-        var result = await JsonSerializer.DeserializeAsync<CiiDto>(responseStream);
+        client.DefaultRequestHeaders.Add("Authorization", token);
+      }
+      client.DefaultRequestHeaders.Add("clientid", _config.clientId);
+      using var response = await client.GetAsync("/identities/schemes/manageidentifiers?ccs_org_id=" + orgId + "&scheme=" + scheme + "&id=" + id + "&clientid=" + _config.clientId);
+      if (response.IsSuccessStatusCode)
+      {
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonConvert.DeserializeObject<CiiDto>(content);
         return result;
       }
-      catch (Exception ex)
+      else if (response.StatusCode == HttpStatusCode.NotFound)
       {
-        Console.Write(ex);
-        if (ex.Message == "Response status code does not indicate success: 405 (Method Not Allowed).")
-        {
-          throw new MethodNotAllowedException(ex);
-        }
-        if (ex.Message == "Response status code does not indicate success: 404 (Not Found).")
-        {
-          throw new ResourceNotFoundException();
-        }
-        throw;
+        throw new ResourceNotFoundException();
+      }
+      else
+      {
+        throw new CcsSsoException("ERROR_RETRIEVING_IDENTIFIERS");
       }
     }
 

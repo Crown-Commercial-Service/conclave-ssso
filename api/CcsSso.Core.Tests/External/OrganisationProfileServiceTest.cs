@@ -1,5 +1,6 @@
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Service.External;
 using CcsSso.Core.Tests.Infrastructure;
@@ -93,28 +94,8 @@ namespace CcsSso.Core.Tests.External
                 },
                 new object[]
                 {
-                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", null, "street3", "local3", "region3", "pcode3", "GB", true, true, true),
-                  ErrorConstant.ErrorInvalidOrganisationUri
-                },
-                new object[]
-                {
-                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "", "street3", "local3", "region3", "pcode3", "GB", true, true, true),
-                  ErrorConstant.ErrorInvalidOrganisationUri
-                },
-                new object[]
-                {
-                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", " ", "street3", "local3", "region3", "pcode3", "GB", true, true, true),
-                  ErrorConstant.ErrorInvalidOrganisationUri
-                },
-                new object[]
-                {
-                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "uri", "street", "local3", "region3", "pcode3", "", true, false, true),
+                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "uri", "", "local3", "region3", "pcode3", "", true, false, true),
                   ErrorConstant.ErrorInsufficientDetails
-                },
-                new object[]
-                {
-                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "uri", "street3", "local3", "region3", "pcode3", "ccode3", true, false, true),
-                  ErrorConstant.ErrorInvalidCountryCode
                 }
             };
 
@@ -130,6 +111,29 @@ namespace CcsSso.Core.Tests.External
 
           var ex = await Assert.ThrowsAsync<CcsSsoException>(() => orgService.CreateOrganisationAsync(organisationInfo));
           Assert.Equal(expectedError, ex.Message);
+        });
+      }
+
+      public static IEnumerable<object[]> AlreadyExistsOrganisationData =>
+            new List<object[]>
+            {
+                new object[]
+                {
+                  DtoHelper.GetOrganisationProfileInfo("1", "orgname", "Org3@web.com", "street3", "local3", "region3", "pcode3", "GB", true, true, true)
+                }
+            };
+
+      [Theory]
+      [MemberData(nameof(AlreadyExistsOrganisationData))]
+      public async Task ThrowsException_WhenOrgExists(OrganisationProfileInfo organisationInfo)
+      {
+        await DataContextHelper.ScopeAsync(async dataContext =>
+        {
+          await SetupTestDataAsync(dataContext);
+
+          var orgService = OrganisationProfileService(dataContext);
+
+          await Assert.ThrowsAsync<ResourceAlreadyExistsException>(() => orgService.CreateOrganisationAsync(organisationInfo));
         });
       }
     }
@@ -160,18 +164,18 @@ namespace CcsSso.Core.Tests.External
           {
             new CiiDto
             {
-              identifier = new CiiIdentifier
+              Identifier = new CiiIdentifier
               {
-                legalName = expectedOrganisationInfo.Identifier.LegalName,
-                uri = expectedOrganisationInfo.Identifier.Uri
+                LegalName = expectedOrganisationInfo.Identifier.LegalName,
+                Uri = expectedOrganisationInfo.Identifier.Uri
               },
-              address = new CiiAddress
+              Address = new CiiAddress
               {
-                streetAddress = expectedOrganisationInfo.Address.StreetAddress,
-                region = expectedOrganisationInfo.Address.Region,
-                locality = expectedOrganisationInfo.Address.Locality,
-                postalCode = expectedOrganisationInfo.Address.PostalCode,
-                countryName = expectedOrganisationInfo.Address.CountryCode,
+                StreetAddress = expectedOrganisationInfo.Address.StreetAddress,
+                Region = expectedOrganisationInfo.Address.Region,
+                Locality = expectedOrganisationInfo.Address.Locality,
+                PostalCode = expectedOrganisationInfo.Address.PostalCode,
+                CountryName = expectedOrganisationInfo.Address.CountryCode,
               }
             }
           });
@@ -281,21 +285,6 @@ namespace CcsSso.Core.Tests.External
                 },
                 new object[]
                 {
-                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", null, "street3", "local3", "region3", "pcode3", "ccode3", true, true, true),
-                  ErrorConstant.ErrorInvalidOrganisationUri
-                },
-                new object[]
-                {
-                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", "", "street3", "local3", "region3", "pcode3", "ccode3", true, true, true),
-                  ErrorConstant.ErrorInvalidOrganisationUri
-                },
-                new object[]
-                {
-                  DtoHelper.GetOrganisationProfileInfo("3", "Org3", " ", "street3", "local3", "region3", "pcode3", "ccode3", true, true, true),
-                  ErrorConstant.ErrorInvalidOrganisationUri
-                },
-                new object[]
-                {
                   DtoHelper.GetOrganisationProfileInfo("3", "Org3", "uri", "", "local3", "region3", "pcode3", "GB", true, false, true),
                   ErrorConstant.ErrorInsufficientDetails
                 },
@@ -345,22 +334,26 @@ namespace CcsSso.Core.Tests.External
       }
     }
 
-    public static OrganisationProfileService OrganisationProfileService(IDataContext dataContext, Mock<ICiiService> mockCiiService = null,
-      Mock<IOrganisationService> mockOrganisationHelperService = null)
+    public static OrganisationProfileService OrganisationProfileService(IDataContext dataContext, Mock<ICiiService> mockCiiService = null)
     {
-      IContactsHelperService contactsHelperService = new ContactsHelperService(dataContext);
+      Mock<ILocalCacheService> mockLocalCacheService = new();
+      mockLocalCacheService.Setup(s => s.GetOrSetValueAsync<List<ContactPointReason>>("CONTACT_POINT_REASONS", It.IsAny<Func<Task<List<ContactPointReason>>>>(), It.IsAny<int>()))
+        .ReturnsAsync(new List<ContactPointReason> {
+          new ContactPointReason { Id = 1, Name = ContactReasonType.Other, Description = "Other" },
+          new ContactPointReason { Id = 2, Name = ContactReasonType.Shipping, Description = "Shipping" },
+          new ContactPointReason { Id = 3, Name = ContactReasonType.Site, Description = "Billing" },
+          new ContactPointReason { Id = 4, Name = ContactReasonType.Site, Description = "Site" },
+          new ContactPointReason { Id = 5, Name = ContactReasonType.Unspecified, Description = "Unspecified" }
+        });
+      IContactsHelperService contactsHelperService = new ContactsHelperService(dataContext, mockLocalCacheService.Object);
       Mock<ICcsSsoEmailService> mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
       mockCiiService ??= new Mock<ICiiService>();
-      mockOrganisationHelperService ??= new Mock<IOrganisationService>();
       Mock<IAdaptorNotificationService> mockAdapterNotificationService = new Mock<IAdaptorNotificationService>();
 
-      mockOrganisationHelperService.Setup(s => s.GetOrganisationEligibleRolesAsync(It.IsAny<Organisation>(), It.IsAny<int>()))
-        .ReturnsAsync(new List<OrganisationEligibleRole>());
-      var mockWrapperCacheService = new Mock<IWrapperCacheService>(); 
-      var mockLocalCacheService = new Mock<ILocalCacheService>();
+      var mockWrapperCacheService = new Mock<IWrapperCacheService>();
 
        var service = new OrganisationProfileService(dataContext, contactsHelperService, mockCcsSsoEmailService.Object,
-        mockCiiService.Object, mockOrganisationHelperService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object, mockLocalCacheService.Object);
+        mockCiiService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object, mockLocalCacheService.Object);
       return service;
     }
 

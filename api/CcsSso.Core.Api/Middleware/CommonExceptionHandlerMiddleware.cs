@@ -1,6 +1,8 @@
+using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Net;
 using System.Security.Authentication;
@@ -11,9 +13,10 @@ namespace CcsSso.Api.Middleware
   public class CommonExceptionHandlerMiddleware
   {
     private RequestDelegate _next;
-
-    public CommonExceptionHandlerMiddleware(RequestDelegate next)
+    private readonly ILogger<CommonExceptionHandlerMiddleware> _logger;
+    public CommonExceptionHandlerMiddleware(RequestDelegate next, ILogger<CommonExceptionHandlerMiddleware> logger)
     {
+      _logger = logger;
       _next = next;
     }
 
@@ -25,23 +28,23 @@ namespace CcsSso.Api.Middleware
       }
       catch (UnauthorizedAccessException ex)
       {
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.Unauthorized);
-      }
-      catch (ResourceNotFoundException ex)
-      {
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.NotFound);
-      }
-      catch (DbUpdateConcurrencyException ex)
-      {
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.Conflict);
-      }
-      catch(MethodNotAllowedException ex)
-      {
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.MethodNotAllowed);
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Unauthorized);
       }
       catch (ForbiddenException ex)
       {
-        await HandleException(context, ex.ToString(), ex, HttpStatusCode.Forbidden);
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Forbidden);
+      }
+      catch (ResourceNotFoundException ex)
+      {
+        await HandleException(context, string.Empty, ex, HttpStatusCode.NotFound);
+      }
+      catch (ResourceAlreadyExistsException ex)
+      {
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Conflict);
+      }
+      catch (DbUpdateConcurrencyException ex)
+      {
+        await HandleException(context, string.Empty, ex, HttpStatusCode.Conflict);
       }
       catch (CcsSsoException ex)
       {
@@ -59,6 +62,7 @@ namespace CcsSso.Api.Middleware
 
     private async Task HandleException(HttpContext context, string displayError, Exception ex, HttpStatusCode statusCode)
     {
+      _logger.LogError(ex, displayError);
       context.Response.StatusCode = (int)statusCode;
       await context.Response.WriteAsync(displayError);
     }

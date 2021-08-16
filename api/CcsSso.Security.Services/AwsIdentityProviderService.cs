@@ -83,12 +83,17 @@ namespace CcsSso.Security.Services
       }
     }
 
-    /// <summary>
-    /// Creates a new User
-    /// </summary>
-    /// <param name="userInfo"></param>
-    /// <returns></returns>
-    public async Task<UserRegisterResult> CreateUserAsync(UserInfo userInfo)
+    public async Task UpdatePendingMFAVerifiedFlagAsync(string userName, bool mfaResetVerified)
+    {
+      throw new NotImplementedException();
+    }
+
+      /// <summary>
+      /// Creates a new User
+      /// </summary>
+      /// <param name="userInfo"></param>
+      /// <returns></returns>
+      public async Task<UserRegisterResult> CreateUserAsync(UserInfo userInfo)
     {
       AdminCreateUserRequest adminCreateUserRequest = new AdminCreateUserRequest()
       {
@@ -149,6 +154,16 @@ namespace CcsSso.Security.Services
       {
         throw new CcsSsoException("USERNAME_EXISTS");
       }
+    }
+
+    public async Task UpdateUserMfaFlagAsync(Domain.Dtos.UserInfo userInfo)
+    {
+      throw new NotImplementedException();
+    }
+
+    public async Task ResetMfaAsync(string ticket)
+    {
+      throw new NotImplementedException();
     }
 
     /// <summary>
@@ -370,11 +385,11 @@ namespace CcsSso.Security.Services
     /// </summary>
     /// <param name="userName"></param>
     /// <returns></returns>
-    public async Task InitiateResetPasswordAsync(string userName)
+    public async Task InitiateResetPasswordAsync(ChangePasswordInitiateRequest changePasswordInitiateRequest)
     {
       AdminResetUserPasswordRequest adminResetUserPasswordRequest = new AdminResetUserPasswordRequest()
       {
-        Username = userName,
+        Username = changePasswordInitiateRequest.UserName,
         UserPoolId = _appConfigInfo.AwsCognitoConfigurationInfo.AWSPoolId
       };
       await _provider.AdminResetUserPasswordAsync(adminResetUserPasswordRequest);

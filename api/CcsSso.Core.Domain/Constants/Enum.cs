@@ -13,6 +13,14 @@ namespace CcsSso.Domain.Constants
     Mrs,
     Miss,
     Ms,
-    Doctor
+    Doctor,
+    Unknown
+  }
+
+  public enum ContactAssignedStatus
+  {
+    All,
+    Original,
+    Assigned
   }
 }

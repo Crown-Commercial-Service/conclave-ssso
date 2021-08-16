@@ -153,10 +153,9 @@ namespace CcsSso.Security.Api.Controllers
     [SwaggerOperation(Tags = new[] { "security" })]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
-    public async Task<ContentResult> CheckSession()
+    public async Task<ContentResult> CheckSession(string origin)
     {
       var path = "./Static/OPIFrame.html";
-      this.Request.Headers.TryGetValue("Referer", out var origin);
       var fileContents = await System.IO.File.ReadAllTextAsync(path);
       Response.Headers.Add(
             "Content-Security-Policy",
@@ -246,6 +245,15 @@ namespace CcsSso.Security.Api.Controllers
       await _userManagerService.UpdateUserAsync(userInfo);
     }
 
+    [HttpPost("security/updateuser_mfa")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(400)]
+    public async Task UpdateUserMfaFlag(UserInfo userInfo)
+    {
+      await _userManagerService.UpdateUserMfaFlagAsync(userInfo);
+    }
+
     /// <summary>
     /// Change the old password to the new password
     /// </summary>
@@ -326,9 +334,9 @@ namespace CcsSso.Security.Api.Controllers
     [SwaggerOperation(Tags = new[] { "security" })]
     [ProducesResponseType(204)]
     [ProducesResponseType(400)]
-    public async Task InitiateResetPassword([FromBody] string userName)
+    public async Task InitiateResetPassword(ChangePasswordInitiateRequest changePasswordInitiateRequest)
     {
-      await _securityService.InitiateResetPasswordAsync(userName);
+      await _securityService.InitiateResetPasswordAsync(changePasswordInitiateRequest);
     }
 
     /// <summary>
@@ -478,6 +486,36 @@ namespace CcsSso.Security.Api.Controllers
       await _userManagerService.DeleteUserAsync(email);
     }
 
+    /// <summary>
+    /// Reset Mfa by ticket
+    /// </summary>
+    /// <response code="204">Successfully reset the mfa</response>
+    /// <response code="404">User not found </response>
+    /// <response  code="400">
+    /// Code: INVALID_TICKET (Invalid ticket)
+    /// Code: MFA_RESET_FAILED (MFA reset failed)
+    /// </response>
+    [HttpPost("security/resetmfa_ticket")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(500)]
+    public async Task ResetMfaByTicket(MfaResetInfo mfaResetInfo)
+    {
+      await _userManagerService.ResetMfaAsync(mfaResetInfo.Ticket, string.Empty);
+    }
+
+    /// <summary>
+    /// Send Reset Mfa email
+    /// </summary>
+    /// <response code="204">Successfully send the reset mfa user</response>
+    [HttpPost("security/send_reset_mfa_notification")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(500)]
+    public async Task SendMfaEamil(MfaResetRequest mfaResetInfo)
+    {
+      await _userManagerService.SendResetMfaNotificationAsync(mfaResetInfo);
+    }
 
     /// <summary>
     /// Get a user

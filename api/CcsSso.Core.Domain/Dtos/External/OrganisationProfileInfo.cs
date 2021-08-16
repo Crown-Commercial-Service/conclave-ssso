@@ -90,7 +90,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string CreationDate { get; set; }
 
-    public string CompanyType { get; set; }
+    public string BusinessType { get; set; }
 
     public int SupplierBuyerType { get; set; }
 
@@ -108,6 +108,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public int RoleId { get; set; }
 
     public string RoleName { get; set; }
+
+    public string ServiceName { get; set; }
 
     public RoleEligibleOrgType OrgTypeEligibility { get; set; }
 

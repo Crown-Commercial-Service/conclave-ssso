@@ -1,5 +1,6 @@
 using CcsSso.Adaptor.Domain.Constants;
 using CcsSso.Adaptor.Domain.Contracts;
+using CcsSso.Adaptor.Domain.Contracts.Cii;
 using CcsSso.Adaptor.Domain.Contracts.Wrapper;
 using CcsSso.Shared.Domain.Excecptions;
 using System.Collections.Generic;
@@ -14,14 +15,15 @@ namespace CcsSso.Adaptor.Service
     private readonly IWrapperUserService _wrapperUserService;
     private readonly IWrapperOrganisationService _wrapperOrganisationService;
     private readonly IWrapperUserContactService _wrapperUserContactService;
-
+    private readonly ICiiService _ciiService;
     public UserService(IAttributeMappingService attributeMappingService, IWrapperUserService wrapperUserService,
-      IWrapperOrganisationService wrapperOrganisationService, IWrapperUserContactService wrapperUserContactService)
+      IWrapperOrganisationService wrapperOrganisationService, IWrapperUserContactService wrapperUserContactService, ICiiService ciiService)
     {
       _attributeMappingService = attributeMappingService;
       _wrapperUserService = wrapperUserService;
       _wrapperOrganisationService = wrapperOrganisationService;
       _wrapperUserContactService = wrapperUserContactService;
+      _ciiService = ciiService;
     }
 
     public async Task<Dictionary<string, object>> GetUserAsync(string userName)
@@ -57,6 +59,14 @@ namespace CcsSso.Adaptor.Service
         {
           // If organisation not found at least send the other data avaialble
         }
+      }
+
+      // Get salesforce info. This is a temporary implementation just to support DIGITS integration
+      if (conclaveEntityMappingDictionary.Any(g => g.Key == ConclaveEntityNames.OrgIdentifiers))
+      {
+        var identifierInfo = await _ciiService.GetOrgIdentifierInfoAsync(userResponse.OrganisationId);
+        var identifierInfoDictionary = _attributeMappingService.GetMappedOrgIdentifierInfo(identifierInfo, conclaveEntityMappingDictionary[ConclaveEntityNames.OrgIdentifiers]);
+        resultDictionaries.Add(identifierInfoDictionary);
       }
 
       var result = _attributeMappingService.GetMergedResultDictionary(resultDictionaries);
