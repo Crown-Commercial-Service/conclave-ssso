@@ -167,6 +167,9 @@ namespace CcsSso.Service.External
 
         await _dataContext.SaveChangesAsync();
 
+        // Delete assigned contacts
+        await _contactsHelper.DeleteAssignedContactsAsync(contactId);
+
         // Log
         await _auditLoginService.CreateLogAsync(AuditLogEvent.UserContactDelete, AuditLogApplication.ManageMyAccount, $"UserId:{deletingContactPoint.Party.User.Id}, UserContactPointId:{contactId}, ContactDetailId:{deletingContactPoint.ContactDetailId}" +
           $", DeletedContactIds:{string.Join(",", deletingVirtualAddresses.Select(va => va.Id))}, DeletedContactTypes:{string.Join(",", deletingVirtualAddresses.Select(va => va.VirtualAddressType.Name))}" +

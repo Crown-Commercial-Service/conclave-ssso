@@ -1,7 +1,9 @@
+using CcsSso.Shared.Domain;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using VaultSharp;
 using VaultSharp.V1.AuthMethods;
@@ -44,7 +46,8 @@ namespace CcsSso.Adaptor.Api.CustomOptions
 
     public async Task GetSecrets()
     {
-      var _secrets = await _client.V1.Secrets.Cubbyhole.ReadSecretAsync(secretPath: "brickendon/adaptor");
+      var mountPathValue = _vcapSettings.credentials.backends_shared.space.Split("/secret").FirstOrDefault();
+      var _secrets = await _client.V1.Secrets.KeyValue.V1.ReadSecretAsync("secret/adaptor", mountPathValue);
       var _dbConnection = _secrets.Data["DbConnection"].ToString();
       var _apiKey = _secrets.Data["ApiKey"].ToString();
       var _isApiGatewayEnabled = _secrets.Data["IsApiGatewayEnabled"].ToString();
@@ -89,6 +92,13 @@ namespace CcsSso.Adaptor.Api.CustomOptions
         Data.Add("QueueInfo:RecieveMessagesMaxCount", queueInfo.RecieveMessagesMaxCount);
         Data.Add("QueueInfo:RecieveWaitTimeInSeconds", queueInfo.RecieveWaitTimeInSeconds);
         Data.Add("QueueInfo:PushDataQueueUrl", queueInfo.PushDataQueueUrl);
+      }
+
+      if (_secrets.Data.ContainsKey("CiiApiSettings"))
+      {
+        var _cii = JsonConvert.DeserializeObject<CiiVault>(_secrets.Data["CiiApiSettings"].ToString());
+        Data.Add("CiiApiSettings:Url", _cii.Url);
+        Data.Add("CiiApiSettings:SpecialToken", _cii.SpecialToken);
       }
     }
   }
@@ -154,43 +164,16 @@ namespace CcsSso.Adaptor.Api.CustomOptions
     public string PushDataQueueUrl { get; set; }
   }
 
+  public class CiiVault
+  {
+    public string Url { get; set; }
+
+    public string SpecialToken { get; set; }
+  }
+
   public class VaultOptions
   {
     public string Address { get; set; }
-  }
-
-  public class VCapSettings
-  {
-    public string binding_name { get; set; }
-    public Credentials credentials { get; set; }
-    public Array backends { get; set; }
-    public Array transit { get; set; }
-    public Backend backends_shared { get; set; }
-    public string instance_name { get; set; }
-    public string label { get; set; }
-    public string name { get; set; }
-    public string plan { get; set; }
-    public string provider { get; set; }
-    public string syslog_drain_url { get; set; }
-
-    public class Credentials
-    {
-      public string address { get; set; }
-      public Auth auth { get; set; }
-
-      public class Auth
-      {
-        public string accessor { get; set; }
-        public string token { get; set; }
-      }
-    }
-
-    public class Backend
-    {
-      public string application { get; set; }
-      public string organization { get; set; }
-      public string space { get; set; }
-    }
   }
 
   public static class VaultExtensions

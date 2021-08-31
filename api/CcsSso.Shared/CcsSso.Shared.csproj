@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -6,11 +6,11 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.SQS" Version="3.7.0.21" />
+    <PackageReference Include="GovukNotify" Version="4.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.9.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.9.0" />
-    <PackageReference Include="Notify" Version="3.0.0" />
   </ItemGroup>
 
 </Project>

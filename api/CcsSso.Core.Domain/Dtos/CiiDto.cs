@@ -4,63 +4,68 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CcsSso.Dtos.Domain.Models
 {
+  public class CiiPostResponceDto
+  {
+    public string CcsOrgId { get; set; }
+  }
+
   public class CiiDto
   {
-    public string name { get; set; }
+    public string Name { get; set; }
 
-    public CiiContactPoint contactPoint { get; set; }
+    public CiiContactPoint ContactPoint { get; set; }
 
-    public CiiIdentifier identifier { get; set; }
+    public CiiIdentifier Identifier { get; set; }
 
-    public CiiAddress address { get; set; }
+    public CiiAddress Address { get; set; }
 
-    public CiiAdditionalIdentifier[] additionalIdentifiers { get; set; }
+    public CiiAdditionalIdentifier[] AdditionalIdentifiers { get; set; }
   }
 
   public class CiiAddress
   {
-    public string countryName { get; set; }
+    public string CountryName { get; set; }
 
-    public string locality { get; set; }
+    public string Locality { get; set; }
 
-    public string postalCode { get; set; }
+    public string PostalCode { get; set; }
 
-    public string region { get; set; }
+    public string Region { get; set; }
 
-    public string streetAddress { get; set; }
+    public string StreetAddress { get; set; }
   }
 
   public class CiiContactPoint
   {
-    public string email { get; set; }
+    public string Email { get; set; }
 
-    public string faxNumber { get; set; }
+    public string FaxNumber { get; set; }
 
-    public string name { get; set; }
+    public string Name { get; set; }
 
-    public string telephone { get; set; }
+    public string Telephone { get; set; }
 
-    public string uri { get; set; }
+    public string Uri { get; set; }
   }
 
   public class CiiIdentifier
   {
-    public string id { get; set; }
+    public string Id { get; set; }
 
-    public string legalName { get; set; }
+    public string LegalName { get; set; }
 
-    public string scheme { get; set; }
+    public string Scheme { get; set; }
 
-    public string uri { get; set; }
+    public string Uri { get; set; }
   }
 
   public class CiiAdditionalIdentifier
   {
-    public string id { get; set; }
+    public string Id { get; set; }
 
-    public string legalName { get; set; }
+    public string LegalName { get; set; }
 
-    public string scheme { get; set; }
+    public string Scheme { get; set; }
   }
 
   public class CiiSchemeDto

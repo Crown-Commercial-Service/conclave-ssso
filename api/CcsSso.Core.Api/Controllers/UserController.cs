@@ -21,93 +21,8 @@ namespace CcsSso.Api.Controllers
       _userService = userService;
     }
 
-    /// <summary>
-    /// Get user details
-    /// </summary>
-    /// <response  code="200">Successfully returns user</response>
-    /// <response  code="404">Requested user is not found</response>
-    /// <remarks>
-    /// Sample request:
-    /// User/123
-    /// </remarks>
-    [HttpGet("{id}")]
-    [Produces("application/json")]
-    [SwaggerOperation(Tags = new[] { "user" })]
-    [ProducesResponseType(200)]
-    [ProducesResponseType(404)]
-    public async Task<UserDetails> Get(string id)
-    {
-      return await _userService.GetAsync(id);
-    }
-
-    /// <summary>
-    /// Get user basic details
-    /// </summary>
-    /// <response  code="200">Successfully returns user</response>
-    /// <response  code="404">Requested user is not found</response>
-    /// <remarks>
-    /// Sample request:
-    /// User/123
-    /// </remarks>
-    [HttpGet("GetUser")]
-    [Produces("application/json")]
-    [SwaggerOperation(Tags = new[] { "user" })]
-    [ProducesResponseType(200)]
-    [ProducesResponseType(404)]
-    public async Task<UserDetails> GetUser(string userName)
-    {
-      //return new UserDetails()
-      //{
-      //  FirstName = "Hiran",
-      //  LastName = "Amarasinghe",
-      //  UserName = "hiran@geveo.com",
-      //  UserGroups = new List<UserGroup>()
-      //  {
-      //    new UserGroup() {Group = "123",Role = "123"}
-      //  }
-      //};
-      return await _userService.GetAsync(userName);
-    }
-
-    /// <summary>
-    /// Method to add a user
-    /// </summary>
-    /// <response  code="200">User Id</response>
-    /// <response  code="400">Bad Request</response>
-    /// <remarks>
-    /// Sample request:
-    /// POST /user
-    /// {
-    ///    "firstName": "John",
-    ///    "lastName": "Doe",
-    ///    "userName": "email@gmail.com",
-    ///    "jobTitle": "MR",
-    ///    "organisationId": 1,
-    ///    "partyId": 1,
-    /// }
-    /// </remarks>
-    [HttpPost]
-    [SwaggerOperation(Tags = new[] { "user" })]
-    // [ProducesResponseType(typeof(string), 200)]
-    // [ProducesResponseType(401)]
-    // [ProducesResponseType(typeof(string), 400)]
-    public async Task<string> Post(UserDto model)
-    {
-      CookieOptions httpCookieOptions = new CookieOptions()
-      {
-        HttpOnly = true,
-        SameSite = SameSiteMode.None,
-        Secure = true
-      };
-      string userDetailsCookie = "ud";
-      Response.Cookies.Delete(userDetailsCookie);
-      //"as" stands for activation email sent
-      Response.Cookies.Append(userDetailsCookie, "as", httpCookieOptions);
-      return await _userService.CreateAsync(model);
-    }
-
-    [HttpGet("GetPermissions")]
-    [SwaggerOperation(Tags = new[] { "user" })]
+    [HttpGet("permissions")]
+    [SwaggerOperation(Tags = new[] { "User" })]
     public async Task<List<ServicePermissionDto>> GetPermissions(string userName, string serviceClientId)
     {
       return await _userService.GetPermissions(userName, serviceClientId);
@@ -115,12 +30,13 @@ namespace CcsSso.Api.Controllers
 
     [HttpPost("useractivationemail")]
     [Consumes("application/x-www-form-urlencoded")]
+    [SwaggerOperation(Tags = new[] { "User" })]
     public async Task SendUserActivationEmail(IFormCollection userDetails)
     {
-      string userDetailsCookie = "ud";
-      if (Request.Cookies.ContainsKey(userDetailsCookie))
+      string registrationDetailsCookie = "rud";
+      if (Request.Cookies.ContainsKey(registrationDetailsCookie))
       {
-        Request.Cookies.TryGetValue(userDetailsCookie, out string details);
+        Request.Cookies.TryGetValue(registrationDetailsCookie, out string details);
         if (details == "as")
         {
           userDetails.TryGetValue("email", out StringValues email);
@@ -132,7 +48,7 @@ namespace CcsSso.Api.Controllers
             Secure = true
           };
           //"ras" stands for activation email re-sent
-          Response.Cookies.Append(userDetailsCookie, "ras", httpCookieOptions);
+          Response.Cookies.Append(registrationDetailsCookie, "ras", httpCookieOptions);
         }
       }
     }

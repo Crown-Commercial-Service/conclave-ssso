@@ -106,6 +106,12 @@ namespace CcsSso.Security.Services
       {
         throw new CcsSsoException("OLD_PASSWORD_REQUIRED");
       }
+      if ((_applicationConfigurationInfo.PasswordPolicy.LowerAndUpperCaseWithDigits &&
+        !UtilitiesHelper.IsPasswordValidForRequiredCharactors(changePassword.NewPassword))
+        || changePassword.NewPassword.Length < _applicationConfigurationInfo.PasswordPolicy.RequiredLength)
+      {
+        throw new CcsSsoException("ERROR_PASSWORD_TOO_WEAK");
+      }
       await _identityProviderService.ChangePasswordAsync(changePassword);
 
       //send notification
@@ -129,13 +135,13 @@ namespace CcsSso.Security.Services
       return await _identityProviderService.RespondToNewPasswordRequiredAsync(passwordChallengeDto);
     }
 
-    public async Task InitiateResetPasswordAsync(string userName)
+    public async Task InitiateResetPasswordAsync(ChangePasswordInitiateRequest changePasswordInitiateRequest)
     {
-      if (string.IsNullOrEmpty(userName))
+      if (string.IsNullOrEmpty(changePasswordInitiateRequest.UserName))
       {
         throw new CcsSsoException("USERNAME_REQUIRED");
       }
-      await _identityProviderService.InitiateResetPasswordAsync(userName.ToLower());
+      await _identityProviderService.InitiateResetPasswordAsync(changePasswordInitiateRequest);
     }
 
     public async Task ResetPasswordAsync(ResetPasswordDto resetPassword)

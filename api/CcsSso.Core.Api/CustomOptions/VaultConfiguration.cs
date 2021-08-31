@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using CcsSso.Shared.Domain;
 
 namespace CcsSso.Api.CustomOptions
 {
@@ -29,7 +30,6 @@ namespace CcsSso.Api.CustomOptions
       _vcapSettings = JsonConvert.DeserializeObject<VCapSettings>(vault.ToString());
       IAuthMethodInfo authMethod = new TokenAuthMethodInfo(vaultToken: _vcapSettings.credentials.auth.token);
       var vaultClientSettings = new VaultClientSettings(_vcapSettings.credentials.address, authMethod);
-
       _client = new VaultClient(vaultClientSettings);
     }
 
@@ -45,12 +45,14 @@ namespace CcsSso.Api.CustomOptions
 
     public async Task GetSecrets()
     {
-      var _secrets = await _client.V1.Secrets.Cubbyhole.ReadSecretAsync(secretPath: "brickendon/core");
+      var mountPathValue = _vcapSettings.credentials.backends_shared.space.Split("/secret").FirstOrDefault();
+      var _secrets = await _client.V1.Secrets.KeyValue.V1.ReadSecretAsync("secret/core", mountPathValue);
       var _dbConnection = _secrets.Data["DbConnection"].ToString();
       var _isApiGatewayEnabled = _secrets.Data["IsApiGatewayEnabled"].ToString();
       var _cii = JsonConvert.DeserializeObject<Cii>(_secrets.Data["Cii"].ToString());
       Data.Add("DbConnection", _dbConnection);
       Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
+      Data.Add("CustomDomain", _secrets.Data["CustomDomain"].ToString());
       if (_secrets.Data.ContainsKey("CorsDomains"))
       {
         var corsList = JsonConvert.DeserializeObject<List<string>>(_secrets.Data["CorsDomains"].ToString());
@@ -63,6 +65,7 @@ namespace CcsSso.Api.CustomOptions
       Data.Add("Cii:Url", _cii.url);
       Data.Add("Cii:Token", _cii.token);
       Data.Add("Cii:Delete_Token", _cii.token_delete);
+
       if (_secrets.Data.ContainsKey("JwtTokenValidationInfo"))
       {
         var jwtTokenValidationInfoVault = JsonConvert.DeserializeObject<JwtTokenValidationInfoVault>(_secrets.Data["JwtTokenValidationInfo"].ToString());
@@ -121,40 +124,6 @@ namespace CcsSso.Api.CustomOptions
   public class VaultOptions
   {
     public string Address { get; set; }
-  }
-
-  public class VCapSettings
-  {
-    public string binding_name { get; set; }
-    public Credentials credentials { get; set; }
-    public Array backends { get; set; }
-    public Array transit { get; set; }
-    public Backend backends_shared { get; set; }
-    public string instance_name { get; set; }
-    public string label { get; set; }
-    public string name { get; set; }
-    public string plan { get; set; }
-    public string provider { get; set; }
-    public string syslog_drain_url { get; set; }
-
-    public class Credentials
-    {
-      public string address { get; set; }
-      public Auth auth { get; set; }
-
-      public class Auth
-      {
-        public string accessor { get; set; }
-        public string token { get; set; }
-      }
-    }
-
-    public class Backend
-    {
-      public string application { get; set; }
-      public string organization { get; set; }
-      public string space { get; set; }
-    }
   }
 
   public class Cii

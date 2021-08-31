@@ -13,5 +13,7 @@ namespace CcsSso.Core.DbModel.Entity
     public CcsAccessRole CcsAccessRole { get; set; }
 
     public int CcsAccessRoleId { get; set; }
+
+    public bool MfaEnabled { get; set; }
   }
 }

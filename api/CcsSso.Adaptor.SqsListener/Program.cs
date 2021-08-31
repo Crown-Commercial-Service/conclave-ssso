@@ -11,6 +11,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using System.Threading.Tasks;
 using VaultSharp;
 using VaultSharp.V1.AuthMethods;
@@ -20,6 +21,8 @@ namespace CcsSso.Adaptor.SqsListener
 {
   public class Program
   {
+    private static bool vaultEnabled;
+
     public static void Main(string[] args)
     {
       CreateHostBuilder(args).Build().Run();
@@ -33,7 +36,7 @@ namespace CcsSso.Adaptor.SqsListener
                              .AddJsonFile("appsettings.json", optional: false)
                              .Build();
               var builtConfig = config.Build();
-              var vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
+              vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
               if (!vaultEnabled)
               {
                 config.AddJsonFile("appsecrets.json", optional: false, reloadOnChange: true);
@@ -41,8 +44,6 @@ namespace CcsSso.Adaptor.SqsListener
             })
             .ConfigureServices((hostContext, services) =>
             {
-              var appSettings = ConfigurationManager.AppSettings;
-              bool.TryParse(appSettings["VaultEnabled"], out bool vaultEnabled);
               AdaptorApiSetting adaptorApiSettings;
               SqsListnerJobSettingVault sqsJobSettingsVault;
               QueueInfoVault queueInfoVault;
@@ -131,7 +132,8 @@ namespace CcsSso.Adaptor.SqsListener
         ContinueAsyncTasksOnCapturedContext = false
       };
       var client = new VaultClient(vaultClientSettings);
-      var _secrets = await client.V1.Secrets.Cubbyhole.ReadSecretAsync(secretPath: "brickendon");
+      var mountPathValue = vcapSettings.credentials.backends_shared.space.Split("/secret").FirstOrDefault();
+      var _secrets = await client.V1.Secrets.KeyValue.V1.ReadSecretAsync("secret/adaptor-sqs-listener", mountPathValue);
       return _secrets.Data;
     }
   }

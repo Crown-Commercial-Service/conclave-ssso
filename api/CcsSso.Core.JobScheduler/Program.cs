@@ -14,6 +14,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using VaultSharp;
@@ -127,7 +128,8 @@ namespace CcsSso.Core.JobScheduler
         ContinueAsyncTasksOnCapturedContext = false
       };
       var client = new VaultClient(vaultClientSettings);
-      var _secrets = await client.V1.Secrets.Cubbyhole.ReadSecretAsync(secretPath: "brickendon");
+      var mountPathValue = vcapSettings.credentials.backends_shared.space.Split("/secret").FirstOrDefault();
+      var _secrets = await client.V1.Secrets.KeyValue.V1.ReadSecretAsync("secret/org-dereg-job", mountPathValue);
       return _secrets.Data;
     }
   }

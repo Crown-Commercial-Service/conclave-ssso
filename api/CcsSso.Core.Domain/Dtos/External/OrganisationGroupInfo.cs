@@ -26,6 +26,8 @@ namespace CcsSso.Core.Domain.Dtos.External
   {
     public string OrganisationId { get; set; }
 
+    public bool MfaEnabled { get; set; }
+
     public List<GroupRole> Roles { get; set; }
 
     public List<GroupUser> Users { get; set; }

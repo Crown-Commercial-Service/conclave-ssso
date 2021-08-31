@@ -73,6 +73,18 @@ namespace CcsSso.Security.Api
           tokenExpirationTimeInMinutes = 30; //default hardcoded value
         }
 
+        int.TryParse(Configuration["MfaSettings:TicketExpirationInMinutes"], out int ticketExpirationInMinutes);
+        if (ticketExpirationInMinutes <= 0)
+        {
+          ticketExpirationInMinutes = 30; //default hardcoded value
+        }
+
+        int.TryParse(Configuration["MfaSettings:MFAResetPersistentTicketListExpirationInDays"], out int mfaResetPersistentTicketListExpirationInDays);
+        if (mfaResetPersistentTicketListExpirationInDays <= 0)
+        {
+          mfaResetPersistentTicketListExpirationInDays = 30; //default hardcoded value
+        }
+
         int.TryParse(Configuration["JwtTokenConfig:LogoutTokenExpireTimeInMinutes"], out int logoutTokenExpirationTimeInMinutes);
         if (logoutTokenExpirationTimeInMinutes <= 0)
         {
@@ -120,6 +132,7 @@ namespace CcsSso.Security.Api
             ResetPasswordEmailTemplateId = Configuration["Email:ResetPasswordEmailTemplateId"],
             NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
             ChangePasswordNotificationTemplateId = Configuration["Email:ChangePasswordNotificationTemplateId"],
+            MfaResetEmailTemplateId = Configuration["Email:MfaResetEmailTemplateId"],
             SendNotificationsEnabled = sendNotificationsEnabled
           },
           RollBarConfigurationInfo = new RollBarConfigurationInfo()
@@ -164,6 +177,12 @@ namespace CcsSso.Security.Api
           CryptoSettings = new CryptoSettings()
           {
             CookieEncryptionKey = Configuration["Crypto:CookieEncryptionKey"]
+          } ,
+          MfaSetting = new MfaSetting()
+          {
+            TicketExpirationInMinutes = ticketExpirationInMinutes,
+            MfaResetRedirectUri = Configuration["MfaSettings:MfaResetRedirectUri"],
+            MFAResetPersistentTicketListExpirationInDays = mfaResetPersistentTicketListExpirationInDays
           }
         };
         return appConfigInfo;
@@ -267,10 +286,9 @@ namespace CcsSso.Security.Api
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-    {
-
+    {      
       app.AddLoggerMiddleware();// Registers the logger configured on the core library
-
+      app.UseHsts();
       app.Use(async (context, next) =>
       {
         context.Response.Headers.Add(
@@ -280,6 +298,7 @@ namespace CcsSso.Security.Api
             "Pragma",
             "no-cache");
         context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+        context.Response.Headers.Add("X-Xss-Protection", "1");
         await next();
       });
 
@@ -298,7 +317,6 @@ namespace CcsSso.Security.Api
         .AllowAnyMethod()
         .AllowCredentials()
       );
-
       app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseMiddleware<AuthenticatorMiddleware>();
       app.UseAuthorization();

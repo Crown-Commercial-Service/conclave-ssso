@@ -1,5 +1,4 @@
 using CcsSso.Core.DbModel.Entity;
-using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Tests.Infrastructure;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
@@ -61,10 +60,8 @@ namespace CcsSso.Tests
             IsEnabled = false
           }
         };
-        var mockAdapterNotificationServie = new Mock<IAdaptorNotificationService>();
-        var mockCacheService = new Mock<IWrapperCacheService>();
         await SetupTestDataAsync(dataContext);
-        return new UserService(dataContext, mockHttpClientFactory.Object, applicationConfigurationInfo, mockAdapterNotificationServie.Object, mockCacheService.Object);
+        return new UserService(dataContext, mockHttpClientFactory.Object, applicationConfigurationInfo);
       }
 
       static async Task SetupTestDataAsync(IDataContext dataContext)

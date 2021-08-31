@@ -20,6 +20,8 @@ namespace CcsSso.DbModel.Entity
 
     public string UserGroupName { get; set; }
 
+    public bool MfaEnabled { get; set; }
+
     public List<UserGroupMembership> UserGroupMemberships { get; set; }
 
     public List<OrganisationGroupEligibleRole> GroupEligibleRoles { get; set; }

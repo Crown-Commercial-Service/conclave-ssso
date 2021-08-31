@@ -1,6 +1,5 @@
-using System;
+using CcsSso.Shared.Domain.Constants;
 using System.Collections.Generic;
-using System.Text;
 
 namespace CcsSso.Shared.Domain.Contexts
 {
@@ -8,10 +7,20 @@ namespace CcsSso.Shared.Domain.Contexts
   {
     public int UserId { get; set; }
 
+    public string UserName { get; set; }
+
     public string CiiOrganisationId { get; set; }
 
     public string IpAddress { get; set; }
 
     public string Device { get; set; }
+
+    public List<string> Roles { get; set; }
+
+    public RequestType RequestType { get; set; }
+
+    public string RequestIntendedOrganisationId { get; set; }
+
+    public string RequestIntendedUserName { get; set; }
   }
 }

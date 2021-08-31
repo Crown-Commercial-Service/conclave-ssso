@@ -14,5 +14,8 @@ namespace CcsSso.Shared.Domain.Constants
     public const string UserContactPoint = "WRAPPER_USER_CONTACT_POINT"; // WRAPPER_USER_CONTACT_POINT-{userName}-{contactPointId}
     public const string OrganisationContactPoint = "WRAPPER_ORG_CONTACT_POINT"; // WRAPPER_ORG_CONTACT_POINT-{ciiOrganisationId}-{contactPointId}
     public const string SiteContactPoint = "WRAPPER_ORG_SITE_CONTACT_POINT"; // WRAPPER_ORG_SITE_CONTACT_POINT-{ciiOrganisationId}-{siteId}-{contactPointId}
+    public const string ForceSignoutKey = "FORCE_SIGNOUT-";
+    public const string BlockedListKey = "BLOCKED-LIST";
+    public const string UserOrganisation = "USER_ORGANISATION"; // USER_ORGANISATION-{userName}
   }
 }

@@ -1,3 +1,4 @@
+using CcsSso.Adaptor.Domain.Dtos.Cii;
 using CcsSso.Adaptor.Domain.Dtos.Wrapper;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,6 +16,8 @@ namespace CcsSso.Adaptor.Domain.Contracts
     Dictionary<string, object> GetMappedOrganisationSites(List<WrapperOrganisationSite> sites, Dictionary<string, string> attributeMappings);
 
     Dictionary<string, object> GetMappedOrganisationUsers(List<WrapperUserListInfo> orgUsers, Dictionary<string, string> attributeMappings);
+
+    Dictionary<string, object> GetMappedOrgIdentifierInfo(CiiIdentifierAllDto identifierInfo, Dictionary<string, string> attributeMappings);
 
     Dictionary<string, object> GetMappedUserRoles(WrapperUserResponse user, Dictionary<string, string> attributeMappings);
 

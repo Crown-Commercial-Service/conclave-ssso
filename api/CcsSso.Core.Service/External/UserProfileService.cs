@@ -8,6 +8,7 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Services.Helpers;
+using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
 using Microsoft.EntityFrameworkCore;
@@ -28,10 +29,11 @@ namespace CcsSso.Core.Service.External
     private readonly IAdaptorNotificationService _adapterNotificationService;
     private readonly IWrapperCacheService _wrapperCacheService;
     private readonly IAuditLoginService _auditLoginService;
+    private readonly IRemoteCacheService _remoteCacheService;
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
       IAdaptorNotificationService adapterNotificationService, IWrapperCacheService wrapperCacheService,
-      IAuditLoginService auditLoginService)
+      IAuditLoginService auditLoginService, IRemoteCacheService remoteCacheService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -41,6 +43,7 @@ namespace CcsSso.Core.Service.External
       _adapterNotificationService = adapterNotificationService;
       _wrapperCacheService = wrapperCacheService;
       _auditLoginService = auditLoginService;
+      _remoteCacheService = remoteCacheService;
     }
 
     public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo)
@@ -50,7 +53,7 @@ namespace CcsSso.Core.Service.External
       _userHelper.ValidateUserName(userName);
 
       var organisation = await _dataContext.Organisation
-        .Include(o => o.UserGroups)
+        .Include(o => o.UserGroups).ThenInclude(ge => ge.GroupEligibleRoles)
         .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
         .Include(o => o.OrganisationEligibleIdentityProviders)
         .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == userProfileRequestInfo.OrganisationId);
@@ -68,6 +71,36 @@ namespace CcsSso.Core.Service.External
       }
 
       Validate(userProfileRequestInfo, false, organisation);
+
+      var eligibleIdentityProvider = await _dataContext.OrganisationEligibleIdentityProvider
+  .Include(x => x.IdentityProvider)
+  .FirstOrDefaultAsync(i => i.Id == userProfileRequestInfo.Detail.IdentityProviderId);
+
+      var isConclaveConnection = eligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName;
+      if (userProfileRequestInfo.MfaEnabled && !isConclaveConnection)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
+      }
+
+      //validate mfa and assign mfa if user is part of any admin role or group
+      if (!userProfileRequestInfo.MfaEnabled && isConclaveConnection)
+      {
+        var partOfAdminRole = organisation.OrganisationEligibleRoles.Any(r => userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(role => role == r.Id) && r.MfaEnabled);
+        if (partOfAdminRole)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+        }
+        else
+        {
+          var partOfAdminGroup = organisation.UserGroups.Any(oug => userProfileRequestInfo.Detail.GroupIds != null && userProfileRequestInfo.Detail.GroupIds.Contains(oug.Id) && !oug.IsDeleted &&
+                              oug.GroupEligibleRoles.Any(er => !er.IsDeleted && er.OrganisationEligibleRole.MfaEnabled));
+          if (partOfAdminGroup)
+          {
+            throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+          }
+        }
+      }
+
 
       // Set user groups
       var userGroupMemberships = new List<UserGroupMembership>();
@@ -113,10 +146,11 @@ namespace CcsSso.Core.Service.External
         User = new User
         {
           UserName = userName,
-          UserTitle = (int)userProfileRequestInfo.Title,
+          UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unknown),
           UserGroupMemberships = userGroupMemberships,
           UserAccessRoles = userAccessRoles,
-          OrganisationEligibleIdentityProviderId = userProfileRequestInfo.Detail.IdentityProviderId
+          OrganisationEligibleIdentityProviderId = userProfileRequestInfo.Detail.IdentityProviderId,
+          MfaEnabled = userProfileRequestInfo.MfaEnabled
         }
       };
 
@@ -135,17 +169,16 @@ namespace CcsSso.Core.Service.External
       // Notify the adapter
       await _adapterNotificationService.NotifyUserChangeAsync(OperationType.Create, userProfileRequestInfo.UserName, organisation.CiiOrganisationId);
 
-      var eligibleIdentityProvider = await _dataContext.OrganisationEligibleIdentityProvider
-        .Include(x => x.IdentityProvider)
-        .FirstOrDefaultAsync(i => i.Id == userProfileRequestInfo.Detail.IdentityProviderId);
-      if (eligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName)
+
+      if (isConclaveConnection)
       {
         SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
         {
           Email = userName,
           UserName = userName,
           FirstName = userProfileRequestInfo.FirstName,
-          LastName = userProfileRequestInfo.LastName
+          LastName = userProfileRequestInfo.LastName,
+          MfaEnabled = userProfileRequestInfo.MfaEnabled
         };
 
         try
@@ -199,6 +232,7 @@ namespace CcsSso.Core.Service.External
           OrganisationId = user.Party.Person.Organisation.CiiOrganisationId,
           FirstName = user.Party.Person.FirstName,
           LastName = user.Party.Person.LastName,
+          MfaEnabled = user.MfaEnabled,
           Title = (UserTitle)user.UserTitle,
           Detail = new UserResponseDetail
           {
@@ -214,6 +248,7 @@ namespace CcsSso.Core.Service.External
               RoleKey = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
               RoleName = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
               ServiceClientId = uar.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceClientId,
+              ServiceClientName = uar.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName
             }).ToList()
           }
         };
@@ -236,7 +271,8 @@ namespace CcsSso.Core.Service.External
                     Group = userGroupMembership.OrganisationUserGroup.UserGroupName,
                     AccessRoleName = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
                     AccessRole = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
-                    ServiceClientId = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceClientId
+                    ServiceClientId = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceClientId,
+                    ServiceClientName = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName
                   };
 
                   userProfileInfo.Detail.UserGroups.Add(groupAccessRole);
@@ -264,7 +300,7 @@ namespace CcsSso.Core.Service.External
       throw new ResourceNotFoundException();
     }
 
-    public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null)
+    public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null, bool includeSelf = false)
     {
 
       if (!await _dataContext.Organisation.AnyAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId))
@@ -291,7 +327,7 @@ namespace CcsSso.Core.Service.External
 
       var userPagedInfo = await _dataContext.GetPagedResultAsync(_dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person)
-        .Where(u => !u.IsDeleted && u.Id != _requestContext.UserId &&
+        .Where(u => !u.IsDeleted && (includeSelf || u.Id != _requestContext.UserId) &&
         u.Party.Person.Organisation.CiiOrganisationId == organisationId &&
         (string.IsNullOrWhiteSpace(searchString) || u.UserName.ToLower().Contains(searchString)
         || (havingMultipleWords && u.Party.Person.FirstName.ToLower().Contains(searchFirstNameLowerCase) && u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase))
@@ -315,7 +351,7 @@ namespace CcsSso.Core.Service.External
       return userListResponse;
     }
 
-    public async Task DeleteUserAsync(string userName)
+    public async Task DeleteUserAsync(string userName, bool checkForLastAdmin = true)
     {
 
       _userHelper.ValidateUserName(userName);
@@ -331,7 +367,7 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
-      if (await IsOrganisationOnlyAdminAsync(user, userName))
+      if (checkForLastAdmin && await IsOrganisationOnlyAdminAsync(user, userName))
       {
         throw new CcsSsoException(ErrorConstant.ErrorCannotDeleteLastOrgAdmin);
       }
@@ -367,6 +403,7 @@ namespace CcsSso.Core.Service.External
         $"{CacheKeyConstant.User}-{userName}",
         $"{CacheKeyConstant.OrganisationUsers}-{user.Party.Person.Organisation.CiiOrganisationId}"
       };
+      await _remoteCacheService.SetValueAsync(CacheKeyConstant.ForceSignoutKey + userName, true);
       await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeyList.ToArray());
 
       // Notify the adapter
@@ -418,10 +455,10 @@ namespace CcsSso.Core.Service.External
       bool isMyProfile = _requestContext.UserId == user.Id;
 
       Validate(userProfileRequestInfo, isMyProfile, organisation);
-
+      bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
       bool hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
                                     user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
-                                    user.UserTitle != (int)userProfileRequestInfo.Title ||
+                                    user.UserTitle != (int)(userProfileRequestInfo.Title ?? UserTitle.Unknown) ||
                                     user.OrganisationEligibleIdentityProviderId != userProfileRequestInfo.Detail.IdentityProviderId);
 
       user.Party.Person.FirstName = userProfileRequestInfo.FirstName.Trim();
@@ -436,7 +473,7 @@ namespace CcsSso.Core.Service.External
       int previousIdentityProviderId = 0;
       if (!isMyProfile)
       {
-        user.UserTitle = (int)userProfileRequestInfo.Title;
+        user.UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unknown);
         requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
         requestRoles = userProfileRequestInfo.Detail.RoleIds == null ? new List<int>() : userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
         hasGroupMembershipsNotChanged = Enumerable.SequenceEqual(requestGroups, user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).OrderBy(e => e));
@@ -445,6 +482,44 @@ namespace CcsSso.Core.Service.External
         previousRoles = user.UserAccessRoles.Select(ur => ur.OrganisationEligibleRoleId).ToList();
         user.UserGroupMemberships.RemoveAll(g => true);
         user.UserAccessRoles.RemoveAll(r => true);
+
+        var elegibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
+                                        .Include(x => x.IdentityProvider)
+                                        .ToListAsync();
+
+        var isConclaveConnection = elegibleIdentityProviders.First(i => i.Id == userProfileRequestInfo.Detail.IdentityProviderId).IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName;
+
+        if (userProfileRequestInfo.MfaEnabled && !isConclaveConnection)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
+        }
+
+        //mfa flag has removed
+        if (!userProfileRequestInfo.MfaEnabled && isConclaveConnection)
+        {
+          //check for any admin role/groups
+          var mfaEnabledRoleExists = organisation.OrganisationEligibleRoles.Any(r => userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(role => role == r.Id)
+                                    && r.MfaEnabled && !r.IsDeleted);
+
+          if (mfaEnabledRoleExists)
+          {
+            throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+          }
+          else if (userProfileRequestInfo.Detail.GroupIds != null && userProfileRequestInfo.Detail.GroupIds.Any())
+          {
+            var mfaEnabled = organisation.UserGroups.Any(oug => userProfileRequestInfo.Detail.GroupIds.Contains(oug.Id) && !oug.IsDeleted &&
+                              oug.GroupEligibleRoles.Any(er => !er.IsDeleted && er.OrganisationEligibleRole.MfaEnabled));
+            if (mfaEnabled)
+            {
+              throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+            }
+          }
+        }
+        user.MfaEnabled = userProfileRequestInfo.MfaEnabled;
+        if (mfaFlagChanged)
+        {
+          hasProfileInfoChanged = true;
+        }
 
         // Set groups
         var userGroupMemberships = new List<UserGroupMembership>();
@@ -500,27 +575,35 @@ namespace CcsSso.Core.Service.External
         if (previousIdentityProviderId != userProfileRequestInfo.Detail.IdentityProviderId)
         {
           hasIdpChange = true;
-          var elegibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
-            .Include(x => x.IdentityProvider)
-            .ToListAsync();
 
           if (elegibleIdentityProviders.First(i => i.Id == previousIdentityProviderId).IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName)
           {
             await _idamService.DeleteUserInIdamAsync(userName);
           }
-          else if (elegibleIdentityProviders.First(i => i.Id == userProfileRequestInfo.Detail.IdentityProviderId).IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName)
+          else if (isConclaveConnection)
           {
             SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
             {
               Email = userName,
               UserName = userName,
               FirstName = userProfileRequestInfo.FirstName,
-              LastName = userProfileRequestInfo.LastName
+              LastName = userProfileRequestInfo.LastName,
+              MfaEnabled = user.MfaEnabled
             };
 
             await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
             isRegisteredInIdam = true;
           }
+        }
+        else if (mfaFlagChanged)
+        {
+          SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+          {
+            Email = userName,
+            MfaEnabled = user.MfaEnabled
+          };
+
+          await _idamService.UpdateUserMfaInIdamAsync(securityApiUserInfo);
         }
       }
 
@@ -532,6 +615,7 @@ namespace CcsSso.Core.Service.External
         await _auditLoginService.CreateLogAsync(AuditLogEvent.UserUpdate, AuditLogApplication.ManageUserAccount, $"UserId:{user.Id}");
         if (hasIdpChange)
         {
+          await _remoteCacheService.SetValueAsync(CacheKeyConstant.ForceSignoutKey + userName, true);
           await _auditLoginService.CreateLogAsync(AuditLogEvent.UserIdpUpdate, AuditLogApplication.ManageUserAccount, $"UserId:{user.Id}, NewIdpId:{user.OrganisationEligibleIdentityProviderId}, PreviousIdpId:{previousIdentityProviderId}");
         }
         if (!hasGroupMembershipsNotChanged)
@@ -591,6 +675,8 @@ namespace CcsSso.Core.Service.External
       }
 
       await _idamService.ResetUserPasswordAsync(userName);
+
+      await _remoteCacheService.SetValueAsync(CacheKeyConstant.ForceSignoutKey + userName, true);
 
       // Log
       await _auditLoginService.CreateLogAsync(AuditLogEvent.AdminResetPassword, component == AuditLogApplication.OrgUserSupport ?
@@ -657,6 +743,9 @@ namespace CcsSso.Core.Service.External
 
       // Notify the adapter
       await _adapterNotificationService.NotifyUserChangeAsync(OperationType.Update, userName, user.Party.Person.Organisation.CiiOrganisationId);
+
+      // Send permission upadate email
+      await _ccsSsoEmailService.SendUserPermissionUpdateEmailAsync(userName);
     }
 
     public async Task AddAdminRoleAsync(string userName)
@@ -697,6 +786,9 @@ namespace CcsSso.Core.Service.External
 
       // Notify the adapter
       await _adapterNotificationService.NotifyUserChangeAsync(OperationType.Update, userName, user.Party.Person.Organisation.CiiOrganisationId);
+
+      // Send permission upadate email
+      await _ccsSsoEmailService.SendUserPermissionUpdateEmailAsync(userName);
     }
 
     private async Task<bool> IsOrganisationOnlyAdminAsync(User user, string userName)
@@ -756,7 +848,7 @@ namespace CcsSso.Core.Service.External
         var orgRoleIds = organisation.OrganisationEligibleRoles.Select(r => r.Id);
         var orgIdpIds = organisation.OrganisationEligibleIdentityProviders.Select(i => i.Id);
 
-        if (userProfileReqestInfo.Title == null || !UtilitiesHelper.IsEnumValueValid<UserTitle>((int)userProfileReqestInfo.Title))
+        if (userProfileReqestInfo.Title != null && !UtilitiesHelper.IsEnumValueValid<UserTitle>((int)userProfileReqestInfo.Title))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidTitle);
         }

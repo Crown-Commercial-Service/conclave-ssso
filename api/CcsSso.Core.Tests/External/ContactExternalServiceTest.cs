@@ -115,6 +115,16 @@ namespace CcsSso.Core.Tests.External
                     DtoHelper.GetContactRequestDetail(VirtualContactTypeName.Phone, "1231"),
                     ErrorConstant.ErrorInvalidPhoneNumber
                 },
+                new object[]
+                {
+                    DtoHelper.GetContactRequestDetail(VirtualContactTypeName.Fax, "1231"),
+                    ErrorConstant.ErrorInvalidFaxNumber
+                },
+                new object[]
+                {
+                    DtoHelper.GetContactRequestDetail(VirtualContactTypeName.Mobile, "1231"),
+                    ErrorConstant.ErrorInvalidMobileNumber
+                }
             };
 
       [Theory]
@@ -332,6 +342,18 @@ namespace CcsSso.Core.Tests.External
                     DtoHelper.GetContactRequestDetail(VirtualContactTypeName.Phone, "1231"),
                     ErrorConstant.ErrorInvalidPhoneNumber
                 },
+                new object[]
+                {
+                    1,
+                    DtoHelper.GetContactRequestDetail(VirtualContactTypeName.Fax, "1231"),
+                    ErrorConstant.ErrorInvalidFaxNumber
+                },
+                new object[]
+                {
+                    1,
+                    DtoHelper.GetContactRequestDetail(VirtualContactTypeName.Mobile, "1231"),
+                    ErrorConstant.ErrorInvalidMobileNumber
+                }
             };
 
       [Theory]
@@ -388,6 +410,7 @@ namespace CcsSso.Core.Tests.External
       dataContext.VirtualAddressType.Add(new VirtualAddressType { Id = 2, Name = VirtualContactTypeName.Phone, Description = "phone" });
       dataContext.VirtualAddressType.Add(new VirtualAddressType { Id = 3, Name = VirtualContactTypeName.Fax, Description = "fax" });
       dataContext.VirtualAddressType.Add(new VirtualAddressType { Id = 4, Name = VirtualContactTypeName.Url, Description = "url" });
+      dataContext.VirtualAddressType.Add(new VirtualAddressType { Id = 5, Name = VirtualContactTypeName.Mobile, Description = "mobile" });
 
       dataContext.ContactDetail.Add(new ContactDetail { Id = 1 });
       dataContext.ContactDetail.Add(new ContactDetail { Id = 2 });

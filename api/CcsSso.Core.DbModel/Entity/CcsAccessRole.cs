@@ -19,6 +19,8 @@ namespace CcsSso.DbModel.Entity
 
     public string CcsAccessRoleDescription { get; set; }
 
+    public bool MfaEnabled { get; set; }
+
     public RoleEligibleOrgType OrgTypeEligibility { get; set; }
 
     public RoleEligibleSubscriptionType SubscriptionTypeEligibility { get; set; }

@@ -1,5 +1,7 @@
+using CcsSso.Core.Authorisation;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Dtos;
+using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,9 +15,11 @@ namespace CcsSso.Core.Api.Controllers
   public class AuthController : ControllerBase
   {
     private readonly IAuthService _authService;
-    public AuthController(IAuthService authService)
+    private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
+    public AuthController(IAuthService authService, ApplicationConfigurationInfo applicationConfigurationInfo)
     {
       _authService = authService;
+      _applicationConfigurationInfo = applicationConfigurationInfo;
     }
 
     [HttpPost("backchannel_logout")]
@@ -33,18 +37,27 @@ namespace CcsSso.Core.Api.Controllers
       }
     }
 
-    [HttpPost("save_refresh_token")]
-    public void SaveRefreshToken(TokenDetails tokenDetails)
+    [HttpPost("create_session")]
+    public void CreateSession(TokenDetails tokenDetails)
     {
       if (!string.IsNullOrEmpty(tokenDetails.RefreshToken))
       {
         CookieOptions cookieOptions = new CookieOptions()
         {
-          SameSite = SameSiteMode.None,
           Secure = true,
           HttpOnly = true
         };
-        string cookieName = "refreshToken";
+        if(!string.IsNullOrEmpty(_applicationConfigurationInfo.CustomDomain))
+        {
+          cookieOptions.SameSite = SameSiteMode.Lax;
+          cookieOptions.Domain = _applicationConfigurationInfo.CustomDomain;
+        }
+        else
+        {
+          cookieOptions.SameSite = SameSiteMode.None;
+        }
+
+        string cookieName = "conclave";
         if (!Request.Cookies.ContainsKey(cookieName))
         {
           Response.Cookies.Append(cookieName, tokenDetails.RefreshToken, cookieOptions);
@@ -64,16 +77,16 @@ namespace CcsSso.Core.Api.Controllers
     [HttpPost("sign_out")]
     public void Signout()
     {
-      if (Request.Cookies.ContainsKey("refreshToken"))
+      if (Request.Cookies.ContainsKey("conclave"))
       {
-        Response.Cookies.Delete("refreshToken");
+        Response.Cookies.Delete("conclave");
       }
     }
 
     [HttpGet("get_refresh_token")]
     public string GetRefreshToken()
     {
-      string cookieName = "refreshToken";
+      string cookieName = "conclave";
       if (Request.Cookies.ContainsKey(cookieName))
       {
         Request.Cookies.TryGetValue(cookieName, out string refreshToken);
@@ -83,9 +96,29 @@ namespace CcsSso.Core.Api.Controllers
     }
 
     [HttpPost("change_password")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
     public async Task ChangePassword(ChangePasswordDto changePassword)
     {
       await _authService.ChangePasswordAsync(changePassword);
+    }
+
+    [HttpPost("send_reset_mfa_Notification")]
+    public async Task SendResetMfaNotification(MfaResetInfo mfaResetInfo)
+    {
+      await _authService.SendResetMfaNotificationAsync(mfaResetInfo);
+    }
+
+    [HttpPost("reset_mfa_by_ticket")]
+    public async Task ResetMfaByTicket(MfaResetInfo mfaResetInfo)
+    {
+      await _authService.ResetMfaByTicketAsync(mfaResetInfo);
+    }
+
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [HttpPost("send_reset_mfa_notification_by_admin")]
+    public async Task SendResetMfaNotificationByAdmin(MfaResetInfo mfaResetInfo)
+    {
+      await _authService.SendResetMfaNotificationAsync(mfaResetInfo, true);
     }
   }
 }

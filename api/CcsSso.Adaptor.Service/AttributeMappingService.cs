@@ -2,6 +2,7 @@ using CcsSso.Adaptor.DbDomain;
 using CcsSso.Adaptor.Domain;
 using CcsSso.Adaptor.Domain.Constants;
 using CcsSso.Adaptor.Domain.Contracts;
+using CcsSso.Adaptor.Domain.Dtos.Cii;
 using CcsSso.Adaptor.Domain.Dtos.Wrapper;
 using CcsSso.Shared.Domain.Excecptions;
 using Microsoft.EntityFrameworkCore;
@@ -106,10 +107,10 @@ namespace CcsSso.Adaptor.Service
         resultDictionary.Add(attributeMappings["Contacts"], contactPoints.Select(cp => cp.Contacts).ToList());
       }
 
-      // 3. Specific contacts (PHONE/EMAIL/FAX/WEB_ADDRESS): mapped using "PHONE/EMAIL/FAX/WEB_ADDRESS"
+      // 3. Specific contacts (PHONE/EMAIL/FAX/WEB_ADDRESS/MOBILE): mapped using "PHONE/EMAIL/FAX/WEB_ADDRESS/MOBILE"
       else
       {
-        var contactTypes = new List<string> { ContactType.Email, ContactType.Phone, ContactType.Fax, ContactType.Url };
+        var contactTypes = new List<string> { ContactType.Email, ContactType.Phone, ContactType.Fax, ContactType.Url, ContactType.Mobile };
         foreach (var mapping in attributeMappings.Where(m => contactTypes.Contains(m.Key))) // mapping.Key = ContactType in conclave, mapping.Value = Consumber attribute name
         {
           var contactType = mapping.Key;
@@ -195,6 +196,28 @@ namespace CcsSso.Adaptor.Service
     }
 
     /// <summary>
+    /// Get mapped salesforce information
+    /// </summary>
+    /// <param name="identyifierInfo"></param>
+    /// <param name="attributeMappings"></param>
+    /// <returns></returns>
+    public Dictionary<string, object> GetMappedOrgIdentifierInfo(CiiIdentifierAllDto identyifierInfo, Dictionary<string, string> attributeMappings)
+    {
+      Dictionary<string, object> resultDictionary = new Dictionary<string, object>();
+
+      if (attributeMappings.ContainsKey("Identifier"))
+      {
+        resultDictionary.Add(attributeMappings["Identifier"], identyifierInfo?.Identifier);
+      }
+      if (attributeMappings.ContainsKey("AdditionalIdentifiers"))
+      {
+        resultDictionary.Add(attributeMappings["AdditionalIdentifiers"], identyifierInfo?.AdditionalIdentifiers);
+      }
+
+      return resultDictionary;
+    }
+
+    /// <summary>
     /// Get mapped user roles
     /// </summary>
     /// <param name="user"></param>
@@ -244,12 +267,12 @@ namespace CcsSso.Adaptor.Service
       if (userGroupsInfo != null)
       {
         userGroupsInfo = userGroupsInfo.OrderBy(r => r.GroupId).ToList();
-        if (attributeMappings.ContainsKey("Detail.UserGroups.GroupId")) // Get roles ids
+        if (attributeMappings.ContainsKey("Detail.UserGroups.GroupId")) // Get group ids
         {
           var mappedUserRoles = userGroupsInfo.Select(s => s.GroupId).Distinct().ToList();
           resultDictionary.Add(attributeMappings["Detail.UserGroups.GroupId"], mappedUserRoles);
         }
-        if (attributeMappings.ContainsKey("Detail.UserGroups.Group")) // Get role names
+        if (attributeMappings.ContainsKey("Detail.UserGroups.Group")) // Get group names
         {
           var mappedUserRoles = userGroupsInfo.Select(s => s.Group).Distinct().ToList();
           resultDictionary.Add(attributeMappings["Detail.UserGroups.Group"], mappedUserRoles);
@@ -259,7 +282,7 @@ namespace CcsSso.Adaptor.Service
           var mappedUserRoles = userGroupsInfo.Select(s => s.AccessRole).Distinct().ToList();
           resultDictionary.Add(attributeMappings["Detail.UserGroups.AccessRole"], mappedUserRoles);
         }
-        if (attributeMappings.ContainsKey("Detail.UserGroups.AccessRoleName")) // Get roles of groups
+        if (attributeMappings.ContainsKey("Detail.UserGroups.AccessRoleName")) // Get role names of groups
         {
           var mappedUserRoles = userGroupsInfo.Select(s => s.AccessRoleName).Distinct().ToList();
           resultDictionary.Add(attributeMappings["Detail.UserGroups.AccessRoleName"], mappedUserRoles);

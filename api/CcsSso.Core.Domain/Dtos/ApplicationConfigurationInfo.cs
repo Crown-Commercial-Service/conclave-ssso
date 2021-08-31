@@ -21,6 +21,8 @@ namespace CcsSso.Domain.Dtos
     public QueueUrlInfo QueueUrlInfo { get; set; }
 
     public RedisCacheSetting RedisCacheSettings { get; set; }
+
+    public string CustomDomain { get; set; }
   }
 
   public class JwtTokenValidationConfigurationInfo

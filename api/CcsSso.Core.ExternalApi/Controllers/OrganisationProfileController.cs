@@ -1,10 +1,13 @@
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.External;
+using CcsSso.Core.ExternalApi.Authorisation;
+using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace CcsSso.ExternalApi.Controllers
@@ -89,6 +92,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     /// </remarks>
     [HttpGet("{organisationId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(OrganisationProfileResponseInfo), 200)]
     public async Task<OrganisationProfileResponseInfo> GetOrganisation(string organisationId)
@@ -132,6 +137,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     /// </remarks>
     [HttpPut("{organisationId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task UpdateOrganisation(string organisationId, OrganisationProfileInfo organisationProfileInfo)
@@ -144,10 +151,79 @@ namespace CcsSso.ExternalApi.Controllers
     #region Organisation Contacts
 
     /// <summary>
+    /// Allows a user to assign user/site contacts for an organisation
+    /// </summary>
+    /// <response  code="200">Ok. Return assigned site contact ids</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: ERROR_INVALID_ASSIGNING_CONTACT_POINT_IDS, ERROR_INVALID_CONTACT_ASSIGNEMNT_TYPE, ERROR_INVALID_USER_ID_FOR_CONTACT_ASSIGNEMNT,
+    /// ERROR_INVALID_SITE_ID_FOR_CONTACT_ASSIGNEMNT, ERROR_DUPLICATE_CONTACT_ASSIGNMENT
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /organisations/1/contacts/assign
+    ///     {
+    ///        "AssigningContactType": 1, (User:1, Site:2)
+    ///        "AssigningContactPointIds": [1, 2],
+    ///        "AssigningContactsUserId": "user@mail.com"
+    ///     }
+    ///
+    ///     POST /organisations/1/contacts/assign
+    ///     {
+    ///        "AssigningContactType": 2, (User:1, Site:2)
+    ///        "AssigningContactPointIds": [1, 2],
+    ///        "AssigningContactsSiteId": 1
+    ///     }
+    ///     
+    ///
+    /// </remarks>s
+    [HttpPost("{organisationId}/contacts/assign")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation contact" })]
+    [ProducesResponseType(typeof(List<int>), 200)]
+    public async Task<List<int>> AssignContactsToOrganisationSite(string organisationId, ContactAssignmentInfo contactAssignmentInfo)
+    {
+      return await _contactService.AssignContactsToOrganisationAsync(organisationId, contactAssignmentInfo);
+    }
+
+    /// <summary>
+    /// Allows a user to unassign contacts from an organisation.
+    /// Should provide the assigned contacts contactpoint ids as a query parameter list
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: ERROR_INVALID_UNASSIGNING_CONTACT_POINT_IDS
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /organisations/1/contacts/unassign?contactPointIds=2
+    ///     
+    ///
+    /// </remarks>s
+    [HttpPost("{organisationId}/contacts/unassign")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation contact" })]
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task UnAssignContactsFromOrganisationSite(string organisationId, [FromQuery] List<int> contactPointIds)
+    {
+      await _contactService.UnassignOrganisationContactsAsync(organisationId, contactPointIds);
+    }
+
+    /// <summary>
     /// Allows a user to create organisation contact
     /// </summary>
     /// <response  code="200">Ok. Return created contact id</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INSUFFICIENT_DETAILS, INVALID_CONTACT_TYPE, INVALID_EMAIL, INVALID_PHONE_NUMBER
@@ -182,6 +258,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpPost("{organisationId}/contacts")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation contact" })]
     [ProducesResponseType(typeof(int), 200)]
     public async Task<int> CreateOrganisationContact(string organisationId, ContactRequestInfo contactInfo)
@@ -194,6 +272,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <remarks>
     /// Sample request:
@@ -204,11 +283,13 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet("{organisationId}/contacts")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation contact" })]
     [ProducesResponseType(typeof(OrganisationContactInfoList), 200)]
-    public async Task<OrganisationContactInfoList> GetOrganisationContactsList(string organisationId, [FromQuery] string contactType)
+    public async Task<OrganisationContactInfoList> GetOrganisationContactsList(string organisationId, string contactType, ContactAssignedStatus contactAssignedStatus = ContactAssignedStatus.All)
     {
-      return await _contactService.GetOrganisationContactsListAsync(organisationId, contactType);
+      return await _contactService.GetOrganisationContactsListAsync(organisationId, contactType, contactAssignedStatus);
     }
 
     /// <summary>
@@ -216,6 +297,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <remarks>
     /// Sample request:
@@ -225,6 +307,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet("{organisationId}/contacts/{contactId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation contact" })]
     [ProducesResponseType(typeof(OrganisationContactInfo), 200)]
     public async Task<OrganisationContactInfo> GetOrganisationContact(string organisationId, int contactId)
@@ -237,6 +321,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INSUFFICIENT_DETAILS, INVALID_CONTACT_TYPE, INVALID_EMAIL, INVALID_PHONE_NUMBER
@@ -271,6 +356,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpPut("{organisationId}/contacts/{contactId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation contact" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task UpdateOrganisationContact(string organisationId, int contactId, ContactRequestInfo contactInfo)
@@ -283,6 +370,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <remarks>
     /// Sample request:
@@ -292,6 +380,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpDelete("{organisationId}/contacts/{contactId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation contact" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task DeleteOrganisationContact(string organisationId, int contactId)
@@ -308,6 +398,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok. Return created site id</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INVALID_SITE_NAME, INSUFFICIENT_DETAILS
@@ -330,6 +421,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpPost("{organisationId}/sites")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation site" })]
     [ProducesResponseType(typeof(int), 200)]
     public async Task<int> CreateOrganisationSite(string organisationId, OrganisationSiteInfo organisationSiteInfo)
@@ -342,19 +435,22 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok with site list</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /organisations/1/site
+    ///     GET /organisations/1/site?searchString=sitename
     ///
     /// </remarks>
     [HttpGet("{organisationId}/sites")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation site" })]
     [ProducesResponseType(typeof(OrganisationSiteInfoList), 200)]
-    public async Task<OrganisationSiteInfoList> GetOrganisationSite(string organisationId)
+    public async Task<OrganisationSiteInfoList> GetOrganisationSites(string organisationId, string searchString = null)
     {
-      return await _siteService.GetOrganisationSitesAsync(organisationId);
+      return await _siteService.GetOrganisationSitesAsync(organisationId, searchString);
     }
 
     /// <summary>
@@ -362,6 +458,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok with site details</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <remarks>
     /// Sample request:
@@ -370,6 +467,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet("{organisationId}/sites/{siteId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation site" })]
     [ProducesResponseType(typeof(OrganisationSiteResponse), 200)]
     public async Task<OrganisationSiteResponse> GetOrganisationSite(string organisationId, int siteId)
@@ -383,6 +482,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INVALID_SITE_NAME, INSUFFICIENT_DETAILS
@@ -405,6 +505,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpPut("{organisationId}/sites/{siteId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation site" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task UpdateOrganisationSite(string organisationId, int siteId, OrganisationSiteInfo organisationSiteInfo)
@@ -417,6 +519,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <remarks>
     /// Sample request:
@@ -425,6 +528,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpDelete("{organisationId}/sites/{siteId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation site" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task DeleteOrganisationSite(string organisationId, int siteId)
@@ -437,10 +542,72 @@ namespace CcsSso.ExternalApi.Controllers
     #region Organisation Site Contacts
 
     /// <summary>
+    /// Allows a user to assign user contacts for an organisation site
+    /// </summary>
+    /// <response  code="200">Ok. Return assigned site contact ids</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: ERROR_INVALID_ASSIGNING_CONTACT_POINT_IDS, ERROR_INVALID_CONTACT_ASSIGNEMNT_TYPE, ERROR_INVALID_USER_ID_FOR_CONTACT_ASSIGNEMNT, ERROR_DUPLICATE_CONTACT_ASSIGNMENT
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /organisations/1/sites/1/contacts/assign
+    ///     {
+    ///        "AssigningContactType": 1, (User:1, Site:2 Only user contacts are valid here)
+    ///        "AssigningContactPointIds": [1, 2],
+    ///        "AssigningContactsUserId": "user@mail.com"
+    ///     }
+    ///     
+    ///
+    /// </remarks>s
+    [HttpPost("{organisationId}/sites/{siteId}/contacts/assign")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
+    [ProducesResponseType(typeof(List<int>), 200)]
+    public async Task<List<int>> AssignContactsToOrganisationSite(string organisationId, int siteId, ContactAssignmentInfo contactAssignmentInfo)
+    {
+      return await _siteContactService.AssignContactsToSiteAsync(organisationId, siteId, contactAssignmentInfo);
+    }
+
+
+    /// <summary>
+    /// Allows a user to unassign contacts from an organisation site.
+    /// Should provide the assigned contacts contactpoint ids as a query parameter list
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: ERROR_INVALID_UNASSIGNING_CONTACT_POINT_IDS
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /organisations/1/sites/1/contacts/unassign?contactPointIds=2
+    ///     
+    ///
+    /// </remarks>s
+    [HttpPost("{organisationId}/sites/{siteId}/contacts/unassign")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task UnAssignContactsFromOrganisationSite(string organisationId, int siteId, [FromQuery]List<int> contactPointIds)
+    {
+      await _siteContactService.UnassignSiteContactsAsync(organisationId, siteId, contactPointIds);
+    }
+
+    /// <summary>
     /// Allows a user to create organisation site contact
     /// </summary>
     /// <response  code="200">Ok. Return created site contact id</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INSUFFICIENT_DETAILS, INVALID_CONTACT_TYPE, INVALID_EMAIL, INVALID_PHONE_NUMBER
@@ -475,6 +642,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>s
     [HttpPost("{organisationId}/sites/{siteId}/contacts")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
     [ProducesResponseType(typeof(int), 200)]
     public async Task<int> CreateOrganisationSiteContact(string organisationId, int siteId, ContactRequestInfo contactInfo)
@@ -487,6 +656,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <remarks>
     /// Sample request:
@@ -497,11 +667,13 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet("{organisationId}/sites/{siteId}/contacts")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
     [ProducesResponseType(typeof(OrganisationSiteContactInfoList), 200)]
-    public async Task<OrganisationSiteContactInfoList> GetOrganisationSiteContactsList(string organisationId, int siteId, string contactType)
+    public async Task<OrganisationSiteContactInfoList> GetOrganisationSiteContactsList(string organisationId, int siteId, string contactType, ContactAssignedStatus contactAssignedStatus = ContactAssignedStatus.All)
     {
-      return await _siteContactService.GetOrganisationSiteContactsListAsync(organisationId, siteId, contactType);
+      return await _siteContactService.GetOrganisationSiteContactsListAsync(organisationId, siteId, contactType, contactAssignedStatus);
     }
 
     /// <summary>
@@ -509,6 +681,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <remarks>
     /// Sample request:
@@ -518,6 +691,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet("{organisationId}/sites/{siteId}/contacts/{contactId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
     [ProducesResponseType(typeof(OrganisationSiteContactInfo), 200)]
     public async Task<OrganisationSiteContactInfo> GetOrganisationSiteContact(string organisationId, int siteId, int contactId)
@@ -530,6 +705,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INSUFFICIENT_DETAILS, INVALID_CONTACT_TYPE, INVALID_EMAIL, INVALID_PHONE_NUMBER
@@ -564,6 +740,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpPut("{organisationId}/sites/{siteId}/contacts/{contactId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task UpdateOrganisationSiteContact(string organisationId, int siteId, int contactId, ContactRequestInfo contactInfo)
@@ -576,6 +754,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <remarks>
     /// Sample request:
@@ -585,6 +764,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpDelete("{organisationId}/sites/{siteId}/contacts/{contactId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation site contact" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task DeleteOrganisationSiteContact(string organisationId, int siteId, int contactId)
@@ -601,6 +782,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <remarks>
     /// Sample request:
@@ -610,9 +792,11 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet("{organisationId}/user")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation User" })]
     [ProducesResponseType(typeof(UserListResponse), 200)]
-    public async Task<UserListResponse> GetUsers(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria, string searchString)
+    public async Task<UserListResponse> GetUsers(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria, string searchString, bool includeSelf = false)
     {
       resultSetCriteria ??= new ResultSetCriteria
       {
@@ -621,7 +805,7 @@ namespace CcsSso.ExternalApi.Controllers
       };
       resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
       resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
-      return await _userProfileService.GetUsersAsync(organisationId, resultSetCriteria, searchString);
+      return await _userProfileService.GetUsersAsync(organisationId, resultSetCriteria, searchString, includeSelf);
     }
     #endregion
 
@@ -631,6 +815,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Resource not found</response>
     /// <response  code="409">Resource already exists</response>
     /// <response  code="400">Bad request.
@@ -646,6 +831,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     /// </remarks>
     [HttpPost("{organisationId}/groups")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation Group" })]
     [ProducesResponseType(typeof(int), 200)]
     public async Task<int> CreateOrganisationGroup(string organisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
@@ -658,6 +845,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Resource not found</response>
     /// <remarks>
     /// Sample request:
@@ -666,6 +854,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     /// </remarks>
     [HttpDelete("{organisationId}/groups/{groupId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation Group" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task DeleteOrganisationGroup(string organisationId, int groupId)
@@ -678,6 +868,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Resource not found</response>
     /// <remarks>
     /// Sample request:
@@ -686,6 +877,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     /// </remarks>
     [HttpGet("{organisationId}/groups/{groupId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation Group" })]
     [ProducesResponseType(typeof(OrganisationGroupResponseInfo), 200)]
     public async Task<OrganisationGroupResponseInfo> GetOrganisationGroup(string organisationId, int groupId)
@@ -698,6 +891,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Resource not found</response>
     /// <remarks>
     /// Sample request:
@@ -706,6 +900,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     /// </remarks>
     [HttpGet("{organisationId}/groups")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER", "ORG_USER_SUPPORT")]
     [SwaggerOperation(Tags = new[] { "Organisation Group" })]
     [ProducesResponseType(typeof(OrganisationGroupList), 200)]
     public async Task<OrganisationGroupList> GetOrganisationGroups(string organisationId, string searchString = null)
@@ -718,6 +913,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Resource not found</response>
     /// <response  code="409">Resource already exists</response>
     /// <response  code="400">Bad request.
@@ -781,6 +977,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     /// </remarks>
     [HttpPatch("{organisationId}/groups/{groupId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation Group" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task UpdateOrganisationGroup(string organisationId, int groupId, OrganisationGroupRequestInfo organisationGroupRequestInfo)
@@ -795,6 +993,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Resource not found</response>
     /// <remarks>
     /// Sample request:
@@ -805,6 +1004,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet("{organisationId}/identity-providers")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(List<IdentityProviderDetail>), 200)]
     public async Task<List<IdentityProviderDetail>> GetIdentityProviders(string organisationId)
@@ -812,8 +1013,31 @@ namespace CcsSso.ExternalApi.Controllers
       return await _organisationService.GetOrganisationIdentityProvidersAsync(organisationId);
     }
 
+    /// <summary>
+    /// Allows a user to update identity provider details of an organisation
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET organisations/1/identity-providers/update
+    ///     {
+    ///       ciiOrganisationId: "orgid",
+    ///       changedOrgIdentityProviders: [
+    ///         {
+    ///           id: 1
+    ///         }
+    ///       ]
+    ///      }
+    ///
+    /// </remarks>
     [HttpPut("{organisationId}/identity-providers/update")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
     [ProducesResponseType(200)]
     public async Task UpdateIdentityProvider(OrgIdentityProviderSummary orgIdentityProviderSummary)
     {
@@ -828,6 +1052,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Resource not found</response>
     /// <remarks>
     /// Sample request:
@@ -836,6 +1061,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     /// </remarks>
     [HttpGet("{organisationId}/roles")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS", "ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
     public async Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId)
@@ -843,11 +1069,38 @@ namespace CcsSso.ExternalApi.Controllers
       return await _organisationService.GetOrganisationRolesAsync(organisationId);
     }
 
-    [HttpPut("{ciiOrganisationId}/updateEligableRoles")]
+    /// <summary>
+    /// Update organisation eligible roles
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/updateEligableRoles
+    ///     {
+    ///       isBuyer: true,
+    ///       rolesToAdd: [
+    ///         {
+    ///           id: 1
+    ///         }
+    ///       ],
+    ///       rolesToDelete: [
+    ///         {
+    ///           id: 1
+    ///         }
+    ///       ]
+    ///      }
+    ///     
+    /// </remarks>
+    [HttpPut("{organisationId}/updateEligableRoles")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
-    public async Task UpdateEligableRoles(string ciiOrganisationId, OrganisationRoleUpdate model)
+    public async Task UpdateEligableRoles(string organisationId, OrganisationRoleUpdate model)
     {
-      await _organisationService.UpdateOrganisationEligibleRolesAsync(ciiOrganisationId, model.IsBuyer, model.RolesToAdd, model.RolesToDelete);
+      await _organisationService.UpdateOrganisationEligibleRolesAsync(organisationId, model.IsBuyer, model.RolesToAdd, model.RolesToDelete);
     }
 
     #endregion

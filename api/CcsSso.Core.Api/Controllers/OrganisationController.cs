@@ -1,12 +1,11 @@
+using CcsSso.Core.Authorisation;
 using CcsSso.Domain.Contracts;
-using CcsSso.Domain.Dtos;
 using CcsSso.Dtos.Domain.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System;
-using Microsoft.AspNetCore.Http;
 
 namespace CcsSso.Api.Controllers
 {
@@ -14,40 +13,28 @@ namespace CcsSso.Api.Controllers
   [ApiController]
   public class OrganisationController : ControllerBase
   {
-    private readonly ICiiService _ciiService;
     private readonly IOrganisationService _organisationService;
-    private readonly IContactService _contactService;
-    private readonly IUserService _userService;
-    private IHttpContextAccessor _httpContextAccessor;
 
-    public OrganisationController(IOrganisationService organisationService, ICiiService ciiService, IContactService contactService, IUserService userService, IHttpContextAccessor httpContextAccessor)
+    public OrganisationController(IOrganisationService organisationService)
     {
       _organisationService = organisationService;
-      _ciiService = ciiService;
-      _contactService = contactService;
-      _userService = userService;
-      _httpContextAccessor = httpContextAccessor;
     }
 
-    /// <summary>
-    /// Method to delete an organisation.
-    /// </summary>
-    /// <response  code="200">Successfully deleted</response>
-    /// <response  code="401">Authentication fails</response>
-    /// <remarks>
-    /// Sample request:
-    ///
-    ///     DELETE /organisation/1
-    ///     
-    ///
-    /// </remarks>
-    [HttpDelete("{id}")]
-    [SwaggerOperation(Tags = new[] { "organisation" })]
-    [ProducesResponseType(typeof(int), 200)]
-    [ProducesResponseType(401)]
-    public async Task Delete(int id)
+    [HttpPost("register")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    public async Task<string> Register(OrganisationRegistrationDto organisationRegistrationDto)
     {
-      await _organisationService.DeleteAsync(id);
+      CookieOptions httpCookieOptions = new CookieOptions()
+      {
+        HttpOnly = true,
+        SameSite = SameSiteMode.None,
+        Secure = true
+      };
+      string registrationDetailsCookie = "rud";
+      Response.Cookies.Delete(registrationDetailsCookie);
+      //"as" stands for activation email sent
+      Response.Cookies.Append(registrationDetailsCookie, "as", httpCookieOptions);
+      return await _organisationService.RegisterAsync(organisationRegistrationDto);
     }
 
     /// <summary>
@@ -60,7 +47,7 @@ namespace CcsSso.Api.Controllers
     /// Sample request: GET /organisation/1
     /// </remarks>
     [HttpGet("{id}")]
-    [SwaggerOperation(Tags = new[] { "organisation" })]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(OrganisationDto), 200)]
     [ProducesResponseType(204)]
     [ProducesResponseType(401)]
@@ -70,7 +57,8 @@ namespace CcsSso.Api.Controllers
     }
 
     [HttpGet("getAll")]
-    [SwaggerOperation(Tags = new[] { "organisation" })]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(OrganisationDto), 200)]
     [ProducesResponseType(204)]
     [ProducesResponseType(401)]
@@ -79,99 +67,12 @@ namespace CcsSso.Api.Controllers
       return await _organisationService.GetAllAsync(orgName);
     }
 
-    /// <summary>
-    /// Method to create an organisation
-    /// </summary>
-    /// <response  code="200">Organisation Id</response>
-    /// <response  code="400">Bad Request</response>
-    /// <remarks>
-    /// Sample request:
-    /// POST /organisation
-    /// {
-    ///    "ciiOrganisationId": "12345678910",
-    ///    "organisationUri": "http://www.google.com",
-    ///    "rightToBuy": true,
-    ///    "partyId": 1,
-    /// }
-    /// </remarks>
-    [HttpPost]
-    [SwaggerOperation(Tags = new[] { "organisation" })]
-    // [ProducesResponseType(typeof(int), 200)]
-    // [ProducesResponseType(401)]
-    // [ProducesResponseType(typeof(string), 400)]
-    public async Task<int> Post(OrganisationDto model)
-    {
-      return await _organisationService.CreateAsync(model);
-    }
-
-    [HttpPut]
-    [SwaggerOperation(Tags = new[] { "organisation" })]
-    [ProducesResponseType(typeof(int), 200)]
-    [ProducesResponseType(401)]
-    public async Task Put(OrganisationDto model)
-    {
-      await _organisationService.PutAsync(model);
-    }
-
     [HttpGet("getUsers")]
-    [SwaggerOperation(Tags = new[] { "organisation" })]
+    [ClaimAuthorise("ORG_USER_SUPPORT")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
     public async Task<List<OrganisationUserDto>> GetUsers(string name)
     {
       return await _organisationService.GetUsersAsync(name);
-    }
-
-    [HttpPost("rollback")]
-    [SwaggerOperation(Tags = new[] { "organisation" })]
-    // [ProducesResponseType(typeof(int), 200)]
-    // [ProducesResponseType(401)]
-    // [ProducesResponseType(typeof(string), 400)]
-    public async Task Rollback(OrganisationRollbackDto model)
-    {
-      if (!String.IsNullOrEmpty(model.CiiOrganisationId))
-      {
-        try
-        {
-          var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
-          await _ciiService.DeleteOrgAsync(model.CiiOrganisationId, accessToken);
-        }
-        catch (System.Exception ex)
-        {
-          System.Console.Write(ex);
-        }
-      }
-      if (!String.IsNullOrEmpty(model.OrganisationId))
-      {
-        try
-        {
-          await _organisationService.DeleteAsync(Int32.Parse(model.OrganisationId));
-        }
-        catch (System.Exception ex)
-        {
-          System.Console.Write(ex);
-        }
-      }
-      if (!String.IsNullOrEmpty(model.ContactId))
-      {
-        try
-        {
-          await _contactService.DeleteAsync(Int32.Parse(model.ContactId));
-        }
-        catch (System.Exception ex)
-        {
-          System.Console.Write(ex);
-        }
-      }
-      if (!String.IsNullOrEmpty(model.UserId))
-      {
-        try
-        {
-          await _userService.DeleteAsync(Int32.Parse(model.UserId));
-        }
-        catch (System.Exception ex)
-        {
-          System.Console.Write(ex);
-        }
-      }
     }
   }
 }

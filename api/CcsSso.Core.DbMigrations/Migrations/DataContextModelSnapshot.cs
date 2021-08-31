@@ -326,6 +326,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("MfaEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("OrganisationId")
                         .HasColumnType("integer");
 
@@ -469,6 +472,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .HasColumnType("integer")
                         .UseIdentityByDefaultColumn();
 
+                    b.Property<int>("AssignedContactType")
+                        .HasColumnType("integer");
+
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -493,6 +499,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("LastUpdatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OriginalContactId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -537,6 +546,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
                     b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("MfaEnabled")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("OrgTypeEligibility")
                         .HasColumnType("integer");
@@ -597,6 +609,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .HasColumnType("integer")
                         .UseIdentityByDefaultColumn();
 
+                    b.Property<int>("AssignedContactType")
+                        .HasColumnType("integer");
+
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -624,6 +639,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("LastUpdatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OriginalContactPointId")
                         .HasColumnType("integer");
 
                     b.Property<int>("PartyId")
@@ -944,6 +962,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("MfaEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("OrganisationId")
                         .HasColumnType("integer");
 
@@ -1246,6 +1267,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
                     b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("MfaEnabled")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("OrganisationEligibleIdentityProviderId")
                         .HasColumnType("integer");

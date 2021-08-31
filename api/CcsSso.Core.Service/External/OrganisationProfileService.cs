@@ -1,6 +1,8 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
@@ -28,19 +30,17 @@ namespace CcsSso.Core.Service.External
     private readonly IContactsHelperService _contactsHelper;
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
     private readonly ICiiService _ciiService;
-    private readonly IOrganisationService _organisationHelperService;
     private readonly IAdaptorNotificationService _adapterNotificationService;
     private readonly IWrapperCacheService _wrapperCacheService;
     private readonly ILocalCacheService _localCacheService;
     public OrganisationProfileService(IDataContext dataContext, IContactsHelperService contactsHelper, ICcsSsoEmailService ccsSsoEmailService,
-      ICiiService ciiService, IOrganisationService organisationHelperService, IAdaptorNotificationService adapterNotificationService,
+      ICiiService ciiService, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ILocalCacheService localCacheService)
     {
       _dataContext = dataContext;
       _contactsHelper = contactsHelper;
       _ccsSsoEmailService = ccsSsoEmailService;
       _ciiService = ciiService;
-      _organisationHelperService = organisationHelperService;
       _adapterNotificationService = adapterNotificationService;
       _wrapperCacheService = wrapperCacheService;
       _localCacheService = localCacheService;
@@ -55,6 +55,11 @@ namespace CcsSso.Core.Service.External
     {
       Validate(organisationProfileInfo);
 
+      if (await _dataContext.Organisation.AnyAsync(org => !org.IsDeleted && org.CiiOrganisationId == organisationProfileInfo.Detail.OrganisationId))
+      {
+        throw new ResourceAlreadyExistsException();
+      }
+
       var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(t => t.PartyTypeName == PartyTypeName.ExternalOrgnaisation)).Id;
       var contactPointReasonId = await _contactsHelper.GetContactPointReasonIdAsync(ContactReasonType.Other);
 
@@ -62,7 +67,7 @@ namespace CcsSso.Core.Service.External
       {
         CiiOrganisationId = organisationProfileInfo.Detail.OrganisationId,
         LegalName = organisationProfileInfo.Identifier.LegalName.Trim(),
-        OrganisationUri = organisationProfileInfo.Identifier.Uri.Trim()
+        OrganisationUri = organisationProfileInfo.Identifier.Uri?.Trim()
       };
 
       organisation.IsSme = organisationProfileInfo.Detail.IsSme;
@@ -70,8 +75,9 @@ namespace CcsSso.Core.Service.External
       organisation.RightToBuy = organisationProfileInfo.Detail.RightToBuy;
       organisation.IsActivated = organisationProfileInfo.Detail.IsActive;
       organisation.SupplierBuyerType = organisationProfileInfo.Detail.SupplierBuyerType;
+      organisation.BusinessType = organisationProfileInfo.Detail.BusinessType;
 
-      var eligibleRoles = await _organisationHelperService.GetOrganisationEligibleRolesAsync(organisation, organisationProfileInfo.Detail.SupplierBuyerType);
+      var eligibleRoles = await GetOrganisationEligibleRolesAsync(organisation, organisationProfileInfo.Detail.SupplierBuyerType);
       _dataContext.OrganisationEligibleRole.AddRange(eligibleRoles);
 
       var eligibleIdentityProviders = new List<OrganisationEligibleIdentityProvider>();
@@ -98,7 +104,10 @@ namespace CcsSso.Core.Service.External
         }
       };
 
-      AssignPhysicalContactsToContactPoint(organisationProfileInfo.Address, contactPoint);
+      if (organisationProfileInfo.Address != null)
+      {
+        AssignPhysicalContactsToContactPoint(organisationProfileInfo.Address, contactPoint);
+      }
 
       var party = new Party
       {
@@ -210,10 +219,10 @@ namespace CcsSso.Core.Service.External
         {
           Identifier = new OrganisationIdentifier
           {
-            Id = ciiOrganisation?.identifier?.id ?? string.Empty,
-            Scheme = ciiOrganisation?.identifier?.scheme ?? string.Empty,
-            LegalName = ciiOrganisation?.identifier?.legalName ?? string.Empty,
-            Uri = ciiOrganisation?.identifier?.uri ?? string.Empty,
+            Id = ciiOrganisation?.Identifier?.Id ?? string.Empty,
+            Scheme = ciiOrganisation?.Identifier?.Scheme ?? string.Empty,
+            LegalName = ciiOrganisation?.Identifier?.LegalName ?? string.Empty,
+            Uri = ciiOrganisation?.Identifier?.Uri ?? string.Empty,
           },
           Detail = new OrganisationDetail
           {
@@ -223,6 +232,7 @@ namespace CcsSso.Core.Service.External
             IsVcse = organisation.IsVcse,
             RightToBuy = organisation.RightToBuy ?? false,
             SupplierBuyerType = organisation.SupplierBuyerType != null ? (int)organisation.SupplierBuyerType : 0,
+            BusinessType = organisation.BusinessType,
             CreationDate = organisation.CreatedOnUtc.ToString(DateTimeFormat.DateFormat)
           },
           AdditionalIdentifiers = new List<OrganisationIdentifier>()
@@ -251,15 +261,15 @@ namespace CcsSso.Core.Service.External
           }
         }
 
-        if (ciiOrganisation?.additionalIdentifiers != null)
+        if (ciiOrganisation?.AdditionalIdentifiers != null)
         {
-          foreach (var ciiAdditionalIdentifier in ciiOrganisation.additionalIdentifiers)
+          foreach (var ciiAdditionalIdentifier in ciiOrganisation.AdditionalIdentifiers)
           {
             var identifier = new OrganisationIdentifier
             {
-              Id = ciiAdditionalIdentifier.id,
-              Scheme = ciiAdditionalIdentifier.scheme,
-              LegalName = ciiAdditionalIdentifier.legalName,
+              Id = ciiAdditionalIdentifier.Id,
+              Scheme = ciiAdditionalIdentifier.Scheme,
+              LegalName = ciiAdditionalIdentifier.LegalName,
               Uri = string.Empty
             };
             organisationInfo.AdditionalIdentifiers.Add(identifier);
@@ -310,20 +320,25 @@ namespace CcsSso.Core.Service.External
 
     public async Task<List<OrganisationRole>> GetOrganisationRolesAsync(string ciiOrganisationId)
     {
-      var organisation = await _dataContext.Organisation
+      // Read org table to find the Org and then include all roles (FirstOrDefaultAsync get the Org)
+      var orgEligibleRoles = await _dataContext.Organisation
        .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
-       .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
+        .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
+        .Where(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId)
+        .Select(o => o.OrganisationEligibleRoles)
+       .FirstOrDefaultAsync();
 
-      if (organisation == null)
+      if (orgEligibleRoles == null)
       {
         throw new ResourceNotFoundException();
       }
 
-      var roles = organisation.OrganisationEligibleRoles.Where(x => !x.IsDeleted)
+      var roles = orgEligibleRoles.Where(x => !x.IsDeleted)
         .OrderBy(r => r.CcsAccessRoleId).Select(or => new OrganisationRole
         {
           RoleId = or.Id,
           RoleName = or.CcsAccessRole.CcsAccessRoleName,
+          ServiceName = or.CcsAccessRole?.ServiceRolePermissions?.FirstOrDefault()?.ServicePermission.CcsService.ServiceName,
           OrgTypeEligibility = or.CcsAccessRole.OrgTypeEligibility,
           SubscriptionTypeEligibility = or.CcsAccessRole.SubscriptionTypeEligibility,
           TradeEligibility = or.CcsAccessRole.TradeEligibility
@@ -419,7 +434,7 @@ namespace CcsSso.Core.Service.External
       if (organisation != null)
       {
         organisation.LegalName = organisationProfileInfo.Identifier.LegalName.Trim();
-        organisation.OrganisationUri = organisationProfileInfo.Identifier.Uri.Trim();
+        organisation.OrganisationUri = organisationProfileInfo.Identifier.Uri?.Trim();
 
         if (organisationProfileInfo.Detail != null)
         {
@@ -593,15 +608,9 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidOrganisationName);
       }
 
-      if (string.IsNullOrWhiteSpace(organisationProfileInfo.Identifier.Uri))
-      {
-        throw new CcsSsoException(ErrorConstant.ErrorInvalidOrganisationUri);
-      }
-
       if (organisationProfileInfo.Address != null) // Address is not mandatory for an organisation
       {
-        if (string.IsNullOrWhiteSpace(organisationProfileInfo.Address.StreetAddress) || string.IsNullOrWhiteSpace(organisationProfileInfo.Address.PostalCode)
-        || string.IsNullOrWhiteSpace(organisationProfileInfo.Address.CountryCode))
+        if (string.IsNullOrWhiteSpace(organisationProfileInfo.Address.StreetAddress) || string.IsNullOrWhiteSpace(organisationProfileInfo.Address.PostalCode))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
         }
@@ -609,8 +618,69 @@ namespace CcsSso.Core.Service.External
         if (!string.IsNullOrWhiteSpace(organisationProfileInfo.Address.CountryCode) && !CultureSupport.IsValidCountryCode(organisationProfileInfo.Address.CountryCode))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidCountryCode);
-        } 
+        }
       }
+    }
+
+    private async Task<List<OrganisationEligibleRole>> GetOrganisationEligibleRolesAsync(Organisation org, int supplierBuyerType)
+    {
+      var eligibleRoles = new List<OrganisationEligibleRole>();
+      if (supplierBuyerType == 0)
+      {
+        var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
+          ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
+          ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
+          (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Both)
+        ).ToListAsync();
+        roles.ForEach((role) =>
+        {
+          var eligibleRole = new OrganisationEligibleRole
+          {
+            CcsAccessRole = role,
+            Organisation = org,
+            MfaEnabled = role.MfaEnabled
+          };
+          eligibleRoles.Add(eligibleRole);
+        });
+      }
+      else if (supplierBuyerType == 1)
+      {
+        var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
+          ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
+          ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
+          (ar.TradeEligibility == RoleEligibleTradeType.Buyer || ar.TradeEligibility == RoleEligibleTradeType.Both)
+        ).ToListAsync();
+        roles.ForEach((role) =>
+        {
+          var eligibleRole = new OrganisationEligibleRole
+          {
+            CcsAccessRole = role,
+            Organisation = org,
+            MfaEnabled = role.MfaEnabled
+          };
+          eligibleRoles.Add(eligibleRole);
+        });
+      }
+      else
+      {
+        var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
+          ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
+          ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
+          (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Buyer || ar.TradeEligibility == RoleEligibleTradeType.Both)
+        ).ToListAsync();
+        roles.ForEach((role) =>
+        {
+          var eligibleRole = new OrganisationEligibleRole
+          {
+            CcsAccessRole = role,
+            Organisation = org,
+            MfaEnabled = role.MfaEnabled
+          };
+          eligibleRoles.Add(eligibleRole);
+        });
+      }
+
+      return eligibleRoles;
     }
 
   }

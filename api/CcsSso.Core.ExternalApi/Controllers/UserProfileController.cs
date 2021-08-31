@@ -1,5 +1,6 @@
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.External;
+using CcsSso.Core.ExternalApi.Authorisation;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +28,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE, INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, INVALID_USER_DETAIL
@@ -50,6 +52,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpPost]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("USER_POST")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
     public async Task<UserEditResponseInfo> CreateUser(UserProfileEditRequestInfo userProfileRequestInfo)
@@ -62,6 +66,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INVALID_USER_ID
@@ -74,6 +79,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet]
+    [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(UserProfileResponseInfo), 200)]
     public async Task<UserProfileResponseInfo> GetUser(string userId)
@@ -86,6 +92,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE, INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, ERROR_CANNOT_REMOVE_ADMIN_ROLE_OR_GROUP_OF_LAST_ADMIN, INVALID_USER_DETAIL
@@ -109,6 +116,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpPut]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
     public async Task<UserEditResponseInfo> UpdateUser(string userId, UserProfileEditRequestInfo userProfileRequestInfo)
@@ -121,6 +130,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INVALID_USER_ID, ERROR_CANNOT_DELETE_LAST_ADMIN_OF_ORGANISATION
@@ -133,6 +143,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpDelete]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task DeleteUser(string userId)
@@ -145,7 +157,8 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    [HttpPut("change-password")]
+    [HttpPut("reset-password")]
+    [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task ResetUserPassword(string userId, string? component)
@@ -154,6 +167,7 @@ namespace CcsSso.ExternalApi.Controllers
     }
 
     [HttpPut("remove-admin-roles")]
+    [ClaimAuthorise("ORG_USER_SUPPORT")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task RemoveAdminRoles(string userId)
@@ -162,6 +176,7 @@ namespace CcsSso.ExternalApi.Controllers
     }
 
     [HttpPut("add-admin-role")]
+    [ClaimAuthorise("ORG_USER_SUPPORT")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task AddAdminRole(string userId)
@@ -176,6 +191,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok. Return created contact id</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INVALID_USER_ID, INSUFFICIENT_DETAILS, INVALID_EMAIL, INVALID_PHONE_NUMBER, INVALID_CONTACT_TYPE
@@ -210,6 +226,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpPost("contacts")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(int), 200)]
     public async Task<int> CreateUserContact(string userId, ContactRequestInfo contactInfo)
@@ -222,6 +240,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INVALID_USER_ID
@@ -235,6 +254,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet("contacts")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(UserContactInfoList), 200)]
     public async Task<UserContactInfoList> GetUserContactsList(string userId, [FromQuery] string contactType)
@@ -247,6 +268,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INVALID_USER_ID
@@ -259,6 +281,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet("contacts/{contactId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(UserContactInfo), 200)]
     public async Task<UserContactInfo> GetUserContact(string userId, int contactId)
@@ -272,6 +296,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INVALID_USER_ID, INSUFFICIENT_DETAILS, INVALID_EMAIL, INVALID_PHONE_NUMBER, INVALID_CONTACT_TYPE
@@ -306,6 +331,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpPut("contacts/{contactId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task UpdateUserContact(string userId, int contactId, ContactRequestInfo contactInfo)
@@ -318,6 +345,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
     /// Error Codes: INVALID_USER_ID
@@ -330,6 +358,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpDelete("contacts/{contactId}")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task DeleteUserContact(string userId, int contactId)

@@ -7,6 +7,7 @@ using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Shared.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -21,13 +22,16 @@ namespace CcsSso.Core.Service.External
     private readonly IDataContext _dataContext;
     private readonly IUserProfileHelperService _userProfileHelperService;
     private readonly IAuditLoginService _auditLoginService;
-
+    private readonly ICcsSsoEmailService _ccsSsoEmailService;
+    private readonly IWrapperCacheService _wrapperCacheService;
     public OrganisationGroupService(IDataContext dataContext, IUserProfileHelperService userProfileHelperService,
-      IAuditLoginService auditLoginService)
+      IAuditLoginService auditLoginService, ICcsSsoEmailService ccsSsoEmailService, IWrapperCacheService wrapperCacheService)
     {
       _dataContext = dataContext;
       _userProfileHelperService = userProfileHelperService;
       _auditLoginService = auditLoginService;
+      _ccsSsoEmailService = ccsSsoEmailService;
+      _wrapperCacheService = wrapperCacheService;
     }
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
@@ -73,7 +77,7 @@ namespace CcsSso.Core.Service.External
     {
       var group = await _dataContext.OrganisationUserGroup
         .Include(g => g.GroupEligibleRoles)
-        .Include(g => g.UserGroupMemberships)
+        .Include(g => g.UserGroupMemberships).ThenInclude(ugm => ugm.User)
         .FirstOrDefaultAsync(g => !g.IsDeleted && g.Id == groupId && g.Organisation.CiiOrganisationId == ciiOrganisationId);
 
       if (group == null)
@@ -89,6 +93,11 @@ namespace CcsSso.Core.Service.External
 
       // Log
       await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeDelete, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, GroupName:{group.UserGroupName}, OrganisationId:{ciiOrganisationId}");
+
+      // Invalidate redis
+      var invalidatingCacheKeys = new List<string>();
+      invalidatingCacheKeys.AddRange(group.UserGroupMemberships.Select(ugm => $"{CacheKeyConstant.User}-{ugm.User.UserName}"));
+      await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeys.ToArray());
     }
 
     public async Task<OrganisationGroupResponseInfo> GetGroupAsync(string ciiOrganisationId, int groupId)
@@ -106,6 +115,7 @@ namespace CcsSso.Core.Service.External
       OrganisationGroupResponseInfo organisationGroupResponseInfo = new OrganisationGroupResponseInfo
       {
         GroupId = group.Id,
+        MfaEnabled = group.MfaEnabled,
         OrganisationId = ciiOrganisationId,
         GroupName = group.UserGroupName,
         CreatedDate = group.CreatedOnUtc.Date.ToString(DateTimeFormat.DateFormatShortMonth),
@@ -154,7 +164,7 @@ namespace CcsSso.Core.Service.External
     public async Task UpdateGroupAsync(string ciiOrganisationId, int groupId, OrganisationGroupRequestInfo organisationGroupRequestInfo)
     {
       var group = await _dataContext.OrganisationUserGroup
-        .Include(g => g.GroupEligibleRoles)
+        .Include(g => g.GroupEligibleRoles).ThenInclude(r => r.OrganisationEligibleRole)
         .Include(g => g.UserGroupMemberships).ThenInclude(ugm => ugm.User)
         .FirstOrDefaultAsync(g => !g.IsDeleted && g.Id == groupId && g.Organisation.CiiOrganisationId == ciiOrganisationId);
 
@@ -163,13 +173,15 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
+      var existingUserNames = group.UserGroupMemberships.Select(ugm => ugm.User.UserName).ToList();
       string newName = string.Empty;
       string previousName = group.UserGroupName;
       bool hasNameChanged = false;
       List<int> addedRoleIds = new();
       List<int> removedRoleIds = new();
-      List<int> addedUserIds = new();
-      List<int> removedUserIds = new();
+      List<Tuple<int, string>> addedUsersTupleList = new();
+      List<Tuple<int, string>> removedUsersTupleList = new();
+      var mfaEnableInGroup = false;
 
       if (!string.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName))
       {
@@ -187,6 +199,15 @@ namespace CcsSso.Core.Service.External
         group.UserGroupNameKey = organisationGroupRequestInfo.GroupName.Trim().ToUpper();
       }
 
+      // Take the not deleted org role ids
+      var orgRoleInfo = await _dataContext.OrganisationEligibleRole
+        .Where(r => !r.IsDeleted && r.Organisation.CiiOrganisationId == ciiOrganisationId)
+        .Select(r => new
+        {
+          Id = r.Id,
+          MfaEnable = r.MfaEnabled
+        }).ToListAsync();
+
       if (organisationGroupRequestInfo.RoleInfo != null)
       {
         if (organisationGroupRequestInfo.RoleInfo.AddedRoleIds == null && organisationGroupRequestInfo.RoleInfo.RemovedRoleIds == null)
@@ -194,16 +215,10 @@ namespace CcsSso.Core.Service.External
           throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
         }
 
-        // Take the not deleted org role ids
-        var orgRoleIds = await _dataContext.OrganisationEligibleRole
-          .Where(r => !r.IsDeleted)
-          .Select(r => r.Id)
-          .ToListAsync();
-
         if ((organisationGroupRequestInfo.RoleInfo.AddedRoleIds != null &&
-          organisationGroupRequestInfo.RoleInfo.AddedRoleIds.Any(id => !orgRoleIds.Contains(id)))
+          organisationGroupRequestInfo.RoleInfo.AddedRoleIds.Any(id => !orgRoleInfo.Any(r => r.Id == id)))
           || (organisationGroupRequestInfo.RoleInfo.RemovedRoleIds != null &&
-          organisationGroupRequestInfo.RoleInfo.RemovedRoleIds.Any(id => !orgRoleIds.Contains(id))))
+          organisationGroupRequestInfo.RoleInfo.RemovedRoleIds.Any(id => !orgRoleInfo.Any(r => r.Id == id))))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
         }
@@ -266,15 +281,17 @@ namespace CcsSso.Core.Service.External
         }
 
         // Remove user group membership
+        removedUserNameList = removedUserNameList.Distinct().ToList(); // Remove duplicates
         group.UserGroupMemberships.RemoveAll(ugm => removedUserNameList.Contains(ugm.User.UserName));
-        removedUserIds.AddRange(groupUpdatingUsers.Where(u => removedUserNameList.Contains(u.UserName)).Select(u => u.Id).Distinct().ToList());
+        removedUsersTupleList.AddRange(groupUpdatingUsers.Where(u => removedUserNameList.Contains(u.UserName))
+          .Select(u => new Tuple<int, string>(u.Id, u.UserName)).ToList());
 
         // Add user group membership
         addedUserNameList = addedUserNameList.Distinct().ToList(); // Avoid duplicates
         addedUserNameList.ForEach((addedUserName) =>
         {
           // Add group for user if not already exists
-          if (!group.UserGroupMemberships.Any(ugm => !ugm.IsDeleted && ugm.User!= null && ugm.User.UserName == addedUserName))
+          if (!group.UserGroupMemberships.Any(ugm => !ugm.IsDeleted && ugm.User != null && ugm.User.UserName == addedUserName))
           {
             var addedUserId = groupUpdatingUsers.First(u => u.UserName == addedUserName).Id;
             var userGroupMembership = new UserGroupMembership
@@ -283,19 +300,33 @@ namespace CcsSso.Core.Service.External
               OrganisationUserGroupId = group.Id
             };
 
-            addedUserIds.Add(addedUserId); // for logs
+            addedUsersTupleList.Add(new Tuple<int, string>(addedUserId, addedUserName)); // for logs
             group.UserGroupMemberships.Add(userGroupMembership);
           }
         });
       }
 
+      var mfaEnableRoleExists = orgRoleInfo.Any(r => group.GroupEligibleRoles.Any(ge => ge.OrganisationEligibleRoleId == r.Id && !ge.IsDeleted && r.MfaEnable));
+
+      // validate for mfa
+      if (mfaEnableRoleExists && (addedRoleIds.Any() || addedUsersTupleList.Any()))
+      {
+        var mfaDisabledUserExists = await _dataContext.User.AnyAsync(u => !u.IsDeleted && group.UserGroupMemberships.Select(ug => ug.UserId).Any(ugId => ugId == u.Id) && !u.MfaEnabled);
+
+        if (mfaDisabledUserExists)
+        {
+          throw new CcsSsoException("MFA_DISABLED_USERS_INCLUDED");
+        }
+      }
+      // This field should not let be updated manually as it consumes in user screen to decide mfa enable/disable
+      group.MfaEnabled = mfaEnableRoleExists;
       await _dataContext.SaveChangesAsync();
 
       //Log
       if (hasNameChanged)
       {
         await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeNameChange, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, OrganisationId:{ciiOrganisationId}" +
-          $", NewGroupName:{newName}, PreviousGroupName:{previousName}"); 
+          $", NewGroupName:{newName}, PreviousGroupName:{previousName}");
       }
       if (addedRoleIds.Any())
       {
@@ -307,16 +338,32 @@ namespace CcsSso.Core.Service.External
         await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeRoleRemove, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, OrganisationId:{ciiOrganisationId}" +
           $", RemovedRoleIds:{string.Join(",", removedRoleIds)}");
       }
-      if (addedUserIds.Any())
+      if (addedUsersTupleList.Any())
       {
         await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeUserAdd, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, OrganisationId:{ciiOrganisationId}" +
-          $", AddedUserIds:{string.Join(",", addedUserIds)}");
+          $", AddedUserIds:{string.Join(",", addedUsersTupleList.Select(au => au.Item1))}");
       }
-      if (removedUserIds.Any())
+      if (removedUsersTupleList.Any())
       {
         await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeUserRemove, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, OrganisationId:{ciiOrganisationId}" +
-          $", RemovedUserIds:{string.Join(",", removedUserIds)}");
+          $", RemovedUserIds:{string.Join(",", removedUsersTupleList.Select(ru => ru.Item1))}");
       }
+
+      var changedUsersNameList = addedUsersTupleList.Concat(removedUsersTupleList).Select(tuple => tuple.Item2).Distinct().ToList();
+
+      // Send permission upadate email
+      List<Task> emailTaskList = new();
+      changedUsersNameList.ForEach(uName =>
+      {
+        emailTaskList.Add(_ccsSsoEmailService.SendUserPermissionUpdateEmailAsync(uName));
+      });
+      await Task.WhenAll(emailTaskList);
+
+      // Invalidate redis
+      var invalidatingCacheKeys = new List<string>();
+      invalidatingCacheKeys.AddRange(changedUsersNameList.Select(changedUserName => $"{CacheKeyConstant.User}-{changedUserName}"));
+      invalidatingCacheKeys.AddRange(existingUserNames.Select(existUserName => $"{CacheKeyConstant.User}-{existUserName}"));
+      await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeys.ToArray());
     }
   }
 }
