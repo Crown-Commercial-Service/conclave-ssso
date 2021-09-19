@@ -24,6 +24,12 @@ namespace CcsSso.Core.Api.Middleware
       "auth/backchannel_logout", "auth/get_refresh_token","auth/send_reset_mfa_notification","auth/reset_mfa_by_ticket",
       "organisation/register", "user/useractivationemail", "user/permissions"
     };
+
+    private List<string> allowedPathsForXSRFValidation = new List<string>()
+    {
+      "auth/create_session"
+    };
+
     private const string allowedCiiRoute = "cii";
     private List<string> restrictedCiiPaths = new List<string>()
     {
@@ -53,6 +59,17 @@ namespace CcsSso.Core.Api.Middleware
 
       if (context.Request.Headers.ContainsKey("Authorization"))
       {
+
+        if (!string.IsNullOrEmpty(_applicationConfigurationInfo.CustomDomain) && !allowedPathsForXSRFValidation.Contains(path))
+        {
+          var cookie = context.Request.Cookies["XSRF-TOKEN-SVR"];
+          var header = context.Request.Headers["x-xsrf-token"];
+          if (string.IsNullOrEmpty(cookie) || string.IsNullOrEmpty(header) || cookie != header)
+          {
+            throw new UnauthorizedAccessException();
+          }
+        }
+
         var bearerToken = context.Request.Headers["Authorization"].FirstOrDefault();
         if (!string.IsNullOrEmpty(bearerToken))
         {

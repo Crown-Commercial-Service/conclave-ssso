@@ -232,7 +232,7 @@ namespace CcsSso.Core.Service.External
             IsVcse = organisation.IsVcse,
             RightToBuy = organisation.RightToBuy ?? false,
             SupplierBuyerType = organisation.SupplierBuyerType != null ? (int)organisation.SupplierBuyerType : 0,
-            BusinessType = organisation.BusinessType,
+            BusinessType = organisation.BusinessType ?? string.Empty,
             CreationDate = organisation.CreatedOnUtc.ToString(DateTimeFormat.DateFormat)
           },
           AdditionalIdentifiers = new List<OrganisationIdentifier>()

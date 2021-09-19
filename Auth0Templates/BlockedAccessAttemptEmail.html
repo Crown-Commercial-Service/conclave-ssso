@@ -24,17 +24,24 @@
             style='-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;margin: 0;padding: 20px;font-family: "ProximaNova", sans-serif;height: 100% !important;'
           >
             <div class="main">
-          
-              <h1>Blocked Access Attempt</h1>
-
-              <p>
-                We detected suspicious activity from the ip: <strong>{{ user.source_ip }}</strong> from
-                <strong>{{ user.city }}</strong>, <strong>{{ user.country }}</strong>.
+              <p
+                style="text-align: center;-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%; margin-bottom: 30px;"
+              >
+               
               </p>
 
+              <h1>Blocked Access Attempt</h1>
               <p>
-                If that is your IP address <a href="{{ url }}">click here</a> to unblock your account. Otherwise
-                disregard this email.
+                Your account has been locked out due to suspicious activity. Please follow the link below to unblock your account.
+                <br />
+                <a href={{url}}>Unblock</a>
+              </p>
+
+              <br /><br />
+              <hr style="border: 2px solid #EAEEF3; border-bottom: 0; margin: 20px 0;" />
+              <p style="text-align: center;color: #A9B3BC;-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;">
+                You're receiving this email because you have an account in 
+            Public Procurement Gateway. If you are not sure why you're receiving this, please contact us.
               </p>
             </div>
           </td>

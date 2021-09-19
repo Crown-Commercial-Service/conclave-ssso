@@ -16,12 +16,12 @@ namespace CcsSso.Adaptor.SqsListener.Listners
   public class AdapterPushDataListner : BackgroundService
   {
     private const string LISTNER_JOB_NAME = "Adapter Push Data Listener";
-    private readonly ILogger<WrapperNotificationListner> _logger;
+    private readonly ILogger<AdapterPushDataListner> _logger;
     private readonly SqsListnerAppSetting _appSetting;
     private readonly IAwsSqsService _awsSqsService;
     private readonly IHttpClientFactory _httpClientFactory;
 
-    public AdapterPushDataListner(ILogger<WrapperNotificationListner> logger, SqsListnerAppSetting appSetting, IAwsSqsService awsSqsService, IHttpClientFactory httpClientFactory)
+    public AdapterPushDataListner(ILogger<AdapterPushDataListner> logger, SqsListnerAppSetting appSetting, IAwsSqsService awsSqsService, IHttpClientFactory httpClientFactory)
     {
       _logger = logger;
       _appSetting = appSetting;

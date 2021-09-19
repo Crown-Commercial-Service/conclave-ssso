@@ -184,6 +184,7 @@ namespace CcsSso.Api
 
       app.Use(async (context, next) =>
       {
+        context.Request.EnableBuffering();
         var customDomain = Configuration.GetSection("CustomDomain").Get<string>();
         context.Response.Headers.Add(
             "Cache-Control",
@@ -196,20 +197,22 @@ namespace CcsSso.Api
         var tokens = antiforgery.GetAndStoreTokens(context);
         // [ValidateAntiForgeryToken]
         // Cookie will be read by angular client and attach to http header
-        context.Response.Cookies.Append("XSRF-TOKEN", tokens.CookieToken,
+        context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken,
             new CookieOptions()
             {
               SameSite = string.IsNullOrEmpty(customDomain) ? SameSiteMode.None : SameSiteMode.Lax,
+              Domain = customDomain,
               Secure = true,
               HttpOnly = false
             });
 
         // For server to compare
-        context.Response.Cookies.Append("XSRF-TOKEN-SVR", tokens.CookieToken,
+        context.Response.Cookies.Append("XSRF-TOKEN-SVR", tokens.RequestToken,
            new CookieOptions()
            {
              SameSite = string.IsNullOrEmpty(customDomain) ? SameSiteMode.None : SameSiteMode.Lax,
              Secure = true,
+             Domain = customDomain,
              HttpOnly = true
            });
 
@@ -227,6 +230,8 @@ namespace CcsSso.Api
       {
         ForwardedHeaders = ForwardedHeaders.XForwardedFor
       });
+
+      app.UseMiddleware<InputValidationMiddleware>();
       app.UseMiddleware<AuthenticationMiddleware>();
 
       app.UseAuthorization();

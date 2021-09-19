@@ -146,7 +146,7 @@ namespace CcsSso.Core.Service.External
         User = new User
         {
           UserName = userName,
-          UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unknown),
+          UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified),
           UserGroupMemberships = userGroupMemberships,
           UserAccessRoles = userAccessRoles,
           OrganisationEligibleIdentityProviderId = userProfileRequestInfo.Detail.IdentityProviderId,
@@ -458,7 +458,7 @@ namespace CcsSso.Core.Service.External
       bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
       bool hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
                                     user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
-                                    user.UserTitle != (int)(userProfileRequestInfo.Title ?? UserTitle.Unknown) ||
+                                    user.UserTitle != (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified) ||
                                     user.OrganisationEligibleIdentityProviderId != userProfileRequestInfo.Detail.IdentityProviderId);
 
       user.Party.Person.FirstName = userProfileRequestInfo.FirstName.Trim();
@@ -473,7 +473,7 @@ namespace CcsSso.Core.Service.External
       int previousIdentityProviderId = 0;
       if (!isMyProfile)
       {
-        user.UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unknown);
+        user.UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified);
         requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
         requestRoles = userProfileRequestInfo.Detail.RoleIds == null ? new List<int>() : userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
         hasGroupMembershipsNotChanged = Enumerable.SequenceEqual(requestGroups, user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).OrderBy(e => e));

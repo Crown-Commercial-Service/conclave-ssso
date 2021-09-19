@@ -162,6 +162,10 @@ namespace CcsSso.Service
       {
         throw new ResourceNotFoundException();
       }
+      else if (response.StatusCode == HttpStatusCode.MethodNotAllowed)
+      {
+        throw new ResourceAlreadyExistsException();
+      }
       else
       {
         throw new CcsSsoException("ERROR_RETRIEVING_ORGANISATIONS_BY_COMPANY_NUMBER");
@@ -248,6 +252,10 @@ namespace CcsSso.Service
       else if (response.StatusCode == HttpStatusCode.NotFound)
       {
         throw new ResourceNotFoundException();
+      }
+      else if (response.StatusCode == HttpStatusCode.MethodNotAllowed)
+      {
+        throw new ResourceAlreadyExistsException();
       }
       else
       {

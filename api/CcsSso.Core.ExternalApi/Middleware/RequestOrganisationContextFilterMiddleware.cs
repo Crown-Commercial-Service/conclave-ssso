@@ -24,7 +24,7 @@ namespace CcsSso.Core.ExternalApi.Middleware
       var requestType = path.Contains("organisations") ? RequestType.HavingOrgId : path.Contains("users") ? RequestType.NotHavingOrgId : RequestType.Other;
       if (requestType == RequestType.HavingOrgId)
       {
-        requestContext.RequestIntendedOrganisationId = context.Request.RouteValues["organisationId"].ToString();
+        requestContext.RequestIntendedOrganisationId = context.Request.RouteValues["organisationId"]?.ToString();
       }
       else if (requestType == RequestType.NotHavingOrgId)
       {

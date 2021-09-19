@@ -901,6 +901,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpGet("{organisationId}/groups")]
     [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER", "ORG_USER_SUPPORT")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation Group" })]
     [ProducesResponseType(typeof(OrganisationGroupList), 200)]
     public async Task<OrganisationGroupList> GetOrganisationGroups(string organisationId, string searchString = null)
@@ -1062,6 +1063,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpGet("{organisationId}/roles")]
     [ClaimAuthorise("MANAGE_SUBSCRIPTIONS", "ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
     public async Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId)
