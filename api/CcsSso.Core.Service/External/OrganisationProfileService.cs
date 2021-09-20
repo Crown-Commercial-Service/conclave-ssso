@@ -232,7 +232,7 @@ namespace CcsSso.Core.Service.External
             IsVcse = organisation.IsVcse,
             RightToBuy = organisation.RightToBuy ?? false,
             SupplierBuyerType = organisation.SupplierBuyerType != null ? (int)organisation.SupplierBuyerType : 0,
-            BusinessType = organisation.BusinessType,
+            BusinessType = organisation.BusinessType ?? string.Empty,
             CreationDate = organisation.CreatedOnUtc.ToString(DateTimeFormat.DateFormat)
           },
           AdditionalIdentifiers = new List<OrganisationIdentifier>()
@@ -516,6 +516,11 @@ namespace CcsSso.Core.Service.External
           if (!rolesToAdd.All(ar => ccsAccessRoles.Any(r => r.Id == ar.RoleId)))
           {
             throw new CcsSsoException("INVALID_ROLES_TO_ADD");
+          }
+
+          if (rolesToAdd.Any(ar => organisation.OrganisationEligibleRoles.Any(oer => oer.CcsAccessRoleId == ar.RoleId)))
+          {
+            throw new CcsSsoException("ROLE_ALREADY_EXISTS_FOR_ORGANISATION");
           }
 
           List<OrganisationEligibleRole> addedEligibleRoles = new List<OrganisationEligibleRole>();

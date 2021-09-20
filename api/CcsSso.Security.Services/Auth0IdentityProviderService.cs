@@ -18,6 +18,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace CcsSso.Security.Services
 {
@@ -497,10 +498,6 @@ namespace CcsSso.Security.Services
           await _managementApiClient.Users.UpdateAsync(userId, userUpdateRequest);
           await _ccsSsoEmailService.SendResetPasswordAsync(changePasswordInitiateRequest.UserName, ticket);
         }
-        else
-        {
-          throw new CcsSsoException("INVALID_USER_NAME");
-        }
       }
     }
 
@@ -722,7 +719,7 @@ namespace CcsSso.Security.Services
       var httpClient = _httpClientFactory.CreateClient();
       httpClient.BaseAddress = new Uri(_appConfigInfo.UserExternalApiDetails.Url);
       httpClient.DefaultRequestHeaders.Add("X-API-Key", _appConfigInfo.UserExternalApiDetails.ApiKey);
-      var result = await httpClient.GetAsync($"?userId={email}");
+      var result = await httpClient.GetAsync($"?userId={HttpUtility.UrlEncode(email)}");
       var userJsonString = await result.Content.ReadAsStringAsync();
       if (!string.IsNullOrEmpty(userJsonString))
       {
@@ -798,6 +795,20 @@ namespace CcsSso.Security.Services
       if (string.IsNullOrEmpty(email))
       {
         throw new CcsSsoException("TOKEN_GENERATION_FAILED");
+      }
+
+      var useMfa = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/use_mfa")?.Value;
+      if(useMfa != null)
+      {
+        var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
+        using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
+        {
+          var user = (await _managementApiClient.Users.GetUsersByEmailAsync(email)).FirstOrDefault();
+          if (user != null && user.UserMetadata != null && user.UserMetadata.mfa_reset_verified == false)
+          {
+            throw new CcsSsoException("MFA_NOT_VERIFIED");
+          }
+        }
       }
 
       var connection = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/connection")?.Value;

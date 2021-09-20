@@ -47,7 +47,7 @@ namespace CcsSso.Adaptor.Domain.Dtos.Wrapper
 
     public string CreationDate { get; set; }
 
-    public string CompanyType { get; set; }
+    public string BusinessType { get; set; }
 
     public int SupplierBuyerType { get; set; }
 

@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace CcsSso.Service
 {
@@ -101,7 +102,7 @@ namespace CcsSso.Service
       var client = _httpClientFactory.CreateClient("CiiApi");
       client.DefaultRequestHeaders.Remove("x-api-key");
       client.DefaultRequestHeaders.Add("x-api-key", _config.deleteToken);
-      var response = await client.DeleteAsync("/identities/organisation?ccs_org_id=" + id);
+      var response = await client.DeleteAsync("/identities/organisation?ccs_org_id=" + HttpUtility.UrlEncode(id));
       if (response.StatusCode == HttpStatusCode.NotFound)
       {
         throw new ResourceNotFoundException();
@@ -125,7 +126,7 @@ namespace CcsSso.Service
         client.DefaultRequestHeaders.Add("Authorization", token);
       }
       client.DefaultRequestHeaders.Add("clientid", _config.clientId);
-      var response = await client.DeleteAsync("/identities/schemes/organisation?ccs_org_id=" + orgId + "&identifier[scheme]=" + scheme + "&identifier[id]=" + id + "&clientid=" + _config.clientId);
+      var response = await client.DeleteAsync("/identities/schemes/organisation?ccs_org_id=" + HttpUtility.UrlEncode(orgId) + "&identifier[scheme]=" + HttpUtility.UrlEncode(scheme) + "&identifier[id]=" + HttpUtility.UrlEncode(id) + "&clientid=" + _config.clientId);
       if (response.IsSuccessStatusCode)
       {
         await _auditLoginService.CreateLogAsync(AuditLogEvent.OrgRegistryRemove, AuditLogApplication.ManageOrganisation, $"OrgId:{orgId}, Scheme:{scheme}, Id:{id}");
@@ -151,7 +152,7 @@ namespace CcsSso.Service
     public async Task<CiiDto> GetAsync(string scheme, string companyNumber, string token)
     {
       var client = _httpClientFactory.CreateClient("CiiApi");
-      var response = await client.GetAsync("/identities/schemes/organisation?scheme=" + scheme + "&id=" + companyNumber);
+      var response = await client.GetAsync("/identities/schemes/organisation?scheme=" + HttpUtility.UrlEncode(scheme) + "&id=" + HttpUtility.UrlEncode(companyNumber));
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
@@ -161,6 +162,10 @@ namespace CcsSso.Service
       else if (response.StatusCode == HttpStatusCode.NotFound)
       {
         throw new ResourceNotFoundException();
+      }
+      else if (response.StatusCode == HttpStatusCode.MethodNotAllowed)
+      {
+        throw new ResourceAlreadyExistsException();
       }
       else
       {
@@ -207,7 +212,7 @@ namespace CcsSso.Service
         client.DefaultRequestHeaders.Add("Authorization", token);
       }
       client.DefaultRequestHeaders.Add("clientid", _config.clientId);
-      using var response = await client.GetAsync("/identities/schemes/organisations?ccs_org_id=" + id + "&clientid=" + _config.clientId);
+      using var response = await client.GetAsync("/identities/schemes/organisations?ccs_org_id=" + HttpUtility.UrlEncode(id) + "&clientid=" + _config.clientId);
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
@@ -238,7 +243,7 @@ namespace CcsSso.Service
         client.DefaultRequestHeaders.Add("Authorization", token);
       }
       client.DefaultRequestHeaders.Add("clientid", _config.clientId);
-      using var response = await client.GetAsync("/identities/schemes/manageidentifiers?ccs_org_id=" + orgId + "&scheme=" + scheme + "&id=" + id + "&clientid=" + _config.clientId);
+      using var response = await client.GetAsync("/identities/schemes/manageidentifiers?ccs_org_id=" + HttpUtility.UrlEncode(orgId) + "&scheme=" + HttpUtility.UrlEncode(scheme) + "&id=" + HttpUtility.UrlEncode(id) + "&clientid=" + _config.clientId);
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
@@ -248,6 +253,10 @@ namespace CcsSso.Service
       else if (response.StatusCode == HttpStatusCode.NotFound)
       {
         throw new ResourceNotFoundException();
+      }
+      else if (response.StatusCode == HttpStatusCode.MethodNotAllowed)
+      {
+        throw new ResourceAlreadyExistsException();
       }
       else
       {

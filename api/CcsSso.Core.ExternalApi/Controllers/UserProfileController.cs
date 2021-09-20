@@ -80,6 +80,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpGet]
     [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(UserProfileResponseInfo), 200)]
     public async Task<UserProfileResponseInfo> GetUser(string userId)
@@ -159,6 +160,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <returns></returns>
     [HttpPut("reset-password")]
     [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task ResetUserPassword(string userId, string? component)

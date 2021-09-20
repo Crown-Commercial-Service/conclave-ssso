@@ -162,7 +162,7 @@
         width: auto;
         margin-bottom: 22px;
         padding: 8px 10px 10px;
-        height: 40px;
+        height: 2em;
     }
 
     .govuk-button--warning,
@@ -681,7 +681,7 @@
 		var clientId = "5G2pNShwaBQzjJNx6fCSqt9ZIAU9sEur";
 		var baseUrl = "https://dev-ccs-sso.eu.auth0.com";
 		var logoutCallbackUrl = 'https://dev-ccs-sso.london.cloudapps.digital';
-        var mfareseturl = "https://dev-ccs-sso.london.cloudapps.digital/mfaresetnotification?u={{ userData.friendlyUserId }}";
+        var mfareseturl = 'https://dev-ccs-sso.london.cloudapps.digital/mfaresetnotification?u='+encodeURIComponent('{{userData.friendlyUserId}}');
         function resetMfa() {
             window.location = mfareseturl;
         }
