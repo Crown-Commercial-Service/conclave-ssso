@@ -60,15 +60,17 @@
         text-decoration: none;
     }
 
-    .right-content {	
-        text-align: end;	
-    }	
-    .footer-global:after {	
-        height: 20rem;	
-    }	
-    .govuk-footer__meta-item {	
-        margin-bottom: -15px;	
-    }	
+    .right-content {
+        text-align: end;
+    }
+
+    .footer-global:after {
+        height: 20rem;
+    }
+
+    .govuk-footer__meta-item {
+        margin-bottom: -15px;
+    }
 
 
     /* Gov UK Styles */
@@ -154,7 +156,7 @@
     }
 
     .govuk-button {
-        background-color: #007E8A !important;
+        background-color: #007E8A;
         border-radius: .1875rem;
         box-shadow: 0 3px 0 #003618;
         padding-left: 1.875rem;
@@ -162,7 +164,33 @@
         width: auto;
         margin-bottom: 22px;
         padding: 8px 10px 10px;
-        height: 40px;
+        height: 2em;
+    }
+
+    .govuk-button:focus {
+        background-color: #ffdd00;
+        color: #000000 !important;
+        font-style: normal;
+        outline: 3px solid transparent;
+        border-color: #ffdd00;
+        box-shadow: inset 0 0 0 1px #ffdd00;
+    }
+
+
+    .govuk-button--secondary:focus {
+        background-color: #ffdd00 !important;
+        font-style: normal;
+        color: #0b0c0c !important;
+    }
+
+    .govuk-button:hover {
+        background-color: #015e66;
+        color: #FFFFFF !important;
+    }
+
+    .govuk-button--secondary:hover {
+        background-color: #b1b4b6 !important;
+        color: #0b0c0c !important;
     }
 
     .govuk-button--warning,
@@ -267,73 +295,73 @@
     .info {
         color: #33CC33
     }
-	
-.loading {
-  position: fixed;
-  display: block;
-  width: 100%;
-  height: 100%;
-  top: 0; right: 0;
-  bottom: 0; left: 0;
-  text-align: center;
-  opacity: 0.7;
-  background-color: #fff;
-  z-index: 99;
-}
 
-.loader {
-    left: 50%;
-    margin-left: -4em;
-    font-size: 10px;
-    border: .8em solid rgba(218, 219, 223, 1);
-    border-left: .8em solid rgba(58, 166, 165, 1);
-    animation: spin 1.1s infinite linear;
-}
+    .loading {
+        position: fixed;
+        display: block;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        text-align: center;
+        opacity: 0.7;
+        background-color: #fff;
+        z-index: 99;
+    }
 
-.loader, .loader:after {
-    border-radius: 50%;
-    width: 8em;
-    height: 8em;
-    display: block;
-    position: absolute;
-    top: 50%;
-    margin-top: -4.05em;
-}
+    .loader {
+        left: 50%;
+        margin-left: -4em;
+        font-size: 10px;
+        border: .8em solid rgba(218, 219, 223, 1);
+        border-left: .8em solid rgba(58, 166, 165, 1);
+        animation: spin 1.1s infinite linear;
+    }
 
-@keyframes spin {
-  0% {
-    transform: rotate(360deg);
-  }
-  100% {
-    transform: rotate(0deg);
-  }
-}
+    .loader,
+    .loader:after {
+        border-radius: 50%;
+        width: 8em;
+        height: 8em;
+        display: block;
+        position: absolute;
+        top: 50%;
+        margin-top: -4.05em;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(360deg);
+        }
+
+        100% {
+            transform: rotate(0deg);
+        }
+    }
+
+    .header-link {
+       color: #FFFFFF !important;
+    }
 </style>
 
 <body class="govuk-template__body show-flourishes pillar--none js-enabled">
     <header class="header-global">
-<div style="display:none" class="loading" id="loading">
-   <div class="loader"></div>
-</div>
+        <div style="display:none" class="loading" id="loading">
+            <div class="loader"></div>
+        </div>
         <div class="ccs-width-container">
             <div class="nav-wrapper">
                 <a href="https://www.crowncommercial.gov.uk" class="logo"><img
                         src="https://res.cloudinary.com/ccssiteimage/image/upload/v1613028512/site/CCS_WHITE_SML_AW_space-01_p3dj6u.png"
                         alt="Go to the CCS homepage"></a>
-                <button class="global-navigation__toggler" data-toggler="nav" aria-expanded="true">
-                    <span>Menu</span> <span class="icon"><svg width="16" height="13" xmlns="http://www.w3.org/2000/svg">
-                            <g stroke="currentColor" stroke-width="2" fill="none" fill-rule="evenodd"
-                                stroke-linecap="square">
-                                <path d="M14.5 1.12H1.464M14.5 6.12H1.464M14.5 11.24H1.464"></path>
-                            </g>
-                        </svg></span>
-                </button>
                 <nav class="global-navigation" data-toggle="nav"
                     data-app-uri="http://www.crowncommercial.gov.uk/contact/sendToSalesforce"
                     data-app-pathinfo="/contact/sendToSalesforce" aria-hidden="false">
                     <ul class="nav-list nav-list--primary">
                         <li class="nav-list__item">
-                            <a class="nav-list__link"	
+                            <a class="nav-list__link header-link"
                                 href="https://dev-ccs-sso.london.cloudapps.digital/help-support">Help and support</a>
                         </li>
                     </ul>
@@ -345,7 +373,7 @@
         <div class="govuk-phase-banner">
             <p class="govuk-phase-banner__content">
                 <strong class="govuk-tag govuk-phase-banner__content__tag ">
-                  alpha
+                    alpha
                 </strong>
                 <span class="govuk-phase-banner__text">This is a new service – your <a class="govuk-link"
                         href="https://www.smartsurvey.co.uk/s/QWDZX/">feedback</a> will help us to improve it.</span>
@@ -354,7 +382,8 @@
     </div>
 
     <div class="govuk-main-wrapper login-container">
-        <h1 class="govuk-heading-xl">Sign in to the Crown Commercial Service <br /> MFA</h1>
+        <h1 class="govuk-heading-xl">Sign in to the Crown Commercial Service <br /> Procurement Gateway Authenticator
+        </h1>
 
         <div class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1"
             id="error-summary" data-module="govuk-error-summary" style="display: none">
@@ -389,13 +418,10 @@
                     </div>
                     <div class="content flex hidden" data-screen data-enrollment-enroll data-method="sms">
                         <div style="margin-top:10px;" data-enrollment-toolbar>
-                            <button type="button" data-show-enrollment="push"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">Push</button>
-                            <button type="button" data-show-enrollment="sms"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">SMS</button>
-                            <button type="button" data-show-enrollment="otp"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">Google
-                                Authenticator</button>
+                            <button type="button" data-show-enrollment="push" class="govuk-button hidden">Push</button>
+                            <button type="button" data-show-enrollment="sms" class="govuk-button hidden">SMS</button>
+                            <button type="button" data-show-enrollment="otp" class="govuk-button hidden">Procurement
+                                Gateway Authenticator</button>
                         </div>
                         <form class="ui form login mb-two" data-enroll>
                             <div id="sms-form-group" class="govuk-form-group">
@@ -409,8 +435,7 @@
                                     placeholder="Enter your phnoe">
                             </div>
                             <div class="captcha-container govuk-form-group"></div>
-                            <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                                style="margin-top:25px;" type="submit" id="btn-login">
+                            <button class="govuk-button" style="margin-top:25px;" type="submit" id="btn-login">
                                 Enroll
                             </button>
                         </form>
@@ -418,13 +443,10 @@
 
                     <div class="content flex hidden" data-screen data-enrollment-confirm data-method="sms">
                         <div style="margin-top:10px;" data-enrollment-toolbar>
-                            <button type="button" data-show-enrollment="push"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">Push</button>
-                            <button type="button" data-show-enrollment="sms"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">SMS</button>
-                            <button type="button" data-show-enrollment="otp"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">Google
-                                Authenticator</button>
+                            <button type="button" data-show-enrollment="push" class="govuk-button hidden">Push</button>
+                            <button type="button" data-show-enrollment="sms" class="govuk-button hidden">SMS</button>
+                            <button type="button" data-show-enrollment="otp" class="govuk-button hidden">Procurement
+                                Gateway Authenticator</button>
                         </div>
 
                         <form class="ui form login mb-two" data-confirm>
@@ -439,8 +461,7 @@
                                     placeholder="Enter your phnoe">
                             </div>
                             <div class="captcha-container govuk-form-group"></div>
-                            <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                                style="margin-top:25px;" type="submit" id="btn-login">
+                            <button class="govuk-button" style="margin-top:25px;" type="submit" id="btn-login">
                                 Confirm enrollment
                             </button>
                         </form>
@@ -448,13 +469,10 @@
 
                     <div class="content flex hidden" data-screen data-enrollment-enroll data-method="push">
                         <div style="margin-top:10px;" data-enrollment-toolbar>
-                            <button type="button" data-show-enrollment="push"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">Push</button>
-                            <button type="button" data-show-enrollment="sms"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">SMS</button>
-                            <button type="button" data-show-enrollment="otp"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">Google
-                                Authenticator</button>
+                            <button type="button" data-show-enrollment="push" class="govuk-button hidden">Push</button>
+                            <button type="button" data-show-enrollment="sms" class="govuk-button hidden">SMS</button>
+                            <button type="button" data-show-enrollment="otp" class="govuk-button hidden">Procurement
+                                Gateway Authenticator</button>
                         </div>
 
                         <p>Scan this QR With Guardian app</p>
@@ -488,13 +506,11 @@
                                     placeholder="Enter your code">
                             </div>
                             <div class="captcha-container govuk-form-group"></div>
-                            <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                                style="margin-top:25px;" type="submit" id="btn-gcode">
+                            <button class="govuk-button" style="margin-top:25px;" type="submit" id="btn-gcode">
                                 Confirm enrollment
                             </button>
-							<button onclick="cancelMfa()"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                                style="margin-top:25px;" type="button" id="btn-cancel">
+                            <button onclick="cancelMfa()" class="govuk-button" style="margin-top:25px;" type="button"
+                                id="btn-cancel">
                                 Cancel
                             </button>
                         </form>
@@ -515,22 +531,19 @@
                                     placeholder="Enter your code">
                             </div>
                             <div class="captcha-container govuk-form-group"></div>
-                            <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                                style="margin-top:25px;" type="submit" id="btn-login">
+                            <button class="govuk-button" style="margin-top:25px;" type="submit" id="btn-login">
                                 Login
                             </button>
                             <button style="display: none;" data-show-recovery hidden
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                                style="margin-top:25px;" type="button" id="btn-recovery">
+                                class="govuk-button govuk-button--secondary" style="margin-top:25px;" type="button"
+                                id="btn-recovery">
                                 Recovery
                             </button>
-                            <button onclick="resetMfa()"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
+                            <button onclick="resetMfa()" class="govuk-button govuk-button--secondary"
                                 style="margin-top:25px;" type="button" id="btn-reset">
                                 Reset
                             </button>
-							<button onclick="cancelMfa()"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
+                            <button onclick="cancelMfa()" class="govuk-button govuk-button--secondary"
                                 style="margin-top:25px;" type="button" id="btn-cancel">
                                 Cancel
                             </button>
@@ -541,15 +554,14 @@
                     <div class="hidden content flex hidden" data-screen data-login-confirm="push">
                         <p class="govuk-body" data-request-loading>Sending push notification...</p>
                         <p class="govuk-body" data-request-done>We have sent a push notification to your phone</p>
-                        <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                            style="margin-top:25px;" type="button" data-login-verify-show="otp">I don't have the
+                        <button class="govuk-button" style="margin-top:25px;" type="button"
+                            data-login-verify-show="otp">I don't have the
                             device
                             handy</button>
-                        <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                            style="margin-top:25px;" type="button" data-request>Retry</button>
+                        <button class="govuk-button" style="margin-top:25px;" type="button" data-request>Retry</button>
                         <p>
-                            <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                                style="margin-top:25px;" type="button" data-show-recovery>Recovery</button>
+                            <button class="govuk-button govuk-button--secondary" style="margin-top:25px;" type="button"
+                                data-show-recovery>Recovery</button>
                         </p>
                     </div>
 
@@ -558,13 +570,11 @@
                         <p class="govuk-body" data-request-loading>Sending sms...</p>
                         <p class="govuk-body" data-request-done>
                             Enter a the code we sent by SMS.
-                            <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button" type="button"
-                                data-request>Retry</button>
+                            <button class="govuk-button" type="button" data-request>Retry</button>
                         </p>
                         <form class="ui form login mb-two" data-login-verify>
                             <input type="text" class="govuk-input" data-verify-field="otpCode" />
-                            <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                                style="margin-top:25px;" type="submit">Login</button>
+                            <button class="govuk-button" style="margin-top:25px;" type="submit">Login</button>
                         </form>
                         <!-- <p>
                             <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
@@ -573,8 +583,8 @@
                         <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
                             style="margin-top:25px;" type="button" data-login-verify-show="otp">I don't have the device
                             handy</button> -->
-                        <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                            style="margin-top:25px;" type="button" data-request>Retry</button>
+                        <button class="govuk-button govuk-button--secondary" style="margin-top:25px;" type="button"
+                            data-request>Retry</button>
                     </div>
 
 
@@ -582,8 +592,7 @@
                         <form class="ui form login mb-two" data-recovery-verify>
                             <p>Enter recovery code to login</p>
                             <input type="text" class="govuk-input" data-recovery-field="recoveryCode" />
-                            <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                                type="submit">Login</button>
+                            <button class="govuk-button" type="submit">Login</button>
                         </form>
                     </div>
 
@@ -597,69 +606,67 @@
         </div>
     </div>
     <footer class="govuk-footer footer-global footer" role="contentinfo">
-      <div class="govuk-width-container ">
-          <div class="govuk-footer__meta">
-              <div class="govuk-footer__meta-item">
-                  <a class="govuk-footer__link logo" href="/"><img
-                          src="https://res.cloudinary.com/ccssiteimage/image/upload/v1613028512/site/CCS_WHITE_SML_AW_space-01_p3dj6u.png"
-                          alt="Go to the CCS homepage"></a>
-              </div>
-              <div class="govuk-footer__meta-item govuk-footer__meta-item--grow right-content">
-                  <ul class="govuk-list">
-                      <li>
-                          <h2 class="govuk-visually-hidden">Social links</h2>
-                          <ul class="govuk-footer__inline-list">
-                              <li class="govuk-footer__inline-list-item">
-                                  <a href="https://twitter.com/gov_procurement" class="govuk-footer__link">
-                                      <span class="icon">
-                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                              <path fill="currentColor"
-                                                  d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z">
-                                              </path>
-                                          </svg>
-                                      </span>
-                                      <span class="visuallyhidden">Follow us on Twitter</span>
-                                  </a>
-                              </li>
-                              <li class="govuk-footer__inline-list-item">
-                                  <a href="https://www.linkedin.com/company/government-procurement-service/"
-                                      class="govuk-footer__link">
-                                      <span class="icon">
-                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                              <path fill="currentColor"
-                                                  d="M4.98 3.5c0 1.381-1.11 2.5-2.48 2.5s-2.48-1.119-2.48-2.5c0-1.38 1.11-2.5 2.48-2.5s2.48 1.12 2.48 2.5zm.02 4.5h-5v16h5v-16zm7.982 0h-4.968v16h4.969v-8.399c0-4.67 6.029-5.052 6.029 0v8.399h4.988v-10.131c0-7.88-8.922-7.593-11.018-3.714v-2.155z">
-                                              </path>
-                                          </svg>
-                                      </span>
-                                      <span class="visuallyhidden">Connect with us on LinkedIn</span>
-                                  </a>
-                              </li>
-                          </ul>
-                      </li>
-                      <li>
-                          <h2 class="govuk-visually-hidden">Support links</h2>
-                          <ul class="govuk-footer__inline-list">
-                              <li class="govuk-footer__inline-list-item">
-                                  <a class="govuk-footer__link"
-                                      href="https://www.crowncommercial.gov.uk/cookie-policy">Cookies</a>
-                              </li>
-                              <li class="govuk-footer__inline-list-item">
-                                  <a class="govuk-footer__link"
-                                      href="https://www.gov.uk/government/publications/crown-commercial-service-privacy-notice">Privacy
-                                      Policy</a>
-                              </li>
-                              <li class="govuk-footer__inline-list-item">
-                                  <a class="govuk-footer__link"
-                                      href="https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/">©
-                                      Crown copyright</a>
-                              </li>
-                          </ul>
-                      </li>
-                  </ul>
-              </div>
-          </div>
-      </div>
-  </footer>
+        <div class="govuk-width-container ">
+            <div class="govuk-footer__meta">
+                <div class="govuk-footer__meta-item">
+                    <a class="govuk-footer__link logo" href="/"><img
+                            src="https://res.cloudinary.com/ccssiteimage/image/upload/v1613028512/site/CCS_WHITE_SML_AW_space-01_p3dj6u.png"
+                            alt="Go to the CCS homepage"></a>
+                </div>
+                <div class="govuk-footer__meta-item govuk-footer__meta-item--grow right-content">
+                    <ul class="govuk-list">
+                        <li>
+                            <ul class="govuk-footer__inline-list">
+                                <li class="govuk-footer__inline-list-item">
+                                    <a href="https://twitter.com/gov_procurement" class="govuk-footer__link">
+                                        <span class="icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                                <path fill="currentColor"
+                                                    d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z">
+                                                </path>
+                                            </svg>
+                                        </span>
+                                        <span class="visuallyhidden">Follow us on Twitter</span>
+                                    </a>
+                                </li>
+                                <li class="govuk-footer__inline-list-item">
+                                    <a href="https://www.linkedin.com/company/government-procurement-service/"
+                                        class="govuk-footer__link">
+                                        <span class="icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                                <path fill="currentColor"
+                                                    d="M4.98 3.5c0 1.381-1.11 2.5-2.48 2.5s-2.48-1.119-2.48-2.5c0-1.38 1.11-2.5 2.48-2.5s2.48 1.12 2.48 2.5zm.02 4.5h-5v16h5v-16zm7.982 0h-4.968v16h4.969v-8.399c0-4.67 6.029-5.052 6.029 0v8.399h4.988v-10.131c0-7.88-8.922-7.593-11.018-3.714v-2.155z">
+                                                </path>
+                                            </svg>
+                                        </span>
+                                        <span class="visuallyhidden">Connect with us on LinkedIn</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <ul class="govuk-footer__inline-list">
+                                <li class="govuk-footer__inline-list-item">
+                                    <a class="govuk-footer__link"
+                                        href="https://www.crowncommercial.gov.uk/cookie-policy">Cookies</a>
+                                </li>
+                                <li class="govuk-footer__inline-list-item">
+                                    <a class="govuk-footer__link"
+                                        href="https://www.gov.uk/government/publications/crown-commercial-service-privacy-notice">Privacy
+                                        Policy</a>
+                                </li>
+                                <li class="govuk-footer__inline-list-item">
+                                    <a class="govuk-footer__link"
+                                        href="https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/">©
+                                        Crown copyright</a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <!--[if IE 8]>
   <script src="//cdnjs.cloudflare.com/ajax/libs/ie8/0.2.5/ie8.js"></script>
@@ -678,16 +685,16 @@
     <script>
         var mfaMethod = 'otp';
         var isAuthMode = true;
-		var clientId = "5G2pNShwaBQzjJNx6fCSqt9ZIAU9sEur";
-		var baseUrl = "https://dev-ccs-sso.eu.auth0.com";
-		var logoutCallbackUrl = 'https://dev-ccs-sso.london.cloudapps.digital';
-        var mfareseturl = "https://dev-ccs-sso.london.cloudapps.digital/mfaresetnotification?u={{ userData.friendlyUserId }}";
+        var clientId = "5G2pNShwaBQzjJNx6fCSqt9ZIAU9sEur";
+        var baseUrl = "https://dev-ccs-sso.eu.auth0.com";
+        var logoutCallbackUrl = 'https://dev-ccs-sso.london.cloudapps.digital';
+        var mfareseturl = 'https://dev-ccs-sso.london.cloudapps.digital/mfaresetnotification?u=' + encodeURIComponent('{{userData.friendlyUserId}}');
         function resetMfa() {
             window.location = mfareseturl;
         }
-		
-		function cancelMfa() {
-			window.location = baseUrl + "/v2/logout?client_id=" + clientId + "&returnTo="+ logoutCallbackUrl;
+
+        function cancelMfa() {
+            window.location = baseUrl + "/v2/logout?client_id=" + clientId + "&returnTo=" + logoutCallbackUrl;
         }
 
         function scrollToError(element, inputId) {
@@ -775,9 +782,9 @@
         $root
             .off('submit.login-verify')
             .on('submit.login-verify', '[data-login-verify]', function (e) {
-				debugger;
-				
-				$('#loading').show();
+                debugger;
+
+                $('#loading').show();
                 e.preventDefault();
 
                 var data = getData(screen.getActive(), '[data-verify-field]', 'verify-field');
@@ -807,7 +814,7 @@
 
         // ------------------- START Guardian transaction ---------------------
         guardianjs.start(function (err, transaction) {
-		
+
             if (err) {
                 state.transaction = null;
                 showError(err);
@@ -827,7 +834,7 @@
             // Let's start listening for errors
             transaction.on('error', function (err) {
                 debugger;
-				 $('#loading').hide();
+                $('#loading').hide();
                 showError(err);
             });
 
@@ -945,7 +952,7 @@
             var $qr = screen.getActive().find('[data-qr]');
             if ($qr.length) {
                 transaction.enroll(method, null, function (err, enroll) {
-                  debugger;
+                    debugger;
                     if (err) {
                         return showLocalError(err);
                     }
@@ -960,7 +967,7 @@
                 .off('submit.enroll')
                 .on('submit.enroll', '[data-enroll]', function (evt) {
                     debugger;
-					$('#loading').show();
+                    $('#loading').show();
                     evt.preventDefault();
                     var data = getData(screen.getActive(),
                         '[data-enroll-field]', 'enroll-field');
@@ -985,7 +992,7 @@
                 .off('submit.confirm')
                 .on('submit.confirm', '[data-confirm]', function (evt) {
                     evt.preventDefault();
-					$('#loading').show();
+                    $('#loading').show();
                     var data = getData(screen.getActive(),
                         '[data-confirm-field]', 'confirm-field');
                     var enroll = state.current.enroll;
@@ -1106,7 +1113,7 @@
 
         function showLocalError(message) {
             let code = 'general'
-			$('#loading').hide();
+            $('#loading').hide();
             if (message instanceof Error) {
                 code = message.errorCode;
                 message = message.message || 'Something went wrong...';
