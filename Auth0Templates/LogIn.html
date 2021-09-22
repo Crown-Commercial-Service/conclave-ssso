@@ -155,15 +155,66 @@
     }
 
     .govuk-button {
-        background-color: #007E8A !important;
-        border-radius: .1875rem;
+        background-color: #007E8A;
         box-shadow: 0 3px 0 #003618;
         padding-left: 1.875rem;
         padding-right: 1.875rem;
         width: auto;
         margin-bottom: 22px;
         padding: 8px 10px 10px;
-        height: 40px;
+        height: 2em;
+    }
+
+    .govuk-button:focus {
+        background-color: #ffdd00;
+        color: #000000 !important;
+        font-style: normal;
+        outline: 3px solid transparent;
+        border-color: #ffdd00;
+        box-shadow: inset 0 0 0 1px #ffdd00;
+    }
+	
+	.govuk-button--disabled, .govuk-button[disabled="disabled"], .govuk-button[disabled] {
+     background: #015e66 !important; 
+}
+
+
+.govuk-button--disabled:hover, .govuk-button[disabled=disabled]:hover, .govuk-button[disabled]:hover {
+    background-color: #015e66 !important;
+}
+
+  	.navigation-text:focus {
+      color: #0b0c0c !important;
+      background-color: #ffdd00 !important;
+      text-decoration-color: #0b0c0c !important;
+      text-decoration-line: underline;
+      text-decoration-skip-ink: none;
+      text-decoration-thickness : 3px;
+      text-decoration-style: solid;
+	     outline:none !important;
+    }
+
+    .navigation-text:hover {
+      color: #003078;
+      text-decoration-color: rgb(0, 48, 120);
+      text-decoration-line: underline;
+      text-decoration-skip-ink: none;
+      text-decoration-style: solid;
+      text-decoration-thickness : 3px;
+    }
+
+    .govuk-button--secondary:focus {
+        background-color: #ffdd00 !important;
+        color: #FFFFFF !important;
+    }
+
+    .govuk-button:hover {
+        background-color: #015e66;
+        color: #FFFFFF !important;
+    }
+
+    .govuk-button--secondary:hover {
+        background-color: #b1b4b6 !important;
     }
 
     .govuk-button--warning,
@@ -248,6 +299,11 @@
             max-width: 1280px;
         }
     }
+  
+  .header-link {
+       color: #FFFFFF !important;
+    }
+  
 </style>
 
 <body class="govuk-template__body show-flourishes pillar--none js-enabled">
@@ -257,20 +313,12 @@
                 <a href="https://www.crowncommercial.gov.uk" class="logo"><img
                         src="https://res.cloudinary.com/ccssiteimage/image/upload/v1613028512/site/CCS_WHITE_SML_AW_space-01_p3dj6u.png"
                         alt="Go to the CCS homepage"></a>
-                <button class="global-navigation__toggler" data-toggler="nav" aria-expanded="true">
-                    <span>Menu</span> <span class="icon"><svg width="16" height="13" xmlns="http://www.w3.org/2000/svg">
-                            <g stroke="currentColor" stroke-width="2" fill="none" fill-rule="evenodd"
-                                stroke-linecap="square">
-                                <path d="M14.5 1.12H1.464M14.5 6.12H1.464M14.5 11.24H1.464"></path>
-                            </g>
-                        </svg></span>
-                </button>
                 <nav class="global-navigation" data-toggle="nav"
                     data-app-uri="http://www.crowncommercial.gov.uk/contact/sendToSalesforce"
                     data-app-pathinfo="/contact/sendToSalesforce" aria-hidden="false">
                     <ul class="nav-list nav-list--primary">
                         <li class="nav-list__item">
-                            <a class="nav-list__link"
+                            <a class="nav-list__link header-link"
                                 href="https://dev-ccs-sso.london.cloudapps.digital/help-support">Help and support</a>
                         </li>
                     </ul>
@@ -284,7 +332,7 @@
                 <strong class="govuk-tag govuk-phase-banner__content__tag ">
                     alpha
                 </strong>
-                <span class="govuk-phase-banner__text">This is a new service – your <a class="govuk-link"
+                <span class="govuk-phase-banner__text">This is a new service – your <a class="navigation-text"
                         href="https://www.smartsurvey.co.uk/s/QWDZX/">feedback</a> will help us to improve it.</span>
             </p>
         </div>
@@ -336,11 +384,11 @@
                             <span style="display: none" id="password-error" class="govuk-error-message">
                                 <span class="govuk-visually-hidden">Error:</span> Password is required
                             </span>
-                            <input type="password" autocomplete="off" class="govuk-input" id="password" placeholder="Enter your password">
+                            <input type="password" autocomplete="off" class="govuk-input" id="password"
+                                placeholder="Enter your password">
                         </div>
                         <div class="captcha-container govuk-form-group"></div>
-                        <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                            style="margin-top:25px;" type="submit" id="btn-login">
+                        <button class="govuk-button" style="margin-top:25px;" type="submit" id="btn-login">
                             Sign in
                         </button>
                         <div style="margin-top:20px;" class="form-group">
@@ -356,33 +404,29 @@
                         </div>
 
                         <label class="govuk-label" style="margin-bottom:30px">Log into your account</label>
-                        <button type="button" id="btn-google" style="width: 400px;"
-                            class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button">
+                        <button type="button" id="btn-google" style="width: 400px;" class="govuk-button">
                             Log In with Google
                         </button>
                         <br />
-                        <button type="button" id="btn-facebook" style="width: 400px;"
-                            class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button">
+                        <button type="button" id="btn-facebook" style="width: 400px;" class="govuk-button">
                             Log In with Facebook
                         </button>
                         <br />
-                        <button type="button" id="btn-microsoft" style="width: 400px;"
-                            class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button">
+                        <button type="button" id="btn-microsoft" style="width: 400px;" class="govuk-button">
                             Log In with Microsoft
                         </button>
                         <br />
-                        <button type="button" id="btn-linkedin" style="width: 400px;"
-                            class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button">
+                        <button type="button" id="btn-linkedin" style="width: 400px;" class="govuk-button">
                             Log In with LinkedIn
                         </button>
 
                         <div class="align-right">
                             <h2 class="govuk-heading-ml">Problem signing in?</h2>
-                            <a style="margin-bottom: 15px;" class="govuk-link"
+                            <a style="margin-bottom: 15px;" class="navigation-text"
                                 href="https://dev-ccs-sso.london.cloudapps.digital/forgot-password">I have forgotten my
                                 password</a>
                             <br />
-                            <a class="govuk-link" href="https://dev-ccs-sso.london.cloudapps.digital/help-support">Help
+                            <a class="navigation-text" href="https://dev-ccs-sso.london.cloudapps.digital/help-support">Help
                                 and support for
                                 signing in </a>
                         </div>
@@ -402,7 +446,6 @@
                 <div class="govuk-footer__meta-item govuk-footer__meta-item--grow right-content">
                     <ul class="govuk-list">
                         <li>
-                            <h2 class="govuk-visually-hidden">Social links</h2>
                             <ul class="govuk-footer__inline-list">
                                 <li class="govuk-footer__inline-list-item">
                                     <a href="https://twitter.com/gov_procurement" class="govuk-footer__link">
@@ -432,7 +475,6 @@
                             </ul>
                         </li>
                         <li>
-                            <h2 class="govuk-visually-hidden">Support links</h2>
                             <ul class="govuk-footer__inline-list">
                                 <li class="govuk-footer__inline-list-item">
                                     <a class="govuk-footer__link"
