@@ -10,6 +10,7 @@ using CcsSso.Domain.Exceptions;
 using CcsSso.Dtos.Domain.Models;
 using CcsSso.Shared.Domain.Contexts;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,9 +29,10 @@ namespace CcsSso.Service
     private readonly IUserProfileService _userProfileService;
     private readonly IOrganisationContactService _organisationContactService;
     private readonly RequestContext _requestContext;
+    private readonly ILogger<OrganisationService> _logger;
     public OrganisationService(IDataContext dataContext, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ICiiService ciiService, IOrganisationProfileService organisationProfileService,
-      IUserProfileService userProfileService, IOrganisationContactService organisationContactService, RequestContext requestContext)
+      IUserProfileService userProfileService, IOrganisationContactService organisationContactService, RequestContext requestContext, ILogger<OrganisationService> logger)
     {
       _dataContext = dataContext;
       _adapterNotificationService = adapterNotificationService;
@@ -40,6 +42,7 @@ namespace CcsSso.Service
       _userProfileService = userProfileService;
       _organisationContactService = organisationContactService;
       _requestContext = requestContext;
+      _logger = logger;
     }
 
     /// <summary>
@@ -320,11 +323,10 @@ namespace CcsSso.Service
 
         await _organisationContactService.CreateOrganisationContactAsync(ciiOrgId, contactRequestInfo);
       }
-      catch (Exception)
+      catch (Exception ex)
       {
-        await DeleteAsync(ciiOrgId);
-        await _userProfileService.DeleteUserAsync(organisationRegistrationDto.AdminUserName, false);
-        throw;
+        // Do not roll back and just log the issue
+        _logger.LogError(ex, ex.Message);
       }
     }
   }

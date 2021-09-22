@@ -3,6 +3,9 @@
   <head>
     <meta charset="utf-8">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js" integrity="sha512-nOQuvD9nKirvxDdvQ9OMqe2dgapbPB7vYAMrzJihw5m+aNcf0dX53m6YxM4LgA9u8e9eg9QX+/+mPu8kCNpV2A==" crossorigin="anonymous"></script>
+    <![if !IE]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/3.16.2/minified.js" integrity="sha512-uLngiUnohkENU35LIRgvApbR9PINhMN6GGfk+XuXgh/9XyI1Vp9ZovqdQ7mLXtWs2Gx7k9F3+Co3hpuyQ2aVRg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <![endif]>
     <script language="JavaScript" type="text/javascript">
       window.addEventListener("message", receiveMessage, false);
       function receiveMessage(e) {
@@ -23,7 +26,7 @@
           stat = 'error';
         }
 
-        var ss = CryptoJS.SHA256(client_id + ' ' + origin + ' ' + opbs + ' ' +  salt) + "." + salt;
+        var ss = CryptoJS.SHA256(client_id + ' ' + origin + ' ' + opbs + ' ' + salt) + "." + salt;
         if (session_state == ss) {
           stat = 'unchanged';
         } else {

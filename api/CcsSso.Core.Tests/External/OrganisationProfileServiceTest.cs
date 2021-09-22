@@ -159,24 +159,21 @@ namespace CcsSso.Core.Tests.External
         {
           await SetupTestDataAsync(dataContext);
           Mock<ICiiService> mockCiiService = new Mock<ICiiService>();
-          mockCiiService.Setup(s => s.GetOrgsAsync(It.IsAny<string>(),""))
-          .ReturnsAsync(new CiiDto[]
+          mockCiiService.Setup(s => s.GetOrgDetailsAsync(It.IsAny<string>()))
+          .ReturnsAsync(new CiiDto
           {
-            new CiiDto
+            Identifier = new CiiIdentifier
             {
-              Identifier = new CiiIdentifier
-              {
-                LegalName = expectedOrganisationInfo.Identifier.LegalName,
-                Uri = expectedOrganisationInfo.Identifier.Uri
-              },
-              Address = new CiiAddress
-              {
-                StreetAddress = expectedOrganisationInfo.Address.StreetAddress,
-                Region = expectedOrganisationInfo.Address.Region,
-                Locality = expectedOrganisationInfo.Address.Locality,
-                PostalCode = expectedOrganisationInfo.Address.PostalCode,
-                CountryName = expectedOrganisationInfo.Address.CountryCode,
-              }
+              LegalName = expectedOrganisationInfo.Identifier.LegalName,
+              Uri = expectedOrganisationInfo.Identifier.Uri
+            },
+            Address = new CiiAddress
+            {
+              StreetAddress = expectedOrganisationInfo.Address.StreetAddress,
+              Region = expectedOrganisationInfo.Address.Region,
+              Locality = expectedOrganisationInfo.Address.Locality,
+              PostalCode = expectedOrganisationInfo.Address.PostalCode,
+              CountryName = expectedOrganisationInfo.Address.CountryCode,
             }
           });
           var orgService = OrganisationProfileService(dataContext, mockCiiService);

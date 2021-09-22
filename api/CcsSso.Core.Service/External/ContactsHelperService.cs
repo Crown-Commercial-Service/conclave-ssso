@@ -98,7 +98,7 @@ namespace CcsSso.Service.External
 
       if (contactPoint.Party.Person != null)
       {
-        contactResponseInfo.ContactPointName = $"{contactPoint.Party.Person.FirstName} {contactPoint.Party.Person.LastName}";
+        contactResponseInfo.ContactPointName = $"{contactPoint.Party.Person.FirstName} {contactPoint.Party.Person.LastName}".Trim();
       }
     }
 

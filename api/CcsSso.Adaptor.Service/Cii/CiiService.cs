@@ -24,9 +24,9 @@ namespace CcsSso.Adaptor.Service.Cii
     public async Task<CiiIdentifierAllDto> GetOrgIdentifierInfoAsync(string ciiOrgId)
     {
 
-      var ciiDtoList = await _ciiApiService.GetAsync<List<CiiIdentifierAllDto>>($"identities/schemes/organisations/sso/all?ccs_org_id={ciiOrgId}", "ERROR_RETRIEVING_IDENTIFIERS_FROM_CII");
+      var ciiDto = await _ciiApiService.GetAsync<CiiIdentifierAllDto>($"identities/organisations/sso/{ciiOrgId}/all", "ERROR_RETRIEVING_IDENTIFIERS_FROM_CII");
 
-      return ciiDtoList.FirstOrDefault();
+      return ciiDto;
     }
   }
 }

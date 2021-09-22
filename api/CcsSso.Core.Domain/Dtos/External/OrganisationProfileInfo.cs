@@ -107,6 +107,8 @@ namespace CcsSso.Core.Domain.Dtos.External
   {
     public int RoleId { get; set; }
 
+    public string RoleKey { get; set; }
+
     public string RoleName { get; set; }
 
     public string ServiceName { get; set; }

@@ -22,12 +22,12 @@ namespace CcsSso.Core.Api.Middleware
     private List<string> allowedPaths = new List<string>()
     {
       "auth/backchannel_logout", "auth/get_refresh_token","auth/send_reset_mfa_notification","auth/reset_mfa_by_ticket",
-      "organisation/register", "user/useractivationemail", "user/permissions"
+      "organisation/register", "user/useractivationemail", "user/permissions", "cii/schemes", "cii/identifiers"
     };
-    private const string allowedCiiRoute = "cii";
-    private List<string> restrictedCiiPaths = new List<string>()
+
+    private List<string> allowedPathsForXSRFValidation = new List<string>()
     {
-      "cii/delete-scheme",  "cii/add-scheme"
+      "auth/create_session"
     };
 
     public AuthenticationMiddleware(RequestDelegate next, ITokenService tokenService,
@@ -45,7 +45,7 @@ namespace CcsSso.Core.Api.Middleware
       requestContext.IpAddress = context.GetRemoteIPAddress();
       requestContext.Device = context.Request.Headers["User-Agent"];
 
-      if (allowedPaths.Contains(path) || (path.Contains(allowedCiiRoute) && !restrictedCiiPaths.Any(rp => rp == path)))
+      if (allowedPaths.Contains(path))
       {
         await _next(context);
         return;
@@ -53,6 +53,17 @@ namespace CcsSso.Core.Api.Middleware
 
       if (context.Request.Headers.ContainsKey("Authorization"))
       {
+
+        if (!string.IsNullOrEmpty(_applicationConfigurationInfo.CustomDomain) && !allowedPathsForXSRFValidation.Contains(path))
+        {
+          var cookie = context.Request.Cookies["XSRF-TOKEN-SVR"];
+          var header = context.Request.Headers["x-xsrf-token"];
+          if (string.IsNullOrEmpty(cookie) || string.IsNullOrEmpty(header) || cookie != header)
+          {
+            throw new UnauthorizedAccessException();
+          }
+        }
+
         var bearerToken = context.Request.Headers["Authorization"].FirstOrDefault();
         if (!string.IsNullOrEmpty(bearerToken))
         {

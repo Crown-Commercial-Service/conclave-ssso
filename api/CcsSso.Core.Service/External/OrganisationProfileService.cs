@@ -207,13 +207,7 @@ namespace CcsSso.Core.Service.External
 
       if (organisation != null)
       {
-
-        var ciiOrganisation = (await _ciiService.GetOrgsAsync(ciiOrganisationId, "")).FirstOrDefault();
-
-        if (ciiOrganisation == null)
-        {
-          throw new ResourceNotFoundException();
-        }
+        var ciiOrganisation = await _ciiService.GetOrgDetailsAsync(ciiOrganisationId);
 
         var organisationInfo = new OrganisationProfileResponseInfo
         {
@@ -232,7 +226,7 @@ namespace CcsSso.Core.Service.External
             IsVcse = organisation.IsVcse,
             RightToBuy = organisation.RightToBuy ?? false,
             SupplierBuyerType = organisation.SupplierBuyerType != null ? (int)organisation.SupplierBuyerType : 0,
-            BusinessType = organisation.BusinessType,
+            BusinessType = organisation.BusinessType ?? string.Empty,
             CreationDate = organisation.CreatedOnUtc.ToString(DateTimeFormat.DateFormat)
           },
           AdditionalIdentifiers = new List<OrganisationIdentifier>()
@@ -337,6 +331,7 @@ namespace CcsSso.Core.Service.External
         .OrderBy(r => r.CcsAccessRoleId).Select(or => new OrganisationRole
         {
           RoleId = or.Id,
+          RoleKey = or.CcsAccessRole.CcsAccessRoleNameKey,
           RoleName = or.CcsAccessRole.CcsAccessRoleName,
           ServiceName = or.CcsAccessRole?.ServiceRolePermissions?.FirstOrDefault()?.ServicePermission.CcsService.ServiceName,
           OrgTypeEligibility = or.CcsAccessRole.OrgTypeEligibility,
@@ -516,6 +511,11 @@ namespace CcsSso.Core.Service.External
           if (!rolesToAdd.All(ar => ccsAccessRoles.Any(r => r.Id == ar.RoleId)))
           {
             throw new CcsSsoException("INVALID_ROLES_TO_ADD");
+          }
+
+          if (rolesToAdd.Any(ar => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == ar.RoleId)))
+          {
+            throw new CcsSsoException("ROLE_ALREADY_EXISTS_FOR_ORGANISATION");
           }
 
           List<OrganisationEligibleRole> addedEligibleRoles = new List<OrganisationEligibleRole>();

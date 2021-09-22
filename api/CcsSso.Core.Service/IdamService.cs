@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace CcsSso.Core.Service
 {
@@ -33,7 +34,7 @@ namespace CcsSso.Core.Service
       client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
       client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
 
-      var response = await client.DeleteAsync($"security/deleteuser?email={userName}");
+      var response = await client.DeleteAsync($"security/deleteuser?email={HttpUtility.UrlEncode(userName)}");
 
       if (!response.IsSuccessStatusCode)
       {

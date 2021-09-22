@@ -7,7 +7,6 @@ using CcsSso.Domain.Dtos.External;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace CcsSso.ExternalApi.Controllers
@@ -901,6 +900,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpGet("{organisationId}/groups")]
     [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER", "ORG_USER_SUPPORT")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation Group" })]
     [ProducesResponseType(typeof(OrganisationGroupList), 200)]
     public async Task<OrganisationGroupList> GetOrganisationGroups(string organisationId, string searchString = null)
@@ -1062,6 +1062,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpGet("{organisationId}/roles")]
     [ClaimAuthorise("MANAGE_SUBSCRIPTIONS", "ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
     public async Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId)
@@ -1095,7 +1096,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///      }
     ///     
     /// </remarks>
-    [HttpPut("{organisationId}/updateEligableRoles")]
+    [HttpPut("{organisationId}/updateEligibleRoles")]
     [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     public async Task UpdateEligableRoles(string organisationId, OrganisationRoleUpdate model)

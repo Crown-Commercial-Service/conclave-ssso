@@ -14,7 +14,7 @@ namespace CcsSso.Domain.Constants
     Miss,
     Ms,
     Doctor,
-    Unknown
+    Unspecified
   }
 
   public enum ContactAssignedStatus

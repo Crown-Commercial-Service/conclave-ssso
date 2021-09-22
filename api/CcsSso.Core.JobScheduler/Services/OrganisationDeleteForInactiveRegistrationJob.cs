@@ -244,7 +244,7 @@ namespace CcsSso.Core.JobScheduler
       var client = _httpClientFactory.CreateClient();
       client.DefaultRequestHeaders.Add("x-api-key", _appSettings.CiiSettings.Token);
       client.BaseAddress = new Uri(_appSettings.CiiSettings.Url);
-      var url = "/identities/organisation?ccs_org_id=" + ciiOrgId;
+      var url = "/identities/organisations/" + ciiOrgId;
       var result = await client.DeleteAsync(url);
       if (result.IsSuccessStatusCode)
       {
