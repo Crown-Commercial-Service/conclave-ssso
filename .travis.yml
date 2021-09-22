@@ -22,7 +22,6 @@ deploy:
     space: uat
     manifest: /home/travis/build/$GITHUB_USER/conclave-sso/manifest.yml
     skip-cleanup: true
-    repo: Crown-Commercial-Service/conclave-ssso
     edge: true
     on:
       branch: uat
