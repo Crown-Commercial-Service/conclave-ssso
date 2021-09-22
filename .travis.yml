@@ -21,7 +21,7 @@ deploy:
     api: $api
     organization: $organisation
     space: uat
-    manifest: /home/travis/build/$GITHUB_USER/conclave-api-automation/manifest.yml
+    manifest: /home/travis/build/$GITHUB_USER/conclave-ssso/manifest.yml
     skip-cleanup: true
     edge: true
     on:
