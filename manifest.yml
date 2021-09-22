@@ -1,14 +1,82 @@
 ---
 applications:
-- name: dev-api-wrapper
+- name: uat-api-security
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Security.Api/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: uat-api-security.london.cloudapps.digital
+  services:
+    - uat-security-pg-service
+    - uat-vault 
+    - uat-security-redis-service
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: uat-api-wrapper
   instances: 1
   memory: 512M
   path: api/CcsSso.Core.ExternalApi/bin/Debug/net5.0
   buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
   routes:
-  - route: dev-api-wrapper.london.cloudapps.digital 
+    - route: uat-api-wrapper.london.cloudapps.digital
   services:
-    - dev3-sso-pg-service
-    - dev-vault
+    - uat-sso-pg-service
+    - uat-vault
+    - uat-adaptor-sqs-service
+    - uat-data-redis-service
   env:
-    CACHE_NUGET_PACKAGES: false   
+    CACHE_NUGET_PACKAGES: false
+- name: uat-api-core
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Core.Api/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: uat-api-core.london.cloudapps.digital
+  services:
+    - uat-sso-pg-service
+    - uat-vault
+    - uat-data-redis-service
+    - uat-adaptor-sqs-service
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: uat-api-adaptor
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Adaptor.Api/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: uat-api-adaptor.london.cloudapps.digital
+  services:
+    - uat-adaptor-pg-service
+    - uat-data-redis-service
+    - uat-adaptor-sqs-service
+    - uat-vault   
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: uat-adaptor-sqs-listener
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Adaptor.SqsListener/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  no-route: true
+  health-check-type: none
+  services:
+    - uat-vault
+    - uat-adaptor-sqs-service
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: uat-org-dereg-job
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Core.JobScheduler/bin/Debug/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  no-route: true
+  health-check-type: none
+  services:
+    - uat-sso-pg-service
+    - uat-vault
+  env:
+    CACHE_NUGET_PACKAGES: false
+
