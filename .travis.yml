@@ -21,7 +21,7 @@ deploy:
     api: $api
     organization: $organisation
     space: uat
-    manifest: /home/travis/build/Crown-Commercial-Service/conclave-ssso/manifest.yml
+    manifest: manifest.yml
     skip-cleanup: true
     edge: true
     on:
