@@ -144,6 +144,52 @@ namespace CcsSso.Security.Services
       }
     }
 
+    public async Task<UserRegisterResult> CreateUserAsync_migration(Domain.Dtos.UserInfo userInfo, string pwd)
+    {
+      try
+      {
+        UserCreateRequest userCreateRequest = new UserCreateRequest
+        {
+          Email = userInfo.Email,
+          //Password = UtilitiesHelper.GenerateRandomPassword(_appConfigInfo.PasswordPolicy),
+          Password = pwd,
+          FirstName = userInfo.FirstName,
+          LastName = userInfo.LastName,
+          EmailVerified = true,
+          UserMetadata = new
+          {
+            use_mfa = userInfo.MfaEnabled
+          },
+          Connection = _appConfigInfo.Auth0ConfigurationInfo.DBConnectionName
+        };
+
+        var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
+        using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
+        {
+          var result = await _managementApiClient.Users.CreateAsync(userCreateRequest);
+
+          //await SendUserActivationEmailAsync(userInfo.Email, managementApiToken);
+
+          return new UserRegisterResult()
+          {
+            UserName = result.Email,
+            Id = result.UserId
+          };
+        }
+      }
+      catch (ErrorApiException e)
+      {
+        if (e.ApiError.Error == "Conflict")
+        {
+          throw new CcsSsoException("USERNAME_EXISTS");
+        }
+        else
+        {
+          throw new CcsSsoException("USER_REGISTRATION_FAILED");
+        }
+      }
+    }
+
     public async Task SendUserActivationEmailAsync(string email, string managementApiToken = null)
     {
       if (string.IsNullOrEmpty(managementApiToken))

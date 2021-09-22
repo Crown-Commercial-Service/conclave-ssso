@@ -198,6 +198,15 @@ namespace CcsSso.Security.Api.Controllers
       return userRegisterResult;
     }
 
+    [HttpPost("security/migration/register")]
+    [SwaggerOperation(Tags = new[] { "security/migration" })]
+    [ProducesResponseType(201)]
+    [ProducesResponseType(400)]
+    public async Task<UserRegisterResult> Register_migration(UserInfo userInfo, string pwd)
+    {
+      var userRegisterResult = await _userManagerService.CreateUserAsync_migration(userInfo, pwd);
+      return userRegisterResult;
+    }
     /// <summary>
     /// Returns all external identity providers that are listed
     /// </summary>

@@ -6,6 +6,7 @@ namespace CcsSso.Core.Domain.Contracts.External
   public interface IUserProfileService
   {
     Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo);
+    Task<UserEditResponseInfo> CreateUserAsync_migration(UserProfileEditRequestInfo userProfileRequestInfo);
 
     Task DeleteUserAsync(string userName, bool checkForLastAdmin = true);
 

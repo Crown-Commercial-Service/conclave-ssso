@@ -31,6 +31,12 @@ namespace CcsSso.Security.Services
       return await _identityProviderService.CreateUserAsync(userInfo);
     }
 
+    public async Task<UserRegisterResult> CreateUserAsync_migration(UserInfo userInfo, string pwd)
+    {
+      userInfo.Email = userInfo.Email?.ToLower();
+      ValidateUser(userInfo);
+      return await _identityProviderService.CreateUserAsync_migration(userInfo, pwd);
+    }
     public async Task UpdateUserAsync(UserInfo userInfo)
     {
       ValidateUser(userInfo);
