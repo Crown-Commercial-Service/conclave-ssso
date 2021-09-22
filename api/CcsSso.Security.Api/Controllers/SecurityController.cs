@@ -557,19 +557,23 @@ namespace CcsSso.Security.Api.Controllers
       string opbsCookieName = "opbs";
       DateTime expiresOnUTC = DateTime.UtcNow.AddMinutes(_applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes);
 
+      
       CookieOptions opbsCookieOptions = new CookieOptions()
       {
         Expires = expiresOnUTC,
-        // Since it's not clear the way the project is build (debug or release), this was always set to None with secure True
-        SameSite = SameSiteMode.None,
         Secure = true
-        //#if DEBUG
-        //        SameSite = SameSiteMode.None,
-        //        Secure = true
-        //#else
-        //          SameSite = SameSiteMode.Lax    // Need to verify
-        //#endif
       };
+
+      if (!string.IsNullOrEmpty(_applicationConfigurationInfo.CustomDomain))
+      {
+        opbsCookieOptions.SameSite = SameSiteMode.Lax;
+        opbsCookieOptions.Domain = _applicationConfigurationInfo.CustomDomain;
+      }
+      else
+      {
+        opbsCookieOptions.SameSite = SameSiteMode.None;
+      }
+
       string opbsValue;
       // Generate OPBS cookie if not exists in request
       if (!Request.Cookies.ContainsKey(opbsCookieName))
@@ -589,9 +593,19 @@ namespace CcsSso.Security.Api.Controllers
       {
         HttpOnly = true,
         Expires = expiresOnUTC,
-        SameSite = SameSiteMode.None,
         Secure = true
       };
+
+      if (!string.IsNullOrEmpty(_applicationConfigurationInfo.CustomDomain))
+      {
+        httpCookieOptions.SameSite = SameSiteMode.Lax;
+        httpCookieOptions.Domain = _applicationConfigurationInfo.CustomDomain;
+      }
+      else
+      {
+        httpCookieOptions.SameSite = SameSiteMode.None;
+      }
+
       string sessionCookie = "ccs-sso";
 
       string sid;
@@ -621,9 +635,19 @@ namespace CcsSso.Security.Api.Controllers
       {
         HttpOnly = true,
         Expires = expiresOnUTC,
-        SameSite = SameSiteMode.None,
         Secure = true
       };
+
+      if (!string.IsNullOrEmpty(_applicationConfigurationInfo.CustomDomain))
+      {
+        visitedSiteCookieOptions.SameSite = SameSiteMode.Lax;
+        visitedSiteCookieOptions.Domain = _applicationConfigurationInfo.CustomDomain;
+      }
+      else
+      {
+        visitedSiteCookieOptions.SameSite = SameSiteMode.None;
+      }
+
       string visitedSiteCookie = "ccs-sso-visitedsites";
       if (!Request.Cookies.ContainsKey(visitedSiteCookie))
       {

@@ -114,7 +114,7 @@ namespace CcsSso.Core.Api.Controllers
       await _authService.ResetMfaByTicketAsync(mfaResetInfo);
     }
 
-    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_USER_SUPPORT")]
     [HttpPost("send_reset_mfa_notification_by_admin")]
     public async Task SendResetMfaNotificationByAdmin(MfaResetInfo mfaResetInfo)
     {

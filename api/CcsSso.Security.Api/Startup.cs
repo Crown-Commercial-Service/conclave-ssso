@@ -105,6 +105,7 @@ namespace CcsSso.Security.Api
 
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
+          CustomDomain = Configuration["CustomDomain"],
           Auth0ConfigurationInfo = new Auth0Configuration()
           {
             ClientId = Configuration["Auth0:ClientId"],
@@ -206,15 +207,7 @@ namespace CcsSso.Security.Api
 
       services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-      // This could be a temporary checking to register the identity provider service.
-      if (Configuration["IdentityProvider"] == "AUTH0")
-      {
-        services.AddSingleton<IIdentityProviderService, Auth0IdentityProviderService>();
-      }
-      else
-      {
-        services.AddSingleton<IIdentityProviderService, AwsIdentityProviderService>();
-      }
+      services.AddSingleton<IIdentityProviderService, Auth0IdentityProviderService>();
       services.AddSingleton<TokenHelper>();
 
       services.AddSingleton<ISecurityCacheService, SecurityCacheService>();

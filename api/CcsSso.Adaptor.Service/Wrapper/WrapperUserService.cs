@@ -3,6 +3,7 @@ using CcsSso.Adaptor.Domain.Contracts.Wrapper;
 using CcsSso.Adaptor.Domain.Dtos.Wrapper;
 using CcsSso.Shared.Domain.Constants;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace CcsSso.Adaptor.Service.Wrapper
 {
@@ -16,7 +17,7 @@ namespace CcsSso.Adaptor.Service.Wrapper
 
     public async Task<WrapperUserResponse> GetUserAsync(string userName)
     {
-      var result = await _wrapperApiService.GetAsync<WrapperUserResponse>(WrapperApi.User, $"?userId={userName}", $"{CacheKeyConstant.User}-{userName}", "ERROR_RETRIEVING_USER");
+      var result = await _wrapperApiService.GetAsync<WrapperUserResponse>(WrapperApi.User, $"?userId={HttpUtility.UrlEncode(userName)}", $"{CacheKeyConstant.User}-{userName}", "ERROR_RETRIEVING_USER");
       return result;
     }
 

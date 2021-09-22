@@ -27,6 +27,8 @@ namespace CcsSso.Security.Domain.Dtos
     public CryptoSettings CryptoSettings { get; set; }
 
     public MfaSetting MfaSetting { get; set; }
+
+    public string CustomDomain { get; set; }
   }
 
   public class SecurityApiKeySettings

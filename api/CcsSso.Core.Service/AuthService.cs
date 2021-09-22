@@ -121,11 +121,12 @@ namespace CcsSso.Core.Service
 
     public async Task<bool> AuthorizeForOrganisationAsync(RequestType requestType)
     {
-      var isAuthorized = false;
+      var isCcsAdminRequest = _requestContext.Roles.Contains("ORG_USER_SUPPORT") || _requestContext.Roles.Contains("MANAGE_SUBSCRIPTIONS");
+      var isAuthorizedForOrganisation = false;
 
       if (requestType == RequestType.HavingOrgId)
       {
-        isAuthorized = _requestContext.CiiOrganisationId == _requestContext.RequestIntendedOrganisationId;
+        isAuthorizedForOrganisation = _requestContext.CiiOrganisationId == _requestContext.RequestIntendedOrganisationId;
       }
       else if (requestType == RequestType.NotHavingOrgId)
       {
@@ -138,16 +139,16 @@ namespace CcsSso.Core.Service
 
           await _remoteCacheService.SetValueAsync<string>($"{CacheKeyConstant.UserOrganisation}-{_requestContext.RequestIntendedUserName}", intendedOrganisationId);
         }
-        
-        isAuthorized = _requestContext.CiiOrganisationId == intendedOrganisationId;
+
+        isAuthorizedForOrganisation = _requestContext.CiiOrganisationId == intendedOrganisationId;
       }
 
-      if (!isAuthorized)
+      if (!isAuthorizedForOrganisation && !isCcsAdminRequest)
       {
         throw new ForbiddenException();
       }
 
-      return isAuthorized;
+      return true;
     }
 
     public async Task SendResetMfaNotificationAsync(MfaResetInfo mfaResetInfo, bool forceUserSignout = false)
@@ -178,7 +179,7 @@ namespace CcsSso.Core.Service
           throw new CcsSsoException(errorMessage);
         }
 
-        if(forceUserSignout)
+        if (forceUserSignout)
         {
           await _remoteCacheService.SetValueAsync(CacheKeyConstant.ForceSignoutKey + mfaResetInfo.UserName, true);
         }

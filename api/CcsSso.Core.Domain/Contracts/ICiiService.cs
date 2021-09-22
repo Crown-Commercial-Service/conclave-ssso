@@ -5,20 +5,20 @@ namespace CcsSso.Domain.Contracts
 {
   public interface ICiiService
   {
-    Task<CiiDto> GetAsync(string scheme, string companyNumber, string token);
+    Task AddSchemeAsync(string ciiOrganisationId, string scheme, string identifier, string token);
 
-    Task<CiiDto[]> GetOrgsAsync(string id, string token);
+    Task DeleteOrgAsync(string ciiOrganisationId);
 
-    Task<CiiSchemeDto[]> GetSchemesAsync(string token);
+    Task DeleteSchemeAsync(string ciiOrganisationId, string scheme, string identifier, string token);
 
-    Task<CiiDto> GetIdentifiersAsync(string orgId, string scheme, string id, string token);
+    Task<CiiDto> GetIdentifierDetailsAsync(string scheme, string identifier);
+
+    Task<CiiDto> GetOrganisationIdentifierDetailsAsync(string ciiOrganisationId, string scheme, string identifier, string token);
+
+    Task<CiiDto> GetOrgDetailsAsync(string ciiOrganisationId);
+
+    Task<CiiSchemeDto[]> GetSchemesAsync();
 
     Task<string> PostAsync(CiiDto model);
-
-    Task PutAsync(CiiPutDto model, string token);
-
-    Task DeleteOrgAsync(string id);
-
-    Task DeleteSchemeAsync(string orgId, string scheme, string id, string token);
   }
 }

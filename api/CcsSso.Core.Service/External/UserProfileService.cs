@@ -111,7 +111,7 @@ namespace CcsSso.Core.Service.External
           OrganisationUserGroupId = groupId
         });
       });
-
+      
       // Set user roles
       var userAccessRoles = new List<UserAccessRole>();
       userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
@@ -122,10 +122,11 @@ namespace CcsSso.Core.Service.External
         });
       });
 
+      var defaultUserRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.DefaultUserRoleNameKey).Id;
+
       // Set default user role if no role available
-      if (userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any())
+      if (userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() || !userAccessRoles.Exists(ur => ur.OrganisationEligibleRoleId == defaultUserRoleId))
       {
-        var defaultUserRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.DefaultUserRoleNameKey).Id;
         userAccessRoles.Add(new UserAccessRole
         {
           OrganisationEligibleRoleId = defaultUserRoleId
@@ -146,7 +147,7 @@ namespace CcsSso.Core.Service.External
         User = new User
         {
           UserName = userName,
-          UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unknown),
+          UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified),
           UserGroupMemberships = userGroupMemberships,
           UserAccessRoles = userAccessRoles,
           OrganisationEligibleIdentityProviderId = userProfileRequestInfo.Detail.IdentityProviderId,
@@ -458,7 +459,7 @@ namespace CcsSso.Core.Service.External
       bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
       bool hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
                                     user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
-                                    user.UserTitle != (int)(userProfileRequestInfo.Title ?? UserTitle.Unknown) ||
+                                    user.UserTitle != (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified) ||
                                     user.OrganisationEligibleIdentityProviderId != userProfileRequestInfo.Detail.IdentityProviderId);
 
       user.Party.Person.FirstName = userProfileRequestInfo.FirstName.Trim();
@@ -473,7 +474,7 @@ namespace CcsSso.Core.Service.External
       int previousIdentityProviderId = 0;
       if (!isMyProfile)
       {
-        user.UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unknown);
+        user.UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified);
         requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
         requestRoles = userProfileRequestInfo.Detail.RoleIds == null ? new List<int>() : userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
         hasGroupMembershipsNotChanged = Enumerable.SequenceEqual(requestGroups, user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).OrderBy(e => e));
@@ -560,10 +561,11 @@ namespace CcsSso.Core.Service.External
           throw new CcsSsoException(ErrorConstant.ErrorCannotRemoveAdminRoleGroupLastOrgAdmin);
         }
 
+        var defaultUserRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.DefaultUserRoleNameKey).Id;
+
         // Set default user role if no role available
-        if (userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any())
-        {
-          var defaultUserRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.DefaultUserRoleNameKey).Id;
+        if (userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() || !userAccessRoles.Exists(ur => ur.OrganisationEligibleRoleId == defaultUserRoleId))
+        {          
           userAccessRoles.Add(new UserAccessRole
           {
             OrganisationEligibleRoleId = defaultUserRoleId
@@ -847,7 +849,7 @@ namespace CcsSso.Core.Service.External
         var orgGroupIds = organisation.UserGroups.Select(g => g.Id).ToList();
         var orgRoleIds = organisation.OrganisationEligibleRoles.Select(r => r.Id);
         var orgIdpIds = organisation.OrganisationEligibleIdentityProviders.Select(i => i.Id);
-
+        
         if (userProfileReqestInfo.Title != null && !UtilitiesHelper.IsEnumValueValid<UserTitle>((int)userProfileReqestInfo.Title))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidTitle);

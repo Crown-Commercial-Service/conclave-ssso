@@ -27,5 +27,12 @@ namespace CcsSso.Shared.Services
       }
       return null;
     }
+
+    public static string GetCountryCodeByName(string name)
+    {
+      var regions = CultureInfo.GetCultures(CultureTypes.SpecificCultures).Select(x => new RegionInfo(x.LCID));
+      var englishRegion = regions.FirstOrDefault(region => region.EnglishName.Contains(name));
+      return englishRegion?.TwoLetterISORegionName;
+    }
   }
 }
