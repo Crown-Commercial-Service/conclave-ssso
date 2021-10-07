@@ -20,9 +20,9 @@ deploy:
     password: $password
     api: $api
     organization: $organisation
-    space: uat
+    space: $TRAVIS_BRANCH
     manifest: /home/travis/build/Crown-Commercial-Service/conclave-ssso/manifest.yml
     skip-cleanup: true
     edge: true
     on:
-      branch: uat
+      branch: $TRAVIS_BRANCH
