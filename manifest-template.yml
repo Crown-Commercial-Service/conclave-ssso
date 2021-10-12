@@ -1,9 +1,81 @@
 ---
 applications:
-- name: CF_SPACE-ccs-sso
+- name: CF_SPACE-api-security
   instances: 1
-  memory: 50M
-  buildpack: https://github.com/cloudfoundry/staticfile-buildpack
-  #buildpack: https://github.com/cloudfoundry/nginx-buildpack.git
+  memory: 512M
+  path: api/CcsSso.Security.Api/bin/Release/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
   routes:
-    - route: CF_SPACE-ccs-sso.london.cloudapps.digital
+    - route: CF_SPACE-api-security.london.cloudapps.digital
+  services:
+    - CF_SPACE-security-pg-service
+    - CF_SPACE-vault 
+    - CF_SPACE-security-redis-service
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: CF_SPACE-api-wrapper
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Core.ExternalApi/bin/Release/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: CF_SPACE-api-wrapper.london.cloudapps.digital
+  services:
+    - CF_SPACE-sso-pg-service
+    - CF_SPACE-vault
+    - CF_SPACE-adaptor-sqs-service
+    - CF_SPACE-data-redis-service
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: CF_SPACE-api-core
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Core.Api/bin/Release/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: CF_SPACE-api-core.london.cloudapps.digital
+  services:
+    - CF_SPACE-sso-pg-service
+    - CF_SPACE-vault
+    - CF_SPACE-data-redis-service
+    - CF_SPACE-adaptor-sqs-service
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: CF_SPACE-api-adaptor
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Adaptor.Api/bin/Release/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  routes:
+    - route: CF_SPACE-api-adaptor.london.cloudapps.digital
+  services:
+    - CF_SPACE-adaptor-pg-service
+    - CF_SPACE-data-redis-service
+    - CF_SPACE-adaptor-sqs-service
+    - CF_SPACE-vault   
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: CF_SPACE-adaptor-sqs-listener
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Adaptor.SqsListener/bin/Release/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  no-route: true
+  health-check-type: none
+  services:
+    - CF_SPACE-vault
+    - CF_SPACE-adaptor-sqs-service
+  env:
+    CACHE_NUGET_PACKAGES: false
+- name: CF_SPACE-org-dereg-job
+  instances: 1
+  memory: 512M
+  path: api/CcsSso.Core.JobScheduler/bin/Release/net5.0
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  no-route: true
+  health-check-type: none
+  services:
+    - CF_SPACE-sso-pg-service
+    - CF_SPACE-vault
+  env:
+    CACHE_NUGET_PACKAGES: false
