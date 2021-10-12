@@ -21,13 +21,13 @@ namespace CcsSso.Core.Api.Middleware
     private readonly IRemoteCacheService _remoteCacheService;
     private List<string> allowedPaths = new List<string>()
     {
-      "auth/backchannel_logout", "auth/get_refresh_token","auth/send_reset_mfa_notification","auth/reset_mfa_by_ticket",
-      "organisation/register", "user/useractivationemail", "user/permissions", "cii/schemes", "cii/identifiers"
+      "auth/backchannel-logout", "auth/refresh-tokens","auth/mfa-reset-notifications","auth/mfa-reset-by-tickets",
+      "organisations/registrations", "users/permissions", "users/nominee", "users/activation-email", "cii/schemes", "cii/identifiers"
     };
 
     private List<string> allowedPathsForXSRFValidation = new List<string>()
     {
-      "auth/create_session"
+      "auth/sessions"
     };
 
     public AuthenticationMiddleware(RequestDelegate next, ITokenService tokenService,
@@ -80,7 +80,7 @@ namespace CcsSso.Core.Api.Middleware
             var jti = result.ClaimValues[JwtRegisteredClaimNames.Jti];
             long.TryParse(result.ClaimValues[JwtRegisteredClaimNames.Exp], out long exp);
 
-            if (path == "auth/sign_out")
+            if (path == "auth/sign-out")
             {
               await _remoteCacheService.SetValueAsync(CacheKeyConstant.BlockedListKey + jti, sub, new TimeSpan(exp));
             }
@@ -90,7 +90,7 @@ namespace CcsSso.Core.Api.Middleware
               //check if user is entitled to force signout
               if (forceSignout)
               {
-                if (path == "auth/create_session")
+                if (path == "auth/sessions")
                 {
                   await _remoteCacheService.RemoveAsync(CacheKeyConstant.ForceSignoutKey + sub);
                 }
@@ -116,7 +116,7 @@ namespace CcsSso.Core.Api.Middleware
             requestContext.Roles = result.ClaimValues["roles"].Split(",").ToList();
             await _next(context);
           }
-          else if (path == "auth/sign_out")
+          else if (path == "auth/sign-out")
           {
             await _next(context);
           }
@@ -126,7 +126,7 @@ namespace CcsSso.Core.Api.Middleware
           }
         }
       }
-      else if (path == "auth/sign_out")
+      else if (path == "auth/sign-out")
       {
         await _next(context);
       }

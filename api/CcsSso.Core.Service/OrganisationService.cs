@@ -172,7 +172,7 @@ namespace CcsSso.Service
           RightToBuy = organisation.RightToBuy,
           PartyId = organisation.PartyId,
           LegalName = organisation.LegalName,
-        }).ToListAsync();
+        }).OrderBy(o => o.LegalName).ToListAsync();
 
       return organisations;
     }
@@ -194,7 +194,7 @@ namespace CcsSso.Service
           OrganisationId = user.Party.Person.Organisation.Id,
           OrganisationLegalName = user.Party.Person.Organisation.LegalName,
           CiiOrganisationId = user.Party.Person.Organisation.CiiOrganisationId
-        }).ToListAsync();
+        }).OrderBy(u => u.Name).ToListAsync();
       return users;
     }
 

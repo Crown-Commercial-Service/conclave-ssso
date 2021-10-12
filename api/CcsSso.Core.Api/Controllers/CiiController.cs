@@ -41,32 +41,32 @@ namespace CcsSso.Api.Controllers
 
     [HttpGet("organisation-details")]
     [SwaggerOperation(Tags = new[] { "Cii" })]
-    public async Task<CiiDto> GetOrgDetails(string ciiOrganisationId)
+    public async Task<CiiDto> GetOrgDetails([FromQuery(Name = "organisation-id")] string ciiOrganisationId)
     {
       return await _ciiService.GetOrgDetailsAsync(ciiOrganisationId);
     }
 
     [HttpGet("organisation-identifiers")]
     [SwaggerOperation(Tags = new[] { "Cii" })]
-    public async Task<CiiDto> GetOrganisationIdentifierDetails(string ciiOrganisationId, string scheme, string identifier)
+    public async Task<CiiDto> GetOrganisationIdentifierDetails([FromQuery(Name = "organisation-id")] string ciiOrganisationId, string scheme, string identifier)
     {
       var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
       return await _ciiService.GetOrganisationIdentifierDetailsAsync(ciiOrganisationId, scheme, identifier, accessToken);
     }
 
-    [HttpPut("add-scheme")]
+    [HttpPut("additional-identifiers")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
     [SwaggerOperation(Tags = new[] { "Cii" })]
-    public async Task AddScheme(string ciiOrganisationId, string scheme, string identifier)
+    public async Task AddScheme([FromQuery(Name = "organisation-id")] string ciiOrganisationId, string scheme, string identifier)
     {
       var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
       await _ciiService.AddSchemeAsync(ciiOrganisationId, scheme, identifier, accessToken);
     }
 
-    [HttpDelete("delete-scheme")]
+    [HttpDelete("additional-identifiers")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
     [SwaggerOperation(Tags = new[] { "Cii" })]
-    public async Task DeleteScheme(string ciiOrganisationId, string scheme, string identifier)
+    public async Task DeleteScheme([FromQuery(Name = "organisation-id")] string ciiOrganisationId, string scheme, string identifier)
     {
       var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
       await _ciiService.DeleteSchemeAsync(ciiOrganisationId, scheme, identifier, accessToken);

@@ -113,7 +113,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /users?userId=user@mail.com
+    ///     GET /users?user-id=user@mail.com
     ///     
     ///
     /// </remarks>
@@ -122,7 +122,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(UserProfileResponseInfo), 200)]
-    public async Task<UserProfileResponseInfo> GetUser(string userId)
+    public async Task<UserProfileResponseInfo> GetUser([FromQuery(Name = "user-id")]string userId)
     {
       return await _userProfileService.GetUserAsync(userId);
     }
@@ -140,7 +140,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     PUT /users?userId=user@mail.com
+    ///     PUT /users?user-id=user@mail.com
     ///     {
     ///        "firstName": "FirstName",
     ///        "lastName": "LastName",
@@ -160,7 +160,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
-    public async Task<UserEditResponseInfo> UpdateUser(string userId, UserProfileEditRequestInfo userProfileRequestInfo)
+    public async Task<UserEditResponseInfo> UpdateUser([FromQuery(Name = "user-id")] string userId, UserProfileEditRequestInfo userProfileRequestInfo)
     {
       return await _userProfileService.UpdateUserAsync(userId, userProfileRequestInfo);
     }
@@ -178,7 +178,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     DELETE /users?userId=user@mail.com
+    ///     DELETE /users?user-id=user@mail.com
     ///     
     ///
     /// </remarks>
@@ -187,7 +187,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task DeleteUser(string userId)
+    public async Task DeleteUser([FromQuery(Name = "user-id")] string userId)
     {
       await _userProfileService.DeleteUserAsync(userId);
     }
@@ -197,30 +197,30 @@ namespace CcsSso.ExternalApi.Controllers
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    [HttpPut("reset-password")]
+    [HttpPut("passwords")]
     [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR")]
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task ResetUserPassword(string userId, string? component)
+    public async Task ResetUserPassword([FromQuery(Name = "user-id")] string userId, string? component)
     {
       await _userProfileService.ResetUserPasswodAsync(userId, component);
     }
 
-    [HttpPut("remove-admin-roles")]
+    [HttpDelete("admin-roles")]
     [ClaimAuthorise("ORG_USER_SUPPORT")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task RemoveAdminRoles(string userId)
+    public async Task RemoveAdminRoles([FromQuery(Name = "user-id")] string userId)
     {
       await _userProfileService.RemoveAdminRolesAsync(userId);
     }
 
-    [HttpPut("add-admin-role")]
+    [HttpPut("admin-roles")]
     [ClaimAuthorise("ORG_USER_SUPPORT")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task AddAdminRole(string userId)
+    public async Task AddAdminRole([FromQuery(Name = "user-id")] string userId)
     {
       await _userProfileService.AddAdminRoleAsync(userId);
     }
@@ -240,7 +240,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     POST /users/contacts?userId=user@mail.com
+    ///     POST /users/contacts?user-id=user@mail.com
     ///     {
     ///        "contactPointReason": "BILLING/SHIPPING",
     ///        "contactPointName": "Test User",
@@ -271,7 +271,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(int), 200)]
-    public async Task<int> CreateUserContact(string userId, ContactRequestInfo contactInfo)
+    public async Task<int> CreateUserContact([FromQuery(Name = "user-id")] string userId, ContactRequestInfo contactInfo)
     {
       return await _contactService.CreateUserContactAsync(userId, contactInfo);
     }
@@ -289,7 +289,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /user-profile/users/contacts?userId=user@mail.com
+    ///     GET /user-profile/users/contacts?user-id=user@mail.com
     ///     
     ///     
     ///
@@ -299,7 +299,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(UserContactInfoList), 200)]
-    public async Task<UserContactInfoList> GetUserContactsList(string userId, [FromQuery] string contactType)
+    public async Task<UserContactInfoList> GetUserContactsList([FromQuery(Name = "user-id")] string userId, [FromQuery] string contactType)
     {
       return await _contactService.GetUserContactsListAsync(userId, contactType);
     }
@@ -317,7 +317,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /users/contacts/1?userId=user@mail.com
+    ///     GET /users/contacts/1?user-id=user@mail.com
     ///     
     ///
     /// </remarks>
@@ -326,7 +326,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(UserContactInfo), 200)]
-    public async Task<UserContactInfo> GetUserContact(string userId, int contactId)
+    public async Task<UserContactInfo> GetUserContact([FromQuery(Name = "user-id")] string userId, int contactId)
     {
       return await _contactService.GetUserContactAsync(userId, contactId);
     }
@@ -345,7 +345,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     PUT /users/contacts/1?userId=user@mail.com
+    ///     PUT /users/contacts/1?user-id=user@mail.com
     ///     {
     ///        "contactPointReason": "BILLING/SHIPPING",
     ///        "contactPointName": "Test User",
@@ -376,7 +376,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task UpdateUserContact(string userId, int contactId, ContactRequestInfo contactInfo)
+    public async Task UpdateUserContact([FromQuery(Name = "user-id")] string userId, int contactId, ContactRequestInfo contactInfo)
     {
       await _contactService.UpdateUserContactAsync(userId, contactId, contactInfo);
     }
@@ -394,7 +394,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     DELETE /users/contacts/1?userId=user@mail.com
+    ///     DELETE /users/contacts/1?user-id=user@mail.com
     ///     
     ///
     /// </remarks>
@@ -403,7 +403,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User contact" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task DeleteUserContact(string userId, int contactId)
+    public async Task DeleteUserContact([FromQuery(Name = "user-id")] string userId, int contactId)
     {
       await _contactService.DeleteUserContactAsync(userId, contactId);
     }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.Api.Controllers
 {
-  [Route("logger")]
+  [Route("logs")]
   [ApiController]
   public class LoggerController : ControllerBase
   {
@@ -17,7 +17,7 @@ namespace CcsSso.Core.Api.Controllers
     }
 
     [HttpPost]
-    [SwaggerOperation(Tags = new[] { "logger" })]
+    [SwaggerOperation(Tags = new[] { "logs" })]
     [ProducesResponseType(typeof(int), 200)]
     [ProducesResponseType(401)]
     public async Task CreateLog(LogInfo logInfo)

@@ -45,10 +45,10 @@ namespace CcsSso.Security.Api.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     POST /login
+    ///     POST /security/test/oauth/token
     ///     {
     ///        "username": "helen@xxx.com",
-    ///        "userpassword": "1234",
+    ///        "password": "1234",
     ///        "client_id":"1234",
     ///        "client_secret":"xxxx"
     ///     }
@@ -56,8 +56,8 @@ namespace CcsSso.Security.Api.Controllers
     /// </remarks>
     [HttpPost]
     [Produces("application/json")]
-    [Route("test/oauth/token")]
-    [SwaggerOperation(Tags = new[] { "test" })]
+    [Route("security/test/oauth/token")]
+    [SwaggerOperation(Tags = new[] { "security" })]
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
@@ -542,13 +542,6 @@ namespace CcsSso.Security.Api.Controllers
     public async Task<IdamUser> GetUser(string email)
     {
       return await _userManagerService.GetUserAsync(email);
-    }
-
-    [HttpPost("security/nominate")]
-    [SwaggerOperation(Tags = new[] { "security" })]
-    public async Task Nominate(UserInfo userInfo)
-    {
-      await _userManagerService.NominateUserAsync(userInfo);
     }
 
     [HttpPost("security/useractivationemail")]

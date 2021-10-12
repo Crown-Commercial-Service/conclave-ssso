@@ -44,8 +44,6 @@ namespace CcsSso.Security.Domain.Contracts
 
     string GetAuthenticationEndPoint(string state, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt, string nonce, string display, string login_hint, int? max_age, string acr_values);
 
-    Task SendNominateEmailAsync(Domain.Dtos.UserInfo userInfo);
-
     Task SendUserActivationEmailAsync(string email, string managementApiToken = null);
   }
 }

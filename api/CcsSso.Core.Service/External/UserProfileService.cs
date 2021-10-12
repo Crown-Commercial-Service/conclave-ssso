@@ -9,6 +9,7 @@ using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Services.Helpers;
 using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
 using Microsoft.EntityFrameworkCore;
@@ -30,10 +31,11 @@ namespace CcsSso.Core.Service.External
     private readonly IWrapperCacheService _wrapperCacheService;
     private readonly IAuditLoginService _auditLoginService;
     private readonly IRemoteCacheService _remoteCacheService;
+    private readonly ICacheInvalidateService _cacheInvalidateService;
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
       IAdaptorNotificationService adapterNotificationService, IWrapperCacheService wrapperCacheService,
-      IAuditLoginService auditLoginService, IRemoteCacheService remoteCacheService)
+      IAuditLoginService auditLoginService, IRemoteCacheService remoteCacheService, ICacheInvalidateService cacheInvalidateService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -44,6 +46,7 @@ namespace CcsSso.Core.Service.External
       _wrapperCacheService = wrapperCacheService;
       _auditLoginService = auditLoginService;
       _remoteCacheService = remoteCacheService;
+      _cacheInvalidateService = cacheInvalidateService;
     }
 
     public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo)
@@ -111,7 +114,7 @@ namespace CcsSso.Core.Service.External
           OrganisationUserGroupId = groupId
         });
       });
-      
+
       // Set user roles
       var userAccessRoles = new List<UserAccessRole>();
       userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
@@ -521,6 +524,8 @@ namespace CcsSso.Core.Service.External
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation)
         .Include(u => u.UserGroupMemberships)
         .Include(u => u.UserAccessRoles)
+        .Include(u => u.Party).ThenInclude(p => p.ContactPoints).ThenInclude(cp => cp.ContactDetail).ThenInclude(cd => cd.VirtualAddresses) // Get virtual addresses
+        .Include(u => u.Party).ThenInclude(p => p.ContactPoints).ThenInclude(cp => cp.ContactDetail).ThenInclude(cd => cd.ContactPoints) // Assigned contact points
         .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
 
       if (user == null)
@@ -553,19 +558,30 @@ namespace CcsSso.Core.Service.External
         });
       }
 
+      List<int> deletingContactPointIds = new();
+      if (user.Party.ContactPoints != null)
+      {
+        user.Party.ContactPoints.ForEach((cp) =>
+        {
+          cp.IsDeleted = true;
+          deletingContactPointIds.Add(cp.Id);
+          if (cp.ContactDetail != null)
+          {
+            cp.ContactDetail.IsDeleted = true;
+            cp.ContactDetail.VirtualAddresses.ForEach((va) => { va.IsDeleted = true; });
+            cp.ContactDetail.ContactPoints.ForEach((otherContactPoint) => { otherContactPoint.IsDeleted = true; }); // Delete assigned contacts
+          }
+        });
+      }
+
       await _dataContext.SaveChangesAsync();
 
       // Log
       await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelete, AuditLogApplication.ManageUserAccount, $"UserId:{user.Id}");
 
-      //Invalidate redis
-      var invalidatingCacheKeyList = new List<string>
-      {
-        $"{CacheKeyConstant.User}-{userName}",
-        $"{CacheKeyConstant.OrganisationUsers}-{user.Party.Person.Organisation.CiiOrganisationId}"
-      };
+      // Invalidate redis
+      await _cacheInvalidateService.RemoveUserCacheValuesOnDeleteAsync(userName, user.Party.Person.Organisation.CiiOrganisationId, deletingContactPointIds);
       await _remoteCacheService.SetValueAsync(CacheKeyConstant.ForceSignoutKey + userName, true);
-      await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeyList.ToArray());
 
       // Notify the adapter
       await _adapterNotificationService.NotifyUserChangeAsync(OperationType.Delete, userName, user.Party.Person.Organisation.CiiOrganisationId);
@@ -725,7 +741,7 @@ namespace CcsSso.Core.Service.External
 
         // Set default user role if no role available
         if (userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() || !userAccessRoles.Exists(ur => ur.OrganisationEligibleRoleId == defaultUserRoleId))
-        {          
+        {
           userAccessRoles.Add(new UserAccessRole
           {
             OrganisationEligibleRoleId = defaultUserRoleId
@@ -1009,7 +1025,7 @@ namespace CcsSso.Core.Service.External
         var orgGroupIds = organisation.UserGroups.Select(g => g.Id).ToList();
         var orgRoleIds = organisation.OrganisationEligibleRoles.Select(r => r.Id);
         var orgIdpIds = organisation.OrganisationEligibleIdentityProviders.Select(i => i.Id);
-        
+
         if (userProfileReqestInfo.Title != null && !UtilitiesHelper.IsEnumValueValid<UserTitle>((int)userProfileReqestInfo.Title))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidTitle);
