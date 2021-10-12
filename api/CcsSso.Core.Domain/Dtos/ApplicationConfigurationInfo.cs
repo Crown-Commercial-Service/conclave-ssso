@@ -4,6 +4,8 @@ namespace CcsSso.Domain.Dtos
   {
     public string ApiKey { get; set; }
 
+    public ConclaveSettings ConclaveSettings { get; set; }
+
     public string ConclaveLoginUrl { get; set; }
 
     public bool EnableAdapterNotifications { get; set; }
@@ -41,6 +43,13 @@ namespace CcsSso.Domain.Dtos
     public string ApiKey { get; set; }
   }
 
+  public class ConclaveSettings
+  {
+    public string BaseUrl { get; set; }
+
+    public string OrgRegistrationRoute { get; set; }
+  }
+
   public class CcsEmailInfo
   {
     public string UserWelcomeEmailTemplateId { get; set; }
@@ -52,6 +61,8 @@ namespace CcsSso.Domain.Dtos
     public string UserContactUpdateNotificationTemplateId { get; set; }
 
     public string UserPermissionUpdateNotificationTemplateId { get; set; }
+
+    public string NominateEmailTemplateId { get; set; }
 
     public bool SendNotificationsEnabled { get; set; }
   }

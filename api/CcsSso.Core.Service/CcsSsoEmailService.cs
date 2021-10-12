@@ -36,6 +36,22 @@ namespace CcsSso.Core.Service
       await _emaillProviderService.SendEmailAsync(emailInfo);
     }
 
+    public async Task SendNominateEmailAsync(string email, string link)
+    {
+      var data = new Dictionary<string, dynamic>
+      {
+        { "OrgRegistersationlink", link },
+        { "emailaddress", email }
+      };
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.EmailInfo.NominateEmailTemplateId,
+        BodyContent = data
+      };
+      await _emaillProviderService.SendEmailAsync(emailInfo);
+    }
+
     public async Task SendOrgProfileUpdateEmailAsync(string email)
     {
       if (_appConfigInfo.EmailInfo.SendNotificationsEnabled)

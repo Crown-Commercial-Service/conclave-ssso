@@ -1,0 +1,17 @@
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/bin/Release/net5.0/CcsSso.Security.Domain.deps.json
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/bin/Release/net5.0/CcsSso.Security.Domain.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/bin/Release/net5.0/ref/CcsSso.Security.Domain.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/bin/Release/net5.0/CcsSso.Security.Domain.pdb
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/bin/Release/net5.0/CcsSso.Shared.Cache.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/bin/Release/net5.0/CcsSso.Shared.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/bin/Release/net5.0/CcsSso.Shared.pdb
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/bin/Release/net5.0/CcsSso.Shared.Cache.pdb
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/obj/Release/net5.0/CcsSso.Security.Domain.csproj.AssemblyReference.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/obj/Release/net5.0/CcsSso.Security.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/obj/Release/net5.0/CcsSso.Security.Domain.AssemblyInfoInputs.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/obj/Release/net5.0/CcsSso.Security.Domain.AssemblyInfo.cs
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/obj/Release/net5.0/CcsSso.Security.Domain.csproj.CoreCompileInputs.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/obj/Release/net5.0/CcsSso.Security.Domain.csproj.CopyComplete
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/obj/Release/net5.0/CcsSso.Security.Domain.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/obj/Release/net5.0/ref/CcsSso.Security.Domain.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Security.Domain/obj/Release/net5.0/CcsSso.Security.Domain.pdb

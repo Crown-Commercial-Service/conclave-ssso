@@ -1,4 +1,5 @@
 using CcsSso.Core.Domain.Jobs;
+using CcsSso.Core.JobScheduler.Enum;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
@@ -24,14 +25,16 @@ namespace CcsSso.Core.JobScheduler
     private readonly IDateTimeService _dataTimeService;
     private readonly AppSettings _appSettings;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ICacheInvalidateService _cacheInvalidateService;
 
     public OrganisationDeleteForInactiveRegistrationJob(IServiceScopeFactory factory, IDateTimeService dataTimeService,
-      AppSettings appSettings, IHttpClientFactory httpClientFactory)
+      AppSettings appSettings, IHttpClientFactory httpClientFactory, ICacheInvalidateService cacheInvalidateService)
     {
       _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
       _dataTimeService = dataTimeService;
       _appSettings = appSettings;
       _httpClientFactory = httpClientFactory;
+      _cacheInvalidateService = cacheInvalidateService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -60,7 +63,7 @@ namespace CcsSso.Core.JobScheduler
         {
           try
           {
-            bool isCandidateToDelete = true;
+            OrgDeleteCandidateStatus orgDeleteCandidateStatus = OrgDeleteCandidateStatus.None;
             //Get admin users to check their statuses in idam
             var adminUsers = await GetOrganisationAdmins(orgDetail.Item1);
             //Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.Item2}");
@@ -75,22 +78,30 @@ namespace CcsSso.Core.JobScheduler
 
                 if (idamUser.EmailVerified)
                 {
-                  isCandidateToDelete = false;
+                  orgDeleteCandidateStatus = OrgDeleteCandidateStatus.Activate;
                   break;
                 }
+                else
+                {
+                  orgDeleteCandidateStatus = OrgDeleteCandidateStatus.Delete;
+                }
+              }
+              else
+              {
+                orgDeleteCandidateStatus = OrgDeleteCandidateStatus.None;
               }
             }
 
-            if (isCandidateToDelete)
+            if (orgDeleteCandidateStatus == OrgDeleteCandidateStatus.Delete)
             {
               //Console.WriteLine($"*********Deleting from Conclave Organization id {orgDetail.Item1}***********************");
               await DeleteOrganisationAsync(orgDetail.Item1);
               //Console.WriteLine($"*********Deleted from Conclave Organization id {orgDetail.Item1}***********************");
 
               //Console.WriteLine($"*********Deleting from CII Organization id {orgDetail.Item1} ***********************");
-              await DeleteCIIOrganisationEntryAsync(orgDetail.Item2);              
+              await DeleteCIIOrganisationEntryAsync(orgDetail.Item2);
             }
-            else
+            else if (orgDeleteCandidateStatus == OrgDeleteCandidateStatus.Activate)
             {
               //Console.WriteLine($"*********Activating CII Organization id {orgDetail.Item1} ***********************");
               await ActivateOrganisationAsync(orgDetail.Item1);
@@ -99,7 +110,7 @@ namespace CcsSso.Core.JobScheduler
           }
           catch (Exception e)
           {
-            //Console.WriteLine($"Org deletion error " + e.Message);
+            Console.WriteLine($"Org deletion error " + e.Message);
             //Console.WriteLine($"*********Error deleting Organization***********************" + e.Message);
           }
         }
@@ -118,8 +129,6 @@ namespace CcsSso.Core.JobScheduler
 
     public async Task DeleteOrganisationAsync(int orgId)
     {
-      List<string> userNames = new List<string>();
-
       var deletingOrganisation = await _dataContext.Organisation
                                 .Include(o => o.OrganisationEligibleIdentityProviders)
                                 .Include(o => o.OrganisationAccessRoles)
@@ -130,6 +139,9 @@ namespace CcsSso.Core.JobScheduler
 
       if (deletingOrganisation != null)
       {
+        List<int> orgContactPointIds = new();
+        Dictionary<string, List<int>> deletingUserDetails = new();
+
         deletingOrganisation.OrganisationEligibleIdentityProviders.ForEach((idp) => { idp.IsDeleted = true; });
 
         if (deletingOrganisation.Party != null)
@@ -144,6 +156,7 @@ namespace CcsSso.Core.JobScheduler
           foreach (var orgContactPoint in deletingOrganisation.Party.ContactPoints)
           {
             orgContactPoint.IsDeleted = true;
+            orgContactPointIds.Add(orgContactPoint.Id);
             if (orgContactPoint.ContactDetail != null)
             {
               orgContactPoint.ContactDetail.IsDeleted = true;
@@ -195,37 +208,49 @@ namespace CcsSso.Core.JobScheduler
                   uar.IsDeleted = true;
                 }
               }
-              userNames.Add(person.Party.User.UserName); // Add the userName to delete from Auth0
-            }
 
-            if (person.Party.ContactPoints != null)
-            {
-              foreach (var personContactPoint in person.Party.ContactPoints)
+              List<int> delteingUserContactPointIds = new();
+              if (person.Party.ContactPoints != null)
               {
-                personContactPoint.IsDeleted = true;
-
-                if (personContactPoint.ContactDetail != null)
+                foreach (var personContactPoint in person.Party.ContactPoints)
                 {
-                  personContactPoint.ContactDetail.IsDeleted = true;
-
-                  if (personContactPoint.ContactDetail.VirtualAddresses != null)
+                  personContactPoint.IsDeleted = true;
+                  delteingUserContactPointIds.Add(personContactPoint.Id);
+                  if (personContactPoint.ContactDetail != null)
                   {
-                    foreach (var virtualContact in personContactPoint.ContactDetail.VirtualAddresses)
+                    personContactPoint.ContactDetail.IsDeleted = true;
+
+                    if (personContactPoint.ContactDetail.VirtualAddresses != null)
                     {
-                      virtualContact.IsDeleted = true;
+                      foreach (var virtualContact in personContactPoint.ContactDetail.VirtualAddresses)
+                      {
+                        virtualContact.IsDeleted = true;
+                      }
                     }
                   }
                 }
               }
+
+              deletingUserDetails.Add(person.Party.User.UserName, delteingUserContactPointIds);
             }
           }
         }
         await _dataContext.SaveChangesAsync();
-        foreach (var userName in userNames)
+        foreach (var user in deletingUserDetails)
         {
           //Console.WriteLine($"********* Deleting {userName} from Auth0 ***********************");
-          await DeleteUserFromSecurityApiAsync(userName);          
+          await DeleteUserFromSecurityApiAsync(user.Key);
+          try
+          {
+            await _cacheInvalidateService.RemoveUserCacheValuesOnDeleteAsync(user.Key, deletingOrganisation.CiiOrganisationId, user.Value);
+          }
+          catch // Dont want to stop user deletion if any error in cache invalidate
+          {
+            continue;
+          }
         }
+        await _cacheInvalidateService.RemoveOrganisationCacheValuesOnDeleteAsync(deletingOrganisation.CiiOrganisationId, orgContactPointIds,
+          new Dictionary<string, List<int>>());
       }
     }
 

@@ -1,0 +1,12 @@
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Shared.Cache/bin/Release/net5.0/CcsSso.Shared.Cache.deps.json
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Shared.Cache/bin/Release/net5.0/CcsSso.Shared.Cache.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Shared.Cache/bin/Release/net5.0/ref/CcsSso.Shared.Cache.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Shared.Cache/bin/Release/net5.0/CcsSso.Shared.Cache.pdb
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Shared.Cache/obj/Release/net5.0/CcsSso.Shared.Cache.csproj.AssemblyReference.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Shared.Cache/obj/Release/net5.0/CcsSso.Shared.Cache.GeneratedMSBuildEditorConfig.editorconfig
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Shared.Cache/obj/Release/net5.0/CcsSso.Shared.Cache.AssemblyInfoInputs.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Shared.Cache/obj/Release/net5.0/CcsSso.Shared.Cache.AssemblyInfo.cs
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Shared.Cache/obj/Release/net5.0/CcsSso.Shared.Cache.csproj.CoreCompileInputs.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Shared.Cache/obj/Release/net5.0/CcsSso.Shared.Cache.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Shared.Cache/obj/Release/net5.0/ref/CcsSso.Shared.Cache.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-20/CCS-Conclave-P1/api/CcsSso.Shared.Cache/obj/Release/net5.0/CcsSso.Shared.Cache.pdb

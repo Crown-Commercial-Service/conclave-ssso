@@ -66,6 +66,20 @@ namespace CcsSso.Api.CustomOptions
       Data.Add("Cii:Token", _cii.token);
       Data.Add("Cii:Delete_Token", _cii.token_delete);
 
+      if (_secrets.Data.ContainsKey("Email"))
+      {
+        var emailInfo = JsonConvert.DeserializeObject<EmailInfoVault>(_secrets.Data["Email"].ToString());
+        Data.Add("Email:NominateEmailTemplateId", emailInfo.NominateEmailTemplateId);
+        Data.Add("Email:ApiKey", emailInfo.ApiKey);
+      }
+
+      if (_secrets.Data.ContainsKey("ConclaveSettings"))
+      {
+        var conclaveSettingsVault = JsonConvert.DeserializeObject<ConclaveSettingsVault>(_secrets.Data["ConclaveSettings"].ToString());
+        Data.Add("ConclaveSettings:BaseUrl", conclaveSettingsVault.BaseUrl);
+        Data.Add("ConclaveSettings:OrgRegistrationRoute", conclaveSettingsVault.OrgRegistrationRoute);
+      }
+
       if (_secrets.Data.ContainsKey("JwtTokenValidationInfo"))
       {
         var jwtTokenValidationInfoVault = JsonConvert.DeserializeObject<JwtTokenValidationInfoVault>(_secrets.Data["JwtTokenValidationInfo"].ToString());
@@ -144,6 +158,21 @@ namespace CcsSso.Api.CustomOptions
       return configuration;
     }
   }
+
+  public class EmailInfoVault
+  {
+    public string ApiKey { get; set; }
+    public string NominateEmailTemplateId { get; set; }
+  }
+
+  public class ConclaveSettingsVault
+  {
+    public string BaseUrl { get; set; }
+
+    public string OrgRegistrationRoute { get; set; }
+  }
+
+
   public class JwtTokenValidationInfoVault
   {
     public string IdamClienId { get; set; }

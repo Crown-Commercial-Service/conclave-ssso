@@ -11,8 +11,6 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task SendResetPasswordAsync(string email, string verificationLink);
 
-    Task SendNominateEmailAsync(string email, string link);
-
     Task SendResetMfaEmailAsync(string email, string link);
 
     Task SendChangePasswordNotificationAsync(string email);

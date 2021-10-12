@@ -19,7 +19,7 @@ namespace CcsSso.Adaptor.Api.Controllers
     }
 
     [HttpGet]
-    public async Task<Dictionary<string,object>> GetUser(string userName)
+    public async Task<Dictionary<string,object>> GetUser([FromQuery(Name = "user-name")]string userName)
     {
       return await _userService.GetUserAsync(userName);
     }

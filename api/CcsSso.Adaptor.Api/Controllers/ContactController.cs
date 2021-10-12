@@ -42,13 +42,13 @@ namespace CcsSso.Adaptor.Api.Controllers
 
     #region User Contact
     [HttpGet("{contactId}/users")]
-    public async Task<Dictionary<string, object>> GetUserContact(int contactId, [FromQuery] string userName)
+    public async Task<Dictionary<string, object>> GetUserContact(int contactId, [FromQuery(Name = "user-name")] string userName)
     {
       return await _contactService.GetUserContactAsync(contactId, userName);
     }
 
     [HttpPost("users")]
-    public async Task<IActionResult> CreateContact(Dictionary<string, object> contactData, [FromQuery] string userName)
+    public async Task<IActionResult> CreateContact(Dictionary<string, object> contactData, [FromQuery(Name = "user-name")] string userName)
     {
       var result = await _contactService.CreateUserContactAsync(userName, contactData);
 
@@ -56,7 +56,7 @@ namespace CcsSso.Adaptor.Api.Controllers
     }
 
     [HttpPut("{contactId}/users")]
-    public async Task<int> UpdateContact(int contactId, Dictionary<string, object> contactData, [FromQuery] string userName)
+    public async Task<int> UpdateContact(int contactId, Dictionary<string, object> contactData, [FromQuery(Name = "user-name")] string userName)
     {
       return await _contactService.UpdateUserContactAsync(contactId, userName, contactData);
     } 

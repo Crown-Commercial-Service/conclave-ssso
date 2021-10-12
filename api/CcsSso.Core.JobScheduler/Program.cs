@@ -1,6 +1,9 @@
 using CcsSso.Core.Domain.Jobs;
+using CcsSso.Core.Service;
 using CcsSso.DbPersistence;
 using CcsSso.Domain.Contracts;
+using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Shared.Cache.Services;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
 using CcsSso.Shared.Domain.Contexts;
@@ -13,7 +16,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -49,6 +51,7 @@ namespace CcsSso.Core.JobScheduler
           CiiSettings ciiSettings;
           SecurityApiSettings securityApiSettings;
           ScheduleJobSettingsVault scheduleJobSettingsVault;
+          RedisCacheSettingsVault redisCacheSettingsVault;
           if (vaultEnabled)
           {
             var secrets = LoadSecretsAsync().Result;
@@ -56,6 +59,7 @@ namespace CcsSso.Core.JobScheduler
             ciiSettings = JsonConvert.DeserializeObject<CiiSettings>(secrets["CIISettings"].ToString());
             securityApiSettings = JsonConvert.DeserializeObject<SecurityApiSettings>(secrets["SecurityApiSettings"].ToString());
             scheduleJobSettingsVault = JsonConvert.DeserializeObject<ScheduleJobSettingsVault>(secrets["ScheduleJobSettings"].ToString());
+            redisCacheSettingsVault = JsonConvert.DeserializeObject<RedisCacheSettingsVault>(secrets["RedisCacheSettings"].ToString());
           }
           else
           {
@@ -64,6 +68,7 @@ namespace CcsSso.Core.JobScheduler
             ciiSettings = config.GetSection("CIISettings").Get<CiiSettings>();
             securityApiSettings = config.GetSection("SecurityApiSettings").Get<SecurityApiSettings>();
             scheduleJobSettingsVault = config.GetSection("ScheduleJobSettings").Get<ScheduleJobSettingsVault>();
+            redisCacheSettingsVault = config.GetSection("RedisCacheSettings").Get<RedisCacheSettingsVault>();
           }
 
           services.AddSingleton(s =>
@@ -113,7 +118,12 @@ namespace CcsSso.Core.JobScheduler
           services.AddSingleton<IDateTimeService, DateTimeService>();
           services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(dbConnection));
           services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
-          services.AddSingleton<RequestContext>(s => new RequestContext { UserId = 0 });
+          services.AddSingleton<RequestContext>(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
+          services.AddSingleton<IRemoteCacheService, RedisCacheService>();
+          services.AddSingleton<ICacheInvalidateService, CacheInvalidateService>();
+          services.AddSingleton<RedisConnectionPoolService>(_ =>
+            new RedisConnectionPoolService(redisCacheSettingsVault.ConnectionString)
+          );
         });
 
     private static async Task<Dictionary<string, object>> LoadSecretsAsync()

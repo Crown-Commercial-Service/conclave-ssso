@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.Api.Controllers
 {
-  [Route("[controller]")]
+  [Route("auth")]
   [ApiController]
   public class AuthController : ControllerBase
   {
@@ -22,7 +22,7 @@ namespace CcsSso.Core.Api.Controllers
       _applicationConfigurationInfo = applicationConfigurationInfo;
     }
 
-    [HttpPost("backchannel_logout")]
+    [HttpPost("backchannel-logout")]
     [Consumes("application/x-www-form-urlencoded")]
     public async Task BackchanelLogout([FromForm] IFormCollection logoutToken)
     {
@@ -37,7 +37,7 @@ namespace CcsSso.Core.Api.Controllers
       }
     }
 
-    [HttpPost("create_session")]
+    [HttpPost("sessions")]
     public void CreateSession(TokenDetails tokenDetails)
     {
       if (!string.IsNullOrEmpty(tokenDetails.RefreshToken))
@@ -74,7 +74,7 @@ namespace CcsSso.Core.Api.Controllers
       }
     }
 
-    [HttpPost("sign_out")]
+    [HttpPost("sign-out")]
     public void Signout()
     {
       if (Request.Cookies.ContainsKey("conclave"))
@@ -83,7 +83,7 @@ namespace CcsSso.Core.Api.Controllers
       }
     }
 
-    [HttpGet("get_refresh_token")]
+    [HttpGet("refresh-tokens")]
     public string GetRefreshToken()
     {
       string cookieName = "conclave";
@@ -95,27 +95,27 @@ namespace CcsSso.Core.Api.Controllers
       throw new ResourceNotFoundException();
     }
 
-    [HttpPost("change_password")]
+    [HttpPost("passwords")]
     [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
     public async Task ChangePassword(ChangePasswordDto changePassword)
     {
       await _authService.ChangePasswordAsync(changePassword);
     }
 
-    [HttpPost("send_reset_mfa_Notification")]
+    [HttpPost("mfa-reset-notifications")]
     public async Task SendResetMfaNotification(MfaResetInfo mfaResetInfo)
     {
       await _authService.SendResetMfaNotificationAsync(mfaResetInfo);
     }
 
-    [HttpPost("reset_mfa_by_ticket")]
+    [HttpPost("mfa-reset-by-tickets")]
     public async Task ResetMfaByTicket(MfaResetInfo mfaResetInfo)
     {
       await _authService.ResetMfaByTicketAsync(mfaResetInfo);
     }
 
     [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_USER_SUPPORT")]
-    [HttpPost("send_reset_mfa_notification_by_admin")]
+    [HttpPost("mfa-reset-notification-by-admins")]
     public async Task SendResetMfaNotificationByAdmin(MfaResetInfo mfaResetInfo)
     {
       await _authService.SendResetMfaNotificationAsync(mfaResetInfo, true);

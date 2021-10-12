@@ -60,10 +60,12 @@ namespace CcsSso.Core.Tests.Jobs
             .Setup(x => x.CreateScope())
             .Returns(serviceScope.Object);
 
+        var mockCacheInvalidateService = new Mock<ICacheInvalidateService>();
+
         serviceProvider
     .Setup(x => x.GetService(typeof(IServiceScopeFactory)))
     .Returns(serviceScopeFactory.Object);
-        return new OrganisationDeleteForInactiveRegistrationJob(serviceScopeFactory.Object, dateTimeService, appSettings, httpClientFactory);
+        return new OrganisationDeleteForInactiveRegistrationJob(serviceScopeFactory.Object, dateTimeService, appSettings, httpClientFactory, mockCacheInvalidateService.Object);
       }
       catch(Exception e)
       {

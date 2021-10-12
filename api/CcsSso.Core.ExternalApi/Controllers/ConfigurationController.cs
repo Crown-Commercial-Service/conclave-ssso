@@ -46,7 +46,8 @@ namespace CcsSso.Core.ExternalApi.Controllers
       return await _configurationDetailService.GetRolesAsync();
     }
 
-    [HttpGet("GetCcsServices")]
+    [HttpGet("services")]
+    [SwaggerOperation(Tags = new[] { "Configuration" })]
     public async Task<List<CcsServiceInfo>> GetCcsServices()
     {
       return await _configurationDetailService.GetCcsServicesAsync();
