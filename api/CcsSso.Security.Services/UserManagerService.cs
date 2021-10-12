@@ -137,12 +137,6 @@ namespace CcsSso.Security.Services
       }
     }
 
-    public async Task NominateUserAsync(UserInfo userInfo)
-    {
-      userInfo.Email = userInfo.Email.ToLower();
-      await _identityProviderService.SendNominateEmailAsync(userInfo);
-    }
-
     public async Task<IdamUser> GetUserAsync(string email)
     {
       return await _identityProviderService.GetUser(email);

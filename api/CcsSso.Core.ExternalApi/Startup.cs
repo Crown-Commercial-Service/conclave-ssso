@@ -150,6 +150,7 @@ namespace CcsSso.ExternalApi
       services.AddSingleton<ICcsSsoEmailService, CcsSsoEmailService>();
       services.AddDbContext<DataContext>(options => options.UseNpgsql(Configuration["DbConnection"]));
       services.AddSingleton<IRemoteCacheService, RedisCacheService>();
+      services.AddSingleton<ICacheInvalidateService, CacheInvalidateService>();
       services.AddSingleton<RedisConnectionPoolService>(_ =>
         new RedisConnectionPoolService(Configuration["RedisCacheSettings:ConnectionString"])
       );

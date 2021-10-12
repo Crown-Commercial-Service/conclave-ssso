@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Api.Controllers
 {
-  [Route("organisation")]
+  [Route("organisations")]
   [ApiController]
   public class OrganisationController : ControllerBase
   {
@@ -20,7 +20,7 @@ namespace CcsSso.Api.Controllers
       _organisationService = organisationService;
     }
 
-    [HttpPost("register")]
+    [HttpPost("registrations")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     public async Task<string> Register(OrganisationRegistrationDto organisationRegistrationDto)
     {
@@ -46,28 +46,28 @@ namespace CcsSso.Api.Controllers
     /// <remarks>
     /// Sample request: GET /organisation/1
     /// </remarks>
-    [HttpGet("{id}")]
+    [HttpGet("{organisationId}")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(OrganisationDto), 200)]
     [ProducesResponseType(204)]
     [ProducesResponseType(401)]
-    public async Task<OrganisationDto> Get(string id)
+    public async Task<OrganisationDto> Get(string organisationId)
     {
-      return await _organisationService.GetAsync(id);
+      return await _organisationService.GetAsync(organisationId);
     }
 
-    [HttpGet("getAll")]
+    [HttpGet]
     [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(OrganisationDto), 200)]
     [ProducesResponseType(204)]
     [ProducesResponseType(401)]
-    public async Task<List<OrganisationDto>> GetAll(string orgName)
+    public async Task<List<OrganisationDto>> GetAll([FromQuery(Name = "organisation-name")] string orgName)
     {
       return await _organisationService.GetAllAsync(orgName);
     }
 
-    [HttpGet("getUsers")]
+    [HttpGet("users")]
     [ClaimAuthorise("ORG_USER_SUPPORT")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     public async Task<List<OrganisationUserDto>> GetUsers(string name)

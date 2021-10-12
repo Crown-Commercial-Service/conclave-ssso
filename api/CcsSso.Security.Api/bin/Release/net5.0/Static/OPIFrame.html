@@ -1,0 +1,62 @@
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js" integrity="sha512-nOQuvD9nKirvxDdvQ9OMqe2dgapbPB7vYAMrzJihw5m+aNcf0dX53m6YxM4LgA9u8e9eg9QX+/+mPu8kCNpV2A==" crossorigin="anonymous"></script>
+    <![if !IE]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/3.16.2/minified.js" integrity="sha512-uLngiUnohkENU35LIRgvApbR9PINhMN6GGfk+XuXgh/9XyI1Vp9ZovqdQ7mLXtWs2Gx7k9F3+Co3hpuyQ2aVRg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <![endif]>
+    <script language="JavaScript" type="text/javascript">
+      window.addEventListener("message", receiveMessage, false);
+      function receiveMessage(e) {
+        let queryString = window.location.search;
+        let urlParams = new URLSearchParams(queryString);
+        let origin = urlParams.get('origin')
+        if (e.origin !== origin) {
+          return;
+        }
+
+        var stat;
+        var client_id = e.data.split(' ')[0];
+        var session_state = e.data.split(' ')[1];
+        var salt = getSaltFromData(session_state);
+        var opbs = getOpbsFromCookie();
+
+        if (!client_id || !session_state || !salt || !opbs) {
+          stat = 'error';
+        }
+
+        var ss = CryptoJS.SHA256(client_id + ' ' + origin + ' ' + opbs + ' ' + salt) + "." + salt;
+        if (session_state == ss) {
+          stat = 'unchanged';
+        } else {
+          stat = 'changed';
+        }
+        e.source.postMessage(stat, e.origin);
+      };
+
+      function getSaltFromData(data) {
+        var salt = "";
+        var split_data = data.split(".");
+        if (split_data.length == 2) {
+          salt = split_data[1];
+        }
+        return salt;
+      }
+
+      function getOpbsFromCookie() {
+        var theName = "opbs=";
+        var theCookie = document.cookie + ";";
+        var start = theCookie.indexOf(theName);
+        if (start != -1) {
+          var end = theCookie.indexOf(";", start);
+          return unescape(theCookie.substring(start + theName.length, end));
+        }
+        return "";
+      }
+    </script>
+  </head>
+  <body>
+    This is op_iframe.
+  </body>
+</html>

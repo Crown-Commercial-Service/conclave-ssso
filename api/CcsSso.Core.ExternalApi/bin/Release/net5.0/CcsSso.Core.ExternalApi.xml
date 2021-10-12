@@ -1,0 +1,1187 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>CcsSso.Core.ExternalApi</name>
+    </assembly>
+    <members>
+        <member name="M:CcsSso.Core.ExternalApi.Controllers.ConfigurationController.GetIdentityProviders">
+             <summary>
+             Allows a user to get identity provider details
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <remarks>
+             Sample request:
+            
+                 GET configurations/identity-providers
+                 
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.Core.ExternalApi.Controllers.ContactController.GetContactTypes">
+             <summary>
+             Get contact types
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <remarks>
+             Sample request:
+            
+                 GET contacts/contact-types
+                 
+              
+             </remarks>
+        </member>
+        <member name="M:CcsSso.Core.ExternalApi.Controllers.ContactController.GetContactReasonInfoList">
+             <summary>
+             Allows a user to get contact reasons
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <remarks>
+             Sample request:
+            
+                 GET contacts/contact-reasons   
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.Core.ExternalApi.Controllers.ContactController.CreateContact(CcsSso.Domain.Dtos.External.ContactRequestDetail)">
+             <summary>
+             Create contact details
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_CONTACT_TYPE, INVALID_CONTACT_VALUE
+             </response>
+             <remarks>
+             Sample request:
+            
+                 POST contacts
+                 {
+                    "contactType": "EMAIL",
+                    "contactValue": "contact@mail.com"
+                 }
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.Core.ExternalApi.Controllers.ContactController.GetContact(System.Int32)">
+             <summary>
+             Get contact details
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="404">Not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET contacts/1
+                 
+              
+             </remarks>
+        </member>
+        <member name="M:CcsSso.Core.ExternalApi.Controllers.ContactController.UpdateContact(System.Int32,CcsSso.Domain.Dtos.External.ContactRequestDetail)">
+             <summary>
+             Update contact details
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_CONTACT_TYPE, INVALID_CONTACT_VALUE
+             </response>
+             <remarks>
+             Sample request:
+            
+                 PUT contacts/1
+                 {
+                    "contactType": "EMAIL",
+                    "contactValue": "contact@mail.com"
+                 }
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.Core.ExternalApi.Controllers.ContactController.DeleteContact(System.Int32)">
+             <summary>
+             Delete contact details
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="404">Not found</response>
+             <remarks>
+             Sample request:
+            
+                 DELETE contacts/1
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.CreateOrganisation(CcsSso.Core.Domain.Dtos.External.OrganisationProfileInfo)">
+             <summary>
+             Allows a user to create organisation
+             </summary>
+             <response  code="200">Ok. Return created organisation id</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="400">Bad request.
+             Error Codes:  INVALID_IDENTIFIER, INVALID_LEGAL_NAME, INVALID_URI, INSUFFICIENT_DETAILS
+             </response>
+             <remarks>
+             Sample request:
+            
+                 POST /organisations/
+                 {
+                   "Identifier": {
+                     "legalName": "Kier Limited",
+                     "uri": "http://data.companieshouse.gov.uk/doc/company/1"
+                   },
+                   "address": {
+                     "streetAddress": "1600 Amphitheatre Pkwy",
+                     "locality": "Mountain View.",
+                     "region": "CA.",
+                     "postalCode": "94043",
+                     "countryCode": "UK"
+                   },
+                   "Detail": {
+                     "organisationId": "CiiOrgidId",
+                     "rightToBuy": "true",
+                     "is_sme": 1,
+                     "is_vcse": 1,
+                     "active": 1
+                   }
+                 }
+                 
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.GetOrganisation(System.String)">
+             <summary>
+             Get organisation profile details
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="404">Resource not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET /organisations/CiiOrgidId
+                 
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.UpdateOrganisation(System.String,CcsSso.Core.Domain.Dtos.External.OrganisationProfileInfo)">
+             <summary>
+             Allows a user to update organisation
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="404">Resource not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_IDENTIFIER, INVALID_LEGAL_NAME, INVALID_URI, INSUFFICIENT_DETAILS
+             </response>
+             <remarks>
+             Sample request:
+            
+                 PUT /organisations/CiiOrgidId
+                 {
+                   "Identifier": {
+                     "legalName": "Kier Limited",
+                     "uri": "http://data.companieshouse.gov.uk/doc/company/1"
+                   },
+                   "address": {
+                     "streetAddress": "1600 Amphitheatre Pkwy",
+                     "locality": "Mountain View.",
+                     "region": "CA.",
+                     "postalCode": "94043",
+                     "countryCode": "UK"
+                   },
+                   "Detail": {
+                     "organisationId": "CiiOrgidId",
+                     "rightToBuy": "true",
+                     "is_sme": 1,
+                     "is_vcse": 1,
+                     "active": 1
+                   }
+                 }
+                 
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.AssignContactsToOrganisationSite(System.String,CcsSso.Core.Domain.Dtos.External.ContactAssignmentInfo)">
+             <summary>
+             Allows a user to assign user/site contacts for an organisation
+             </summary>
+             <response  code="200">Ok. Return assigned site contact ids</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: ERROR_INVALID_ASSIGNING_CONTACT_POINT_IDS, ERROR_INVALID_CONTACT_ASSIGNEMNT_TYPE, ERROR_INVALID_USER_ID_FOR_CONTACT_ASSIGNEMNT,
+             ERROR_INVALID_SITE_ID_FOR_CONTACT_ASSIGNEMNT, ERROR_DUPLICATE_CONTACT_ASSIGNMENT
+             </response>
+             <remarks>
+             Sample request:
+            
+                 POST /organisations/1/assigned-contacts
+                 {
+                    "AssigningContactType": 1, (User:1, Site:2)
+                    "AssigningContactPointIds": [1, 2],
+                    "AssigningContactsUserId": "user@mail.com"
+                 }
+            
+                 POST /organisations/1/contacts/assign
+                 {
+                    "AssigningContactType": 2, (User:1, Site:2)
+                    "AssigningContactPointIds": [1, 2],
+                    "AssigningContactsSiteId": 1
+                 }
+                 
+            
+             </remarks>s
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.UnAssignContactsFromOrganisationSite(System.String,System.Collections.Generic.List{System.Int32})">
+             <summary>
+             Allows a user to unassign contacts from an organisation.
+             Should provide the assigned contacts contactpoint ids as a query parameter list
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: ERROR_INVALID_UNASSIGNING_CONTACT_POINT_IDS
+             </response>
+             <remarks>
+             Sample request:
+            
+                 POST /organisations/1/assigned-contacts?contact-point-ids=2
+                 
+            
+             </remarks>s
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.CreateOrganisationContact(System.String,CcsSso.Domain.Dtos.External.ContactRequestInfo)">
+             <summary>
+             Allows a user to create organisation contact
+             </summary>
+             <response  code="200">Ok. Return created contact id</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INSUFFICIENT_DETAILS, INVALID_CONTACT_TYPE, INVALID_EMAIL, INVALID_PHONE_NUMBER
+             </response>
+             <remarks>
+             Sample request:
+            
+                 POST /organisations/1/contacts
+                 {
+                    "contactPointReason": "BILLING/SHIPPING",
+                    "contactPointName": "Test User",
+                    "contacts": [
+                       {
+                         contactType: "EMAIL",
+                         contactValue: "testuser@mail.com"
+                       },
+                       {
+                         contactType: "PHONE",
+                         contactValue: "+551155256325"
+                       },
+                       {
+                         contactType: "FAX",
+                         contactValue: "+551155256325"
+                       },
+                       {
+                         contactType: "WEB_ADDRESS",
+                         contactValue: "test.com"
+                       },
+                    ]
+                 }
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.GetOrganisationContactsList(System.String,System.String,CcsSso.Domain.Constants.ContactAssignedStatus)">
+             <summary>
+             Allows a user to get organisation contact details
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET organisations/1/contacts
+                 
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.GetOrganisationContact(System.String,System.Int32)">
+             <summary>
+             Allows a user to retrieve details for a given organisation contact
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET /organisations/1/contacts/1
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.UpdateOrganisationContact(System.String,System.Int32,CcsSso.Domain.Dtos.External.ContactRequestInfo)">
+             <summary>
+             Allows a user to edit organisation contact
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INSUFFICIENT_DETAILS, INVALID_CONTACT_TYPE, INVALID_EMAIL, INVALID_PHONE_NUMBER
+             </response>
+             <remarks>
+             Sample request:
+            
+                 PUT /organisations/1/contacts/1
+                 {
+                    "contactPointReason": "BILLING/SHIPPING",
+                    "contactPointName": "Test User",
+                    "contacts": [
+                       {
+                         contactType: "EMAIL",
+                         contactValue: "testuser@mail.com"
+                       },
+                       {
+                         contactType: "PHONE",
+                         contactValue: "+551155256325"
+                       },
+                       {
+                         contactType: "FAX",
+                         contactValue: "+551155256325"
+                       },
+                       {
+                         contactType: "WEB_ADDRESS",
+                         contactValue: "test.com"
+                       },
+                    ]
+                 }
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.DeleteOrganisationContact(System.String,System.Int32)">
+             <summary>
+             Remove a contact from an organisation
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <remarks>
+             Sample request:
+            
+                 DELETE /organisations/1/contacts/1
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.CreateOrganisationSite(System.String,CcsSso.Core.Domain.Dtos.External.OrganisationSiteInfo)">
+             <summary>
+             Allows a user to create organisation site
+             </summary>
+             <response  code="200">Ok. Return created site id</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_SITE_NAME, INSUFFICIENT_DETAILS
+             </response>
+             <remarks>
+             Sample request:
+            
+                 POST /organisations/1/site
+                 {
+                   "siteName": "Main Branch",
+                   "address": {
+                     "streetAddress": "1600 Amphitheatre Pkwy",
+                     "locality": "Mountain View.",
+                     "region": "CA.",
+                     "postalCode": "94043",
+                     "countryCode": "UK"
+                   }
+                 }
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.GetOrganisationSites(System.String,System.String)">
+             <summary>
+             Allows a user to get all the sites in an organisation
+             </summary>
+             <response  code="200">Ok with site list</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET /organisations/1/site?search-string=sitename
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.GetOrganisationSite(System.String,System.Int32)">
+             <summary>
+             Allows a user to get organisation site details
+             </summary>
+             <response  code="200">Ok with site details</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET /organisations/1/site/1    
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.UpdateOrganisationSite(System.String,System.Int32,CcsSso.Core.Domain.Dtos.External.OrganisationSiteInfo)">
+             <summary>
+             Allows a user to update organisation site
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_SITE_NAME, INSUFFICIENT_DETAILS
+             </response>
+             <remarks>
+             Sample request:
+            
+                 PUT /organisations/1/site/1
+                 {
+                   "siteName": "Main Branch",
+                   "address": {
+                     "streetAddress": "1600 Amphitheatre Pkwy",
+                     "locality": "Mountain View.",
+                     "region": "CA.",
+                     "postalCode": "94043",
+                     "countryCode": "UK"
+                   }
+                 }
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.DeleteOrganisationSite(System.String,System.Int32)">
+             <summary>
+             Allows a user to delete organisation site
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <remarks>
+             Sample request:
+            
+                 DELETE /organisations/1/site/1    
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.AssignContactsToOrganisationSite(System.String,System.Int32,CcsSso.Core.Domain.Dtos.External.ContactAssignmentInfo)">
+             <summary>
+             Allows a user to assign user contacts for an organisation site
+             </summary>
+             <response  code="200">Ok. Return assigned site contact ids</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: ERROR_INVALID_ASSIGNING_CONTACT_POINT_IDS, ERROR_INVALID_CONTACT_ASSIGNEMNT_TYPE, ERROR_INVALID_USER_ID_FOR_CONTACT_ASSIGNEMNT, ERROR_DUPLICATE_CONTACT_ASSIGNMENT
+             </response>
+             <remarks>
+             Sample request:
+            
+                 POST /organisations/1/sites/1/assigned-contacts
+                 {
+                    "AssigningContactType": 1, (User:1, Site:2 Only user contacts are valid here)
+                    "AssigningContactPointIds": [1, 2],
+                    "AssigningContactsUserId": "user@mail.com"
+                 }
+                 
+            
+             </remarks>s
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.UnAssignContactsFromOrganisationSite(System.String,System.Int32,System.Collections.Generic.List{System.Int32})">
+             <summary>
+             Allows a user to unassign contacts from an organisation site.
+             Should provide the assigned contacts contactpoint ids as a query parameter list
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: ERROR_INVALID_UNASSIGNING_CONTACT_POINT_IDS
+             </response>
+             <remarks>
+             Sample request:
+            
+                 DELETE /organisations/1/sites/1/assigned-contacts?contactPointIds=2
+                 
+            
+             </remarks>s
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.CreateOrganisationSiteContact(System.String,System.Int32,CcsSso.Domain.Dtos.External.ContactRequestInfo)">
+             <summary>
+             Allows a user to create organisation site contact
+             </summary>
+             <response  code="200">Ok. Return created site contact id</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INSUFFICIENT_DETAILS, INVALID_CONTACT_TYPE, INVALID_EMAIL, INVALID_PHONE_NUMBER
+             </response>
+             <remarks>
+             Sample request:
+            
+                 POST /organisations/1/sites/1/contacts
+                 {
+                    "contactPointReason": "BILLING/SHIPPING",
+                    "contactPointName": "Test User",
+                    "contacts": [
+                       {
+                         contactType: "EMAIL",
+                         contactValue: "testuser@mail.com"
+                       },
+                       {
+                         contactType: "PHONE",
+                         contactValue: "+551155256325"
+                       },
+                       {
+                         contactType: "FAX",
+                         contactValue: "+551155256325"
+                       },
+                       {
+                         contactType: "WEB_ADDRESS",
+                         contactValue: "test.com"
+                       },
+                    ]
+                 }
+                 
+            
+             </remarks>s
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.GetOrganisationSiteContactsList(System.String,System.Int32,System.String,CcsSso.Domain.Constants.ContactAssignedStatus)">
+             <summary>
+             Allows a user to get list of contacts for organisation site 
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET organisations/1/sites/1/contacts
+                 
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.GetOrganisationSiteContact(System.String,System.Int32,System.Int32)">
+             <summary>
+             Allows a user to retrieve details for a given organisation site contact
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET /organisations/1/sites/1/contacts/1
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.UpdateOrganisationSiteContact(System.String,System.Int32,System.Int32,CcsSso.Domain.Dtos.External.ContactRequestInfo)">
+             <summary>
+             Allows a user to edit organisation site contact
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INSUFFICIENT_DETAILS, INVALID_CONTACT_TYPE, INVALID_EMAIL, INVALID_PHONE_NUMBER
+             </response>
+             <remarks>
+             Sample request:
+            
+                 PUT /organisations/1/sites/1/contacts/1
+                 {
+                    "contactPointReason": "BILLING/SHIPPING",
+                    "contactPointName": "Test User",
+                    "contacts": [
+                       {
+                         contactType: "EMAIL",
+                         contactValue: "testuser@mail.com"
+                       },
+                       {
+                         contactType: "PHONE",
+                         contactValue: "+551155256325"
+                       },
+                       {
+                         contactType: "FAX",
+                         contactValue: "+551155256325"
+                       },
+                       {
+                         contactType: "WEB_ADDRESS",
+                         contactValue: "test.com"
+                       },
+                    ]
+                 }
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.DeleteOrganisationSiteContact(System.String,System.Int32,System.Int32)">
+             <summary>
+             Remove a contact from an organisation site
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <remarks>
+             Sample request:
+            
+                 DELETE /organisations/1/sites/1/contacts/1
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.GetUsers(System.String,CcsSso.Core.Domain.Dtos.External.ResultSetCriteria,System.String,System.Boolean)">
+             <summary>
+             Allows a user to retrieve users for a given organisation
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <remarks>
+             NOTE:- query params page-size, current-page
+             Sample request:
+            
+                 GET /organisations/1/users?page-size=10,current-page=1
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.CreateOrganisationGroup(System.String,CcsSso.Core.Domain.Dtos.External.OrganisationGroupNameInfo)">
+             <summary>
+             Create organisation group
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Resource not found</response>
+             <response  code="409">Resource already exists</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_GROUP_NAME
+             </response>
+             <remarks>
+             Sample request:
+            
+                 POST /organisations/1/groups
+                 {
+                   'groupName': "Group Name"
+                 }
+                 
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.DeleteOrganisationGroup(System.String,System.Int32)">
+             <summary>
+             Delete organisation group
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Resource not found</response>
+             <remarks>
+             Sample request:
+            
+                 DELETE /organisations/1/groups/1
+                 
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.GetOrganisationGroup(System.String,System.Int32)">
+             <summary>
+             Get organisation group
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Resource not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET /organisations/1/groups/1
+                 
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.GetOrganisationGroups(System.String,System.String)">
+             <summary>
+             Get organisation groups
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Resource not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET /organisations/1/groups
+                 
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.UpdateOrganisationGroup(System.String,System.Int32,CcsSso.Core.Domain.Dtos.External.OrganisationGroupRequestInfo)">
+             <summary>
+             Update organisation group
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Resource not found</response>
+             <response  code="409">Resource already exists</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_ROLE_INFO, INVALID_USER_INFO
+             </response>
+             <remarks>
+             Sample requests:
+            
+                 PATCH /organisations/1/groups/1
+                 {
+                   'groupName': "Group Name",
+                   'roleInfo': null,
+                   'userInfo': null
+                 }
+            
+                 PATCH /organisations/1/groups/1
+                 {
+                   'groupName': "",
+                   'roleInfo':{
+                       'addedRoleIds': [ 1, 2 ],
+                       'removedRoleIds': [ 3 ]
+                    },
+                   'userInfo':{
+                       'addedUserIds': [ "user1@mail.com", "user2@mail.com" ],
+                       'addedUserIds': [ "user3@mail.com" ]
+                    }
+                 }
+            
+                 PATCH /organisations/1/groups/1
+                 {
+                   'groupName': null,
+                   'roleInfo':{
+                       'addedRoleIds': [ 1, 2 ],
+                       'removedRoleIds': [ 3 ]
+                    },
+                   'userInfo':{
+                       'addedUserIds': [ "user1@mail.com", "user2@mail.com" ],
+                       'addedUserIds': [ "user3@mail.com" ]
+                    }
+                 }
+            
+                 PATCH /organisations/1/groups/1
+                 {
+                   'groupName': "Group Name",
+                   'roleInfo': null,
+                   'userInfo':{
+                       'addedUserIds': [ "user1@mail.com", "user2@mail.com" ],
+                       'addedUserIds': [ "user3@mail.com" ]
+                    }
+                 }
+            
+                 PATCH /organisations/1/groups/1
+                 {
+                   'groupName': "Group Name",
+                   'roleInfo':{
+                       'addedRoleIds': [ 1, 2 ],
+                       'removedRoleIds': [ 3 ]
+                    },
+                   'userInfo': null
+                 }
+                 
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.GetIdentityProviders(System.String)">
+             <summary>
+             Allows a user to get identity provider details of an organisation
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Resource not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET organisations/1/identity-providers
+                 
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.UpdateIdentityProvider(CcsSso.Core.Domain.Dtos.External.OrgIdentityProviderSummary)">
+             <summary>
+             Allows a user to update identity provider details of an organisation
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Resource not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET organisations/1/identity-providers
+                 {
+                   ciiOrganisationId: "orgid",
+                   changedOrgIdentityProviders: [
+                     {
+                       id: 1
+                     }
+                   ]
+                  }
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.GetOrganisationRoles(System.String)">
+             <summary>
+             Get organisation roles
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Resource not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET /organisations/1/roles
+                 
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.OrganisationProfileController.UpdateEligableRoles(System.String,CcsSso.Core.Domain.Dtos.External.OrganisationRoleUpdate)">
+             <summary>
+             Update organisation eligible roles
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Resource not found</response>
+             <remarks>
+             Sample request:
+            
+                 GET /organisations/1/updateEligableRoles
+                 {
+                   isBuyer: true,
+                   rolesToAdd: [
+                     {
+                       id: 1
+                     }
+                   ],
+                   rolesToDelete: [
+                     {
+                       id: 1
+                     }
+                   ]
+                  }
+                 
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.UserProfileController.CreateUser(CcsSso.Core.Domain.Dtos.External.UserProfileEditRequestInfo)">
+             <summary>
+             Allows a user to create user details
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE, INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, INVALID_USER_DETAIL
+             </response>
+             <remarks>
+             Sample request:
+            
+                 POST /users
+                 {
+                    "firstName": "FirstName",
+                    "lastName": "LastName",
+                    "userName": "user@mail.com",
+                    "organisationId": "CcsOrgId1",
+                    "detail": {
+                       "id": 0,
+                       "groupIds": { 1, 2 },
+                       "roleIds": { 1, 2 },
+                       "identityProviderId": 1,
+                    }
+                 }
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.UserProfileController.CreateUser_migration(CcsSso.Core.Domain.Dtos.External.UserProfileEditRequestInfo)">
+             <summary>
+             Allows a user to create user details
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE, INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, INVALID_USER_DETAIL
+             </response>
+             <remarks>
+             Sample request:
+            
+                 POST /users_migration
+                 {
+                    "firstName": "FirstName",
+                    "lastName": "LastName",
+                    "userName": "user@mail.com",
+                    "organisationId": "CcsOrgId1",
+                    "detail": {
+                       "id": 0,
+                       "groupIds": { 1, 2 },
+                       "roleIds": { 1, 2 },
+                       "identityProviderId": 1,
+                    }
+                 }
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.UserProfileController.GetUser(System.String)">
+             <summary>
+             Allows a user to retrieve details for a given user
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_USER_ID
+             </response>
+             <remarks>
+             Sample request:
+            
+                 GET /users?user-id=user@mail.com
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.UserProfileController.UpdateUser(System.String,CcsSso.Core.Domain.Dtos.External.UserProfileEditRequestInfo)">
+             <summary>
+             Allows a user to update user details
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE, INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, ERROR_CANNOT_REMOVE_ADMIN_ROLE_OR_GROUP_OF_LAST_ADMIN, INVALID_USER_DETAIL
+             </response>
+             <remarks>
+             Sample request:
+            
+                 PUT /users?user-id=user@mail.com
+                 {
+                    "firstName": "FirstName",
+                    "lastName": "LastName",
+                    "organisationId": "CcsOrgId1",
+                    "userName": "user@mail.com",
+                    "detail": {
+                       "id": 1,
+                       "groupIds": { 1, 2},
+                       "roleIds": { 1, 2 },
+                       "identityProviderId": 1,
+                    }
+                 }
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.UserProfileController.DeleteUser(System.String)">
+             <summary>
+             Delete a user
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_USER_ID, ERROR_CANNOT_DELETE_LAST_ADMIN_OF_ORGANISATION
+             </response>
+             <remarks>
+             Sample request:
+            
+                 DELETE /users?user-id=user@mail.com
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.UserProfileController.ResetUserPassword(System.String,System.String)">
+            <summary>
+            Reset user password
+            </summary>
+            <param name="userId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.UserProfileController.CreateUserContact(System.String,CcsSso.Domain.Dtos.External.ContactRequestInfo)">
+             <summary>
+             Allows a user to create user contact details
+             </summary>
+             <response  code="200">Ok. Return created contact id</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_USER_ID, INSUFFICIENT_DETAILS, INVALID_EMAIL, INVALID_PHONE_NUMBER, INVALID_CONTACT_TYPE
+             </response>
+             <remarks>
+             Sample request:
+            
+                 POST /users/contacts?user-id=user@mail.com
+                 {
+                    "contactPointReason": "BILLING/SHIPPING",
+                    "contactPointName": "Test User",
+                    "contacts": [
+                       {
+                         contactType: "EMAIL",
+                         contactValue: "testuser@mail.com"
+                       },
+                       {
+                         contactType: "PHONE",
+                         contactValue: "+551155256325"
+                       },
+                       {
+                         contactType: "FAX",
+                         contactValue: "+551155256325"
+                       },
+                       {
+                         contactType: "WEB_ADDRESS",
+                         contactValue: "test.com"
+                       },
+                    ]
+                 }
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.UserProfileController.GetUserContactsList(System.String,System.String)">
+             <summary>
+             Allows a user to get user contact details
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_USER_ID
+             </response>
+             <remarks>
+             Sample request:
+            
+                 GET /user-profile/users/contacts?user-id=user@mail.com
+                 
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.UserProfileController.GetUserContact(System.String,System.Int32)">
+             <summary>
+             Allows a user to retrieve details for a given contact
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_USER_ID
+             </response>
+             <remarks>
+             Sample request:
+            
+                 GET /users/contacts/1?user-id=user@mail.com
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.UserProfileController.UpdateUserContact(System.String,System.Int32,CcsSso.Domain.Dtos.External.ContactRequestInfo)">
+             <summary>
+             Allows a user to edit user contact details
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_USER_ID, INSUFFICIENT_DETAILS, INVALID_EMAIL, INVALID_PHONE_NUMBER, INVALID_CONTACT_TYPE
+             </response>
+             <remarks>
+             Sample request:
+            
+                 PUT /users/contacts/1?user-id=user@mail.com
+                 {
+                    "contactPointReason": "BILLING/SHIPPING",
+                    "contactPointName": "Test User",
+                    "contacts": [
+                       {
+                         contactType: "EMAIL",
+                         contactValue: "testuser@mail.com"
+                       },
+                       {
+                         contactType: "PHONE",
+                         contactValue: "+551155256325"
+                       },
+                       {
+                         contactType: "FAX",
+                         contactValue: "+551155256325"
+                       },
+                       {
+                         contactType: "WEB_ADDRESS",
+                         contactValue: "test.com"
+                       },
+                    ]
+                 }
+                 
+            
+             </remarks>
+        </member>
+        <member name="M:CcsSso.ExternalApi.Controllers.UserProfileController.DeleteUserContact(System.String,System.Int32)">
+             <summary>
+             Remove a contact from user
+             </summary>
+             <response  code="200">Ok</response>
+             <response  code="401">Unauthorised</response>
+             <response  code="403">Forbidden</response>
+             <response  code="404">Not found</response>
+             <response  code="400">Bad request.
+             Error Codes: INVALID_USER_ID
+             </response>
+             <remarks>
+             Sample request:
+            
+                 DELETE /users/contacts/1?user-id=user@mail.com
+                 
+            
+             </remarks>
+        </member>
+    </members>
+</doc>

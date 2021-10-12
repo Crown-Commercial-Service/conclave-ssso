@@ -17,13 +17,13 @@ namespace CcsSso.Adaptor.Service.Wrapper
 
     public async Task<WrapperUserResponse> GetUserAsync(string userName)
     {
-      var result = await _wrapperApiService.GetAsync<WrapperUserResponse>(WrapperApi.User, $"?userId={HttpUtility.UrlEncode(userName)}", $"{CacheKeyConstant.User}-{userName}", "ERROR_RETRIEVING_USER");
+      var result = await _wrapperApiService.GetAsync<WrapperUserResponse>(WrapperApi.User, $"?user-id={HttpUtility.UrlEncode(userName)}", $"{CacheKeyConstant.User}-{userName}", "ERROR_RETRIEVING_USER");
       return result;
     }
 
     public async Task<string> UpdateUserAsync(string userName, WrapperUserRequest wrapperUserRequest)
     {
-      await _wrapperApiService.PutAsync(WrapperApi.User, $"?userId={userName}", wrapperUserRequest, "ERROR_UPDATING_USER");
+      await _wrapperApiService.PutAsync(WrapperApi.User, $"?user-id={userName}", wrapperUserRequest, "ERROR_UPDATING_USER");
       return userName;
     }
   }

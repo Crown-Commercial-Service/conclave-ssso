@@ -134,10 +134,11 @@ namespace CcsSso.Core.Service
 
         if (string.IsNullOrEmpty(intendedOrganisationId))
         {
-          intendedOrganisationId = await _dataContext.User.Where(u => u.UserName == _requestContext.RequestIntendedUserName)
+          intendedOrganisationId = await _dataContext.User.Where(u => !u.IsDeleted && u.UserName == _requestContext.RequestIntendedUserName)
             .Select(u => u.Party.Person.Organisation.CiiOrganisationId).FirstOrDefaultAsync();
 
-          await _remoteCacheService.SetValueAsync<string>($"{CacheKeyConstant.UserOrganisation}-{_requestContext.RequestIntendedUserName}", intendedOrganisationId);
+          await _remoteCacheService.SetValueAsync<string>($"{CacheKeyConstant.UserOrganisation}-{_requestContext.RequestIntendedUserName}", intendedOrganisationId,
+            new TimeSpan(0, _applicationConfigurationInfo.RedisCacheSettings.CacheExpirationInMinutes, 0));
         }
 
         isAuthorizedForOrganisation = _requestContext.CiiOrganisationId == intendedOrganisationId;

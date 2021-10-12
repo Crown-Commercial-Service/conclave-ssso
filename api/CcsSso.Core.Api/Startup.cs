@@ -52,6 +52,11 @@ namespace CcsSso.Api
         int.TryParse(Configuration["RedisCacheSettings:CacheExpirationInMinutes"], out int cacheExpirationInMinutes);
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
 
+        if (cacheExpirationInMinutes == 0)
+        {
+          cacheExpirationInMinutes = 10;
+        }
+
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
           CustomDomain = Configuration["CustomDomain"],
@@ -76,9 +81,29 @@ namespace CcsSso.Api
             IsEnabled = isRedisEnabled,
             CacheExpirationInMinutes = cacheExpirationInMinutes
           },
+          EmailInfo = new CcsEmailInfo
+          {
+            NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
+          },
+          ConclaveSettings = new ConclaveSettings()
+          {
+            BaseUrl = Configuration["ConclaveSettings:BaseUrl"],
+            OrgRegistrationRoute = Configuration["ConclaveSettings:OrgRegistrationRoute"]
+          }
         };
         return appConfigInfo;
       });
+
+      services.AddSingleton(s =>
+      {
+        EmailConfigurationInfo emailConfigurationInfo = new()
+        {
+          ApiKey = Configuration["Email:ApiKey"],
+        };
+
+        return emailConfigurationInfo;
+      });
+
       services.AddSingleton(s =>
       {
         Dtos.Domain.Models.CiiConfig ciiConfigInfo = new Dtos.Domain.Models.CiiConfig()
@@ -125,6 +150,7 @@ namespace CcsSso.Api
       services.AddSingleton<ICcsSsoEmailService, CcsSsoEmailService>();
       services.AddSingleton<ITokenService, TokenService>();
       services.AddSingleton<IRemoteCacheService, RedisCacheService>();
+      services.AddSingleton<ICacheInvalidateService, CacheInvalidateService>();
       services.AddSingleton<RedisConnectionPoolService>(_ =>
         new RedisConnectionPoolService(Configuration["RedisCacheSettings:ConnectionString"])
       );

@@ -3,6 +3,7 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Dtos.Domain.Models;
 using CcsSso.Shared.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -18,11 +19,15 @@ namespace CcsSso.Service
     private readonly IDataContext _dataContext;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
-    public UserService(IDataContext dataContext, IHttpClientFactory httpClientFactory, ApplicationConfigurationInfo applicationConfigurationInfo)
+    private readonly ICcsSsoEmailService _ccsSsoEmailService;
+
+    public UserService(IDataContext dataContext, IHttpClientFactory httpClientFactory,
+      ApplicationConfigurationInfo applicationConfigurationInfo, ICcsSsoEmailService ccsSsoEmailService)
     {
       _dataContext = dataContext;
       _httpClientFactory = httpClientFactory;
       _applicationConfigurationInfo = applicationConfigurationInfo;
+      _ccsSsoEmailService = ccsSsoEmailService;
     }
 
     public async Task<List<ServicePermissionDto>> GetPermissions(string userName, string serviceClientId)
@@ -87,6 +92,12 @@ namespace CcsSso.Service
       list.Add(new KeyValuePair<string, string>("email", email));
       HttpContent codeContent = new FormUrlEncodedContent(list);
       await client.PostAsync(url, codeContent);
+    }
+
+    public async Task NominateUserAsync(string email)
+    {
+      var url = _applicationConfigurationInfo.ConclaveSettings.BaseUrl + _applicationConfigurationInfo.ConclaveSettings.OrgRegistrationRoute;
+      await _ccsSsoEmailService.SendNominateEmailAsync(email, url);
     }
   }
 }

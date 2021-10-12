@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Api.Controllers
 {
-  [Route("user")]
+  [Route("users")]
   [ApiController]
   public class UserController : ControllerBase
   {
@@ -23,12 +23,19 @@ namespace CcsSso.Api.Controllers
 
     [HttpGet("permissions")]
     [SwaggerOperation(Tags = new[] { "User" })]
-    public async Task<List<ServicePermissionDto>> GetPermissions(string userName, string serviceClientId)
+    public async Task<List<ServicePermissionDto>> GetPermissions([FromQuery(Name = "user-name")] string userName, [FromQuery(Name = "service-client-id")] string serviceClientId)
     {
       return await _userService.GetPermissions(userName, serviceClientId);
     }
 
-    [HttpPost("useractivationemail")]
+    [HttpPost("nominees")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    public async Task Nominate([FromBody] string email)
+    {
+      await _userService.NominateUserAsync(email);
+    }
+
+    [HttpPost("activation-emails")]
     [Consumes("application/x-www-form-urlencoded")]
     [SwaggerOperation(Tags = new[] { "User" })]
     public async Task SendUserActivationEmail(IFormCollection userDetails)

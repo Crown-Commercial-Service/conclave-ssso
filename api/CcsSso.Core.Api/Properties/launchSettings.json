@@ -20,11 +20,18 @@
     "CcsSso.Api": {
       "commandName": "Project",
       "launchUrl": "swagger",
+      "applicationUrl": "https://localhost:5000;https://localhost:5001",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "dotnetRunMessages": "true",
-      "applicationUrl": "https://localhost:5000;https://localhost:5001"
+      }
+    },
+    "CcsSso.Core.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:11115;http://localhost:48810",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
     }
   }
 }

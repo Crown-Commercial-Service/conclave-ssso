@@ -44,4 +44,9 @@ namespace CcsSso.Core.Domain.Jobs
 
     public string OrganizationRegistrationExpiredThresholdInMinutes { get; set; }
   }
+
+  public class RedisCacheSettingsVault
+  {
+    public string ConnectionString { get; set; }
+  }
 }

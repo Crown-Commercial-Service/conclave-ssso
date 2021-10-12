@@ -765,7 +765,7 @@ namespace CcsSso.Security.Services
       var httpClient = _httpClientFactory.CreateClient();
       httpClient.BaseAddress = new Uri(_appConfigInfo.UserExternalApiDetails.Url);
       httpClient.DefaultRequestHeaders.Add("X-API-Key", _appConfigInfo.UserExternalApiDetails.ApiKey);
-      var result = await httpClient.GetAsync($"?userId={HttpUtility.UrlEncode(email)}");
+      var result = await httpClient.GetAsync($"?user-id={HttpUtility.UrlEncode(email)}");
       var userJsonString = await result.Content.ReadAsStringAsync();
       if (!string.IsNullOrEmpty(userJsonString))
       {
@@ -795,43 +795,6 @@ namespace CcsSso.Security.Services
         return accessToken;
       }
       throw new UnauthorizedAccessException();
-    }
-
-    public async Task SendNominateEmailAsync(Domain.Dtos.UserInfo userInfo)
-    {
-      try
-      {
-        UserCreateRequest userCreateRequest = new UserCreateRequest
-        {
-          Email = userInfo.Email,
-          FirstName = userInfo.FirstName,
-          LastName = userInfo.LastName,
-        };
-
-        var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
-        using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
-        {
-          var link = String.Empty;
-          if (_appConfigInfo.Auth0ConfigurationInfo.Domain.StartsWith("sand"))
-          {
-            link = "https://sand-ccs-sso.london.cloudapps.digital/manage-org/register";
-          }
-          else if (_appConfigInfo.Auth0ConfigurationInfo.Domain.StartsWith("test"))
-          {
-            link = "https://test-ccs-sso.london.cloudapps.digital/manage-org/register";
-          }
-          else
-          {
-            link = "https://dev-ccs-sso.london.cloudapps.digital/manage-org/register";
-          }
-          await _ccsSsoEmailService.SendNominateEmailAsync(userInfo.Email, link);
-        }
-      }
-      catch (Exception e)
-      {
-        Console.Write(e);
-        throw;
-      }
     }
 
     private async Task<TokenResponseInfo> GetTokensAsync(string clientId, AccessTokenResponse accessTokenResponse, string sid = null)
