@@ -19,6 +19,6 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task<IdamUser> GetUserAsync(string email);
 
-    Task SendUserActivationEmailAsync(string email);
+    Task SendUserActivationEmailAsync(string email, bool isExpired = false);
   }
 }

@@ -1,5 +1,7 @@
+using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Domain.Constants;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace CcsSso.Dtos.Domain.Models
@@ -67,5 +69,15 @@ namespace CcsSso.Dtos.Domain.Models
     public string CiiOrganisationId { get; set; }
 
     public string OrganisationLegalName { get; set; }
+  }
+
+  public class OrganisationUserListResponse : PaginationInfo
+  {
+    public List<OrganisationUserDto> OrgUserList { get; set; }
+  }
+
+  public class OrganisationListResponse : PaginationInfo
+  {
+    public List<OrganisationDto> OrgList { get; set; }
   }
 }

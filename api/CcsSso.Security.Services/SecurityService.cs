@@ -118,23 +118,6 @@ namespace CcsSso.Security.Services
       await _ccsSsoEmailService.SendChangePasswordNotificationAsync(changePassword.UserName);
     }
 
-    public async Task<AuthResultDto> ChangePasswordWhenPasswordChallengeAsync(PasswordChallengeDto passwordChallengeDto)
-    {
-      if (string.IsNullOrEmpty(passwordChallengeDto.UserName))
-      {
-        throw new CcsSsoException("USERNAME_REQUIRED");
-      }
-      if (string.IsNullOrEmpty(passwordChallengeDto.NewPassword))
-      {
-        throw new CcsSsoException("NEW_PASSWORD_REQUIRED");
-      }
-      if (string.IsNullOrEmpty(passwordChallengeDto.SessionId))
-      {
-        throw new CcsSsoException("SESSION_ID_REQUIRED");
-      }
-      return await _identityProviderService.RespondToNewPasswordRequiredAsync(passwordChallengeDto);
-    }
-
     public async Task InitiateResetPasswordAsync(ChangePasswordInitiateRequest changePasswordInitiateRequest)
     {
       if (string.IsNullOrEmpty(changePasswordInitiateRequest.UserName))
@@ -142,23 +125,6 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException("USERNAME_REQUIRED");
       }
       await _identityProviderService.InitiateResetPasswordAsync(changePasswordInitiateRequest);
-    }
-
-    public async Task ResetPasswordAsync(ResetPasswordDto resetPassword)
-    {
-      if (string.IsNullOrEmpty(resetPassword.VerificationCode))
-      {
-        throw new CcsSsoException("VERIFICATION_CODE_REQUIRED");
-      }
-      if (string.IsNullOrEmpty(resetPassword.UserName))
-      {
-        throw new CcsSsoException("USERNAME_REQUIRED");
-      }
-      if (string.IsNullOrEmpty(resetPassword.NewPassword))
-      {
-        throw new CcsSsoException("NEW_PASSWORD_REQUIRED");
-      }
-      await _identityProviderService.ResetPasswordAsync(resetPassword);
     }
 
     public async Task<string> LogoutAsync(string clientId, string redirecturi)

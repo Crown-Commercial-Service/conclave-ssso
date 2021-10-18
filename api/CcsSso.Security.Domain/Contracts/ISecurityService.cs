@@ -18,11 +18,7 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task ChangePasswordAsync(ChangePasswordDto changePassword);
 
-    Task<AuthResultDto> ChangePasswordWhenPasswordChallengeAsync(PasswordChallengeDto passwordChallengeDto);
-
-    Task InitiateResetPasswordAsync(ChangePasswordInitiateRequest changePasswordInitiateRequest);
-
-    Task ResetPasswordAsync(ResetPasswordDto resetPassword);    
+    Task InitiateResetPasswordAsync(ChangePasswordInitiateRequest changePasswordInitiateRequest);  
 
     Task<string> LogoutAsync(string clientId, string redirecturi);
 

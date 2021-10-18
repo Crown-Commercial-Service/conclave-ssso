@@ -34,7 +34,7 @@ namespace CcsSso.Core.Service
       client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
       client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
 
-      var response = await client.DeleteAsync($"security/deleteuser?email={HttpUtility.UrlEncode(userName)}");
+      var response = await client.DeleteAsync($"security/users?email={HttpUtility.UrlEncode(userName)}");
 
       if (!response.IsSuccessStatusCode)
       {
@@ -54,7 +54,7 @@ namespace CcsSso.Core.Service
       client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
       var byteContent = new ByteArrayContent(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(securityApiUserInfo)));
       byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-      var response = await client.PostAsync("security/register", byteContent);
+      var response = await client.PostAsync("security/users", byteContent);
 
       if (!response.IsSuccessStatusCode)
       {
@@ -77,7 +77,7 @@ namespace CcsSso.Core.Service
       client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
       var byteContent = new ByteArrayContent(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(securityApiUserInfo)));
       byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-      var response = await client.PostAsync("security/updateuser_mfa", byteContent);
+      var response = await client.PostAsync("security/users/mfa", byteContent);
 
       if (!response.IsSuccessStatusCode)
       {
@@ -94,7 +94,7 @@ namespace CcsSso.Core.Service
       var content = new { UserName = userName, ForceLogout = true };
       var byteContent = new ByteArrayContent(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(content)));
       byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-      var response = await client.PostAsync($"security/passwordresetrequest", byteContent);
+      var response = await client.PostAsync($"security/password-reset-requests", byteContent);
 
       if (response.StatusCode == HttpStatusCode.BadRequest)
       {

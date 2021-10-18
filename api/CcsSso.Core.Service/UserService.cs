@@ -1,10 +1,7 @@
 using CcsSso.Core.Domain.Contracts;
-using CcsSso.Domain.Constants;
+using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
-using CcsSso.Domain.Exceptions;
-using CcsSso.Dtos.Domain.Models;
-using CcsSso.Shared.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -20,14 +17,16 @@ namespace CcsSso.Service
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
+    private readonly IUserProfileHelperService _userHelper;
 
     public UserService(IDataContext dataContext, IHttpClientFactory httpClientFactory,
-      ApplicationConfigurationInfo applicationConfigurationInfo, ICcsSsoEmailService ccsSsoEmailService)
+      ApplicationConfigurationInfo applicationConfigurationInfo, ICcsSsoEmailService ccsSsoEmailService, IUserProfileHelperService userHelper)
     {
       _dataContext = dataContext;
       _httpClientFactory = httpClientFactory;
       _applicationConfigurationInfo = applicationConfigurationInfo;
       _ccsSsoEmailService = ccsSsoEmailService;
+      _userHelper = userHelper;
     }
 
     public async Task<List<ServicePermissionDto>> GetPermissions(string userName, string serviceClientId)
@@ -81,11 +80,13 @@ namespace CcsSso.Service
       return permissions;
     }
 
-    public async Task SendUserActivationEmailAsync(string email)
+    public async Task SendUserActivationEmailAsync(string email, bool isExpired = false)
     {
+      _userHelper.ValidateUserName(email);
+
       var client = _httpClientFactory.CreateClient("default");
       client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
-      var url = "security/useractivationemail";
+      var url = $"security/users/activation-emails?is-expired={isExpired}";
       client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
 
       var list = new List<KeyValuePair<string, string>>();

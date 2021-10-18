@@ -190,19 +190,35 @@ namespace CcsSso.Security.Services
       }
     }
 
-    public async Task SendUserActivationEmailAsync(string email, string managementApiToken = null)
+    public async Task SendUserActivationEmailAsync(string email, string managementApiToken = null, bool isExpired = false)
     {
+      var isActivationEmail = true;
+
+      if (isExpired) // If link expired check whether link was useractivation or resetpassword
+      {
+        var user = await GetIdamUserAsync(email);
+        isActivationEmail = user.LoginCount == 0;
+      }
+
       if (string.IsNullOrEmpty(managementApiToken))
       {
         managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
       }
-      
-      var ticket = await GetResetPasswordTicketAsync(email, managementApiToken, _appConfigInfo.CcsEmailConfigurationInfo.UserActivationLinkTTLInMinutes);
+
+      var ticket = await GetResetPasswordTicketAsync(email, managementApiToken,
+        isActivationEmail ? _appConfigInfo.CcsEmailConfigurationInfo.UserActivationLinkTTLInMinutes : _appConfigInfo.CcsEmailConfigurationInfo.ResetPasswordLinkTTLInMinutes);
 
       if (!string.IsNullOrEmpty(ticket))
       {
-        ticket = ticket + "&initial";
-        await _ccsSsoEmailService.SendUserActivationLinkAsync(email, ticket);
+        ticket += "&initial";
+        if (isActivationEmail)
+        {
+          await _ccsSsoEmailService.SendUserActivationLinkAsync(email, ticket);
+        }
+        else
+        {
+          await _ccsSsoEmailService.SendResetPasswordAsync(email, ticket);
+        }
       }
     }
 
@@ -547,11 +563,6 @@ namespace CcsSso.Security.Services
       }
     }
 
-    Task IIdentityProviderService.ResetPasswordAsync(ResetPasswordDto resetPassword)
-    {
-      throw new NotImplementedException();
-    }
-
     public async Task<string> SignOutAsync(string clientId, string returnTo)
     {
       // Should include "federated" as query string para if requires to signout from federated auth providers such as Google,FB
@@ -652,7 +663,7 @@ namespace CcsSso.Security.Services
       }
     }
 
-    public async Task<IdamUser> GetUser(string email)
+    public async Task<IdamUser> GetIdamUserAsync(string email)
     {
       var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
       using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
@@ -666,7 +677,8 @@ namespace CcsSso.Security.Services
             {
               FirstName = user.FirstName,
               LastName = user.LastName,
-              EmailVerified = user.EmailVerified.HasValue ? user.EmailVerified.Value : false
+              EmailVerified = user.EmailVerified.HasValue ? user.EmailVerified.Value : false,
+              LoginCount = !string.IsNullOrWhiteSpace(user.LoginsCount) ? int.Parse(user.LoginsCount) : 0
             };
           }
           else
@@ -807,7 +819,7 @@ namespace CcsSso.Security.Services
       }
 
       var useMfa = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/use_mfa")?.Value;
-      if(useMfa != null)
+      if (useMfa != null)
       {
         var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
         using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))

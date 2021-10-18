@@ -22,7 +22,7 @@ namespace CcsSso.Core.Api.Middleware
     private List<string> allowedPaths = new List<string>()
     {
       "auth/backchannel-logout", "auth/refresh-tokens","auth/mfa-reset-notifications","auth/mfa-reset-by-tickets",
-      "organisations/registrations", "users/permissions", "users/nominee", "users/activation-email", "cii/schemes", "cii/identifiers"
+      "organisations/registrations", "users/permissions", "users/nominees", "users/activation-emails", "cii/schemes", "cii/identifiers"
     };
 
     private List<string> allowedPathsForXSRFValidation = new List<string>()
@@ -58,6 +58,9 @@ namespace CcsSso.Core.Api.Middleware
         {
           var cookie = context.Request.Cookies["XSRF-TOKEN-SVR"];
           var header = context.Request.Headers["x-xsrf-token"];
+          // This was added temporary and will be removed after fix the api gateway issue
+          Console.WriteLine("XSRF-TOKEN-SVR=" + cookie);
+          Console.WriteLine("x-xsrf-token=" + header);
           if (string.IsNullOrEmpty(cookie) || string.IsNullOrEmpty(header) || cookie != header)
           {
             throw new UnauthorizedAccessException();

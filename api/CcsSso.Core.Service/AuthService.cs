@@ -54,7 +54,7 @@ namespace CcsSso.Core.Service
       var client = _httpClientFactory.CreateClient();
       client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
       client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
-      var url = "/security/changepassword";
+      var url = "/security/users/passwords";
 
       Dictionary<string, string> requestData = new Dictionary<string, string>
           {
@@ -81,7 +81,7 @@ namespace CcsSso.Core.Service
       var client = _httpClientFactory.CreateClient();
       client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
       client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
-      var url = "/security/resetmfa_ticket";
+      var url = "/security/mfa-reset-tickets";
 
       if (!string.IsNullOrEmpty(mfaResetInfo.Ticket))
       {
@@ -162,7 +162,7 @@ namespace CcsSso.Core.Service
         var client = _httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
         client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
-        var url = "/security/send_reset_mfa_notification";
+        var url = "/security/mfa-reset-notifications";
 
         Dictionary<string, dynamic> requestData = new Dictionary<string, dynamic>
       {

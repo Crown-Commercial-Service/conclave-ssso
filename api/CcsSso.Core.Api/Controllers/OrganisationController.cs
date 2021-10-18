@@ -1,4 +1,5 @@
 using CcsSso.Core.Authorisation;
+using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Domain.Contracts;
 using CcsSso.Dtos.Domain.Models;
 using Microsoft.AspNetCore.Http;
@@ -62,17 +63,35 @@ namespace CcsSso.Api.Controllers
     [ProducesResponseType(typeof(OrganisationDto), 200)]
     [ProducesResponseType(204)]
     [ProducesResponseType(401)]
-    public async Task<List<OrganisationDto>> GetAll([FromQuery(Name = "organisation-name")] string orgName)
+    public async Task<OrganisationListResponse> GetAll([FromQuery(Name = "organisation-name")] string orgName, [FromQuery] ResultSetCriteria resultSetCriteria)
     {
-      return await _organisationService.GetAllAsync(orgName);
+
+      resultSetCriteria ??= new ResultSetCriteria
+      {
+        CurrentPage = 1,
+        PageSize = 10
+      };
+      resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
+      resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
+
+      return await _organisationService.GetAllAsync(orgName, resultSetCriteria);
     }
 
     [HttpGet("users")]
     [ClaimAuthorise("ORG_USER_SUPPORT")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
-    public async Task<List<OrganisationUserDto>> GetUsers(string name)
+    public async Task<OrganisationUserListResponse> GetUsers(string name, [FromQuery] ResultSetCriteria resultSetCriteria)
     {
-      return await _organisationService.GetUsersAsync(name);
+
+      resultSetCriteria ??= new ResultSetCriteria
+      {
+        CurrentPage = 1,
+        PageSize = 10
+      };
+      resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
+      resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
+
+      return await _organisationService.GetUsersAsync(name, resultSetCriteria);
     }
   }
 }

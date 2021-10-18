@@ -69,7 +69,7 @@ namespace CcsSso.Core.JobScheduler
             //Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.Item2}");
             foreach (var adminUser in adminUsers)
             {
-              var url = "/security/getuser?email=" + adminUser.UserName;
+              var url = "/security/users?email=" + adminUser.UserName;
               var response = await client.GetAsync(url);
               if (response.StatusCode == System.Net.HttpStatusCode.OK)
               {
@@ -269,7 +269,7 @@ namespace CcsSso.Core.JobScheduler
       var client = _httpClientFactory.CreateClient();
       client.DefaultRequestHeaders.Add("x-api-key", _appSettings.CiiSettings.Token);
       client.BaseAddress = new Uri(_appSettings.CiiSettings.Url);
-      var url = "/identities/organisations/" + ciiOrgId;
+      var url = "identities/organisations/" + ciiOrgId;
       var result = await client.DeleteAsync(url);
       if (result.IsSuccessStatusCode)
       {
@@ -288,7 +288,7 @@ namespace CcsSso.Core.JobScheduler
       var client = _httpClientFactory.CreateClient();
       client.DefaultRequestHeaders.Add("X-API-Key", _appSettings.SecurityApiSettings.ApiKey);
       client.BaseAddress = new Uri(_appSettings.SecurityApiSettings.Url);
-      var url = "/security/deleteuser?email=" + userName;
+      var url = "/security/users?email=" + userName;
       var response = await client.DeleteAsync(url);
       if (response.StatusCode == System.Net.HttpStatusCode.OK)
       {

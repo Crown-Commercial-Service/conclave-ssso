@@ -1,3 +1,4 @@
+using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Dtos.Domain.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,8 +13,8 @@ namespace CcsSso.Domain.Contracts
 
     Task<OrganisationDto> GetAsync(string id);
 
-    Task<List<OrganisationDto>> GetAllAsync(string orgName);
+    Task<OrganisationListResponse> GetAllAsync(string orgName, ResultSetCriteria resultSetCriteria);
 
-    Task<List<OrganisationUserDto>> GetUsersAsync(string name);
+    Task<OrganisationUserListResponse> GetUsersAsync(string name, ResultSetCriteria resultSetCriteria);
   }
 }

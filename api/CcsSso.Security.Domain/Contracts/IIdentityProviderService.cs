@@ -32,18 +32,16 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task InitiateResetPasswordAsync(ChangePasswordInitiateRequest changePasswordInitiateRequest);
 
-    Task ResetPasswordAsync(ResetPasswordDto resetPassword);
-
     Task<string> SignOutAsync(string clientId, string userName);
 
     Task DeleteAsync(string email);
 
-    Task<IdamUser> GetUser(string email);
+    Task<IdamUser> GetIdamUserAsync(string email);
 
     Task<string> GetIdentityProviderAuthenticationEndPointAsync();
 
     string GetAuthenticationEndPoint(string state, string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge, string prompt, string nonce, string display, string login_hint, int? max_age, string acr_values);
 
-    Task SendUserActivationEmailAsync(string email, string managementApiToken = null);
+    Task SendUserActivationEmailAsync(string email, string managementApiToken = null, bool isExpired = false);
   }
 }

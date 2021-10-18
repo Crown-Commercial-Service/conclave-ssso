@@ -33,6 +33,8 @@ namespace CcsSso.Security.Domain.Dtos
     public string LastName { get; set; }
 
     public bool EmailVerified { get; set; }
+
+    public int LoginCount { get; set; }
   }
 
 

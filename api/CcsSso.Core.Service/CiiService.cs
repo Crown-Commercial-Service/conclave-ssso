@@ -42,7 +42,7 @@ namespace CcsSso.Service
       var client = _httpClientFactory.CreateClient("CiiApi");
       client.DefaultRequestHeaders.Add("Authorization", token);
       //var body = JsonConvert.SerializeObject(model);
-      var response = await client.PutAsync($"/identities/organisations/{ciiOrganisationId}/schemes/{scheme}/identifiers/{identifier}", new StringContent("", System.Text.Encoding.UTF8, "application/json"));
+      var response = await client.PutAsync($"identities/organisations/{ciiOrganisationId}/schemes/{scheme}/identifiers/{identifier}", new StringContent("", System.Text.Encoding.UTF8, "application/json"));
       if (response.IsSuccessStatusCode)
       {
         await _auditLoginService.CreateLogAsync(AuditLogEvent.OrgRegistryAdd, AuditLogApplication.ManageOrganisation, $"OrgId:{ciiOrganisationId}, Scheme:{scheme}, Id:{identifier}");
@@ -67,7 +67,7 @@ namespace CcsSso.Service
       var client = _httpClientFactory.CreateClient("CiiApi");
       client.DefaultRequestHeaders.Remove("x-api-key");
       client.DefaultRequestHeaders.Add("x-api-key", _config.deleteToken);
-      var response = await client.DeleteAsync("/identities/organisations/"+ ciiOrganisationId);
+      var response = await client.DeleteAsync("identities/organisations/" + ciiOrganisationId);
       if (response.StatusCode == HttpStatusCode.NotFound)
       {
         throw new ResourceNotFoundException();
@@ -90,7 +90,7 @@ namespace CcsSso.Service
     {
       var client = _httpClientFactory.CreateClient("CiiApi");
       client.DefaultRequestHeaders.Add("Authorization", token);
-      var response = await client.DeleteAsync($"/identities/organisations/{ciiOrganisationId}/schemes/{scheme}/identifiers/{identifier}");
+      var response = await client.DeleteAsync($"identities/organisations/{ciiOrganisationId}/schemes/{scheme}/identifiers/{identifier}");
       if (response.IsSuccessStatusCode)
       {
         await _auditLoginService.CreateLogAsync(AuditLogEvent.OrgRegistryRemove, AuditLogApplication.ManageOrganisation, $"OrgId:{ciiOrganisationId}, Scheme:{scheme}, Id:{identifier}");
@@ -115,7 +115,7 @@ namespace CcsSso.Service
     public async Task<CiiDto> GetIdentifierDetailsAsync(string scheme, string identifier)
     {
       var client = _httpClientFactory.CreateClient("CiiApi");
-      var response = await client.GetAsync($"/identities/schemes/{scheme}/identifiers/{identifier}");
+      var response = await client.GetAsync($"identities/schemes/{scheme}/identifiers/{identifier}");
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
@@ -150,7 +150,7 @@ namespace CcsSso.Service
     {
       var client = _httpClientFactory.CreateClient("CiiApi");
       client.DefaultRequestHeaders.Add("Authorization", token);
-      using var response = await client.GetAsync($"/identities/organisations/{ciiOrganisationId}/schemes/{scheme}/identifiers/{identifier}");
+      using var response = await client.GetAsync($"identities/organisations/{ciiOrganisationId}/schemes/{scheme}/identifiers/{identifier}");
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
@@ -177,10 +177,19 @@ namespace CcsSso.Service
     /// <param name="ciiOrganisationId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    public async Task<CiiDto> GetOrgDetailsAsync(string ciiOrganisationId)
+    public async Task<CiiDto> GetOrgDetailsAsync(string ciiOrganisationId, string token = null, bool includeHiddenIdentifiers = false)
     {
       var client = _httpClientFactory.CreateClient("CiiApi");
-      using var response = await client.GetAsync($"/identities/organisations/{ciiOrganisationId}");
+      string url = $"identities/organisations/{ciiOrganisationId}";
+      if (includeHiddenIdentifiers)
+      {
+        if (!string.IsNullOrEmpty(token))
+        {
+          client.DefaultRequestHeaders.Add("Authorization", token); 
+        }
+        url += "/all";
+      }
+      using var response = await client.GetAsync(url);
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
@@ -208,7 +217,7 @@ namespace CcsSso.Service
     public async Task<CiiSchemeDto[]> GetSchemesAsync()
     {
       var client = _httpClientFactory.CreateClient("CiiApi");
-      var response = await client.GetAsync("/identities/schemes");
+      var response = await client.GetAsync("identities/schemes");
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
@@ -231,7 +240,7 @@ namespace CcsSso.Service
     {
       var client = _httpClientFactory.CreateClient("CiiApi");
       var body = JsonConvert.SerializeObject(model);
-      var response = await client.PostAsync("/identities/organisations", new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+      var response = await client.PostAsync("identities/organisations", new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
 
       if (response.IsSuccessStatusCode)
       {
@@ -252,6 +261,6 @@ namespace CcsSso.Service
         throw new CcsSsoException("ERROR_CREATING_ORGANISATION");
       }
     }
-    
+
   }
 }
