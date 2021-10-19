@@ -342,7 +342,27 @@
     }
 
     .header-link {
-       color: #FFFFFF !important;
+        color: #FFFFFF !important;
+    }
+
+.navigation-text:focus {
+      color: #0b0c0c !important;
+      background-color: #ffdd00 !important;
+      text-decoration-color: #0b0c0c !important;
+      text-decoration-line: underline;
+      text-decoration-skip-ink: none;
+      text-decoration-thickness : 3px;
+      text-decoration-style: solid;
+	     outline:none !important;
+    }
+
+    .navigation-text:hover {
+      color: #003078;
+      text-decoration-color: rgb(0, 48, 120);
+      text-decoration-line: underline;
+      text-decoration-skip-ink: none;
+      text-decoration-style: solid;
+      text-decoration-thickness : 3px;
     }
 </style>
 
@@ -361,8 +381,8 @@
                     data-app-pathinfo="/contact/sendToSalesforce" aria-hidden="false">
                     <ul class="nav-list nav-list--primary">
                         <li class="nav-list__item">
-                            <a class="nav-list__link header-link"
-                                href="https://dev-ccs-sso.london.cloudapps.digital/help-support">Help and support</a>
+                            <a class="navigation-text" href="https://dev.identify.crowncommercial.gov.uk/help-support">Help and
+                                support</a>
                         </li>
                     </ul>
                 </nav>
@@ -373,17 +393,17 @@
         <div class="govuk-phase-banner">
             <p class="govuk-phase-banner__content">
                 <strong class="govuk-tag govuk-phase-banner__content__tag ">
-                    alpha
+                    beta
                 </strong>
-                <span class="govuk-phase-banner__text">This is a new service – your <a class="govuk-link"
+                <span class="govuk-phase-banner__text">This is a new service – your <a class="navigation-text"
                         href="https://www.smartsurvey.co.uk/s/QWDZX/">feedback</a> will help us to improve it.</span>
             </p>
         </div>
     </div>
 
     <div class="govuk-main-wrapper login-container">
-        <h1 class="govuk-heading-xl">Sign in to the Crown Commercial Service <br /> Procurement Gateway Authenticator
-        </h1>
+            <h1 id="title" class="govuk-heading-xl">
+            </h1>
 
         <div class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1"
             id="error-summary" data-module="govuk-error-summary" style="display: none">
@@ -393,7 +413,7 @@
             <div class="govuk-error-summary__body">
                 <ul class="govuk-list govuk-error-summary__list">
                     <li style="display: none" id="li-error-general">
-                        <a href="https://dev-ccs-sso.london.cloudapps.digital" id="a-error-general">
+                        <a href="https://dev.identify.crowncommercial.gov.uk" id="a-error-general">
                         </a>
                     </li>
                     <li style="display: none" id="li-error-enroll">
@@ -408,202 +428,224 @@
                 </ul>
             </div>
         </div>
-        <div class="govuk-grid-row">
-            <div class="govuk-grid-column-two-thirds">
-                <div class="content flex">
-                    <div style="margin-bottom:10px;" class="content flex hidden hidden" data-recovery-report-container>
-                        <span class="govuk-label" data-recovery-report></span>
-                        <button type="button" class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                            data-saved-recovery>Got it!</button>
-                    </div>
-                    <div class="content flex hidden" data-screen data-enrollment-enroll data-method="sms">
-                        <div style="margin-top:10px;" data-enrollment-toolbar>
-                            <button type="button" data-show-enrollment="push" class="govuk-button hidden">Push</button>
-                            <button type="button" data-show-enrollment="sms" class="govuk-button hidden">SMS</button>
-                            <button type="button" data-show-enrollment="otp" class="govuk-button hidden">Procurement
-                                Gateway Authenticator</button>
-                        </div>
-                        <form class="ui form login mb-two" data-enroll>
-                            <div id="sms-form-group" class="govuk-form-group">
-                                <label class="govuk-label" style="margin-top:8px;margin-bottom:0px" for="email">
-                                    Please enter your phone<br />
-                                </label>
-                                <span style="display: none" id="error-enroll-sms" class="govuk-error-message">
-                                    <span class="govuk-visually-hidden">Error:</span>
-                                </span>
-                                <input type="tel" data-enroll-field="phoneNumber" class="govuk-input" id="phone"
-                                    placeholder="Enter your phnoe">
-                            </div>
-                            <div class="captcha-container govuk-form-group"></div>
-                            <button class="govuk-button" style="margin-top:25px;" type="submit" id="btn-login">
-                                Enroll
-                            </button>
-                        </form>
-                    </div>
 
-                    <div class="content flex hidden" data-screen data-enrollment-confirm data-method="sms">
-                        <div style="margin-top:10px;" data-enrollment-toolbar>
-                            <button type="button" data-show-enrollment="push" class="govuk-button hidden">Push</button>
-                            <button type="button" data-show-enrollment="sms" class="govuk-button hidden">SMS</button>
-                            <button type="button" data-show-enrollment="otp" class="govuk-button hidden">Procurement
-                                Gateway Authenticator</button>
-                        </div>
-
-                        <form class="ui form login mb-two" data-confirm>
-                            <div id="email-form-group" class="govuk-form-group">
-                                <label class="govuk-label" style="margin-top:8px;margin-bottom:0px" for="email">
-                                    Please enter the verification code we sent by SMSes<br />
-                                </label>
-                                <span style="display: none" id="error-sms-code" class="govuk-error-message">
-                                    <span class="govuk-visually-hidden">Error:</span>
-                                </span>
-                                <input type="text" data-confirm-field="otpCode" class="govuk-input" id="otpCode"
-                                    placeholder="Enter your phnoe">
-                            </div>
-                            <div class="captcha-container govuk-form-group"></div>
-                            <button class="govuk-button" style="margin-top:25px;" type="submit" id="btn-login">
-                                Confirm enrollment
-                            </button>
-                        </form>
-                    </div>
-
-                    <div class="content flex hidden" data-screen data-enrollment-enroll data-method="push">
-                        <div style="margin-top:10px;" data-enrollment-toolbar>
-                            <button type="button" data-show-enrollment="push" class="govuk-button hidden">Push</button>
-                            <button type="button" data-show-enrollment="sms" class="govuk-button hidden">SMS</button>
-                            <button type="button" data-show-enrollment="otp" class="govuk-button hidden">Procurement
-                                Gateway Authenticator</button>
-                        </div>
-
-                        <p>Scan this QR With Guardian app</p>
-                        <div data-qr></div>
-                    </div>
-
-
-                    <div class="content flex hidden" data-screen data-enrollment-enroll data-method="otp"
-                        data-enrollment-confirm>
-                        <!-- <div style="margin-top:10px;" data-enrollment-toolbar>
-                            <button type="button" data-show-enrollment="push"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">Push</button>
-                            <button type="button" data-show-enrollment="sms"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">SMS</button>
-                            <button type="button" data-show-enrollment="otp"
-                                class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">Google
-                                Authenticator</button>
-                        </div> -->
-
-                        <form class="ui form login mb-two" data-confirm>
-                            <div style="margin-top: 10px;" data-qr></div>
-                            <div id="gcode-form-group" class="govuk-form-group">
-                                <label class="govuk-label" style="margin-top:8px;margin-bottom:0px">
-                                    Scan this QR code with your authenticator app<br />
-                                </label>
-                                <span style="display: none;margin-top: 10px;" id="error-enroll-otp"
-                                    class="govuk-error-message">
-                                    <span class="govuk-visually-hidden">Error:</span>
-                                </span>
-                                <input type="text" class="govuk-input" id="gcodeenroll" data-confirm-field="otpCode"
-                                    placeholder="Enter your code">
-                            </div>
-                            <div class="captcha-container govuk-form-group"></div>
-                            <button class="govuk-button" style="margin-top:25px;" type="submit" id="btn-gcode">
-                                Confirm enrollment
-                            </button>
-                            <button onclick="cancelMfa()" class="govuk-button" style="margin-top:25px;" type="button"
-                                id="btn-cancel">
-                                Cancel
-                            </button>
-                        </form>
-                    </div>
-
-                    <div class="hidden content flex hidden" data-screen data-login-confirm="otp">
-                        <form data-login-verify class="ui form login mb-two" data-confirm>
-                            <div data-qr></div>
-                            <div id="gcode-auth-form-group" class="govuk-form-group">
-                                <label class="govuk-label" style="margin-top:8px;margin-bottom:0px">
-                                    Enter authenticator code to login<br />
-                                </label>
-                                <span style="display: none;margin-top: 10px;" id="error-otp-code"
-                                    class="govuk-error-message">
-                                    <span class="govuk-visually-hidden">Error:</span>
-                                </span>
-                                <input type="text" class="govuk-input" id="gcode" data-verify-field="otpCode"
-                                    placeholder="Enter your code">
-                            </div>
-                            <div class="captcha-container govuk-form-group"></div>
-                            <button class="govuk-button" style="margin-top:25px;" type="submit" id="btn-login">
-                                Login
-                            </button>
-                            <button style="display: none;" data-show-recovery hidden
-                                class="govuk-button govuk-button--secondary" style="margin-top:25px;" type="button"
-                                id="btn-recovery">
-                                Recovery
-                            </button>
-                            <button onclick="resetMfa()" class="govuk-button govuk-button--secondary"
-                                style="margin-top:25px;" type="button" id="btn-reset">
-                                Reset
-                            </button>
-                            <button onclick="cancelMfa()" class="govuk-button govuk-button--secondary"
-                                style="margin-top:25px;" type="button" id="btn-cancel">
-                                Cancel
-                            </button>
-                        </form>
-                    </div>
-
-
-                    <div class="hidden content flex hidden" data-screen data-login-confirm="push">
-                        <p class="govuk-body" data-request-loading>Sending push notification...</p>
-                        <p class="govuk-body" data-request-done>We have sent a push notification to your phone</p>
-                        <button class="govuk-button" style="margin-top:25px;" type="button"
-                            data-login-verify-show="otp">I don't have the
-                            device
-                            handy</button>
-                        <button class="govuk-button" style="margin-top:25px;" type="button" data-request>Retry</button>
-                        <p>
-                            <button class="govuk-button govuk-button--secondary" style="margin-top:25px;" type="button"
-                                data-show-recovery>Recovery</button>
-                        </p>
-                    </div>
-
-
-                    <div class="hidden content flex hidden" data-screen data-login-confirm="sms">
-                        <p class="govuk-body" data-request-loading>Sending sms...</p>
-                        <p class="govuk-body" data-request-done>
-                            Enter a the code we sent by SMS.
-                            <button class="govuk-button" type="button" data-request>Retry</button>
-                        </p>
-                        <form class="ui form login mb-two" data-login-verify>
-                            <input type="text" class="govuk-input" data-verify-field="otpCode" />
-                            <button class="govuk-button" style="margin-top:25px;" type="submit">Login</button>
-                        </form>
-                        <!-- <p>
-                            <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                                style="margin-top:25px;" type="button" data-show-recovery>Recovery</button>
-                        </p>
-                        <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
-                            style="margin-top:25px;" type="button" data-login-verify-show="otp">I don't have the device
-                            handy</button> -->
-                        <button class="govuk-button govuk-button--secondary" style="margin-top:25px;" type="button"
-                            data-request>Retry</button>
-                    </div>
-
-
-                    <div class="hidden" data-screen data-recovery data-login-confirm="recovery-code">
-                        <form class="ui form login mb-two" data-recovery-verify>
-                            <p>Enter recovery code to login</p>
-                            <input type="text" class="govuk-input" data-recovery-field="recoveryCode" />
-                            <button class="govuk-button" type="submit">Login</button>
-                        </form>
-                    </div>
-
-                    <div class="hidden" data-screen data-messages>
-                        <p class="govuk-body" data-type></p>
-                        <p class="govuk-body" data-message></p>
-                    </div>
-
-                </div>
+        <div class="content flex">
+            <div style="margin-bottom:10px;" class="content flex hidden hidden" data-recovery-report-container>
+                <span class="govuk-label" data-recovery-report></span>
+                <button type="button" class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
+                    data-saved-recovery>Got it!</button>
             </div>
+            <div class="content flex hidden" data-screen data-enrollment-enroll data-method="sms">
+                <div style="margin-top:10px;" data-enrollment-toolbar>
+                    <button type="button" data-show-enrollment="push" class="govuk-button hidden">Push</button>
+                    <button type="button" data-show-enrollment="sms" class="govuk-button hidden">SMS</button>
+                    <button type="button" data-show-enrollment="otp" class="govuk-button hidden">Procurement
+                        Gateway Authenticator</button>
+                </div>
+                <form class="ui form login mb-two" data-enroll>
+                    <div id="sms-form-group" class="govuk-form-group">
+                        <label class="govuk-label" style="margin-top:8px;margin-bottom:0px" for="email">
+                            Please enter your phone<br />
+                        </label>
+                        <span style="display: none" id="error-enroll-sms" class="govuk-error-message">
+                            <span class="govuk-visually-hidden">Error:</span>
+                        </span>
+                        <input type="tel" data-enroll-field="phoneNumber" class="govuk-input" id="phone"
+                            placeholder="Enter your phnoe">
+                    </div>
+                    <div class="captcha-container govuk-form-group"></div>
+                    <button class="govuk-button" style="margin-top:25px;" type="submit" id="btn-login">
+                        Enroll
+                    </button>
+                </form>
+            </div>
+
+            <div class="content flex hidden" data-screen data-enrollment-confirm data-method="sms">
+                <div style="margin-top:10px;" data-enrollment-toolbar>
+                    <button type="button" data-show-enrollment="push" class="govuk-button hidden">Push</button>
+                    <button type="button" data-show-enrollment="sms" class="govuk-button hidden">SMS</button>
+                    <button type="button" data-show-enrollment="otp" class="govuk-button hidden">Procurement
+                        Gateway Authenticator</button>
+                </div>
+
+                <form class="ui form login mb-two" data-confirm>
+                    <div id="email-form-group" class="govuk-form-group">
+                        <label class="govuk-label" style="margin-top:8px;margin-bottom:0px" for="email">
+                            Please enter the verification code we sent by SMSes<br />
+                        </label>
+                        <span style="display: none" id="error-sms-code" class="govuk-error-message">
+                            <span class="govuk-visually-hidden">Error:</span>
+                        </span>
+                        <input type="text" data-confirm-field="otpCode" class="govuk-input" id="otpCode"
+                            placeholder="Enter your phnoe">
+                    </div>
+                    <div class="captcha-container govuk-form-group"></div>
+                    <button class="govuk-button" style="margin-top:25px;" type="submit" id="btn-login">
+                        Confirm enrollment
+                    </button>
+                </form>
+            </div>
+
+            <div class="content flex hidden" data-screen data-enrollment-enroll data-method="push">
+                <div style="margin-top:10px;" data-enrollment-toolbar>
+                    <button type="button" data-show-enrollment="push" class="govuk-button hidden">Push</button>
+                    <button type="button" data-show-enrollment="sms" class="govuk-button hidden">SMS</button>
+                    <button type="button" data-show-enrollment="otp" class="govuk-button hidden">Procurement
+                        Gateway Authenticator</button>
+                </div>
+
+                <p>Scan this QR With Guardian app</p>
+                <div data-qr></div>
+            </div>
+
+
+            <div class="content flex hidden" data-screen data-enrollment-enroll data-method="otp"
+                data-enrollment-confirm>
+                <!-- <div style="margin-top:10px;" data-enrollment-toolbar>
+                                <button type="button" data-show-enrollment="push"
+                                    class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">Push</button>
+                                <button type="button" data-show-enrollment="sms"
+                                    class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">SMS</button>
+                                <button type="button" data-show-enrollment="otp"
+                                    class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button hidden">Google
+                                    Authenticator</button>
+                            </div> -->
+
+                <form class="ui form login mb-two" data-confirm>
+                    <div style="margin-top: 25px;" class="govuk-grid-row">
+                        <div class="govuk-grid-column-one-third" data-qr>
+                        </div>
+                        <div class="govuk-grid-column-two-thirds">
+                            <p>
+                                You will need an authentication app on your device.
+                                An authentication app will
+                                generate a one-time password that you can use each time you sign in. <br>
+                                This app will not have access to your personal or government information.
+                            </p>
+
+                            <p>
+                                Go to your device’s app store, search for one of the following authentication
+                                apps:</p>
+                            <ul>
+                                <li>Auth0 Guardian</li>
+                                <li>Authy</li>
+                                <li>Google Authenticator</li>
+                                <li>Microsoft Authenticator</li>
+                            </ul>
+                            <p>
+                                Select an authentication app and install. Once installed, open the app.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div id="gcode-form-group" class="govuk-form-group">
+                        <label class="govuk-label" style="margin-top:8px;margin-bottom:0px">
+                            Scan this QR code with your authenticator app<br />
+                        </label>
+                        <span style="display: none;margin-top: 10px;" id="error-enroll-otp" class="govuk-error-message">
+                            <span class="govuk-visually-hidden">Error:</span>
+                        </span>
+                        <input type="text" class="govuk-input" id="gcodeenroll" data-confirm-field="otpCode"
+                            placeholder="Enter your code">
+                    </div>
+                    <div class="captcha-container govuk-form-group"></div>
+                    <button class="govuk-button" style="margin-top:25px;" type="submit" id="btn-gcode">
+                        Register
+                    </button>
+                    <button onclick="cancelMfa()" class="govuk-button" style="margin-top:25px;" type="button"
+                        id="btn-cancel">
+                        Cancel
+                    </button>
+                </form>
+            </div>
+
+            <div class="hidden content flex hidden" data-screen data-login-confirm="otp">
+                <form data-login-verify class="ui form login mb-two" data-confirm>
+                    <div data-qr></div>
+                    <div id="gcode-auth-form-group" class="govuk-form-group">
+                        <label class="govuk-label" style="margin-top:8px;margin-bottom:0px">
+                            Enter the one-time password issued by your device<br />
+                        </label>
+                        <span style="display: none;margin-top: 10px;" id="error-otp-code" class="govuk-error-message">
+                            <span class="govuk-visually-hidden">Error:</span>
+                        </span>
+                        <input type="text" class="govuk-input" id="gcode" data-verify-field="otpCode"
+                            placeholder="Enter your code">
+                    </div>
+                    <label class="govuk-label" style="margin-top:8px;margin-bottom:0px">
+                        Go to your authenticator app, open it and select the Public Procurement Gateway. Enter the one-time password displayed.</label>
+                    <div class="captcha-container govuk-form-group"></div>
+                    <button class="govuk-button" type="submit" id="btn-login">
+                        Login
+                    </button>
+                    <button style="display: none;" data-show-recovery hidden
+                        class="govuk-button govuk-button--secondary" type="button" id="btn-recovery">
+                        Recovery
+                    </button>
+                    <button onclick="resetMfa()" class="govuk-button govuk-button--secondary" type="button"
+                        id="btn-reset">
+                        Reset
+                    </button>
+                    <button onclick="cancelMfa()" class="govuk-button govuk-button--secondary" type="button"
+                        id="btn-cancel">
+                        Cancel
+                    </button>
+                </form>
+            </div>
+
+
+            <div class="hidden content flex hidden" data-screen data-login-confirm="push">
+                <p class="govuk-body" data-request-loading>Sending push notification...</p>
+                <p class="govuk-body" data-request-done>We have sent a push notification to your phone</p>
+                <button class="govuk-button" style="margin-top:25px;" type="button" data-login-verify-show="otp">I
+                    don't have the
+                    device
+                    handy</button>
+                <button class="govuk-button" style="margin-top:25px;" type="button" data-request>Retry</button>
+                <p>
+                    <button class="govuk-button govuk-button--secondary" style="margin-top:25px;" type="button"
+                        data-show-recovery>Recovery</button>
+                </p>
+            </div>
+
+
+            <div class="hidden content flex hidden" data-screen data-login-confirm="sms">
+                <p class="govuk-body" data-request-loading>Sending sms...</p>
+                <p class="govuk-body" data-request-done>
+                    Enter a the code we sent by SMS.
+                    <button class="govuk-button" type="button" data-request>Retry</button>
+                </p>
+                <form class="ui form login mb-two" data-login-verify>
+                    <input type="text" class="govuk-input" data-verify-field="otpCode" />
+                    <button class="govuk-button" style="margin-top:25px;" type="submit">Login</button>
+                </form>
+                <!-- <p>
+                                <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
+                                    style="margin-top:25px;" type="button" data-show-recovery>Recovery</button>
+                            </p>
+                            <button class="govuk-!-font-size-18 govuk-!-font-weight-bold govuk-button"
+                                style="margin-top:25px;" type="button" data-login-verify-show="otp">I don't have the device
+                                handy</button> -->
+                <button class="govuk-button govuk-button--secondary" style="margin-top:25px;" type="button"
+                    data-request>Retry</button>
+            </div>
+
+
+            <div class="hidden" data-screen data-recovery data-login-confirm="recovery-code">
+                <form class="ui form login mb-two" data-recovery-verify>
+                    <p>Enter recovery code to login</p>
+                    <input type="text" class="govuk-input" data-recovery-field="recoveryCode" />
+                    <button class="govuk-button" type="submit">Login</button>
+                </form>
+            </div>
+
+            <div class="hidden" data-screen data-messages>
+                <p class="govuk-body" data-type></p>
+                <p class="govuk-body" data-message></p>
+            </div>
+            <a class="navigation-text" href="https://dev.identify.crowncommercial.gov.uk/help-support">Get help with this page</a>
         </div>
+
     </div>
     <footer class="govuk-footer footer-global footer" role="contentinfo">
         <div class="govuk-width-container ">
@@ -669,13 +711,13 @@
     </footer>
 
     <!--[if IE 8]>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/ie8/0.2.5/ie8.js"></script>
-  <![endif]-->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/ie8/0.2.5/ie8.js"></script>
+    <![endif]-->
 
     <!--[if lte IE 9]>
-  <script src="https://cdn.auth0.com/js/polyfills/1.0/base64.min.js"></script>
-  <script src="https://cdn.auth0.com/js/polyfills/1.0/es5-shim.min.js"></script>
-  <![endif]-->
+    <script src="https://cdn.auth0.com/js/polyfills/1.0/base64.min.js"></script>
+    <script src="https://cdn.auth0.com/js/polyfills/1.0/es5-shim.min.js"></script>
+    <![endif]-->
 
     <script src="https://code.jquery.com/jquery-3.1.0.min.js"
         integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
@@ -686,9 +728,9 @@
         var mfaMethod = 'otp';
         var isAuthMode = true;
         var clientId = "5G2pNShwaBQzjJNx6fCSqt9ZIAU9sEur";
-        var baseUrl = "https://dev-ccs-sso.eu.auth0.com";
-        var logoutCallbackUrl = 'https://dev-ccs-sso.london.cloudapps.digital';
-        var mfareseturl = 'https://dev-ccs-sso.london.cloudapps.digital/mfaresetnotification?u=' + encodeURIComponent('{{userData.friendlyUserId}}');
+        var baseUrl = "https://auth.dev.identify.crowncommercial.gov.uk";
+        var logoutCallbackUrl = 'https://dev.identify.crowncommercial.gov.uk';
+        var mfareseturl = 'https://dev.identify.crowncommercial.gov.uk/mfaresetnotification?u=' + encodeURIComponent('{{userData.friendlyUserId}}');
         function resetMfa() {
             window.location = mfareseturl;
         }
@@ -750,8 +792,8 @@
 
             var guardianjs = auth0GuardianJS({
                 serviceUrl: "{{ mfaServerUrl }}",
-            {% if ticket %}
-            ticket: "{{ ticket }}",
+                {% if ticket %}
+                ticket: "{{ ticket }}",
             {% else %}
         requestToken: "{{ requestToken }}",
             {% endif %}
@@ -759,13 +801,13 @@
         issuer: {
             label: "{{ userData.friendlyUserId }}",
                 name: "{{ userData.tenant }}",
-            },
+                },
 
         globalTrackingId: "{{ globalTrackingId }}",
             {% if stateCheckingMechanism %}
         stateCheckingMechanism: "{{ stateCheckingMechanism }}",
             {% endif %}
-          });
+            });
 
         $root
             .off('click.saved-recovery')
@@ -814,6 +856,13 @@
 
         // ------------------- START Guardian transaction ---------------------
         guardianjs.start(function (err, transaction) {
+
+            if (transaction.isEnrolled()) {
+                $("#title").text("Sign in using additional security on your personal device");
+            }
+            else{
+                $("#title").text("Set up additional security using your personal device"); 
+            }
 
             if (err) {
                 state.transaction = null;
@@ -895,7 +944,7 @@
             var enrollment = state.current.enrollment = transaction.getEnrollments()[0];
             var availableMethods = state.current.availableMethods = enrollment.getAvailableAuthenticatorTypes();
             if (availableMethods.length === 0) {
-                showCustomError('No available method', 'general')
+                showCustomError('No available method', 'No available method', 'general')
                 return;
             }
             method = state.current.method = method || availableMethods[0];
@@ -1011,20 +1060,20 @@
 
         // ----------------------------- Utilities ------------------------------
 
-        function showCustomError(error, code) {
+        function showCustomError(errorTop, errorInline, code) {
             $('#error-summary').show();
             // if (code == 'invalid_otp' || code == 'invalid_otp_format') {
             if (code == 'general') {
                 $('#li-error-general').show();
-                $('#a-error-general').text(error);
+                $('#a-error-general').text(errorTop);
                 $('#li-error-enroll').hide();
                 $('#li-error-auth').hide();
             }
             else if (isAuthMode) {
                 $('#li-error-auth').show();
                 $('#error-otp-code').show();
-                $('#error-otp-code').text(error);
-                $('#a-error-auth').text(error);
+                $('#error-otp-code').text(errorInline);
+                $('#a-error-auth').text(errorTop);
                 $('#li-error-enroll').hide();
                 $('#li-error-general').hide();
                 $('#error-enroll-otp').hide();
@@ -1032,8 +1081,8 @@
             else {
                 $('#li-error-enroll').show();
                 $('#error-enroll-otp').show();
-                $('#error-enroll-otp').text(error);
-                $('#a-error-enroll').text(error);
+                $('#error-enroll-otp').text(errorInline);
+                $('#a-error-enroll').text(errorTop);
                 $('#li-error-auth').hide();
                 $('#li-error-general').hide();
                 $("#error-otp-code").hide();
@@ -1100,7 +1149,8 @@
                 else if (message.response.unauthorized) {
                     $('#btn-gcode-enroll').prop('disabled', true);
                     $('#btn-login').prop('disabled', true);
-                    showCustomError('Your Session has expired. Please go back to provide your credential', 'general');
+                    let errorMsg = 'Your Session has expired. Please go back to provide your credential';
+                    showCustomError(errorMsg, errorMsg, 'general');
                     return;
                 }
 
@@ -1108,19 +1158,31 @@
             }
 
             //showMessage(message, 'error');
-            showCustomError(message, 'general');
+            showCustomError(message, message, 'general');
         }
 
         function showLocalError(message) {
             let code = 'general'
             $('#loading').hide();
+            let detailError = message;
             if (message instanceof Error) {
                 code = message.errorCode;
-                message = message.message || 'Something went wrong...';
+                if (code == 'invalid_otp' || 'invalid_otp_format') {
+                    message = 'Enter a valid one-time password';
+                    detailError = 'Enter a valid one-time password. Your authenticator app will generate a new one-time password every 30 seconds.';
+                }
+                else if (code == 'field_required') {
+                    message = 'One-time password is required';
+                    detailError = 'One-time password is required.';
+                }
+                else {
+                    message = message.message || 'Something went wrong...';
+                    detailError = message;
+                }
             }
 
             //$root.find('[data-error]').text(message).removeClass('hidden');
-            showCustomError(message, code);
+            showCustomError(message, detailError, code);
         }
 
         function showSuccess(message) {
@@ -1138,8 +1200,8 @@
 
             return data;
         }
-  
-        }) ();
+    
+            }) ();
     </script>
 </body>
 

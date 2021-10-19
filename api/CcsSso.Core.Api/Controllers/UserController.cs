@@ -38,15 +38,15 @@ namespace CcsSso.Api.Controllers
     [HttpPost("activation-emails")]
     [Consumes("application/x-www-form-urlencoded")]
     [SwaggerOperation(Tags = new[] { "User" })]
-    public async Task SendUserActivationEmail(IFormCollection userDetails)
+    public async Task SendUserActivationEmail(IFormCollection userDetails, [FromQuery(Name = "is-expired")]bool isExpired = false)
     {
       string registrationDetailsCookie = "rud";
+      userDetails.TryGetValue("email", out StringValues email);
       if (Request.Cookies.ContainsKey(registrationDetailsCookie))
       {
         Request.Cookies.TryGetValue(registrationDetailsCookie, out string details);
         if (details == "as")
         {
-          userDetails.TryGetValue("email", out StringValues email);
           await _userService.SendUserActivationEmailAsync(email);
           CookieOptions httpCookieOptions = new CookieOptions()
           {
@@ -57,6 +57,10 @@ namespace CcsSso.Api.Controllers
           //"ras" stands for activation email re-sent
           Response.Cookies.Append(registrationDetailsCookie, "ras", httpCookieOptions);
         }
+      }
+      else if (isExpired) // Resend the link on expiry
+      {
+        await _userService.SendUserActivationEmailAsync(email, true);
       }
     }
   }

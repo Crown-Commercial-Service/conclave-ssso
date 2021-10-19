@@ -15,7 +15,7 @@ namespace CcsSso.Domain.Contracts
 
     Task<CiiDto> GetOrganisationIdentifierDetailsAsync(string ciiOrganisationId, string scheme, string identifier, string token);
 
-    Task<CiiDto> GetOrgDetailsAsync(string ciiOrganisationId);
+    Task<CiiDto> GetOrgDetailsAsync(string ciiOrganisationId, string token = null, bool includeHiddenIdentifiers = false);
 
     Task<CiiSchemeDto[]> GetSchemesAsync();
 

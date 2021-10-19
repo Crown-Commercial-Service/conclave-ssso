@@ -41,7 +41,7 @@ namespace CcsSso.Core.ExternalApi.Middleware
             context.Request.Body.Position = 0;
           }
         }
-        requestContext.RequestIntendedUserName = context.Request.Query["userId"].ToString();
+        requestContext.RequestIntendedUserName = context.Request.Query["user-id"].ToString();
       }
       requestContext.RequestType = requestType;
 

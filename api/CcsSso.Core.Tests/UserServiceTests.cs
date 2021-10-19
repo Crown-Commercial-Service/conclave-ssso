@@ -1,5 +1,6 @@
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Tests.Infrastructure;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
@@ -54,6 +55,7 @@ namespace CcsSso.Tests
       {
         var mockHttpClientFactory = new Mock<IHttpClientFactory>();
         var mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
+        var mockUserHelperService = new Mock<IUserProfileHelperService>();
         var applicationConfigurationInfo = new ApplicationConfigurationInfo
         {
           EnableAdapterNotifications = false,
@@ -63,7 +65,7 @@ namespace CcsSso.Tests
           }
         };
         await SetupTestDataAsync(dataContext);
-        return new UserService(dataContext, mockHttpClientFactory.Object, applicationConfigurationInfo, mockCcsSsoEmailService.Object);
+        return new UserService(dataContext, mockHttpClientFactory.Object, applicationConfigurationInfo, mockCcsSsoEmailService.Object, mockUserHelperService.Object);
       }
 
       static async Task SetupTestDataAsync(IDataContext dataContext)

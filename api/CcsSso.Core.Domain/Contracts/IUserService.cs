@@ -9,7 +9,7 @@ namespace CcsSso.Domain.Contracts
   {
     Task<List<ServicePermissionDto>> GetPermissions(string userName, string serviceClientId);
 
-    Task SendUserActivationEmailAsync(string email);
+    Task SendUserActivationEmailAsync(string email, bool isExpired = false);
 
     Task NominateUserAsync(string email);
   }

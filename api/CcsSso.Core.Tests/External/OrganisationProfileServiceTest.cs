@@ -159,7 +159,7 @@ namespace CcsSso.Core.Tests.External
         {
           await SetupTestDataAsync(dataContext);
           Mock<ICiiService> mockCiiService = new Mock<ICiiService>();
-          mockCiiService.Setup(s => s.GetOrgDetailsAsync(It.IsAny<string>()))
+          mockCiiService.Setup(s => s.GetOrgDetailsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
           .ReturnsAsync(new CiiDto
           {
             Identifier = new CiiIdentifier

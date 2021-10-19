@@ -41,9 +41,10 @@ namespace CcsSso.Api.Controllers
 
     [HttpGet("organisation-details")]
     [SwaggerOperation(Tags = new[] { "Cii" })]
-    public async Task<CiiDto> GetOrgDetails([FromQuery(Name = "organisation-id")] string ciiOrganisationId)
+    public async Task<CiiDto> GetOrgDetails([FromQuery(Name = "organisation-id")] string ciiOrganisationId, [FromQuery(Name = "include-hidden-identifiers")] bool includeHiddenIdentifiers = false)
     {
-      return await _ciiService.GetOrgDetailsAsync(ciiOrganisationId);
+      var accessToken = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].ToString();
+      return await _ciiService.GetOrgDetailsAsync(ciiOrganisationId, accessToken, includeHiddenIdentifiers);
     }
 
     [HttpGet("organisation-identifiers")]

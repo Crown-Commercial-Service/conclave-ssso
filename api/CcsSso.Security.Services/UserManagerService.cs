@@ -139,16 +139,16 @@ namespace CcsSso.Security.Services
 
     public async Task<IdamUser> GetUserAsync(string email)
     {
-      return await _identityProviderService.GetUser(email);
+      return await _identityProviderService.GetIdamUserAsync(email);
     }
 
-    public async Task SendUserActivationEmailAsync(string email)
+    public async Task SendUserActivationEmailAsync(string email, bool isExpired = false)
     {
       if (string.IsNullOrEmpty(email))
       {
         throw new CcsSsoException(ErrorCodes.EmailRequired);
       }
-      await _identityProviderService.SendUserActivationEmailAsync(email.ToLower());
+      await _identityProviderService.SendUserActivationEmailAsync(email.ToLower(), null, isExpired);
     }
   }
 }

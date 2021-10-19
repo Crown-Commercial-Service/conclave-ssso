@@ -40,6 +40,7 @@ namespace CcsSso.Core.Service.External
                           {
                             RoleId = i.Id,
                             RoleName = i.CcsAccessRoleName,
+                            RoleKey= i.CcsAccessRoleNameKey,
                             ServiceName = i.ServiceRolePermissions.FirstOrDefault().ServicePermission.CcsService.ServiceName,
                             OrgTypeEligibility = i.OrgTypeEligibility,
                             SubscriptionTypeEligibility = i.SubscriptionTypeEligibility,

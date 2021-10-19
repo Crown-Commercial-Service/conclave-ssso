@@ -160,9 +160,9 @@ namespace CcsSso.Service
       return null;
     }
 
-    public async Task<List<OrganisationDto>> GetAllAsync(string orgName)
+    public async Task<OrganisationListResponse> GetAllAsync(string orgName, ResultSetCriteria resultSetCriteria)
     {
-      var organisations = await _dataContext.Organisation
+      var organisations = await _dataContext.GetPagedResultAsync(_dataContext.Organisation
         .Where(x => x.IsDeleted == false && (string.IsNullOrEmpty(orgName) || x.LegalName.ToLower().Contains(orgName.ToLower())))
         .Select(organisation => new OrganisationDto
         {
@@ -172,15 +172,23 @@ namespace CcsSso.Service
           RightToBuy = organisation.RightToBuy,
           PartyId = organisation.PartyId,
           LegalName = organisation.LegalName,
-        }).OrderBy(o => o.LegalName).ToListAsync();
+        }).OrderBy(o => o.LegalName), resultSetCriteria);
 
-      return organisations;
+      var orgListResponse = new OrganisationListResponse
+      {
+        CurrentPage = organisations.CurrentPage,
+        PageCount = organisations.PageCount,
+        RowCount = organisations.RowCount,
+        OrgList = organisations.Results ?? new List<OrganisationDto>()
+      };
+
+      return orgListResponse;
     }
 
-    public async Task<List<OrganisationUserDto>> GetUsersAsync(string name)
+    public async Task<OrganisationUserListResponse> GetUsersAsync(string name, ResultSetCriteria resultSetCriteria)
     {
       name = name?.ToLower();
-      var users = await _dataContext.User
+      var users = await _dataContext.GetPagedResultAsync(_dataContext.User
         .Include(c => c.Party)
         .ThenInclude(x => x.Person)
         .ThenInclude(o => o.Organisation)
@@ -194,8 +202,17 @@ namespace CcsSso.Service
           OrganisationId = user.Party.Person.Organisation.Id,
           OrganisationLegalName = user.Party.Person.Organisation.LegalName,
           CiiOrganisationId = user.Party.Person.Organisation.CiiOrganisationId
-        }).OrderBy(u => u.Name).ToListAsync();
-      return users;
+        }).OrderBy(u => u.Name), resultSetCriteria);
+
+      var orgUserListResponse = new OrganisationUserListResponse
+      {
+        CurrentPage = users.CurrentPage,
+        PageCount = users.PageCount,
+        RowCount = users.RowCount,
+        OrgUserList = users.Results ?? new List<OrganisationUserDto>()
+      };
+
+      return orgUserListResponse;
     }
 
     /// <summary>
