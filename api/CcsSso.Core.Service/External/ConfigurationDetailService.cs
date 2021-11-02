@@ -35,6 +35,7 @@ namespace CcsSso.Core.Service.External
     public async Task<List<OrganisationRole>> GetRolesAsync()
     {
       var roles = await _dataContext.CcsAccessRole
+                          .Where(r => !r.IsDeleted)
                           .Include(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
                           .Select(i => new OrganisationRole
                           {

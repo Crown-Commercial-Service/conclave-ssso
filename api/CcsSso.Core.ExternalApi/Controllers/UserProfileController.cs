@@ -31,7 +31,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE, INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, INVALID_USER_DETAIL
+    /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE,ERROR_PASSWORD_TOO_WEAK INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, INVALID_USER_DETAIL
     /// </response>
     /// <remarks>
     /// Sample request:
@@ -41,6 +41,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///        "firstName": "FirstName",
     ///        "lastName": "LastName",
     ///        "userName": "user@mail.com",
+    ///        "password":"",// Not mandatory
+    ///        "SendUserRegistrationEmail":false,
     ///        "organisationId": "CcsOrgId1",
     ///        "detail": {
     ///           "id": 0,
@@ -59,45 +61,6 @@ namespace CcsSso.ExternalApi.Controllers
     public async Task<UserEditResponseInfo> CreateUser(UserProfileEditRequestInfo userProfileRequestInfo)
     {
       return await _userProfileService.CreateUserAsync(userProfileRequestInfo);
-    }
-
-    /// <summary>
-    /// Allows a user to create user details
-    /// </summary>
-    /// <response  code="200">Ok</response>
-    /// <response  code="401">Unauthorised</response>
-    /// <response  code="403">Forbidden</response>
-    /// <response  code="404">Not found</response>
-    /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE, INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, INVALID_USER_DETAIL
-    /// </response>
-    /// <remarks>
-    /// Sample request:
-    ///
-    ///     POST /users_migration
-    ///     {
-    ///        "firstName": "FirstName",
-    ///        "lastName": "LastName",
-    ///        "userName": "user@mail.com",
-    ///        "organisationId": "CcsOrgId1",
-    ///        "detail": {
-    ///           "id": 0,
-    ///           "groupIds": { 1, 2 },
-    ///           "roleIds": { 1, 2 },
-    ///           "identityProviderId": 1,
-    ///        }
-    ///     }
-    ///
-    /// </remarks>
-    [HttpPost("migration")]
-    //[SwaggerOperation(Tags = new[] { "security" })]
-    [ClaimAuthorise("ORG_ADMINISTRATOR")]
-    [OrganisationAuthorise("USER_POST_DMP")]
-    [SwaggerOperation(Tags = new[] { "User migration" })]
-    [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
-    public async Task<UserEditResponseInfo> CreateUser_migration(UserProfileEditRequestInfo userProfileRequestInfo)
-    {
-      return await _userProfileService.CreateUserAsync_migration(userProfileRequestInfo);
     }
 
     /// <summary>

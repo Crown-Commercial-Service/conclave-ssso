@@ -57,6 +57,15 @@ namespace CcsSso.Api.Controllers
       return await _organisationService.GetAsync(organisationId);
     }
 
+    [HttpGet("orgs-by-name")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    [ProducesResponseType(typeof(OrganisationDto), 200)]
+    [ProducesResponseType(204)]
+    public async Task<List<OrganisationDto>> GetByName([FromQuery(Name = "organisation-name")] string orgName)
+    {
+      return await _organisationService.GetByNameAsync(orgName);
+    }
+
     [HttpGet]
     [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
@@ -65,7 +74,6 @@ namespace CcsSso.Api.Controllers
     [ProducesResponseType(401)]
     public async Task<OrganisationListResponse> GetAll([FromQuery(Name = "organisation-name")] string orgName, [FromQuery] ResultSetCriteria resultSetCriteria)
     {
-
       resultSetCriteria ??= new ResultSetCriteria
       {
         CurrentPage = 1,
@@ -92,6 +100,13 @@ namespace CcsSso.Api.Controllers
       resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
 
       return await _organisationService.GetUsersAsync(name, resultSetCriteria);
+    }
+
+    [HttpPost("org-admin-join-notification")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    public async Task SendOrgAdminJoinRequestEmail(OrganisationJoinRequest organisationJoinRequest)
+    {
+      await _organisationService.NotifyOrgAdminToJoinAsync(organisationJoinRequest);
     }
   }
 }

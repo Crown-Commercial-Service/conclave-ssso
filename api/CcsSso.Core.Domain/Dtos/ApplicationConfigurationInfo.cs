@@ -62,6 +62,8 @@ namespace CcsSso.Domain.Dtos
 
     public string UserPermissionUpdateNotificationTemplateId { get; set; }
 
+    public string OrganisationJoinRequestTemplateId { get; set; }
+
     public string NominateEmailTemplateId { get; set; }
 
     public bool SendNotificationsEnabled { get; set; }

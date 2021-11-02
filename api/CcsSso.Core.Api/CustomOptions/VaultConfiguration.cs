@@ -70,6 +70,7 @@ namespace CcsSso.Api.CustomOptions
       {
         var emailInfo = JsonConvert.DeserializeObject<EmailInfoVault>(_secrets.Data["Email"].ToString());
         Data.Add("Email:NominateEmailTemplateId", emailInfo.NominateEmailTemplateId);
+        Data.Add("Email:OrganisationJoinRequestTemplateId", emailInfo.OrganisationJoinRequestTemplateId);        
         Data.Add("Email:ApiKey", emailInfo.ApiKey);
       }
 
@@ -163,6 +164,8 @@ namespace CcsSso.Api.CustomOptions
   {
     public string ApiKey { get; set; }
     public string NominateEmailTemplateId { get; set; }
+
+    public string OrganisationJoinRequestTemplateId { get; set; }
   }
 
   public class ConclaveSettingsVault

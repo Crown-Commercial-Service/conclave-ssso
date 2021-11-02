@@ -106,10 +106,10 @@ namespace CcsSso.Security.Services
         UserCreateRequest userCreateRequest = new UserCreateRequest
         {
           Email = userInfo.Email,
-          Password = UtilitiesHelper.GenerateRandomPassword(_appConfigInfo.PasswordPolicy),
+          Password = !string.IsNullOrEmpty(userInfo.Password) ? userInfo.Password : UtilitiesHelper.GenerateRandomPassword(_appConfigInfo.PasswordPolicy),
           FirstName = userInfo.FirstName,
           LastName = userInfo.LastName,
-          EmailVerified = false,
+          EmailVerified = !string.IsNullOrEmpty(userInfo.Password),
           UserMetadata = new
           {
             use_mfa = userInfo.MfaEnabled
@@ -122,7 +122,10 @@ namespace CcsSso.Security.Services
         {
           var result = await _managementApiClient.Users.CreateAsync(userCreateRequest);
 
-          await SendUserActivationEmailAsync(userInfo.Email, managementApiToken);
+          if (userInfo.SendUserRegistrationEmail)
+          {
+            await SendUserActivationEmailAsync(userInfo.Email, managementApiToken);
+          }
 
           return new UserRegisterResult()
           {
@@ -137,51 +140,15 @@ namespace CcsSso.Security.Services
         {
           throw new CcsSsoException("USERNAME_EXISTS");
         }
-        else
+        else if (e.ApiError.Error == "Bad Request")
         {
-          throw new CcsSsoException("USER_REGISTRATION_FAILED");
-        }
-      }
-    }
-
-    public async Task<UserRegisterResult> CreateUserAsync_migration(Domain.Dtos.UserInfo userInfo, string pwd)
-    {
-      try
-      {
-        UserCreateRequest userCreateRequest = new UserCreateRequest
-        {
-          Email = userInfo.Email,
-          //Password = UtilitiesHelper.GenerateRandomPassword(_appConfigInfo.PasswordPolicy),
-          Password = pwd,
-          FirstName = userInfo.FirstName,
-          LastName = userInfo.LastName,
-          EmailVerified = true,
-          UserMetadata = new
+          switch (e.ApiError.Message)
           {
-            use_mfa = userInfo.MfaEnabled
-          },
-          Connection = _appConfigInfo.Auth0ConfigurationInfo.DBConnectionName
-        };
-
-        var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
-        using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
-        {
-          var result = await _managementApiClient.Users.CreateAsync(userCreateRequest);
-
-          //await SendUserActivationEmailAsync(userInfo.Email, managementApiToken);
-
-          return new UserRegisterResult()
-          {
-            UserName = result.Email,
-            Id = result.UserId
-          };
-        }
-      }
-      catch (ErrorApiException e)
-      {
-        if (e.ApiError.Error == "Conflict")
-        {
-          throw new CcsSsoException("USERNAME_EXISTS");
+            case "PasswordStrengthError: Password is too weak":
+              throw new CcsSsoException("ERROR_PASSWORD_TOO_WEAK");
+            default:
+              throw new CcsSsoException("USER_REGISTRATION_FAILED");
+          }
         }
         else
         {
@@ -234,6 +201,11 @@ namespace CcsSso.Security.Services
           LastName = userInfo.LastName,
           Connection = _appConfigInfo.Auth0ConfigurationInfo.DBConnectionName
         };
+
+        if (!string.IsNullOrEmpty(userInfo.Password))
+        {
+          userUpdateRequest.Password = userInfo.Password;
+        }
 
         var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
         using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))

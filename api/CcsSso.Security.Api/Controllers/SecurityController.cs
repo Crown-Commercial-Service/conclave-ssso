@@ -176,6 +176,7 @@ namespace CcsSso.Security.Api.Controllers
     /// Code: ERROR_LASTNAME_REQUIRED (last name is required)
     /// Code: ERROR_EMAIL_REQUIRED (email is required)
     /// Code: ERROR_EMAIL_FORMAT (invaid email)
+    /// Code: ERROR_PASSWORD_TOO_WEAK (Password too weak)
     /// </response>
     /// <remarks>
     /// Sample request:
@@ -195,16 +196,6 @@ namespace CcsSso.Security.Api.Controllers
     public async Task<UserRegisterResult> Register(UserInfo userInfo)
     {
       var userRegisterResult = await _userManagerService.CreateUserAsync(userInfo);
-      return userRegisterResult;
-    }
-
-    [HttpPost("security/migration/register")]
-    [SwaggerOperation(Tags = new[] { "security/migration" })]
-    [ProducesResponseType(201)]
-    [ProducesResponseType(400)]
-    public async Task<UserRegisterResult> Register_migration(UserInfo userInfo, string pwd)
-    {
-      var userRegisterResult = await _userManagerService.CreateUserAsync_migration(userInfo, pwd);
       return userRegisterResult;
     }
 

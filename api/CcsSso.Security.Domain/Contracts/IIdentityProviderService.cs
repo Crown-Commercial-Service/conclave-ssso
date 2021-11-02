@@ -9,7 +9,7 @@ namespace CcsSso.Security.Domain.Contracts
     Task<AuthResultDto> AuthenticateAsync(string clientId, string secret, string userName, string userPassword);
 
     Task<UserRegisterResult> CreateUserAsync(UserInfo userInfo);
-    Task<UserRegisterResult> CreateUserAsync_migration(UserInfo userInfo, string pwd);
+
     Task UpdateUserAsync(UserInfo userInfo);
 
     Task UpdateUserMfaFlagAsync(Domain.Dtos.UserInfo userInfo);

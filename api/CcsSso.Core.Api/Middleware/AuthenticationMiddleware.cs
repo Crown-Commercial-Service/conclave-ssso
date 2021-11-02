@@ -22,7 +22,8 @@ namespace CcsSso.Core.Api.Middleware
     private List<string> allowedPaths = new List<string>()
     {
       "auth/backchannel-logout", "auth/refresh-tokens","auth/mfa-reset-notifications","auth/mfa-reset-by-tickets",
-      "organisations/registrations", "users/permissions", "users/nominees", "users/activation-emails", "cii/schemes", "cii/identifiers"
+      "organisations/registrations", "users/permissions", "users/nominees", "users/activation-emails", "cii/schemes", "cii/identifiers",
+      "organisations/orgs-by-name","cii/organisation-details","organisations/org-admin-join-notification"
     };
 
     private List<string> allowedPathsForXSRFValidation = new List<string>()
