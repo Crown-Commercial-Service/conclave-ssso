@@ -6,7 +6,7 @@ namespace CcsSso.Security.Domain.Contracts
   public interface IUserManagerService
   {
     Task<UserRegisterResult> CreateUserAsync(UserInfo userInfo);
-    Task<UserRegisterResult> CreateUserAsync_migration(UserInfo userInfo, string pwd);
+    
     Task UpdateUserAsync(UserInfo userInfo);
 
     Task UpdateUserMfaFlagAsync(UserInfo userInfo);

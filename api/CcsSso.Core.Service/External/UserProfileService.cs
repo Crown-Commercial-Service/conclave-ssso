@@ -9,7 +9,6 @@ using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Services.Helpers;
 using CcsSso.Shared.Cache.Contracts;
-using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
 using Microsoft.EntityFrameworkCore;
@@ -160,18 +159,7 @@ namespace CcsSso.Core.Service.External
 
       _dataContext.Party.Add(party);
 
-      await _dataContext.SaveChangesAsync();
-
-      // Log
-      await _auditLoginService.CreateLogAsync(AuditLogEvent.UserCreate, AuditLogApplication.ManageUserAccount, $"UserId:{party.User.Id}, UserIdpId:{party.User.OrganisationEligibleIdentityProviderId}," + " " +
-        $"UserGroupIds:{string.Join(",", party.User.UserGroupMemberships.Select(g => g.OrganisationUserGroupId))}," + " " +
-        $"UserRoleIds:{string.Join(",", party.User.UserAccessRoles.Select(r => r.OrganisationEligibleRoleId))}");
-
-      //Invalidate redis
-      await _wrapperCacheService.RemoveCacheAsync($"{CacheKeyConstant.OrganisationUsers}-{organisation.CiiOrganisationId}");
-
-      // Notify the adapter
-      await _adapterNotificationService.NotifyUserChangeAsync(OperationType.Create, userProfileRequestInfo.UserName, organisation.CiiOrganisationId);
+      await _dataContext.SaveChangesAsync();     
 
 
       if (isConclaveConnection)
@@ -179,6 +167,8 @@ namespace CcsSso.Core.Service.External
         SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
         {
           Email = userName,
+          Password = userProfileRequestInfo.Password,
+          SendUserRegistrationEmail = userProfileRequestInfo.SendUserRegistrationEmail,
           UserName = userName,
           FirstName = userProfileRequestInfo.FirstName,
           LastName = userProfileRequestInfo.LastName,
@@ -198,130 +188,11 @@ namespace CcsSso.Core.Service.External
           throw;
         }
       }
-      else
+      else if(userProfileRequestInfo.SendUserRegistrationEmail)
       {
         // Send the welcome email if not Idam user. (Idam users will recieve an email while registering)
         await _ccsSsoEmailService.SendUserWelcomeEmailAsync(party.User.UserName, eligibleIdentityProvider.IdentityProvider.IdpName);
       }
-
-      return new UserEditResponseInfo
-      {
-        UserId = party.User.UserName,
-        IsRegisteredInIdam = isRegisteredInIdam
-      };
-    }
-
-    public async Task<UserEditResponseInfo> CreateUserAsync_migration(UserProfileEditRequestInfo userProfileRequestInfo)
-    {
-      var isRegisteredInIdam = false;
-      var userName = userProfileRequestInfo.UserName.ToLower();
-      _userHelper.ValidateUserName(userName);
-
-      var organisation = await _dataContext.Organisation
-        .Include(o => o.UserGroups).ThenInclude(ge => ge.GroupEligibleRoles)
-        .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
-        .Include(o => o.OrganisationEligibleIdentityProviders)
-        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == userProfileRequestInfo.OrganisationId);
-      if (organisation == null)
-      {
-        throw new ResourceNotFoundException();
-      }
-
-      var user = await _dataContext.User
-        .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
-
-      if (user != null)
-      {
-        throw new ResourceAlreadyExistsException();
-      }
-
-      Validate(userProfileRequestInfo, false, organisation);
-
-      var eligibleIdentityProvider = await _dataContext.OrganisationEligibleIdentityProvider
-  .Include(x => x.IdentityProvider)
-  .FirstOrDefaultAsync(i => i.Id == userProfileRequestInfo.Detail.IdentityProviderId);
-
-      var isConclaveConnection = eligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName;
-      if (userProfileRequestInfo.MfaEnabled && !isConclaveConnection)
-      {
-        throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
-      }
-
-      //validate mfa and assign mfa if user is part of any admin role or group
-      if (!userProfileRequestInfo.MfaEnabled && isConclaveConnection)
-      {
-        var partOfAdminRole = organisation.OrganisationEligibleRoles.Any(r => userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(role => role == r.Id) && r.MfaEnabled);
-        if (partOfAdminRole)
-        {
-          throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
-        }
-        else
-        {
-          var partOfAdminGroup = organisation.UserGroups.Any(oug => userProfileRequestInfo.Detail.GroupIds != null && userProfileRequestInfo.Detail.GroupIds.Contains(oug.Id) && !oug.IsDeleted &&
-                              oug.GroupEligibleRoles.Any(er => !er.IsDeleted && er.OrganisationEligibleRole.MfaEnabled));
-          if (partOfAdminGroup)
-          {
-            throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
-          }
-        }
-      }
-
-
-      // Set user groups
-      var userGroupMemberships = new List<UserGroupMembership>();
-      userProfileRequestInfo.Detail.GroupIds?.ForEach((groupId) =>
-      {
-        userGroupMemberships.Add(new UserGroupMembership
-        {
-          OrganisationUserGroupId = groupId
-        });
-      });
-
-      // Set user roles
-      var userAccessRoles = new List<UserAccessRole>();
-      userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
-      {
-        userAccessRoles.Add(new UserAccessRole
-        {
-          OrganisationEligibleRoleId = roleId
-        });
-      });
-
-      // Set default user role if no role available
-      if (userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any())
-      {
-        var defaultUserRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.DefaultUserRoleNameKey).Id;
-        userAccessRoles.Add(new UserAccessRole
-        {
-          OrganisationEligibleRoleId = defaultUserRoleId
-        });
-      }
-
-      var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(p => p.PartyTypeName == PartyTypeName.User)).Id;
-
-      var party = new Party
-      {
-        PartyTypeId = partyTypeId,
-        Person = new Person
-        {
-          FirstName = userProfileRequestInfo.FirstName.Trim(),
-          LastName = userProfileRequestInfo.LastName.Trim(),
-          OrganisationId = organisation.Id
-        },
-        User = new User
-        {
-          UserName = userName,
-          UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified),
-          UserGroupMemberships = userGroupMemberships,
-          UserAccessRoles = userAccessRoles,
-          OrganisationEligibleIdentityProviderId = userProfileRequestInfo.Detail.IdentityProviderId,
-          MfaEnabled = userProfileRequestInfo.MfaEnabled
-        }
-      };
-
-      _dataContext.Party.Add(party);
-
-      await _dataContext.SaveChangesAsync();
 
       // Log
       await _auditLoginService.CreateLogAsync(AuditLogEvent.UserCreate, AuditLogApplication.ManageUserAccount, $"UserId:{party.User.Id}, UserIdpId:{party.User.OrganisationEligibleIdentityProviderId}," + " " +
@@ -334,43 +205,13 @@ namespace CcsSso.Core.Service.External
       // Notify the adapter
       await _adapterNotificationService.NotifyUserChangeAsync(OperationType.Create, userProfileRequestInfo.UserName, organisation.CiiOrganisationId);
 
-
-      if (isConclaveConnection)
-      {
-        SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
-        {
-          Email = userName,
-          UserName = userName,
-          FirstName = userProfileRequestInfo.FirstName,
-          LastName = userProfileRequestInfo.LastName,
-          MfaEnabled = userProfileRequestInfo.MfaEnabled
-        };
-
-        try
-        {
-          //await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
-          isRegisteredInIdam = true;
-        }
-        catch (Exception)
-        {
-          // If Idam registration failed, remove the user record in DB
-          _dataContext.Party.Remove(party);
-          await _dataContext.SaveChangesAsync();
-          throw;
-        }
-      }
-      else
-      {
-        // Send the welcome email if not Idam user. (Idam users will recieve an email while registering)
-        await _ccsSsoEmailService.SendUserWelcomeEmailAsync(party.User.UserName, eligibleIdentityProvider.IdentityProvider.IdpName);
-      }
-
       return new UserEditResponseInfo
       {
         UserId = party.User.UserName,
         IsRegisteredInIdam = isRegisteredInIdam
       };
     }
+
     public async Task<UserProfileResponseInfo> GetUserAsync(string userName)
     {
       _userHelper.ValidateUserName(userName);
