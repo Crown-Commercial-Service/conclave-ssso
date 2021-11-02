@@ -10,7 +10,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web;
+using Microsoft.EntityFrameworkCore;
+using CcsSso.Shared.Services;
 
 namespace CcsSso.Service
 {
@@ -24,12 +25,14 @@ namespace CcsSso.Service
     private readonly CiiConfig _config;
     private readonly IAuditLoginService _auditLoginService;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IDataContext _dataContext;
 
-    public CiiService(CiiConfig config, IAuditLoginService auditLoginService, IHttpClientFactory httpClientFactory)
+    public CiiService(CiiConfig config, IAuditLoginService auditLoginService, IHttpClientFactory httpClientFactory, IDataContext dataContext)
     {
       _config = config;
       _auditLoginService = auditLoginService;
       _httpClientFactory = httpClientFactory;
+      _dataContext = dataContext;
     }
 
     /// <summary>
@@ -185,7 +188,7 @@ namespace CcsSso.Service
       {
         if (!string.IsNullOrEmpty(token))
         {
-          client.DefaultRequestHeaders.Add("Authorization", token); 
+          client.DefaultRequestHeaders.Add("Authorization", token);
         }
         url += "/all";
       }
@@ -193,8 +196,21 @@ namespace CcsSso.Service
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
-        var result = JsonConvert.DeserializeObject<CiiDto>(content);
-        return result;
+        var ciiInfo = JsonConvert.DeserializeObject<CiiDto>(content);
+
+        var orgDetails = await GetOrgDetails(ciiOrganisationId);
+        if (orgDetails != null && orgDetails.Address != null)
+        {
+          ciiInfo.Address = new CiiAddress()
+          {
+            CountryName = CultureSupport.GetCountryNameByCode(orgDetails.Address.CountryCode),
+            PostalCode = orgDetails.Address.PostalCode,
+            Region = orgDetails.Address.Region,
+            StreetAddress = orgDetails.Address.StreetAddress,
+            Locality = orgDetails.Address.Locality
+          };
+        }
+        return ciiInfo;
       }
       else if (response.StatusCode == HttpStatusCode.NotFound)
       {
@@ -260,6 +276,39 @@ namespace CcsSso.Service
       {
         throw new CcsSsoException("ERROR_CREATING_ORGANISATION");
       }
+    }
+
+    private async Task<OrganisationDto> GetOrgDetails(string id)
+    {
+      var organisation = await _dataContext.Organisation
+        .Where(x => x.CiiOrganisationId == id && x.IsDeleted == false)
+        .FirstOrDefaultAsync();
+      if (organisation != null)
+      {
+        var orgInfo = new OrganisationDto();
+        var contactPoint = await _dataContext.ContactPoint
+          .Include(c => c.ContactDetail)
+          .ThenInclude(c => c.PhysicalAddress)
+        .Where(x => x.PartyId == organisation.PartyId)
+        .FirstOrDefaultAsync();
+
+        var physicalAddress = contactPoint?.ContactDetail?.PhysicalAddress;
+
+        if (physicalAddress != null)
+        {
+          orgInfo.Address = new Address
+          {
+            StreetAddress = physicalAddress.StreetAddress,
+            Region = physicalAddress.Region,
+            PostalCode = physicalAddress.PostalCode,
+            Locality = physicalAddress.Locality,
+            CountryCode = physicalAddress.CountryCode,
+            Uprn = physicalAddress.Uprn,
+          };
+        }
+        return orgInfo;
+      }
+      return null;
     }
 
   }

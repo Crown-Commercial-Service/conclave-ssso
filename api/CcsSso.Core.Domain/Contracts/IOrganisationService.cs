@@ -13,8 +13,12 @@ namespace CcsSso.Domain.Contracts
 
     Task<OrganisationDto> GetAsync(string id);
 
+    Task<List<OrganisationDto>> GetByNameAsync(string name);
+
     Task<OrganisationListResponse> GetAllAsync(string orgName, ResultSetCriteria resultSetCriteria);
 
     Task<OrganisationUserListResponse> GetUsersAsync(string name, ResultSetCriteria resultSetCriteria);
+
+    Task NotifyOrgAdminToJoinAsync(OrganisationJoinRequest organisationJoinRequest);
   }
 }

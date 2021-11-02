@@ -63,6 +63,10 @@ namespace CcsSso.Core.Service
         {
           throw new ResourceAlreadyExistsException();
         }
+        else if (responseContent == "ERROR_PASSWORD_TOO_WEAK")
+        {
+          throw new CcsSsoException("ERROR_PASSWORD_TOO_WEAK");
+        }
         else
         {
           throw new CcsSsoException("ERROR_IDAM_REGISTRATION_FAILED");

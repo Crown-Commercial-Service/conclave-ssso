@@ -30,9 +30,12 @@ namespace CcsSso.Service
     private readonly IOrganisationContactService _organisationContactService;
     private readonly RequestContext _requestContext;
     private readonly ILogger<OrganisationService> _logger;
+    private readonly ICcsSsoEmailService _ccsSsoEmailService;
+
     public OrganisationService(IDataContext dataContext, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ICiiService ciiService, IOrganisationProfileService organisationProfileService,
-      IUserProfileService userProfileService, IOrganisationContactService organisationContactService, RequestContext requestContext, ILogger<OrganisationService> logger)
+      IUserProfileService userProfileService, IOrganisationContactService organisationContactService,
+      RequestContext requestContext, ILogger<OrganisationService> logger, ICcsSsoEmailService ccsSsoEmailService)
     {
       _dataContext = dataContext;
       _adapterNotificationService = adapterNotificationService;
@@ -43,6 +46,7 @@ namespace CcsSso.Service
       _organisationContactService = organisationContactService;
       _requestContext = requestContext;
       _logger = logger;
+      _ccsSsoEmailService = ccsSsoEmailService;
     }
 
     /// <summary>
@@ -103,6 +107,23 @@ namespace CcsSso.Service
       organisation.OrganisationEligibleIdentityProviders.ForEach(oeip => oeip.IsDeleted = true);
 
       await _dataContext.SaveChangesAsync();
+    }
+
+    public async Task<List<OrganisationDto>> GetByNameAsync(string name)
+    {
+      var organisations = await _dataContext.Organisation
+        .Where(o => o.IsDeleted == false && o.LegalName.ToLower() == name.ToLower())
+        .Select(organisation => new OrganisationDto
+        {
+          OrganisationId = organisation.Id,
+          CiiOrganisationId = organisation.CiiOrganisationId,
+          OrganisationUri = organisation.OrganisationUri,
+          RightToBuy = organisation.RightToBuy,
+          PartyId = organisation.PartyId,
+          LegalName = organisation.LegalName,
+        }).OrderBy(o => o.LegalName).ToListAsync();
+
+      return organisations;
     }
 
 
@@ -183,6 +204,49 @@ namespace CcsSso.Service
       };
 
       return orgListResponse;
+    }
+
+    public async Task NotifyOrgAdminToJoinAsync(OrganisationJoinRequest organisationJoinRequest)
+    {
+      if (string.IsNullOrEmpty(organisationJoinRequest.FirstName))
+      {
+        throw new CcsSsoException("FIRST_NAME_REQUIRED");
+      }
+
+      if (string.IsNullOrEmpty(organisationJoinRequest.LastName))
+      {
+        throw new CcsSsoException("LAST_NAME_REQUIRED");
+      }
+
+      if (string.IsNullOrEmpty(organisationJoinRequest.CiiOrgId))
+      {
+        throw new CcsSsoException("ORGANIZATION_ID_REQUIRED");
+      }
+
+      var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
+       .FirstOrDefaultAsync(or => !or.IsDeleted && or.Organisation.CiiOrganisationId == organisationJoinRequest.CiiOrgId &&
+       or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+
+      var orgAdmins = await _dataContext.User.Where(u => !u.IsDeleted
+       && u.Party.Person.Organisation.CiiOrganisationId == organisationJoinRequest.CiiOrgId
+       && (u.UserGroupMemberships.Any(ugm => !ugm.IsDeleted
+       && ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ga => !ga.IsDeleted && ga.OrganisationEligibleRoleId == orgAdminAccessRoleId))
+       || u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId)))
+      .Select(u => new
+      {
+        Email = u.UserName
+      }).ToListAsync();
+
+      foreach (var orgAdmin in orgAdmins)
+      {
+        await _ccsSsoEmailService.SendOrgJoinRequestEmailAsync(new Core.Domain.Dtos.OrgJoinNotificationInfo()
+        {
+          Email = organisationJoinRequest.Email,
+          FirstName = organisationJoinRequest.FirstName,
+          LastName = organisationJoinRequest.LastName,
+          ToEmail = orgAdmin.Email
+        });
+      }
     }
 
     public async Task<OrganisationUserListResponse> GetUsersAsync(string name, ResultSetCriteria resultSetCriteria)

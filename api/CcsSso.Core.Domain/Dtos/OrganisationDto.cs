@@ -80,4 +80,15 @@ namespace CcsSso.Dtos.Domain.Models
   {
     public List<OrganisationDto> OrgList { get; set; }
   }
+
+  public class OrganisationJoinRequest
+  {
+    public string FirstName { get; set; }
+
+    public string LastName { get; set; }
+
+    public string Email { get; set; }
+
+    public string CiiOrgId { get; set; }
+  }
 }
