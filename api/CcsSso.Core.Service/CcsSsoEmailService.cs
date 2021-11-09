@@ -1,4 +1,5 @@
 using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Dtos;
 using CcsSso.Domain.Dtos;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
@@ -89,6 +90,24 @@ namespace CcsSso.Core.Service
         };
         await _emaillProviderService.SendEmailAsync(emailInfo);
       }
+    }
+
+    public async Task SendOrgJoinRequestEmailAsync(OrgJoinNotificationInfo orgJoinNotificationInfo)
+    {
+      var data = new Dictionary<string, dynamic>
+      {
+        { "firstname", orgJoinNotificationInfo.FirstName },
+        { "lastname", orgJoinNotificationInfo.LastName },
+        { "email", orgJoinNotificationInfo.Email },
+        { "conclaveloginlink", _appConfigInfo.ConclaveSettings.BaseUrl }
+      };
+      var emailInfo = new EmailInfo()
+      {
+        To = orgJoinNotificationInfo.ToEmail,
+        TemplateId = _appConfigInfo.EmailInfo.OrganisationJoinRequestTemplateId,
+        BodyContent = data
+      };
+      await _emaillProviderService.SendEmailAsync(emailInfo);
     }
 
     public async Task SendUserPermissionUpdateEmailAsync(string email)

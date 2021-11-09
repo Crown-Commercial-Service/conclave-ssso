@@ -1,3 +1,4 @@
+using CcsSso.Core.Domain.Dtos;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Contracts
@@ -15,5 +16,7 @@ namespace CcsSso.Core.Domain.Contracts
     Task SendUserContactUpdateEmailAsync(string email);
 
     Task SendUserPermissionUpdateEmailAsync(string email);
+
+    Task SendOrgJoinRequestEmailAsync(OrgJoinNotificationInfo orgJoinNotificationInfo);
   }
 }

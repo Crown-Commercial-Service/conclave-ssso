@@ -84,6 +84,7 @@ namespace CcsSso.Api
           EmailInfo = new CcsEmailInfo
           {
             NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
+            OrganisationJoinRequestTemplateId = Configuration["Email:OrganisationJoinRequestTemplateId"]
           },
           ConclaveSettings = new ConclaveSettings()
           {

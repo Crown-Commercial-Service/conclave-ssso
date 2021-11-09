@@ -21,6 +21,10 @@ namespace CcsSso.Core.Domain.Dtos.External
     public UserTitle? Title { get; set; }
 
     public bool MfaEnabled { get; set; }
+
+    public string Password { get; set; }
+
+    public bool SendUserRegistrationEmail { get; set; } = true;
   }
 
   public class UserRequestDetail
