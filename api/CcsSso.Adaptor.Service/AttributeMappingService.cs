@@ -223,6 +223,36 @@ namespace CcsSso.Adaptor.Service
     /// <param name="user"></param>
     /// <param name="attributeMappings"></param>
     /// <returns></returns>
+    public Dictionary<string, object> GetMappedIdentityProviders(WrapperUserResponse user, Dictionary<string, string> attributeMappings)
+    {
+      Dictionary<string, object> resultDictionary = new Dictionary<string, object>();
+
+      var identityProviderInfo = user.Detail?.IdentityProviders;
+
+      if (identityProviderInfo != null)
+      {
+        identityProviderInfo = identityProviderInfo.OrderBy(i => i.IdentityProviderId).ToList();
+        if (attributeMappings.ContainsKey("Detail.IdentityProviders.IdentityProviderId")) // Get idp ids
+        {
+          var mappedUserRoles = identityProviderInfo.Select(i => i.IdentityProviderId).ToList();
+          resultDictionary.Add(attributeMappings["Detail.IdentityProviders.IdentityProviderId"], mappedUserRoles);
+        }
+        if (attributeMappings.ContainsKey("Detail.IdentityProviders.IdentityProviderDisplayName")) // Get idp names
+        {
+          var mappedUserRoles = identityProviderInfo.Select(i => i.IdentityProviderDisplayName).ToList();
+          resultDictionary.Add(attributeMappings["Detail.IdentityProviders.IdentityProviderDisplayName"], mappedUserRoles);
+        }
+      }
+
+      return resultDictionary;
+    }
+
+    /// <summary>
+    /// Get mapped user roles
+    /// </summary>
+    /// <param name="user"></param>
+    /// <param name="attributeMappings"></param>
+    /// <returns></returns>
     public Dictionary<string, object> GetMappedUserRoles(WrapperUserResponse user, Dictionary<string, string> attributeMappings)
     {
       Dictionary<string, object> resultDictionary = new Dictionary<string, object>();

@@ -1,4 +1,5 @@
 using CcsSso.DbModel.Entity;
+using System.Collections.Generic;
 
 namespace CcsSso.Core.DbModel.Entity
 {
@@ -15,5 +16,7 @@ namespace CcsSso.Core.DbModel.Entity
     public int CcsAccessRoleId { get; set; }
 
     public bool MfaEnabled { get; set; }
+
+    public List<ExternalServiceRoleMapping> ExternalServiceRoleMappings { get; set; }
   }
 }

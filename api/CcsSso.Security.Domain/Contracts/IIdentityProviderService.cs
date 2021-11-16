@@ -20,6 +20,8 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string clientSecret, string refreshToken, string sid);
 
+    Task<TokenResponseInfo> GetMachineTokenAsync(string clientId, string clientSecret, string audience);
+
     Task<TokenResponseInfo> GetTokensAsync(TokenRequestInfo tokenRequestInfo, string sid);
 
     Task RevokeTokenAsync(string refreshToken);

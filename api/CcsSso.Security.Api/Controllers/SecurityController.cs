@@ -133,14 +133,22 @@ namespace CcsSso.Security.Api.Controllers
         GrantType = tokenRequest.GrantType,
         RedirectUrl = tokenRequest.RedirectUrl,
         RefreshToken = tokenRequest.RefreshToken,
-        State = tokenRequest.State
+        State = tokenRequest.State,
+        Audience = tokenRequest.Audience
       };
       // Sessions are handled in two places for a user and they are as Auth0 & Security api (aka CCS-SSO session cookie).
       // Auth0 session is given the highest priority as it used to generate tokens. Hence, CCS-SSO session will be
       // extented for valid Auth0 sessions.
-      var (sid, opbsValue) = await GenerateCookiesAsync(tokenRequestInfo.ClientId, tokenRequestInfo.State);
-      var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
-      var host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
+      var host = string.Empty;
+      string sid = string.Empty;
+      string opbsValue = string.Empty;
+
+      if (tokenRequest.GrantType != "client_credentials")
+      {
+        (sid, opbsValue) = await GenerateCookiesAsync(tokenRequestInfo.ClientId, tokenRequestInfo.State);
+        var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
+        host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
+      }
       var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
       return idToken;
     }
@@ -323,7 +331,7 @@ namespace CcsSso.Security.Api.Controllers
     [SwaggerOperation(Tags = new[] { "security" })]
     [ProducesResponseType(302)]
     [ProducesResponseType(401)]
-    public async Task<IActionResult> LogOut([FromQuery(Name ="client-id")]string clientId, [FromQuery(Name = "redirect-uri")]string redirecturi)
+    public async Task<IActionResult> LogOut([FromQuery(Name = "client-id")] string clientId, [FromQuery(Name = "redirect-uri")] string redirecturi)
     {
       var url = await _securityService.LogoutAsync(clientId, redirecturi);
       if (Request.Cookies.ContainsKey("opbs"))
@@ -370,7 +378,7 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
-    public bool ValidateToken([FromQuery(Name = "client-id")]string clientId)
+    public bool ValidateToken([FromQuery(Name = "client-id")] string clientId)
     {
       if (Request.Headers.ContainsKey("Authorization"))
       {

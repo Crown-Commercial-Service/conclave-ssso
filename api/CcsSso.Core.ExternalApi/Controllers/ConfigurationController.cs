@@ -52,5 +52,12 @@ namespace CcsSso.Core.ExternalApi.Controllers
     {
       return await _configurationDetailService.GetCcsServicesAsync();
     }
+
+    [HttpGet("services/{clientId}")]
+    [SwaggerOperation(Tags = new[] { "Configuration" })]
+    public async Task<ServiceProfile> GetServiceProfile(string clientId, [FromQuery(Name = "organisation-id")]string organisationId)
+    {
+      return await _configurationDetailService.GetServiceProfieAsync(clientId, organisationId);
+    }
   }
 }

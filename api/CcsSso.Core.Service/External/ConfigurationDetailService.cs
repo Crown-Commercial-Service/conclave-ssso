@@ -2,6 +2,8 @@ using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
+using CcsSso.Domain.Dtos;
+using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Cache.Contracts;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,10 +17,12 @@ namespace CcsSso.Core.Service.External
   {
     private readonly IDataContext _dataContext;
     private ILocalCacheService _localCacheService;
-    public ConfigurationDetailService(IDataContext dataContext, ILocalCacheService localCacheService)
+    private ApplicationConfigurationInfo _applicationConfigurationInfo;
+    public ConfigurationDetailService(IDataContext dataContext, ILocalCacheService localCacheService, ApplicationConfigurationInfo applicationConfigurationInfo)
     {
       _dataContext = dataContext;
       _localCacheService = localCacheService;
+      _applicationConfigurationInfo = applicationConfigurationInfo;
     }
     public async Task<List<IdentityProviderDetail>> GetIdentityProvidersAsync()
     {
@@ -41,7 +45,7 @@ namespace CcsSso.Core.Service.External
                           {
                             RoleId = i.Id,
                             RoleName = i.CcsAccessRoleName,
-                            RoleKey= i.CcsAccessRoleNameKey,
+                            RoleKey = i.CcsAccessRoleNameKey,
                             ServiceName = i.ServiceRolePermissions.FirstOrDefault().ServicePermission.CcsService.ServiceName,
                             OrgTypeEligibility = i.OrgTypeEligibility,
                             SubscriptionTypeEligibility = i.SubscriptionTypeEligibility,
@@ -69,6 +73,50 @@ namespace CcsSso.Core.Service.External
         _localCacheService.SetValue(CacheKeys.CcsServices, ccsServices, new TimeSpan(0, 0, 10));
       }
       return ccsServices;
+    }
+
+    public async Task<ServiceProfile> GetServiceProfieAsync(string clientId, string organisationId)
+    {
+      var service = await _dataContext.CcsService.Where(s => s.ServiceClientId == clientId)
+       .Include(s => s.ExternalServiceRoleMappings).ThenInclude(exrm => exrm.OrganisationEligibleRole).ThenInclude(oer => oer.Organisation)
+       .Include(s => s.ExternalServiceRoleMappings).ThenInclude(exrm => exrm.OrganisationEligibleRole).ThenInclude(oer => oer.CcsAccessRole)
+       .FirstOrDefaultAsync();
+
+      if (service == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+
+      ServiceProfile serviceProfile = new();
+
+      if (service.GlobalLevelOrganisationAccess)
+      {
+        serviceProfile = new ServiceProfile
+        {
+          Audience = _applicationConfigurationInfo.DashboardServiceClientId,
+          ServiceId = service.Id,
+          RoleKeys = _applicationConfigurationInfo.ServiceDefaultRoleInfo.GlobalServiceDefaultRoles
+        };
+      }
+      else
+      {
+        serviceProfile = new ServiceProfile
+        {
+          Audience = _applicationConfigurationInfo.DashboardServiceClientId,
+          ServiceId = service.Id,
+          RoleKeys = service.ExternalServiceRoleMappings.Where(exrm => exrm.OrganisationEligibleRole.Organisation.CiiOrganisationId == organisationId)
+            .Select(exrm => exrm.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey).ToList()
+        };
+      }
+
+      return serviceProfile;
+    }
+
+    public async Task<int> GetDashboardServiceIdAsync()
+    {
+      var serviceId = await _localCacheService.GetOrSetValueAsync<int>(CacheKeys.DashboardServiceId, async () => (await _dataContext.CcsService
+        .FirstOrDefaultAsync(s => s.ServiceClientId == _applicationConfigurationInfo.DashboardServiceClientId)).Id);
+      return serviceId;
     }
   }
 }

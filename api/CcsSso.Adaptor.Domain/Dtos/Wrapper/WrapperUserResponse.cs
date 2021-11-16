@@ -26,17 +26,20 @@ namespace CcsSso.Adaptor.Domain.Dtos.Wrapper
   {
     public int Id { get; set; }
 
-    public int IdentityProviderId { get; set; }
-
-    public string IdentityProvider { get; set; }
-
-    public string IdentityProviderDisplayName { get; set; }
+    public List<UserIdentityProvider> IdentityProviders { get; set; }
 
     public List<GroupAccessRole> UserGroups { get; set; }
 
     public bool CanChangePassword { get; set; }
 
     public List<RolePermissionInfo> RolePermissionInfo { get; set; }
+  }
+
+  public class UserIdentityProvider
+  {
+    public int IdentityProviderId { get; set; }
+
+    public string IdentityProviderDisplayName { get; set; }
   }
 
   public class RolePermissionInfo
@@ -82,7 +85,7 @@ namespace CcsSso.Adaptor.Domain.Dtos.Wrapper
 
     public List<int> RoleIds { get; set; }
 
-    public int IdentityProviderId { get; set; }
+    public List<int> IdentityProviderIds { get; set; }
   }
 
   public class WrapperUserEditResponseInfo

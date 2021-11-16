@@ -113,12 +113,12 @@ namespace CcsSso.Security.Api.CustomOptions
       }
 
       // Keep the trailing "/" for all the urls. Ex: "https://abc.com/user-profiles/"
-      if (_secrets.Data.ContainsKey("UserExternalApiDetails"))
+      if (_secrets.Data.ContainsKey("WrapperApi"))
       {
-        var userExternalApiDetailsVault = JsonConvert.DeserializeObject<UserExternalApiDetailsVault>(_secrets.Data["UserExternalApiDetails"].ToString());
-        Data.Add("UserExternalApiDetails:ApiKey", userExternalApiDetailsVault.ApiKey);
-        Data.Add("UserExternalApiDetails:ApiGatewayEnabledUrl", userExternalApiDetailsVault.ApiGatewayEnabledUrl);
-        Data.Add("UserExternalApiDetails:ApiGatewayDisabledUrl", userExternalApiDetailsVault.ApiGatewayDisabledUrl);
+        var wrapperApiVault = JsonConvert.DeserializeObject<WrapperApiVault>(_secrets.Data["WrapperApi"].ToString());
+        Data.Add("WrapperApi:ApiKey", wrapperApiVault.ApiKey);
+        Data.Add("WrapperApi:UserServiceUrl", wrapperApiVault.UserServiceUrl);
+        Data.Add("WrapperApi:ConfigurationServiceUrl", wrapperApiVault.ConfigurationServiceUrl);
       }
 
       if (_secrets.Data.ContainsKey("RollBarLogger"))
@@ -159,6 +159,8 @@ namespace CcsSso.Security.Api.CustomOptions
       Data.Add("Auth0:DBConnectionName", _auth0.DBConnectionName);
       Data.Add("Auth0:ManagementApiBaseUrl", _auth0.ManagementApiBaseUrl);
       Data.Add("Auth0:ManagementApiIdentifier", _auth0.ManagementApiIdentifier);
+      Data.Add("Auth0:DefaultAudience", _auth0.DefaultAudience);
+
       Data.Add("Auth0:UserStore", _auth0.UserStore);
       Data.Add("Auth0:DefaultDBConnectionId", _auth0.DefaultDBConnectionId);
       Data.Add("AWSCognito:Region", _awsCognito.Region);
@@ -207,6 +209,7 @@ namespace CcsSso.Security.Api.CustomOptions
     public string ManagementApiIdentifier { get; set; }
     public string UserStore { get; set; }
     public string DefaultDBConnectionId { get; set; }
+    public string DefaultAudience { get; set; }
   }
 
   public class AWSCognito
@@ -264,13 +267,13 @@ namespace CcsSso.Security.Api.CustomOptions
     public string StateExpirationInMinutes { get; set; }
   }
 
-  public class UserExternalApiDetailsVault
+  public class WrapperApiVault
   {
     public string ApiKey { get; set; }
 
-    public string ApiGatewayEnabledUrl { get; set; }
+    public string UserServiceUrl { get; set; }
 
-    public string ApiGatewayDisabledUrl { get; set; }
+    public string ConfigurationServiceUrl { get; set; }
   }
 
   public class PasswordPolicyVault

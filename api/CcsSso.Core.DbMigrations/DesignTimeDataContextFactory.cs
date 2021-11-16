@@ -1,5 +1,6 @@
 using CcsSso.DbPersistence;
 using CcsSso.Shared.Domain.Contexts;
+using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -21,7 +22,7 @@ namespace CcsSso.DbMigrations
         o.MigrationsAssembly(typeof(DesignTimeDataContextFactory).Assembly.FullName);
       });
 
-      var context = new DataContext(optionsBuilder.Options, new RequestContext { UserId = 0 });
+      var context = new DataContext(optionsBuilder.Options, new RequestContext { UserId = 0 }, new DateTimeService());
 
       return context;
     }

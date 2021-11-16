@@ -156,7 +156,8 @@ namespace CcsSso.Tests
         // User 1
         dataContext.Party.Add(new Party { Id = 3, PartyTypeId = 3 });
         dataContext.Person.Add(new Person { Id = 1, PartyId = 3, OrganisationId = 1, FirstName = "UserFN1", LastName = "UserLN1" });
-        dataContext.User.Add(new User { Id = 1, OrganisationEligibleIdentityProviderId = 1, PartyId = 3, UserName = "user1@mail.com" });
+        dataContext.User.Add(new User { Id = 1, PartyId = 3, UserName = "user1@mail.com" });
+        dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 1, UserId = 1, OrganisationEligibleIdentityProviderId = 1 });
         dataContext.UserGroupMembership.Add(new UserGroupMembership { Id = 1, UserId = 1, OrganisationUserGroupId = 1 });
         dataContext.UserGroupMembership.Add(new UserGroupMembership { Id = 2, UserId = 1, OrganisationUserGroupId = 2 });
         #endregion
@@ -165,7 +166,8 @@ namespace CcsSso.Tests
         // User 2 
         dataContext.Party.Add(new Party { Id = 6, PartyTypeId = 3 });
         dataContext.Person.Add(new Person { Id = 4, PartyId = 6, OrganisationId = 1, FirstName = "UserFN2", LastName = "UserLN2" });
-        dataContext.User.Add(new User { Id = 2, OrganisationEligibleIdentityProviderId = 2, PartyId = 6, UserName = "user2@mail.com" });
+        dataContext.User.Add(new User { Id = 2, PartyId = 6, UserName = "user2@mail.com" });
+        dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 2, UserId = 2, OrganisationEligibleIdentityProviderId = 2 });
         dataContext.UserGroupMembership.Add(new UserGroupMembership { Id = 3, UserId = 2, OrganisationUserGroupId = 3 });
         dataContext.UserGroupMembership.Add(new UserGroupMembership { Id = 4, UserId = 2, OrganisationUserGroupId = 1, IsDeleted = true });
         #endregion
@@ -174,14 +176,16 @@ namespace CcsSso.Tests
         // User 3 No group assigned might be invalid scenario
         dataContext.Party.Add(new Party { Id = 8, PartyTypeId = 3 });
         dataContext.Person.Add(new Person { Id = 6, PartyId = 8, OrganisationId = 1, FirstName = "UserFN3", LastName = "UserLN3" });
-        dataContext.User.Add(new User { Id = 3, OrganisationEligibleIdentityProviderId = 1, PartyId = 8, UserName = "user3@mail.com" });
+        dataContext.User.Add(new User { Id = 3, PartyId = 8, UserName = "user3@mail.com" });
+        dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 3, UserId = 3, OrganisationEligibleIdentityProviderId = 1 });
         #endregion
 
         #region User 4 deleted
         // User 4
         dataContext.Party.Add(new Party { Id = 9, PartyTypeId = 3, IsDeleted = true });
         dataContext.Person.Add(new Person { Id = 7, PartyId = 9, OrganisationId = 1, FirstName = "UserFN4", LastName = "UserLN4", IsDeleted = true });
-        dataContext.User.Add(new User { Id = 4, OrganisationEligibleIdentityProviderId = 1, PartyId = 9, UserName = "user4@mail.com", IsDeleted = true });
+        dataContext.User.Add(new User { Id = 4, PartyId = 9, UserName = "user4@mail.com", IsDeleted = true });
+        dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 4, UserId = 4, OrganisationEligibleIdentityProviderId = 1 });
         #endregion
         #endregion
 
@@ -190,7 +194,9 @@ namespace CcsSso.Tests
         // User 5
         dataContext.Party.Add(new Party { Id = 10, PartyTypeId = 3 });
         dataContext.Person.Add(new Person { Id = 8, PartyId = 10, OrganisationId = 2, FirstName = "UserFN5", LastName = "UserLN5" });
-        dataContext.User.Add(new User { Id = 5, OrganisationEligibleIdentityProviderId = 1, PartyId = 10, UserName = "user5@mail.com" });
+        dataContext.User.Add(new User { Id = 5, PartyId = 10, UserName = "user5@mail.com" });
+        dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 5, UserId = 5, OrganisationEligibleIdentityProviderId = 4 });
+
         dataContext.UserGroupMembership.Add(new UserGroupMembership { Id = 5, UserId = 5, OrganisationUserGroupId = 4 });
         dataContext.UserGroupMembership.Add(new UserGroupMembership { Id = 6, UserId = 5, OrganisationUserGroupId = 5 });
         #endregion
@@ -198,7 +204,9 @@ namespace CcsSso.Tests
         // User 6
         dataContext.Party.Add(new Party { Id = 11, PartyTypeId = 3 });
         dataContext.Person.Add(new Person { Id = 9, PartyId = 11, OrganisationId = 2, FirstName = "UserFN6", LastName = "UserLN6" });
-        dataContext.User.Add(new User { Id = 6, OrganisationEligibleIdentityProviderId = 1, PartyId = 11, UserName = "user6@mail.com" });
+        dataContext.User.Add(new User { Id = 6, PartyId = 11, UserName = "user6@mail.com" });
+        dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 6, UserId = 6, OrganisationEligibleIdentityProviderId = 4 });
+
         dataContext.UserGroupMembership.Add(new UserGroupMembership { Id = 7, UserId = 6, OrganisationUserGroupId = 4 });
         #endregion
         #endregion

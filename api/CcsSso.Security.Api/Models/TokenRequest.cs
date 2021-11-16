@@ -19,6 +19,9 @@ namespace CcsSso.Security.Api.Models
     [BindProperty(Name = "client_id")]
     public string ClientId { get; set; }
 
+    [BindProperty(Name = "audience")]
+    public string Audience { get; set; }
+
     [BindProperty(Name = "code_verifier")]
     public string CodeVerifier { get; set; }
 

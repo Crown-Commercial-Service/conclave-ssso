@@ -1,3 +1,4 @@
+using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Domain.Dtos;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Contracts;
@@ -19,6 +20,7 @@ namespace CcsSso.Core.Api.Middleware
     private readonly ITokenService _tokenService;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private readonly IRemoteCacheService _remoteCacheService;
+
     private List<string> allowedPaths = new List<string>()
     {
       "auth/backchannel-logout", "auth/refresh-tokens","auth/mfa-reset-notifications","auth/mfa-reset-by-tickets",
@@ -40,11 +42,13 @@ namespace CcsSso.Core.Api.Middleware
       _remoteCacheService = remoteCacheService;
     }
 
-    public async Task Invoke(HttpContext context, RequestContext requestContext)
+    public async Task Invoke(HttpContext context, RequestContext requestContext, IConfigurationDetailService configurationDetailService)
     {
       var path = context.Request.Path.Value.TrimStart('/').TrimEnd('/');
       requestContext.IpAddress = context.GetRemoteIPAddress();
       requestContext.Device = context.Request.Headers["User-Agent"];
+      var serviceId = await configurationDetailService.GetDashboardServiceIdAsync();
+      requestContext.ServiceId = serviceId;
 
       if (allowedPaths.Contains(path))
       {
@@ -74,7 +78,7 @@ namespace CcsSso.Core.Api.Middleware
           var token = bearerToken.Split(' ').Last();
           var result = await _tokenService.ValidateTokenAsync(token, _applicationConfigurationInfo.JwtTokenValidationInfo.JwksUrl,
             _applicationConfigurationInfo.JwtTokenValidationInfo.IdamClienId, _applicationConfigurationInfo.JwtTokenValidationInfo.Issuer,
-            new List<string>() { "uid", "ciiOrgId", "sub", JwtRegisteredClaimNames.Jti, JwtRegisteredClaimNames.Exp, "roles" });
+            new List<string>() { "uid", "ciiOrgId", "sub", JwtRegisteredClaimNames.Jti, JwtRegisteredClaimNames.Exp, "roles", "caller" });
 
           if (result.IsValid)
           {
@@ -115,8 +119,8 @@ namespace CcsSso.Core.Api.Middleware
             }
 
             requestContext.UserId = int.Parse(userId);
-            requestContext.CiiOrganisationId = ciiOrgId;
             requestContext.UserName = sub;
+            requestContext.CiiOrganisationId = ciiOrgId;
             requestContext.Roles = result.ClaimValues["roles"].Split(",").ToList();
             await _next(context);
           }

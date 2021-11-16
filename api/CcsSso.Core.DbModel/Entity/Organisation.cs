@@ -28,6 +28,11 @@ namespace CcsSso.DbModel.Entity
     [ForeignKey("PartyId")]
     public int PartyId { get; set; }
 
+    public CcsService CcsService { get; set; }
+
+    [ForeignKey("CcsServiceId")]
+    public int? CcsServiceId { get; set; }
+
     // TODO - Not clear
     //public int ParentOrganisationId { get; set; }
 

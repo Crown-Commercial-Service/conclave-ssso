@@ -491,7 +491,7 @@ namespace CcsSso.Core.Tests.External
 
       dataContext.Party.Add(new Party { Id = 5, PartyTypeId = 3 });
       dataContext.Person.Add(new Person { Id = 3, PartyId = 5, OrganisationId = 1, FirstName = "UserFN1", LastName = "UserLN1" });
-      dataContext.User.Add(new User { Id = 1, OrganisationEligibleIdentityProviderId = 1, PartyId = 5, UserName = "user1@mail.com" });
+      dataContext.User.Add(new User { Id = 1, PartyId = 5, UserName = "user1@mail.com" });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 7, PartyId = 5, PartyTypeId = 3, ContactPointReasonId = 3, ContactDetailId = 6 });
 
       //Org3

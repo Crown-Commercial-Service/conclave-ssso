@@ -8,10 +8,12 @@ using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
+using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Dtos.Domain.Models;
 using CcsSso.Service.External;
 using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Shared.Domain.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using System;
@@ -331,7 +333,127 @@ namespace CcsSso.Core.Tests.External
       }
     }
 
-    public static OrganisationProfileService OrganisationProfileService(IDataContext dataContext, Mock<ICiiService> mockCiiService = null)
+    public class UpdateIdentityProvider
+    {
+
+
+      [Fact]
+      public async Task UpdatesSuccessfully_WhenCorrectDataForUpdate()
+      {
+        await DataContextHelper.ScopeAsync(async dataContext =>
+        {
+          await SetupTestDataAsync(dataContext);
+          var ciiOrganisationId = "1";
+          var orgService = OrganisationProfileService(dataContext);
+          var orgIdpProviderSummary = new OrgIdentityProviderSummary()
+          {
+            CiiOrganisationId = "1",
+            ChangedOrgIdentityProviders = new List<OrgIdentityProvider> { new OrgIdentityProvider() {
+              Id = 3
+            }, new OrgIdentityProvider() {
+              Id = 4
+            }}
+          };
+
+          await orgService.UpdateIdentityProviderAsync(orgIdpProviderSummary);
+
+          var users = await dataContext.User.Include(u => u.UserIdentityProviders)
+                              .Where(u => !u.IsDeleted &&
+                              u.Party.Person.Organisation.CiiOrganisationId == ciiOrganisationId).ToListAsync();
+
+          var user1Idps = users.Where(u => u.Id == 1).SelectMany(u => u.UserIdentityProviders);
+          Assert.Single(user1Idps.Where(idp => !idp.IsDeleted));
+          Assert.Equal(2, user1Idps.FirstOrDefault(idp => !idp.IsDeleted).OrganisationEligibleIdentityProviderId);
+
+          var user2Idps = users.Where(u => u.Id == 2).SelectMany(u => u.UserIdentityProviders);
+          Assert.Single(user2Idps.Where(idp => !idp.IsDeleted));
+
+          var user3Idps = users.Where(u => u.Id == 3).SelectMany(u => u.UserIdentityProviders);
+          Assert.Single(user3Idps.Where(idp => !idp.IsDeleted));
+          Assert.Equal(1, user3Idps.FirstOrDefault(i => !i.IsDeleted).OrganisationEligibleIdentityProviderId);
+        });
+      }
+
+      [Fact]
+      public async Task NotifySecurityServiceAndAdapterSuccessfully_WhenCorrectDataForUpdate()
+      {
+        await DataContextHelper.ScopeAsync(async dataContext =>
+        {
+          await SetupTestDataAsync(dataContext);
+          var ciiOrganisationId = "1";
+          Mock<IAdaptorNotificationService> mockAdapterNotificationService = new Mock<IAdaptorNotificationService>();
+          Mock<IIdamService> mockIdamService = new Mock<IIdamService>();
+          var orgService = OrganisationProfileService(dataContext,null, mockAdapterNotificationService, mockIdamService);
+          var orgIdpProviderSummary = new OrgIdentityProviderSummary()
+          {
+            CiiOrganisationId = ciiOrganisationId,
+            ChangedOrgIdentityProviders = new List<OrgIdentityProvider> { new OrgIdentityProvider() {
+              Id = 3
+            }, new OrgIdentityProvider() {
+              Id = 4
+            }}
+          };
+
+          await orgService.UpdateIdentityProviderAsync(orgIdpProviderSummary);
+
+          mockAdapterNotificationService.Verify(x => x.NotifyUserChangeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Exactly(2));
+
+          mockIdamService.Verify(x => x.RegisterUserInIdamAsync(It.IsAny<SecurityApiUserInfo>()), Times.Once);
+        });
+      }
+
+      [Fact]
+      public async Task ThrowsException_WhenOrganisationIsNotFound()
+      {
+        await DataContextHelper.ScopeAsync(async dataContext =>
+        {
+          await SetupTestDataAsync(dataContext);
+          var ciiOrganisationId = "2";
+          Mock<IAdaptorNotificationService> mockAdapterNotificationService = new Mock<IAdaptorNotificationService>();
+          Mock<IIdamService> mockIdamService = new Mock<IIdamService>();
+          var orgService = OrganisationProfileService(dataContext, null, mockAdapterNotificationService, mockIdamService);
+          var orgIdpProviderSummary = new OrgIdentityProviderSummary()
+          {
+            CiiOrganisationId = ciiOrganisationId,
+            ChangedOrgIdentityProviders = new List<OrgIdentityProvider> { new OrgIdentityProvider() {
+              Id = 2
+            }, new OrgIdentityProvider() {
+              Id = 4
+            }}
+          };
+
+          await Assert.ThrowsAsync<ResourceNotFoundException>(() => orgService.UpdateIdentityProviderAsync(orgIdpProviderSummary));
+        });
+      }
+
+      [Fact]
+      public async Task ThrowsException_WhenUserNamePasswordIDPIsRemoved()
+      {
+        await DataContextHelper.ScopeAsync(async dataContext =>
+        {
+          await SetupTestDataAsync(dataContext);
+          var ciiOrganisationId = "1";
+          Mock<IAdaptorNotificationService> mockAdapterNotificationService = new Mock<IAdaptorNotificationService>();
+          Mock<IIdamService> mockIdamService = new Mock<IIdamService>();
+          var orgService = OrganisationProfileService(dataContext, null, mockAdapterNotificationService, mockIdamService);
+          var orgIdpProviderSummary = new OrgIdentityProviderSummary()
+          {
+            CiiOrganisationId = ciiOrganisationId,
+            ChangedOrgIdentityProviders = new List<OrgIdentityProvider> { new OrgIdentityProvider() {
+              Id = 2
+            }, new OrgIdentityProvider() {
+              Id = 4
+            }}
+          };
+
+          var ex = await Assert.ThrowsAsync<CcsSsoException>(() => orgService.UpdateIdentityProviderAsync(orgIdpProviderSummary));
+          Assert.Equal("ERROR_USERNAME_PASSWORD_IDP_REQUIRED", ex.Message);
+        });
+      }
+    }
+
+    public static OrganisationProfileService OrganisationProfileService(IDataContext dataContext, Mock<ICiiService> mockCiiService = null,
+      Mock<IAdaptorNotificationService> mockAdapterNotificationService = null, Mock<IIdamService> mockIdamService = null)
     {
       Mock<ILocalCacheService> mockLocalCacheService = new();
       mockLocalCacheService.Setup(s => s.GetOrSetValueAsync<List<ContactPointReason>>("CONTACT_POINT_REASONS", It.IsAny<Func<Task<List<ContactPointReason>>>>(), It.IsAny<int>()))
@@ -345,12 +467,22 @@ namespace CcsSso.Core.Tests.External
       IContactsHelperService contactsHelperService = new ContactsHelperService(dataContext, mockLocalCacheService.Object);
       Mock<ICcsSsoEmailService> mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
       mockCiiService ??= new Mock<ICiiService>();
-      Mock<IAdaptorNotificationService> mockAdapterNotificationService = new Mock<IAdaptorNotificationService>();
-
+      if (mockAdapterNotificationService == null)
+      {
+        mockAdapterNotificationService = new Mock<IAdaptorNotificationService>();
+      }
       var mockWrapperCacheService = new Mock<IWrapperCacheService>();
+      var mockRemoteCacheService = new Mock<IRemoteCacheService>();
 
-       var service = new OrganisationProfileService(dataContext, contactsHelperService, mockCcsSsoEmailService.Object,
-        mockCiiService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object, mockLocalCacheService.Object);
+      if (mockIdamService == null)
+      {
+        mockIdamService = new Mock<IIdamService>();
+      }
+      ApplicationConfigurationInfo applicationConfigurationInfo = new();
+      RequestContext requestContext = new();
+      var service = new OrganisationProfileService(dataContext, contactsHelperService, mockCcsSsoEmailService.Object,
+       mockCiiService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object,
+       mockLocalCacheService.Object, applicationConfigurationInfo, requestContext, mockIdamService.Object, mockRemoteCacheService.Object);
       return service;
     }
 
@@ -367,7 +499,11 @@ namespace CcsSso.Core.Tests.External
       dataContext.ContactPointReason.Add(new ContactPointReason { Id = 3, Name = ContactReasonType.Billing, Description = "Billing" });
       dataContext.ContactPointReason.Add(new ContactPointReason { Id = 4, Name = ContactReasonType.Site, Description = "Site" });
       dataContext.ContactPointReason.Add(new ContactPointReason { Id = 5, Name = ContactReasonType.Unspecified, Description = "Unspecified" });
+
       dataContext.IdentityProvider.Add(new IdentityProvider { Id = 1, IdpName = "IDP", IdpUri = "IDP" });
+      dataContext.IdentityProvider.Add(new IdentityProvider { Id = 2, IdpName = "USERNAME-PASSWORD", IdpConnectionName = "Username-Password-Authentication", IdpUri = "UNAME" });
+      dataContext.IdentityProvider.Add(new IdentityProvider { Id = 3, IdpName = "FB", IdpConnectionName = "FACEBOOK", IdpUri = "FB" });
+      dataContext.IdentityProvider.Add(new IdentityProvider { Id = 4, IdpName = "GOOGLE", IdpConnectionName = "GOOGLE", IdpUri = "GOOGLE" });
 
       dataContext.Party.Add(new Party { Id = 1, PartyTypeId = 1 });
       dataContext.Organisation.Add(new Organisation { Id = 1, PartyId = 1, CiiOrganisationId = "1", LegalName = "Org1", OrganisationUri = "Org1Uri", RightToBuy = true, IsActivated = true, IsSme = true, IsVcse = true });
@@ -375,10 +511,13 @@ namespace CcsSso.Core.Tests.External
       dataContext.PhysicalAddress.Add(new PhysicalAddress { Id = 1, ContactDetailId = 1, StreetAddress = "street", Locality = "locality", Region = "region", PostalCode = "postalcode", CountryCode = "countrycode" });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 1, PartyId = 1, PartyTypeId = 1, ContactPointReasonId = 1, ContactDetailId = 1 });
       dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 1, OrganisationId = 1, IdentityProviderId = 1 });
+      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 2, OrganisationId = 1, IdentityProviderId = 2 });
+      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 3, OrganisationId = 1, IdentityProviderId = 3 });
+      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 4, OrganisationId = 1, IdentityProviderId = 4 });
 
       dataContext.Party.Add(new Party { Id = 2, PartyTypeId = 1 });
       dataContext.Organisation.Add(new Organisation { Id = 2, PartyId = 2, CiiOrganisationId = "2", OrganisationUri = "Org2Uri", RightToBuy = true, IsDeleted = true });
-      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 2, OrganisationId = 2, IdentityProviderId = 1 });
+      dataContext.OrganisationEligibleIdentityProvider.Add(new OrganisationEligibleIdentityProvider { Id = 22, OrganisationId = 2, IdentityProviderId = 1 });
 
       dataContext.Party.Add(new Party { Id = 3, PartyTypeId = 2 });
       dataContext.Person.Add(new Person { Id = 1, PartyId = 3, OrganisationId = 1, FirstName = "PesronFN1", LastName = "LN1" });
@@ -396,8 +535,32 @@ namespace CcsSso.Core.Tests.External
 
       dataContext.Party.Add(new Party { Id = 5, PartyTypeId = 3 });
       dataContext.Person.Add(new Person { Id = 3, PartyId = 5, OrganisationId = 1, FirstName = "UserFN1", LastName = "UserLN1" });
-      dataContext.User.Add(new User { Id = 1, OrganisationEligibleIdentityProviderId = 1, PartyId = 5, UserName = "user1@mail.com" });
+      dataContext.User.Add(new User { Id = 1, PartyId = 5, UserName = "user1@mail.com" });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 4, PartyId = 5, PartyTypeId = 3, ContactPointReasonId = 3, ContactDetailId = 2 });
+
+      dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 1, OrganisationEligibleIdentityProviderId = 2, UserId = 1, IsDeleted = false });
+      dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 2, OrganisationEligibleIdentityProviderId = 3, UserId = 1, IsDeleted = false });
+      dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 3, OrganisationEligibleIdentityProviderId = 4, UserId = 1, IsDeleted = false });
+      dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 33, OrganisationEligibleIdentityProviderId = 4, UserId = 1, IsDeleted = true });
+
+      dataContext.Party.Add(new Party { Id = 6, PartyTypeId = 3 });
+      dataContext.Person.Add(new Person { Id = 4, PartyId = 6, OrganisationId = 1, FirstName = "UserFN2", LastName = "UserLN2" });
+      dataContext.User.Add(new User { Id = 2, PartyId = 6, UserName = "user2@mail.com" });
+      dataContext.ContactPoint.Add(new ContactPoint { Id = 5, PartyId = 6, PartyTypeId = 3, ContactPointReasonId = 3, ContactDetailId = 2 });
+
+      dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 44, OrganisationEligibleIdentityProviderId = 3, UserId = 2, IsDeleted = true });
+      dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 4, OrganisationEligibleIdentityProviderId = 3, UserId = 2, IsDeleted = false });
+      dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 5, OrganisationEligibleIdentityProviderId = 4, UserId = 2, IsDeleted = false });
+
+
+      dataContext.Party.Add(new Party { Id = 7, PartyTypeId = 3 });
+      dataContext.Person.Add(new Person { Id = 5, PartyId = 7, OrganisationId = 1, FirstName = "UserFN3", LastName = "UserLN3" });
+      dataContext.User.Add(new User { Id = 3, PartyId = 7, UserName = "user3@mail.com" });
+      dataContext.ContactPoint.Add(new ContactPoint { Id = 6, PartyId = 7, PartyTypeId = 3, ContactPointReasonId = 3, ContactDetailId = 2 });
+
+      dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 66, OrganisationEligibleIdentityProviderId = 3, UserId = 3, IsDeleted = true });
+      dataContext.UserIdentityProvider.Add(new UserIdentityProvider { Id = 6, OrganisationEligibleIdentityProviderId = 1, UserId = 3, IsDeleted = false });
+
 
       await dataContext.SaveChangesAsync();
     }

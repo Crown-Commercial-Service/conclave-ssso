@@ -24,6 +24,8 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string Password { get; set; }
 
+    public bool AccountVerified { get; set; }
+
     public bool SendUserRegistrationEmail { get; set; } = true;
   }
 
@@ -35,24 +37,29 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public List<int> RoleIds { get; set; }
 
-    public int IdentityProviderId { get; set; }
+    public List<int> IdentityProviderIds { get; set; }
   }
 
   public class UserResponseDetail
   {
     public int Id { get; set; }
 
-    public int IdentityProviderId { get; set; }
-
-    public string IdentityProvider { get; set; }
-
-    public string IdentityProviderDisplayName { get; set; }
-
     public List<GroupAccessRole> UserGroups { get; set; }
 
     public bool CanChangePassword { get; set; }
 
     public List<RolePermissionInfo> RolePermissionInfo { get; set; }
+
+    public List<UserIdentityProviderInfo> IdentityProviders { get; set; }
+  }
+
+  public class UserIdentityProviderInfo
+  {
+    public int IdentityProviderId { get; set; }
+
+    public string IdentityProvider { get; set; }
+
+    public string IdentityProviderDisplayName { get; set; }
   }
 
   public class RolePermissionInfo

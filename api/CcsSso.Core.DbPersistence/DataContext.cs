@@ -9,16 +9,19 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Shared.Domain.Contexts;
+using CcsSso.Shared.Contracts;
 
 namespace CcsSso.DbPersistence
 {
   public class DataContext : DbContext, IDataContext
   {
     private readonly RequestContext _requestContext;
-    public DataContext(DbContextOptions<DataContext> options, RequestContext requestContext)
+    private readonly IDateTimeService _dateTimeService;
+    public DataContext(DbContextOptions<DataContext> options, RequestContext requestContext, IDateTimeService dateTimeService)
             : base(options)
     {
       _requestContext= requestContext;
+      _dateTimeService = dateTimeService;
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -174,9 +177,14 @@ namespace CcsSso.DbPersistence
 
     public DbSet<SiteContact> SiteContact { get; set; }
 
+    public DbSet<ExternalServiceRoleMapping> ExternalServiceRoleMapping { get; set; }
+
     public DbSet<OrganisationEligibleRole> OrganisationEligibleRole { get; set; }
 
     public DbSet<OrganisationEligibleIdentityProvider> OrganisationEligibleIdentityProvider { get; set; }
+
+    public DbSet<UserIdentityProvider> UserIdentityProvider { get; set; }
+    
 
     public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -208,12 +216,12 @@ namespace CcsSso.DbPersistence
       {
         if (entry.State == EntityState.Added)
         {
-          entry.Entity.CreatedOnUtc = entry.Entity.LastUpdatedOnUtc = DateTime.UtcNow;
+          entry.Entity.CreatedOnUtc = entry.Entity.LastUpdatedOnUtc = _dateTimeService.GetUTCNow();
           entry.Entity.CreatedUserId = entry.Entity.LastUpdatedUserId = _requestContext.UserId;
         }
         else
         {
-          entry.Entity.LastUpdatedOnUtc = DateTime.UtcNow;
+          entry.Entity.LastUpdatedOnUtc = _dateTimeService.GetUTCNow();
           entry.Entity.LastUpdatedUserId = _requestContext.UserId;
         }
       }

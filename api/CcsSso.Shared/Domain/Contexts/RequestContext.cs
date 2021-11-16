@@ -7,6 +7,10 @@ namespace CcsSso.Shared.Domain.Contexts
   {
     public int UserId { get; set; }
 
+    public string ServiceClientId { get; set; }
+
+    public int ServiceId { get; set; }
+
     public string UserName { get; set; }
 
     public string CiiOrganisationId { get; set; }

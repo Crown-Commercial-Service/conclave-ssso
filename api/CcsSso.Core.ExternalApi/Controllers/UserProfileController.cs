@@ -85,7 +85,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(UserProfileResponseInfo), 200)]
-    public async Task<UserProfileResponseInfo> GetUser([FromQuery(Name = "user-id")]string userId)
+    public async Task<UserProfileResponseInfo> GetUser([FromQuery(Name = "user-id")] string userId)
     {
       return await _userProfileService.GetUserAsync(userId);
     }
@@ -126,6 +126,33 @@ namespace CcsSso.ExternalApi.Controllers
     public async Task<UserEditResponseInfo> UpdateUser([FromQuery(Name = "user-id")] string userId, UserProfileEditRequestInfo userProfileRequestInfo)
     {
       return await _userProfileService.UpdateUserAsync(userId, userProfileRequestInfo);
+    }
+
+
+    /// <summary>
+    /// Updates user account verify state
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="400">Bad request.
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     PUT /account-verification?user-id=123
+    ///     {
+    ///     }
+    ///
+    /// </remarks>
+    [HttpPut("account-verification")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("USER")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
+    public async Task VerifyAccount([FromQuery(Name = "user-id")] string userId)
+    {
+      await _userProfileService.VerifyUserAccountAsync(userId);
     }
 
     /// <summary>

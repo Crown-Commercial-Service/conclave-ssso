@@ -148,11 +148,11 @@ VALUES (28, 'Detail.Id', 2, now(), now(), false);
 
 INSERT INTO public."ConclaveEntityAttribute"(
 "Id", "AttributeName", "ConclaveEntityId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
-VALUES (29, 'Detail.IdentityProviderId', 2, now(), now(), false);
+VALUES (29, 'Detail.IdentityProviders.IdentityProviderId', 2, now(), now(), false);
 
 INSERT INTO public."ConclaveEntityAttribute"(
 "Id", "AttributeName", "ConclaveEntityId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
-VALUES (30, 'Detail.IdentityProviderDisplayName', 2, now(), now(), false);
+VALUES (30, 'Detail.IdentityProviders.IdentityProviderDisplayName', 2, now(), now(), false);
 
 INSERT INTO public."ConclaveEntityAttribute"(
 "Id", "AttributeName", "ConclaveEntityId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
@@ -391,3 +391,9 @@ VALUES (85, 'Identifier', 9, now(), now(), false);
 INSERT INTO public."ConclaveEntityAttribute"(
 "Id", "AttributeName", "ConclaveEntityId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 VALUES (86, 'AdditionalIdentifiers', 9, now(), now(), false);
+
+
+-- ==================== UserIDentityProviders===============================================
+INSERT INTO public."ConclaveEntityAttribute"(
+"Id", "AttributeName", "ConclaveEntityId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+VALUES (87, 'Detail.IdentityProviders', 2, now(), now(), false);

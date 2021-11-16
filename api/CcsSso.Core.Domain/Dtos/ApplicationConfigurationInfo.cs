@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace CcsSso.Domain.Dtos
 {
   public class ApplicationConfigurationInfo
@@ -25,6 +27,15 @@ namespace CcsSso.Domain.Dtos
     public RedisCacheSetting RedisCacheSettings { get; set; }
 
     public string CustomDomain { get; set; }
+
+    public ServiceDefaultRoleInfo ServiceDefaultRoleInfo { get; set; }
+  }
+
+  public class ServiceDefaultRoleInfo
+  {
+    public List<string> GlobalServiceDefaultRoles { get; set; }
+
+    public List<string> ScopedServiceDefaultRoles { get; set; }
   }
 
   public class JwtTokenValidationConfigurationInfo
