@@ -27,7 +27,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
@@ -51,7 +53,7 @@ namespace CcsSso.Api
         bool.TryParse(Configuration["RedisCacheSettings:IsEnabled"], out bool isRedisEnabled);
         int.TryParse(Configuration["RedisCacheSettings:CacheExpirationInMinutes"], out int cacheExpirationInMinutes);
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
-
+        
         if (cacheExpirationInMinutes == 0)
         {
           cacheExpirationInMinutes = 10;
@@ -60,6 +62,7 @@ namespace CcsSso.Api
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
           CustomDomain = Configuration["CustomDomain"],
+          DashboardServiceClientId = Configuration["DashboardServiceClientId"],
           JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
           {
             IdamClienId = Configuration["JwtTokenValidationInfo:IdamClienId"],
@@ -176,6 +179,8 @@ namespace CcsSso.Api
       services.AddScoped<IContactsHelperService, ContactsHelperService>();
       services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
       services.AddScoped<IIdamService, IdamService>();
+      services.AddScoped<IConfigurationDetailService, ConfigurationDetailService>();
+
       services.AddHttpContextAccessor();
 
       services.AddHttpClient("CiiApi", c =>

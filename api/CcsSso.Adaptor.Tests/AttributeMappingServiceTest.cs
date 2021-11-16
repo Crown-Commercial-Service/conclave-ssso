@@ -107,7 +107,7 @@ namespace CcsSso.Adaptor.Tests
                     Detail = new UserResponseDetail
                     {
                       Id = 1,
-                      IdentityProviderDisplayName = "Username and Password",
+                      IdentityProviders = new List<UserIdentityProvider> { new UserIdentityProvider { IdentityProviderId= 1, IdentityProviderDisplayName= "Username and Password" } },
                       RolePermissionInfo = new List<RolePermissionInfo>
                       {
                         new RolePermissionInfo

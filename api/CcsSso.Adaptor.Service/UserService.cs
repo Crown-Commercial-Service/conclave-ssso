@@ -34,6 +34,8 @@ namespace CcsSso.Adaptor.Service
       var userResponse = await _wrapperUserService.GetUserAsync(userName);
       var userResultDictionary = _attributeMappingService.GetMappedDataDictionary(userResponse, conclaveEntityMappingDictionary[ConclaveEntityNames.UserProfile]);
       resultDictionaries.Add(userResultDictionary);
+      var userIdpDictionary = _attributeMappingService.GetMappedIdentityProviders(userResponse, conclaveEntityMappingDictionary[ConclaveEntityNames.UserProfile]);
+      resultDictionaries.Add(userIdpDictionary);
       var userRolesDictionary = _attributeMappingService.GetMappedUserRoles(userResponse, conclaveEntityMappingDictionary[ConclaveEntityNames.UserProfile]);
       resultDictionaries.Add(userRolesDictionary);
       var userGroupsDictionary = _attributeMappingService.GetMappedUserGroups(userResponse, conclaveEntityMappingDictionary[ConclaveEntityNames.UserProfile]);

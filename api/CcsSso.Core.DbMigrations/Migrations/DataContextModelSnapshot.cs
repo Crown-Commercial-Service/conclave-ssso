@@ -15,16 +15,16 @@ namespace CcsSso.Core.DbMigrations.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .UseIdentityByDefaultColumns()
                 .HasAnnotation("Relational:MaxIdentifierLength", 63)
-                .HasAnnotation("ProductVersion", "5.0.2");
+                .HasAnnotation("ProductVersion", "5.0.10")
+                .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.AuditLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<string>("Application")
                         .HasColumnType("text");
@@ -57,7 +57,10 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<bool>("ActivateOrganisations")
+                        .HasColumnType("boolean");
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -72,6 +75,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
+
+                    b.Property<bool>("GlobalLevelOrganisationAccess")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -107,7 +113,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<int>("CcsServiceId")
                         .HasColumnType("integer");
@@ -147,12 +153,54 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.ToTable("CcsServiceLogin");
                 });
 
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.ExternalServiceRoleMapping", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<int>("CcsServiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("ConcurrencyKey")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CreatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastUpdatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("LastUpdatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OrganisationEligibleRoleId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CcsServiceId");
+
+                    b.HasIndex("OrganisationEligibleRoleId");
+
+                    b.ToTable("ExternalServiceRoleMapping");
+                });
+
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.IdamUserLogin", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<DateTime>("CcsLoginDateTime")
                         .HasColumnType("timestamp without time zone");
@@ -212,7 +260,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<int>("CcsAccessRoleId")
                         .HasColumnType("integer");
@@ -259,7 +307,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -301,7 +349,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<int>("CcsAccessRoleId")
                         .HasColumnType("integer");
@@ -346,7 +394,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -388,7 +436,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<int>("CcsServiceId")
                         .HasColumnType("integer");
@@ -428,7 +476,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<int>("CcsAccessRoleId")
                         .HasColumnType("integer");
@@ -470,7 +518,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<int>("AssignedContactType")
                         .HasColumnType("integer");
@@ -511,12 +559,54 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.ToTable("SiteContact");
                 });
 
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.UserIdentityProvider", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<byte[]>("ConcurrencyKey")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CreatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastUpdatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("LastUpdatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OrganisationEligibleIdentityProviderId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganisationEligibleIdentityProviderId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserIdentityProvider");
+                });
+
             modelBuilder.Entity("CcsSso.DbModel.Entity.CcsAccessRole", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<string>("CcsAccessRoleDescription")
                         .HasColumnType("text");
@@ -569,7 +659,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -607,7 +697,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<int>("AssignedContactType")
                         .HasColumnType("integer");
@@ -671,7 +761,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -709,7 +799,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -744,7 +834,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -788,10 +878,13 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<string>("BusinessType")
                         .HasColumnType("text");
+
+                    b.Property<int?>("CcsServiceId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("CiiOrganisationId")
                         .HasColumnType("text");
@@ -842,6 +935,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CcsServiceId");
+
                     b.HasIndex("CiiOrganisationId");
 
                     b.HasIndex("PartyId")
@@ -855,7 +950,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -898,7 +993,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -940,7 +1035,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -986,7 +1081,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1023,7 +1118,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1058,7 +1153,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1110,7 +1205,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1166,7 +1261,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1203,7 +1298,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1243,7 +1338,13 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<bool>("AccountVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("CcsServiceId")
+                        .HasColumnType("integer");
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1271,9 +1372,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<bool>("MfaEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("OrganisationEligibleIdentityProviderId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("PartyId")
                         .HasColumnType("integer");
 
@@ -1285,7 +1383,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrganisationEligibleIdentityProviderId");
+                    b.HasIndex("CcsServiceId");
 
                     b.HasIndex("PartyId")
                         .IsUnique();
@@ -1300,7 +1398,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1342,7 +1440,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1390,7 +1488,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1435,7 +1533,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1470,7 +1568,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1515,7 +1613,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1565,6 +1663,25 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Navigation("CcsService");
 
                     b.Navigation("IdamUserLogin");
+                });
+
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.ExternalServiceRoleMapping", b =>
+                {
+                    b.HasOne("CcsSso.Core.DbModel.Entity.CcsService", "CcsService")
+                        .WithMany("ExternalServiceRoleMappings")
+                        .HasForeignKey("CcsServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CcsSso.Core.DbModel.Entity.OrganisationEligibleRole", "OrganisationEligibleRole")
+                        .WithMany("ExternalServiceRoleMappings")
+                        .HasForeignKey("OrganisationEligibleRoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CcsService");
+
+                    b.Navigation("OrganisationEligibleRole");
                 });
 
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.IdamUserLogin", b =>
@@ -1707,6 +1824,25 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Navigation("ContactPoint");
                 });
 
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.UserIdentityProvider", b =>
+                {
+                    b.HasOne("CcsSso.Core.DbModel.Entity.OrganisationEligibleIdentityProvider", "OrganisationEligibleIdentityProvider")
+                        .WithMany("UserIdentityProviders")
+                        .HasForeignKey("OrganisationEligibleIdentityProviderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CcsSso.DbModel.Entity.User", "User")
+                        .WithMany("UserIdentityProviders")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OrganisationEligibleIdentityProvider");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CcsSso.DbModel.Entity.ContactPoint", b =>
                 {
                     b.HasOne("CcsSso.DbModel.Entity.ContactDetail", "ContactDetail")
@@ -1744,11 +1880,17 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
             modelBuilder.Entity("CcsSso.DbModel.Entity.Organisation", b =>
                 {
+                    b.HasOne("CcsSso.Core.DbModel.Entity.CcsService", "CcsService")
+                        .WithMany("CreatedOrganisations")
+                        .HasForeignKey("CcsServiceId");
+
                     b.HasOne("CcsSso.DbModel.Entity.Party", "Party")
                         .WithOne("Organisation")
                         .HasForeignKey("CcsSso.DbModel.Entity.Organisation", "PartyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CcsService");
 
                     b.Navigation("Party");
                 });
@@ -1859,11 +2001,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
             modelBuilder.Entity("CcsSso.DbModel.Entity.User", b =>
                 {
-                    b.HasOne("CcsSso.Core.DbModel.Entity.OrganisationEligibleIdentityProvider", "OrganisationEligibleIdentityProvider")
-                        .WithMany("Users")
-                        .HasForeignKey("OrganisationEligibleIdentityProviderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("CcsSso.Core.DbModel.Entity.CcsService", "CcsService")
+                        .WithMany("CreatedUsers")
+                        .HasForeignKey("CcsServiceId");
 
                     b.HasOne("CcsSso.DbModel.Entity.Party", "Party")
                         .WithOne("User")
@@ -1871,7 +2011,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("OrganisationEligibleIdentityProvider");
+                    b.Navigation("CcsService");
 
                     b.Navigation("Party");
                 });
@@ -1956,6 +2096,12 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 {
                     b.Navigation("CcsServiceLogins");
 
+                    b.Navigation("CreatedOrganisations");
+
+                    b.Navigation("CreatedUsers");
+
+                    b.Navigation("ExternalServiceRoleMappings");
+
                     b.Navigation("ServicePermissions");
                 });
 
@@ -1968,7 +2114,12 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.OrganisationEligibleIdentityProvider", b =>
                 {
-                    b.Navigation("Users");
+                    b.Navigation("UserIdentityProviders");
+                });
+
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.OrganisationEligibleRole", b =>
+                {
+                    b.Navigation("ExternalServiceRoleMappings");
                 });
 
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.ServicePermission", b =>
@@ -2061,6 +2212,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Navigation("UserAccessRoles");
 
                     b.Navigation("UserGroupMemberships");
+
+                    b.Navigation("UserIdentityProviders");
 
                     b.Navigation("UserSettings");
                 });

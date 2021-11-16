@@ -17,6 +17,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 
@@ -328,6 +329,45 @@ namespace CcsSso.Security.Services
         {
           throw new CcsSsoException("USER_UPDATE_FAILED");
         }
+      }
+    }
+
+
+
+    public async Task<TokenResponseInfo> GetMachineTokenAsync(string clientId, string clientSecret, string audience)
+    {
+      try
+      {
+        ClientCredentialsTokenRequest clientCredentialsTokenRequest = new ClientCredentialsTokenRequest()
+        {
+          ClientId = clientId,
+          Audience = _appConfigInfo.Auth0ConfigurationInfo.DefaultAudience
+        };
+
+        if (!string.IsNullOrEmpty(clientSecret))
+        {
+          clientCredentialsTokenRequest.ClientSecret = clientSecret;
+        }
+
+        var result = await _authenticationApiClient.GetTokenAsync(clientCredentialsTokenRequest);
+        if (result != null)
+        {
+          var serviceProfile = await GetServiceProfileAsync(clientId, audience);
+          var accessToken = GetAccessToken(clientId, audience, serviceProfile);
+          return new TokenResponseInfo
+          {
+            AccessToken = accessToken
+          };
+        }
+        throw new UnauthorizedAccessException();
+      }
+      catch (ErrorApiException e)
+      {
+        throw new SecurityException(new ErrorInfo()
+        {
+          Error = e.ApiError.Error,
+          ErrorDescription = e.ApiError.Message
+        });
       }
     }
 
@@ -747,7 +787,7 @@ namespace CcsSso.Security.Services
     private async Task<UserProfileInfo> GetUserAsync(string email)
     {
       var httpClient = _httpClientFactory.CreateClient();
-      httpClient.BaseAddress = new Uri(_appConfigInfo.UserExternalApiDetails.Url);
+      httpClient.BaseAddress = new Uri(_appConfigInfo.UserExternalApiDetails.UserServiceUrl);
       httpClient.DefaultRequestHeaders.Add("X-API-Key", _appConfigInfo.UserExternalApiDetails.ApiKey);
       var result = await httpClient.GetAsync($"?user-id={HttpUtility.UrlEncode(email)}");
       var userJsonString = await result.Content.ReadAsStringAsync();
@@ -759,6 +799,30 @@ namespace CcsSso.Security.Services
       throw new RecordNotFoundException();
     }
 
+    private async Task VerifyUserAccountAsync(string email)
+    {
+      var httpClient = _httpClientFactory.CreateClient();
+      httpClient.BaseAddress = new Uri(_appConfigInfo.UserExternalApiDetails.UserServiceUrl);
+      httpClient.DefaultRequestHeaders.Add("X-API-Key", _appConfigInfo.UserExternalApiDetails.ApiKey);
+      await httpClient.PutAsync($"account-verification?user-id=" + HttpUtility.UrlEncode(email), null);
+    }
+
+    private async Task<ServiceProfile> GetServiceProfileAsync(string clientId, string audience)
+    {
+      var httpClient = _httpClientFactory.CreateClient();
+      httpClient.BaseAddress = new Uri(_appConfigInfo.UserExternalApiDetails.ConfigurationServiceUrl);
+      httpClient.DefaultRequestHeaders.Add("X-API-Key", _appConfigInfo.UserExternalApiDetails.ApiKey);
+      var result = await httpClient.GetAsync($"services/{clientId}?organisation-id={audience}");
+      var serviceProfileJsonString = await result.Content.ReadAsStringAsync();
+      if (!string.IsNullOrEmpty(serviceProfileJsonString))
+      {
+        var serviceProfile = JsonConvert.DeserializeObject<ServiceProfile>(serviceProfileJsonString);
+        return serviceProfile;
+      }
+      throw new RecordNotFoundException();
+    }
+
+
     private string GetAccessToken(string clientId, string email, UserProfileInfo userDetails)
     {
       var rolesFromUserRoles = userDetails.Detail.RolePermissionInfo.Where(rp => rp.ServiceClientId == clientId).ToList();
@@ -768,6 +832,7 @@ namespace CcsSso.Security.Services
         var roles = rolesFromUserRoles.Select(r => r.RoleKey).Concat(rolesFromUserGroups.Select(r => r.AccessRole)).Distinct();
         var accesstokenClaims = new List<ClaimInfo>();
         accesstokenClaims.Add(new ClaimInfo("uid", userDetails.Detail.Id.ToString()));
+        accesstokenClaims.Add(new ClaimInfo("caller", "user"));
         accesstokenClaims.Add(new ClaimInfo("ciiOrgId", userDetails.OrganisationId));
         foreach (var role in roles)
         {
@@ -779,6 +844,22 @@ namespace CcsSso.Security.Services
         return accessToken;
       }
       throw new UnauthorizedAccessException();
+    }
+
+    private string GetAccessToken(string clientId, string ciiOrgId, ServiceProfile serviceProfile)
+    {
+      var accesstokenClaims = new List<ClaimInfo>();
+      accesstokenClaims.Add(new ClaimInfo("uid", serviceProfile.ServiceId.ToString()));
+      accesstokenClaims.Add(new ClaimInfo("ciiOrgId", ciiOrgId));
+      accesstokenClaims.Add(new ClaimInfo("caller", "service"));
+      foreach (var role in serviceProfile.RoleKeys)
+      {
+        accesstokenClaims.Add(new ClaimInfo("roles", role));
+      }
+
+      accesstokenClaims.Add(new ClaimInfo("sub", clientId));
+      var accessToken = _jwtTokenHandler.CreateToken(serviceProfile.Audience, accesstokenClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
+      return accessToken;
     }
 
     private async Task<TokenResponseInfo> GetTokensAsync(string clientId, AccessTokenResponse accessTokenResponse, string sid = null)
@@ -806,9 +887,14 @@ namespace CcsSso.Security.Services
 
       var connection = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/connection")?.Value;
       var userDetails = await GetUserAsync(email);
-      if (userDetails.Detail.IdentityProvider != connection)
+      if (!userDetails.Detail.IdentityProviders.Any(idp => idp.IdentityProvider == connection))
       {
         throw new CcsSsoException("INVALID_CONNECTION");
+      }
+
+      if (!userDetails.AccountVerified)
+      {
+        await VerifyUserAccountAsync(email);
       }
 
       var customClaims = GetCustomClaimsForIdToken(tokenDecoded, clientId, email, sid, userDetails);

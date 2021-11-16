@@ -1,3 +1,4 @@
+using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Domain.Dtos;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Contracts;
@@ -30,7 +31,7 @@ namespace CcsSso.Core.ExternalApi.Middleware
       _remoteCacheService = remoteCacheService;
     }
 
-    public async Task Invoke(HttpContext context, RequestContext requestContext)
+    public async Task Invoke(HttpContext context, RequestContext requestContext, IConfigurationDetailService configurationDetailService)
     {
       var apiKey = context.Request.Headers["X-API-Key"];
       var bearerToken = context.Request.Headers["Authorization"].FirstOrDefault();
@@ -48,7 +49,7 @@ namespace CcsSso.Core.ExternalApi.Middleware
           var token = bearerToken.Split(' ').Last();
           var result = await _tokenService.ValidateTokenAsync(token, _appConfig.JwtTokenValidationInfo.JwksUrl,
             _appConfig.JwtTokenValidationInfo.IdamClienId, _appConfig.JwtTokenValidationInfo.Issuer,
-            new List<string>() { "uid", "ciiOrgId", "sub", JwtRegisteredClaimNames.Jti, JwtRegisteredClaimNames.Exp, "roles" });
+            new List<string>() { "uid", "ciiOrgId", "sub", JwtRegisteredClaimNames.Jti, JwtRegisteredClaimNames.Exp, "roles", "caller" });
 
           if (result.IsValid)
           {
@@ -70,8 +71,21 @@ namespace CcsSso.Core.ExternalApi.Middleware
               }
             }
 
-            requestContext.UserId = int.Parse(result.ClaimValues["uid"]);
-            requestContext.UserName = result.ClaimValues["sub"];
+            
+            if(result.ClaimValues["caller"] == "service")
+            {
+              requestContext.ServiceClientId = result.ClaimValues["sub"];
+              requestContext.ServiceId = int.Parse(result.ClaimValues["uid"]);
+            }
+            else
+            {
+              requestContext.UserId = int.Parse(result.ClaimValues["uid"]);              
+              requestContext.UserName = result.ClaimValues["sub"];
+
+              var serviceId = await configurationDetailService.GetDashboardServiceIdAsync();
+              requestContext.ServiceId = serviceId;
+            }
+            
             requestContext.CiiOrganisationId = result.ClaimValues["ciiOrgId"];
             requestContext.Roles = result.ClaimValues["roles"].Split(",").ToList();
           }

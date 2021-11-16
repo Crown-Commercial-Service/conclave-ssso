@@ -34,6 +34,8 @@ namespace CcsSso.Domain.Contracts
 
     DbSet<UserGroupMembership> UserGroupMembership { get; set; }
 
+    DbSet<UserIdentityProvider> UserIdentityProvider { get; set; }
+
     DbSet<UserSettingType> UserSettingType { get; set; }
 
     DbSet<UserSetting> UserSetting { get; set; }
@@ -70,6 +72,8 @@ namespace CcsSso.Domain.Contracts
     DbSet<ServicePermission> ServicePermission { get; set; }
 
     DbSet<ServiceRolePermission> ServiceRolePermission { get; set; }
+
+    DbSet<ExternalServiceRoleMapping> ExternalServiceRoleMapping { get; set; }
 
     DbSet<IdamUserLoginRole> IdamUserLoginRole { get; set; }
 

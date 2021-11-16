@@ -23,6 +23,8 @@ namespace CcsSso.Core.ExternalApi.Authorisation
 
     public async Task<AuthorizationPolicy> GetPolicyAsync(string policyName)
     {
+      var xapiKey = _httpContextAccessor.HttpContext.Request.Headers["X-API-Key"];
+
       if (policyName.StartsWith(ClaimAuthoriseAttribute.POLICY_PREFIX))
       {
         var claimString = policyName.Substring(ClaimAuthoriseAttribute.POLICY_PREFIX.Length);
@@ -30,7 +32,8 @@ namespace CcsSso.Core.ExternalApi.Authorisation
         var policyBuilder = new AuthorizationPolicyBuilder();
 
         var requestContext = _httpContextAccessor.HttpContext.RequestServices.GetService<RequestContext>();
-        if (requestContext.UserId == 0) //  Requests with api key no authorization
+        
+        if (!string.IsNullOrEmpty(xapiKey)) //  Requests with api key no authorization
         {
           policyBuilder.RequireAssertion(context => true);
         }
@@ -53,7 +56,7 @@ namespace CcsSso.Core.ExternalApi.Authorisation
         var policyBuilder = new AuthorizationPolicyBuilder();
 
         var requestContext = _httpContextAccessor.HttpContext.RequestServices.GetService<RequestContext>();
-        if (requestContext.UserId == 0) //  Requests with api key no authorization
+        if (!string.IsNullOrEmpty(xapiKey)) //  Requests with api key no authorization
         {
           policyBuilder.RequireAssertion(context => true);
         }

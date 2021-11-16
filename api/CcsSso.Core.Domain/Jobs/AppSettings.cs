@@ -15,6 +15,8 @@ namespace CcsSso.Core.Domain.Jobs
     public CiiSettings CiiSettings { get; set; }
 
     public SecurityApiSettings SecurityApiSettings { get; set; }
+
+    public List<UserDeleteJobSetting> UserDeleteJobSettings { get; set; }
   }
 
   public class CiiSettings
@@ -26,7 +28,9 @@ namespace CcsSso.Core.Domain.Jobs
 
   public class ScheduleJobSettings
   {
-    public int JobSchedulerExecutionFrequencyInMinutes { get; set; }
+    public int InactiveOrganisationDeletionJobExecutionFrequencyInMinutes { get; set; }
+
+    public int UnverifiedUserDeletionJobExecutionFrequencyInMinutes { get; set; }
 
     public int OrganizationRegistrationExpiredThresholdInMinutes { get; set; }
   }
@@ -38,11 +42,15 @@ namespace CcsSso.Core.Domain.Jobs
     public string Url { get; set; }
   }
 
-  public class ScheduleJobSettingsVault
+  public class UserDeleteJobSetting
   {
-    public string JobSchedulerExecutionFrequencyInMinutes { get; set; }
+    public string ServiceClientId { get; set; }
 
-    public string OrganizationRegistrationExpiredThresholdInMinutes { get; set; }
+    public int UserDeleteThresholdInMinutes { get; set; }
+
+    public bool NotifyOrgAdmin { get; set; }
+
+    public string AdminNotifyTemplateId { get; set; }
   }
 
   public class RedisCacheSettingsVault

@@ -1,4 +1,5 @@
 using CcsSso.Core.Domain.Dtos;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Contracts

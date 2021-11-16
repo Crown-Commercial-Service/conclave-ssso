@@ -903,7 +903,7 @@ namespace CcsSso.Core.Tests.External
       // Org1 User
       dataContext.Party.Add(new Party { Id = 5, PartyTypeId = 3 });
       dataContext.Person.Add(new Person { Id = 3, PartyId = 5, OrganisationId = 1, FirstName = "UserFN1", LastName = "UserLN1" });
-      dataContext.User.Add(new User { Id = 1, OrganisationEligibleIdentityProviderId = 1, PartyId = 5, UserName = "user1@mail.com" });
+      dataContext.User.Add(new User { Id = 1, PartyId = 5, UserName = "user1@mail.com" });
       dataContext.ContactPoint.Add(new ContactPoint { Id = 4, PartyId = 5, PartyTypeId = 3, ContactPointReasonId = 3, ContactDetailId = 2 });
       #endregion
 
@@ -944,7 +944,7 @@ namespace CcsSso.Core.Tests.External
       // Org2 User1 ID=2 UserName="org2user1@mail.com"
       dataContext.Party.Add(new Party { Id = 8, PartyTypeId = 3 });
       dataContext.Person.Add(new Person { Id = 6, PartyId = 8, OrganisationId = 2, FirstName = "Org2User1FN", LastName = "Org2User1LN" });
-      dataContext.User.Add(new User { Id = 2, OrganisationEligibleIdentityProviderId = 2, PartyId = 8, UserName = "org2user1@mail.com" });
+      dataContext.User.Add(new User { Id = 2, PartyId = 8, UserName = "org2user1@mail.com" });
 
       // Org2 User1 Contact1 ID=13
       dataContext.Party.Add(new Party { Id = 9, PartyTypeId = 2 });

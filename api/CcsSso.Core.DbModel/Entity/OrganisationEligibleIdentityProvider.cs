@@ -1,9 +1,5 @@
 using CcsSso.DbModel.Entity;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CcsSso.Core.DbModel.Entity
 {
@@ -19,6 +15,6 @@ namespace CcsSso.Core.DbModel.Entity
 
     public int IdentityProviderId { get; set; }
 
-    public List<User> Users { get; set; }
+    public List<UserIdentityProvider> UserIdentityProviders { get; set; }
   }
 }

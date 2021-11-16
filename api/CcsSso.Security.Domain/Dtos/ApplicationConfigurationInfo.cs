@@ -16,7 +16,7 @@ namespace CcsSso.Security.Domain.Dtos
 
     public SessionConfig SessionConfig { get; set; }
 
-    public UserExternalApiDetails UserExternalApiDetails { get; set; }
+    public WrapperApi UserExternalApiDetails { get; set; }
 
     public PasswordPolicy PasswordPolicy { get; set; }
 
@@ -65,6 +65,8 @@ namespace CcsSso.Security.Domain.Dtos
     public string ManagementApiIdentifier { get; set; }
 
     public string DefaultDBConnectionId { get; set; }
+
+    public string DefaultAudience { get; set; }
   }
 
   public class AwsCognitoConfigurationInfo
@@ -125,11 +127,13 @@ namespace CcsSso.Security.Domain.Dtos
     public int LogoutTokenExpireTimeInMinutes { get; set; }
   }
 
-  public class UserExternalApiDetails
+  public class WrapperApi
   {
-    public string Url { get; set; }
-
     public string ApiKey { get; set; }
+
+    public string UserServiceUrl { get; set; }
+
+    public string ConfigurationServiceUrl { get; set; }
   }
 
   public class PasswordPolicy

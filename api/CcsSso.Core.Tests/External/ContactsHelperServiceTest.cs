@@ -854,7 +854,7 @@ namespace CcsSso.Core.Tests.External
       // Org1 user 1
       dataContext.Party.Add(new Party { Id = 5, PartyTypeId = 3 });
       dataContext.Person.Add(new Person { Id = 3, PartyId = 5, OrganisationId = 1, FirstName = "User1FN", LastName = "User1LN" });
-      dataContext.User.Add(new User { Id = 1, OrganisationEligibleIdentityProviderId = 1, PartyId = 5, UserName = "user1@mail.com" });
+      dataContext.User.Add(new User { Id = 1, PartyId = 5, UserName = "user1@mail.com" });
 
       // Org1 user 1 contact1
       dataContext.Party.Add(new Party { Id = 6, PartyTypeId = 2 });

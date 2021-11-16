@@ -3,6 +3,7 @@ using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Service.External;
 using CcsSso.Core.Tests.Infrastructure;
 using CcsSso.Domain.Contracts;
+using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Dtos.External;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Cache.Services;
@@ -59,7 +60,8 @@ namespace CcsSso.Core.Tests.External
     public static ConfigurationDetailService GetConfigurationDetailService(IDataContext dataContext)
     {
       var memCacheService = GetLocalCache();
-      var service = new ConfigurationDetailService(dataContext, memCacheService);
+      ApplicationConfigurationInfo applicationConfigurationInfo = new();
+      var service = new ConfigurationDetailService(dataContext, memCacheService, applicationConfigurationInfo);
       return service;
     }
 

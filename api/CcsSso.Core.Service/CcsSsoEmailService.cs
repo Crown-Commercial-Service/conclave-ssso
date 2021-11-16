@@ -128,5 +128,6 @@ namespace CcsSso.Core.Service
         await _emaillProviderService.SendEmailAsync(emailInfo);
       }
     }
+    
   }
 }
