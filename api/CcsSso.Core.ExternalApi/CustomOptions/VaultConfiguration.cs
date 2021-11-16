@@ -132,6 +132,21 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("RedisCacheSettings:IsEnabled", redisCacheSettingsVault.IsEnabled);
         Data.Add("RedisCacheSettings:CacheExpirationInMinutes", redisCacheSettingsVault.CacheExpirationInMinutes);
       }
+
+      if (_secrets.Data.ContainsKey("ExternalServiceDefaultRoles"))
+      {
+        var externalServiceDefaultRolesSettings = JsonConvert.DeserializeObject<ExternalServiceDefaultRoles>(_secrets.Data["ExternalServiceDefaultRoles"].ToString());
+        int index = 0;
+        foreach (var globalRole in externalServiceDefaultRolesSettings.GlobalServiceDefaultRoles)
+        {
+          Data.Add($"ExternalServiceDefaultRoles:GlobalServiceDefaultRoles:{index++}", globalRole);
+        }
+        index = 0;
+        foreach (var scopedRole in externalServiceDefaultRolesSettings.ScopedServiceDefaultRoles)
+        {
+          Data.Add($"ExternalServiceDefaultRoles:ScopedServiceDefaultRoles:{index++}", scopedRole);
+        }
+      }
     }
   }
 
@@ -218,6 +233,13 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
     public string IsEnabled { get; set; }
 
     public string CacheExpirationInMinutes { get; set; }
+  }
+
+  public class ExternalServiceDefaultRoles
+  {
+    public string[] GlobalServiceDefaultRoles { get; set; }
+
+    public string[] ScopedServiceDefaultRoles { get; set; }
   }
 
   public class VaultOptions

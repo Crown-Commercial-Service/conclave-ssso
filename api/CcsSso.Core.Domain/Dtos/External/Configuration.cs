@@ -18,4 +18,13 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string Url { get; set; }
   }
+
+  public class ServiceProfile
+  {
+    public int ServiceId { get; set; }
+
+    public string Audience { get; set; }
+
+    public List<string> RoleKeys { get; set; }
+  }
 }

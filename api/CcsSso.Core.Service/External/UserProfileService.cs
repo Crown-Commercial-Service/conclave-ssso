@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.Exceptions;
@@ -74,18 +75,21 @@ namespace CcsSso.Core.Service.External
 
       Validate(userProfileRequestInfo, false, organisation);
 
-      var eligibleIdentityProvider = await _dataContext.OrganisationEligibleIdentityProvider
-  .Include(x => x.IdentityProvider)
-  .FirstOrDefaultAsync(i => i.Id == userProfileRequestInfo.Detail.IdentityProviderId);
+      var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
+        .Include(x => x.IdentityProvider)
+        .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id)).ToListAsync();
 
-      var isConclaveConnection = eligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName;
-      if (userProfileRequestInfo.MfaEnabled && !isConclaveConnection)
+      var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
+      var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
+
+      // This is to enforce MFA over any other
+      if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
       {
         throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
       }
 
       //validate mfa and assign mfa if user is part of any admin role or group
-      if (!userProfileRequestInfo.MfaEnabled && isConclaveConnection)
+      if (!userProfileRequestInfo.MfaEnabled && isConclaveConnectionIncluded)
       {
         var partOfAdminRole = organisation.OrganisationEligibleRoles.Any(r => userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(role => role == r.Id) && r.MfaEnabled);
         if (partOfAdminRole)
@@ -152,17 +156,21 @@ namespace CcsSso.Core.Service.External
           UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified),
           UserGroupMemberships = userGroupMemberships,
           UserAccessRoles = userAccessRoles,
-          OrganisationEligibleIdentityProviderId = userProfileRequestInfo.Detail.IdentityProviderId,
-          MfaEnabled = userProfileRequestInfo.MfaEnabled
+          UserIdentityProviders = userProfileRequestInfo.Detail.IdentityProviderIds.Select(idpId => new UserIdentityProvider
+          {
+            OrganisationEligibleIdentityProviderId = idpId
+          }).ToList(),
+          MfaEnabled = userProfileRequestInfo.MfaEnabled,
+          CcsServiceId = _requestContext.ServiceId > 0 ? _requestContext.ServiceId : null
         }
       };
 
       _dataContext.Party.Add(party);
 
-      await _dataContext.SaveChangesAsync();     
+      await _dataContext.SaveChangesAsync();
 
 
-      if (isConclaveConnection)
+      if (isConclaveConnectionIncluded)
       {
         SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
         {
@@ -188,14 +196,14 @@ namespace CcsSso.Core.Service.External
           throw;
         }
       }
-      else if(userProfileRequestInfo.SendUserRegistrationEmail)
+      else if (userProfileRequestInfo.SendUserRegistrationEmail)
       {
         // Send the welcome email if not Idam user. (Idam users will recieve an email while registering)
-        await _ccsSsoEmailService.SendUserWelcomeEmailAsync(party.User.UserName, eligibleIdentityProvider.IdentityProvider.IdpName);
+        await _ccsSsoEmailService.SendUserWelcomeEmailAsync(party.User.UserName, string.Join(",", eligibleIdentityProviders.Select(idp => idp.IdentityProvider.IdpName)));
       }
 
       // Log
-      await _auditLoginService.CreateLogAsync(AuditLogEvent.UserCreate, AuditLogApplication.ManageUserAccount, $"UserId:{party.User.Id}, UserIdpId:{party.User.OrganisationEligibleIdentityProviderId}," + " " +
+      await _auditLoginService.CreateLogAsync(AuditLogEvent.UserCreate, AuditLogApplication.ManageUserAccount, $"UserId:{party.User.Id}, UserIdpId:{string.Join(",", party.User.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId))}," + " " +
         $"UserGroupIds:{string.Join(",", party.User.UserGroupMemberships.Select(g => g.OrganisationUserGroupId))}," + " " +
         $"UserRoleIds:{string.Join(",", party.User.UserAccessRoles.Select(r => r.OrganisationEligibleRoleId))}");
 
@@ -226,7 +234,7 @@ namespace CcsSso.Core.Service.External
 
         .Include(u => u.Party).ThenInclude(p => p.Person)
         .ThenInclude(pr => pr.Organisation)
-        .Include(u => u.OrganisationEligibleIdentityProvider).ThenInclude(oi => oi.IdentityProvider)
+        .Include(u => u.UserIdentityProviders).ThenInclude(uidp => uidp.OrganisationEligibleIdentityProvider).ThenInclude(oi => oi.IdentityProvider)
         .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
 
       if (user != null)
@@ -239,13 +247,17 @@ namespace CcsSso.Core.Service.External
           LastName = user.Party.Person.LastName,
           MfaEnabled = user.MfaEnabled,
           Title = (UserTitle)user.UserTitle,
+          AccountVerified = user.AccountVerified,
           Detail = new UserResponseDetail
           {
             Id = user.Id,
-            IdentityProvider = user.OrganisationEligibleIdentityProvider.IdentityProvider?.IdpConnectionName,
-            CanChangePassword = user.OrganisationEligibleIdentityProvider.IdentityProvider?.IdpConnectionName == Contstant.ConclaveIdamConnectionName,
-            IdentityProviderId = user.OrganisationEligibleIdentityProviderId,
-            IdentityProviderDisplayName = user.OrganisationEligibleIdentityProvider.IdentityProvider?.IdpName,
+            CanChangePassword = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName),
+            IdentityProviders = user.UserIdentityProviders.Where(uidp => !uidp.IsDeleted).Select(idp => new UserIdentityProviderInfo
+            {
+              IdentityProvider = idp.OrganisationEligibleIdentityProvider.IdentityProvider?.IdpConnectionName,
+              IdentityProviderId = idp.OrganisationEligibleIdentityProviderId,
+              IdentityProviderDisplayName = idp.OrganisationEligibleIdentityProvider.IdentityProvider?.IdpName,
+            }).ToList(),
             UserGroups = new List<GroupAccessRole>(),
             RolePermissionInfo = user.UserAccessRoles.Where(uar => !uar.IsDeleted).Select(uar => new RolePermissionInfo
             {
@@ -365,6 +377,7 @@ namespace CcsSso.Core.Service.External
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation)
         .Include(u => u.UserGroupMemberships)
         .Include(u => u.UserAccessRoles)
+        .Include(u => u.UserIdentityProviders)
         .Include(u => u.Party).ThenInclude(p => p.ContactPoints).ThenInclude(cp => cp.ContactDetail).ThenInclude(cd => cd.VirtualAddresses) // Get virtual addresses
         .Include(u => u.Party).ThenInclude(p => p.ContactPoints).ThenInclude(cp => cp.ContactDetail).ThenInclude(cd => cd.ContactPoints) // Assigned contact points
         .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
@@ -397,6 +410,11 @@ namespace CcsSso.Core.Service.External
         {
           userAccessRole.IsDeleted = true;
         });
+      }
+
+      if (user.UserIdentityProviders != null)
+      {
+        user.UserIdentityProviders.ForEach((idp) => { idp.IsDeleted = true; });
       }
 
       List<int> deletingContactPointIds = new();
@@ -438,6 +456,18 @@ namespace CcsSso.Core.Service.External
       }
     }
 
+    public async Task VerifyUserAccountAsync(string userName)
+    {
+      _userHelper.ValidateUserName(userName);
+      var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
+      if(user == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+      user.AccountVerified = true;
+      await _dataContext.SaveChangesAsync();
+    }
+
     public async Task<UserEditResponseInfo> UpdateUserAsync(string userName, UserProfileEditRequestInfo userProfileRequestInfo)
     {
       var isRegisteredInIdam = false;
@@ -463,6 +493,7 @@ namespace CcsSso.Core.Service.External
         .Include(u => u.Party).ThenInclude(p => p.Person)
         .Include(u => u.UserGroupMemberships)
         .Include(u => u.UserAccessRoles)
+        .Include(u => u.UserIdentityProviders).ThenInclude(uidp => uidp.OrganisationEligibleIdentityProvider).ThenInclude(oidp => oidp.IdentityProvider)
         .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
 
       if (user == null)
@@ -477,7 +508,7 @@ namespace CcsSso.Core.Service.External
       bool hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
                                     user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
                                     user.UserTitle != (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified) ||
-                                    user.OrganisationEligibleIdentityProviderId != userProfileRequestInfo.Detail.IdentityProviderId);
+                                    user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id) != userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id));
 
       user.Party.Person.FirstName = userProfileRequestInfo.FirstName.Trim();
       user.Party.Person.LastName = userProfileRequestInfo.LastName.Trim();
@@ -488,7 +519,7 @@ namespace CcsSso.Core.Service.External
       List<int> previousRoles = new();
       List<int> requestGroups = new();
       List<int> requestRoles = new();
-      int previousIdentityProviderId = 0;
+      List<int> previousIdentityProviderIds = new();
       if (!isMyProfile)
       {
         user.UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified);
@@ -505,15 +536,18 @@ namespace CcsSso.Core.Service.External
                                         .Include(x => x.IdentityProvider)
                                         .ToListAsync();
 
-        var isConclaveConnection = elegibleIdentityProviders.First(i => i.Id == userProfileRequestInfo.Detail.IdentityProviderId).IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName;
+        var isPreviouslyUserNamePwdConnectionIncluded = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
+        var isPreviouslyNonUserNamePwdConnectionIncluded = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName);
+        var isUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName));
+        var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
 
-        if (userProfileRequestInfo.MfaEnabled && !isConclaveConnection)
+        if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
         {
           throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
         }
 
         //mfa flag has removed
-        if (!userProfileRequestInfo.MfaEnabled && isConclaveConnection)
+        if (!userProfileRequestInfo.MfaEnabled && isUserNamePwdConnectionIncluded)
         {
           //check for any admin role/groups
           var mfaEnabledRoleExists = organisation.OrganisationEligibleRoles.Any(r => userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(role => role == r.Id)
@@ -533,6 +567,7 @@ namespace CcsSso.Core.Service.External
             }
           }
         }
+
         user.MfaEnabled = userProfileRequestInfo.MfaEnabled;
         if (mfaFlagChanged)
         {
@@ -589,30 +624,49 @@ namespace CcsSso.Core.Service.External
           });
         }
 
-        previousIdentityProviderId = user.OrganisationEligibleIdentityProviderId;
-        user.OrganisationEligibleIdentityProviderId = userProfileRequestInfo.Detail.IdentityProviderId;
-        if (previousIdentityProviderId != userProfileRequestInfo.Detail.IdentityProviderId)
+        hasIdpChange = user.UserIdentityProviders
+          .Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id) != userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id);
+
+        previousIdentityProviderIds = user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).ToList();
+
+        // Remove idps
+        user.UserIdentityProviders.Where(uidp => !uidp.IsDeleted).ToList().ForEach((uidp) =>
         {
-          hasIdpChange = true;
-
-          if (elegibleIdentityProviders.First(i => i.Id == previousIdentityProviderId).IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName)
+          if (!userProfileRequestInfo.Detail.IdentityProviderIds.Contains(uidp.OrganisationEligibleIdentityProviderId))
           {
-            await _idamService.DeleteUserInIdamAsync(userName);
+            uidp.IsDeleted = true;
           }
-          else if (isConclaveConnection)
-          {
-            SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
-            {
-              Email = userName,
-              UserName = userName,
-              FirstName = userProfileRequestInfo.FirstName,
-              LastName = userProfileRequestInfo.LastName,
-              MfaEnabled = user.MfaEnabled
-            };
+        });
 
-            await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
-            isRegisteredInIdam = true;
+        // Add new idps
+        List<UserIdentityProvider> newUserIdentityProviderList = new();
+        userProfileRequestInfo.Detail.IdentityProviderIds.ForEach((id) =>
+        {
+          if (!user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProviderId == id))
+          {
+            newUserIdentityProviderList.Add(new UserIdentityProvider { UserId = user.Id, OrganisationEligibleIdentityProviderId = id });
           }
+        });
+        user.UserIdentityProviders.AddRange(newUserIdentityProviderList);
+
+        if (isPreviouslyUserNamePwdConnectionIncluded && !isUserNamePwdConnectionIncluded) // Conclave connection removed
+        {
+          await _idamService.DeleteUserInIdamAsync(userName);
+        }
+        else if (!isPreviouslyUserNamePwdConnectionIncluded && isUserNamePwdConnectionIncluded)  // Conclave connection added
+        {
+          SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+          {
+            Email = userName,
+            UserName = userName,
+            FirstName = userProfileRequestInfo.FirstName,
+            LastName = userProfileRequestInfo.LastName,
+            MfaEnabled = user.MfaEnabled,
+            SendUserRegistrationEmail = userProfileRequestInfo.SendUserRegistrationEmail
+          };
+
+          await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
+          isRegisteredInIdam = true;
         }
         else if (mfaFlagChanged)
         {
@@ -635,7 +689,7 @@ namespace CcsSso.Core.Service.External
         if (hasIdpChange)
         {
           await _remoteCacheService.SetValueAsync(CacheKeyConstant.ForceSignoutKey + userName, true);
-          await _auditLoginService.CreateLogAsync(AuditLogEvent.UserIdpUpdate, AuditLogApplication.ManageUserAccount, $"UserId:{user.Id}, NewIdpId:{user.OrganisationEligibleIdentityProviderId}, PreviousIdpId:{previousIdentityProviderId}");
+          await _auditLoginService.CreateLogAsync(AuditLogEvent.UserIdpUpdate, AuditLogApplication.ManageUserAccount, $"UserId:{user.Id}, NewIdpIds:{string.Join(",", userProfileRequestInfo.Detail.IdentityProviderIds)}, PreviousIdpIds:{string.Join(",", previousIdentityProviderIds)}");
         }
         if (!hasGroupMembershipsNotChanged)
         {
@@ -882,7 +936,8 @@ namespace CcsSso.Core.Service.External
           throw new CcsSsoException(ErrorConstant.ErrorInvalidUserRole);
         }
 
-        if (!orgIdpIds.Any(orgIdpId => orgIdpId == userProfileReqestInfo.Detail.IdentityProviderId))
+        if (userProfileReqestInfo.Detail.IdentityProviderIds == null || !userProfileReqestInfo.Detail.IdentityProviderIds.Any() ||
+          userProfileReqestInfo.Detail.IdentityProviderIds.Any(id => !orgIdpIds.Contains(id)))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidIdentityProvider);
         }

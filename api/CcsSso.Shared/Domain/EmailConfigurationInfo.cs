@@ -7,5 +7,7 @@ namespace CcsSso.Shared.Domain
   public class EmailConfigurationInfo
   {
     public string ApiKey { get; set; }
+
+    public string UnverifiedUserDeletionNotificationTemplateId { get; set; }
   }
 }

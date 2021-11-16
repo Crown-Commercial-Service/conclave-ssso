@@ -50,6 +50,8 @@ namespace CcsSso.Security.Domain.Dtos
 
     public string LastName { get; set; }
 
+    public bool AccountVerified { get; set; }
+
     public string OrganisationId { get; set; }
   }
 
@@ -62,6 +64,15 @@ namespace CcsSso.Security.Domain.Dtos
     public List<GroupAccessRole> UserGroups { get; set; }
 
     public List<RolePermissionInfo> RolePermissionInfo { get; set; }
+
+    public List<UserIdentityProviderInfo> IdentityProviders { get; set; }
+  }
+
+  public class UserIdentityProviderInfo
+  {
+    public int IdentityProviderId { get; set; }
+
+    public string IdentityProvider { get; set; }
   }
 
   public class RolePermissionInfo

@@ -114,7 +114,8 @@ namespace CcsSso.Security.Api
             DBConnectionName = Configuration["Auth0:DBConnectionName"],
             ManagementApiBaseUrl = Configuration["Auth0:ManagementApiBaseUrl"],
             ManagementApiIdentifier = Configuration["Auth0:ManagementApiIdentifier"],
-            DefaultDBConnectionId = Configuration["Auth0:DefaultDBConnectionId"]
+            DefaultDBConnectionId = Configuration["Auth0:DefaultDBConnectionId"],
+            DefaultAudience = Configuration["Auth0:DefaultAudience"]
           },
           AwsCognitoConfigurationInfo = new AwsCognitoConfigurationInfo()
           {
@@ -154,10 +155,11 @@ namespace CcsSso.Security.Api
             IDTokenExpirationTimeInMinutes = tokenExpirationTimeInMinutes,
             LogoutTokenExpireTimeInMinutes = logoutTokenExpirationTimeInMinutes
           },
-          UserExternalApiDetails = new UserExternalApiDetails()
+          UserExternalApiDetails = new WrapperApi()
           {
-            ApiKey = Configuration["UserExternalApiDetails:ApiKey"],
-            Url = isApiGatewayEnabled ? Configuration["UserExternalApiDetails:ApiGatewayEnabledUrl"] : Configuration["UserExternalApiDetails:ApiGatewayDisabledUrl"]
+            ApiKey = Configuration["WrapperApi:ApiKey"],
+            UserServiceUrl = Configuration["WrapperApi:UserServiceUrl"],
+            ConfigurationServiceUrl = Configuration["WrapperApi:ConfigurationServiceUrl"]
           },
           PasswordPolicy = new PasswordPolicy()
           {

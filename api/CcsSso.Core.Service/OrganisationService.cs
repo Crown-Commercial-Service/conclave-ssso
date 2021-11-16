@@ -311,7 +311,7 @@ namespace CcsSso.Service
             OrganisationId = ciiOrgId,
             BusinessType = organisationRegistrationDto.BusinessType,
             RightToBuy = organisationRegistrationDto.RightToBuy,
-            SupplierBuyerType = organisationRegistrationDto.SupplierBuyerType,
+            SupplierBuyerType = organisationRegistrationDto.SupplierBuyerType
           }
         };
 
@@ -348,7 +348,7 @@ namespace CcsSso.Service
           MfaEnabled = true,
           Detail = new UserRequestDetail
           {
-            IdentityProviderId = identifyProvider.Id,
+            IdentityProviderIds = new List<int> { identifyProvider.Id },
             RoleIds = new List<int> { adminRole.Id },
           }
         };

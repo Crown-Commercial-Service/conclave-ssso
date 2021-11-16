@@ -13,37 +13,29 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Scripts\20210401142220_DropTable.sql" />
-    <None Remove="Scripts\20210401142221_InitialMigration.sql" />
     <None Remove="Scripts\20210401142223_InsertInitialRolesServicePermissions.sql" />
     <None Remove="Scripts\20210401142224_InsertIdentityProviderData.sql" />
-    <None Remove="Scripts\20210402742223_DigitlRolesServicePermissions.sql" />
-    <None Remove="Scripts\20210402742224_InsertRMIAndCATServices.sql" />
-    <None Remove="Scripts\Sprint10\20210421032608_OrganisationEntityChanges.sql" />
-    <None Remove="Scripts\Sprint10\20210424062257_CcsServiceChanges.sql" />
-    <None Remove="Scripts\Sprint12\20210520065215_CcsServiceNewColumns.sql" />
-    <None Remove="Scripts\Sprint13Dev\20210615142223_InsertURDemoPemissions.sql" />
-    <None Remove="Scripts\Sprint13\20210603063941_AddAuditLoginTable.sql" />
-    <None Remove="Scripts\Sprint13\20210608135113_RemoveAuditFieldsFromAuditLogTable.sql" />
-    <None Remove="Scripts\Sprint14\20210621134357_AddOriginalContactId.sql" />
-    <None Remove="Scripts\Sprint14\20210623055402_AddAssignedContactType.sql" />
-    <None Remove="Scripts\Sprint14\AddMfaFlag.sql" />
+    <None Remove="Scripts\20211102104645_InitialMigration.sql" />
+    <None Remove="Scripts\Sprint-23\20211103081721_ExternalServiceRoleMapping.sql" />
+    <None Remove="Scripts\Sprint-23\20211104055058_CcsServiceIdColumnToOrganisation.sql" />
+    <None Remove="Scripts\Sprint-23\20211108030518_UserMultipleIdpAndServiceId.sql" />
+    <None Remove="Scripts\Sprint-23\20211108030519_MigrateUserIdps.sql" />
+    <None Remove="Scripts\Sprint-23\20211109132208_DropOrganisationEligibleIdpIdOnUser.sql" />
+    <None Remove="Scripts\Sprint-23\20211110035511_CanActivateColumntoOrganiation.sql" />
+    <None Remove="Scripts\Sprint-23\20211111112648_AccountVerifiedColumnToUser.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\20210401142220_DropTable.sql" />
-    <EmbeddedResource Include="Scripts\20210401142221_InitialMigration.sql" />
-    <EmbeddedResource Include="Scripts\20210402742224_InsertRMIAndCATServices.sql" />
-    <EmbeddedResource Include="Scripts\20210402742223_DigitlRolesServicePermissions.sql" />
+    <EmbeddedResource Include="Scripts\20211102104645_InitialMigration.sql" />
     <EmbeddedResource Include="Scripts\20210401142223_InsertInitialRolesServicePermissions.sql" />
     <EmbeddedResource Include="Scripts\20210401142224_InsertIdentityProviderData.sql" />
-    <EmbeddedResource Include="Scripts\Sprint10\20210424062257_CcsServiceChanges.sql" />
-    <EmbeddedResource Include="Scripts\Sprint10\20210421032608_OrganisationEntityChanges.sql" />
-    <EmbeddedResource Include="Scripts\Sprint12\20210520065215_CcsServiceNewColumns.sql" />
-    <EmbeddedResource Include="Scripts\Sprint13Dev\20210615142223_InsertURDemoPemissions.sql" />
-    <EmbeddedResource Include="Scripts\Sprint13\20210608135113_RemoveAuditFieldsFromAuditLogTable.sql" />
-    <EmbeddedResource Include="Scripts\Sprint13\20210603063941_AddAuditLoginTable.sql" />
-    <EmbeddedResource Include="Scripts\Sprint14\AddMfaFlag.sql" />
-    <EmbeddedResource Include="Scripts\Sprint14\20210623055402_AddAssignedContactType.sql" />
-    <EmbeddedResource Include="Scripts\Sprint14\20210621134357_AddOriginalContactId.sql" />
+    <EmbeddedResource Include="Scripts\Sprint-23\20211111112648_AccountVerifiedColumnToUser.sql" />
+    <EmbeddedResource Include="Scripts\Sprint-23\20211109132208_DropOrganisationEligibleIdpIdOnUser.sql" />
+    <EmbeddedResource Include="Scripts\Sprint-23\20211108030519_MigrateUserIdps.sql" />
+    <EmbeddedResource Include="Scripts\Sprint-23\20211108030518_UserMultipleIdpAndServiceId.sql" />
+    <EmbeddedResource Include="Scripts\Sprint-23\20211110035511_CanActivateColumntoOrganiation.sql" />
+    <EmbeddedResource Include="Scripts\Sprint-23\20211104055058_CcsServiceIdColumnToOrganisation.sql" />
+    <EmbeddedResource Include="Scripts\Sprint-23\20211103081721_ExternalServiceRoleMapping.sql" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />

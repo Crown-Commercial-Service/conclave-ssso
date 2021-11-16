@@ -1,4 +1,7 @@
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Jobs;
+using CcsSso.Core.JobScheduler.Contracts;
+using CcsSso.Core.JobScheduler.Services;
 using CcsSso.Core.Service;
 using CcsSso.DbPersistence;
 using CcsSso.Domain.Contracts;
@@ -49,16 +52,20 @@ namespace CcsSso.Core.JobScheduler
         {
           string dbConnection;
           CiiSettings ciiSettings;
+          List<UserDeleteJobSetting> userDeleteJobSettings;
           SecurityApiSettings securityApiSettings;
-          ScheduleJobSettingsVault scheduleJobSettingsVault;
+          ScheduleJobSettings scheduleJobSettings;
           RedisCacheSettingsVault redisCacheSettingsVault;
+          EmailConfigurationInfo emailConfigurationInfo;
           if (vaultEnabled)
           {
             var secrets = LoadSecretsAsync().Result;
             dbConnection = secrets["DbConnection"].ToString();
             ciiSettings = JsonConvert.DeserializeObject<CiiSettings>(secrets["CIISettings"].ToString());
+            userDeleteJobSettings = JsonConvert.DeserializeObject<List<UserDeleteJobSetting>>(secrets["UserDeleteJobSettings"].ToString());
+            emailConfigurationInfo = JsonConvert.DeserializeObject<EmailConfigurationInfo>(secrets["Email"].ToString());
             securityApiSettings = JsonConvert.DeserializeObject<SecurityApiSettings>(secrets["SecurityApiSettings"].ToString());
-            scheduleJobSettingsVault = JsonConvert.DeserializeObject<ScheduleJobSettingsVault>(secrets["ScheduleJobSettings"].ToString());
+            scheduleJobSettings = JsonConvert.DeserializeObject<ScheduleJobSettings>(secrets["ScheduleJobSettings"].ToString());
             redisCacheSettingsVault = JsonConvert.DeserializeObject<RedisCacheSettingsVault>(secrets["RedisCacheSettings"].ToString());
           }
           else
@@ -66,39 +73,25 @@ namespace CcsSso.Core.JobScheduler
             var config = hostContext.Configuration;
             dbConnection = config["DbConnection"];
             ciiSettings = config.GetSection("CIISettings").Get<CiiSettings>();
+            userDeleteJobSettings = config.GetSection("UserDeleteJobSettings").Get<List<UserDeleteJobSetting>>();
             securityApiSettings = config.GetSection("SecurityApiSettings").Get<SecurityApiSettings>();
-            scheduleJobSettingsVault = config.GetSection("ScheduleJobSettings").Get<ScheduleJobSettingsVault>();
+            scheduleJobSettings = config.GetSection("ScheduleJobSettings").Get<ScheduleJobSettings>();
+            emailConfigurationInfo = config.GetSection("Email").Get<EmailConfigurationInfo>();
             redisCacheSettingsVault = config.GetSection("RedisCacheSettings").Get<RedisCacheSettingsVault>();
           }
 
           services.AddSingleton(s =>
           {
-            int.TryParse(scheduleJobSettingsVault.OrganizationRegistrationExpiredThresholdInMinutes, out int organizationRegistrationExpiredThresholdInMinutes);
-            int.TryParse(scheduleJobSettingsVault.JobSchedulerExecutionFrequencyInMinutes, out int jobSchedulerExecutionFrequencyInMinutes);
-
-            if (organizationRegistrationExpiredThresholdInMinutes == 0)
-            {
-              organizationRegistrationExpiredThresholdInMinutes = 60 * 36; // 36 hours as default
-            }
-
-            if (jobSchedulerExecutionFrequencyInMinutes == 0)
-            {
-              jobSchedulerExecutionFrequencyInMinutes = 10;
-            }
-
             return new AppSettings()
             {
               DbConnection = dbConnection,
+              UserDeleteJobSettings = userDeleteJobSettings,
               SecurityApiSettings = new SecurityApiSettings()
               {
                 ApiKey = securityApiSettings.ApiKey,
                 Url = securityApiSettings.Url
               },
-              ScheduleJobSettings = new ScheduleJobSettings()
-              {
-                OrganizationRegistrationExpiredThresholdInMinutes = organizationRegistrationExpiredThresholdInMinutes,
-                JobSchedulerExecutionFrequencyInMinutes = jobSchedulerExecutionFrequencyInMinutes
-              },
+              ScheduleJobSettings = scheduleJobSettings,
               CiiSettings = new CiiSettings()
               {
                 Token = ciiSettings.Token,
@@ -115,9 +108,20 @@ namespace CcsSso.Core.JobScheduler
               UseDefaultCredentials = true
             };
           });
+          services.AddSingleton(s =>
+          {
+            return emailConfigurationInfo;
+          });
+
           services.AddSingleton<IDateTimeService, DateTimeService>();
+          services.AddSingleton<IIdamSupportService, IdamSupportService>();
+          services.AddScoped<IOrganisationSupportService, OrganisationSupportService>(); 
+          services.AddScoped<IContactSupportService, ContactSupportService>(); 
+          services.AddSingleton<IEmailSupportService, EmailSupportService>();
+          services.AddSingleton<IEmailProviderService, EmailProviderService>();
           services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(dbConnection));
           services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
+          services.AddHostedService<UnverifiedUserDeleteJob>();
           services.AddSingleton<RequestContext>(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
           services.AddSingleton<IRemoteCacheService, RedisCacheService>();
           services.AddSingleton<ICacheInvalidateService, CacheInvalidateService>();

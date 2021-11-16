@@ -15,6 +15,8 @@ namespace CcsSso.Security.Domain.Dtos
 
     public string ClientId { get; set; }
 
+    public string Audience { get; set; }
+
     public string CodeVerifier { get; set; }
 
     public string ClientSecret { get; set; }

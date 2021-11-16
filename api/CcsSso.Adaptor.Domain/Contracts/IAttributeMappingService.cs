@@ -19,6 +19,8 @@ namespace CcsSso.Adaptor.Domain.Contracts
 
     Dictionary<string, object> GetMappedOrgIdentifierInfo(CiiIdentifierAllDto identifierInfo, Dictionary<string, string> attributeMappings);
 
+    Dictionary<string, object> GetMappedIdentityProviders(WrapperUserResponse user, Dictionary<string, string> attributeMappings);
+
     Dictionary<string, object> GetMappedUserRoles(WrapperUserResponse user, Dictionary<string, string> attributeMappings);
 
     Dictionary<string, object> GetMappedUserGroups(WrapperUserResponse user, Dictionary<string, string> attributeMappings);

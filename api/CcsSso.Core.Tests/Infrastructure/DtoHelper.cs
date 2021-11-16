@@ -136,7 +136,7 @@ namespace CcsSso.Core.Tests.Infrastructure
     }
 
     public static UserProfileEditRequestInfo GetUserProfileRequestInfo(string firstName, string lastName, string userName,
-      string organisationId, int identityProviderId, UserTitle? title, List<int> groupIds = null, List<int> roleIds = null)
+      string organisationId, List<int> identityProviderIds, UserTitle? title, List<int> groupIds = null, List<int> roleIds = null)
     {
       return new UserProfileEditRequestInfo
       {
@@ -147,7 +147,7 @@ namespace CcsSso.Core.Tests.Infrastructure
         Title = title,
         Detail = new UserRequestDetail
         {
-          IdentityProviderId = identityProviderId,
+          IdentityProviderIds = identityProviderIds,
           GroupIds = groupIds,
           RoleIds = roleIds
         }

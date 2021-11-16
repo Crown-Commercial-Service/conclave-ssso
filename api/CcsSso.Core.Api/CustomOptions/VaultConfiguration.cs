@@ -53,6 +53,8 @@ namespace CcsSso.Api.CustomOptions
       Data.Add("DbConnection", _dbConnection);
       Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
       Data.Add("CustomDomain", _secrets.Data["CustomDomain"].ToString());
+      Data.Add("DashboardServiceClientId", _secrets.Data["DashboardServiceClientId"].ToString());
+
       if (_secrets.Data.ContainsKey("CorsDomains"))
       {
         var corsList = JsonConvert.DeserializeObject<List<string>>(_secrets.Data["CorsDomains"].ToString());

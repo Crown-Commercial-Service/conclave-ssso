@@ -26,6 +26,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -56,7 +57,8 @@ namespace CcsSso.ExternalApi
         int.TryParse(Configuration["RedisCacheSettings:CacheExpirationInMinutes"], out int cacheExpirationInMinutes);
         int.TryParse(Configuration["InMemoryCacheExpirationInMinutes"], out int inMemoryCacheExpirationInMinutes);
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
-
+        var globalServiceRoles = Configuration.GetSection("ExternalServiceDefaultRoles:GlobalServiceDefaultRoles").Get<List<string>>();
+        var scopedServiceRoles = Configuration.GetSection("ExternalServiceDefaultRoles:ScopedServiceDefaultRoles").Get<List<string>>();
         if (cacheExpirationInMinutes == 0)
         {
           cacheExpirationInMinutes = 10;
@@ -103,6 +105,11 @@ namespace CcsSso.ExternalApi
             ConnectionString = Configuration["RedisCacheSettings:ConnectionString"],
             IsEnabled = isRedisEnabled,
             CacheExpirationInMinutes = cacheExpirationInMinutes
+          },
+          ServiceDefaultRoleInfo = new ServiceDefaultRoleInfo()
+          {
+            GlobalServiceDefaultRoles = globalServiceRoles,
+            ScopedServiceDefaultRoles = scopedServiceRoles
           }
         };
         return appConfigInfo;

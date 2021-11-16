@@ -55,7 +55,7 @@ namespace CcsSso.Security.Services
 
         foreach (var tuple in customClaims)
         {
-          claims.Add(new Claim(tuple.Key, tuple.Value));
+          claims.Add(new Claim(tuple.Key, tuple.Value ?? string.Empty));
         }
 
         var jwt = new JwtSecurityToken(
