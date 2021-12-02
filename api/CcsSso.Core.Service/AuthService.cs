@@ -108,8 +108,13 @@ namespace CcsSso.Core.Service
 
     public bool AuthorizeUser(string[] claimList)
     {
-
       var isAuthorized = _requestContext.Roles.Any(r => claimList.Any(c => r == c));
+
+      // Org users (having only the ORG_DEFAULT_USER role) should not access other user details
+      if (_requestContext.RequestType == RequestType.NotHavingOrgId && _requestContext.Roles.Count == 1 && _requestContext.Roles.Contains("ORG_DEFAULT_USER"))
+      {
+        isAuthorized = _requestContext.UserName == _requestContext.RequestIntendedUserName;
+      }
 
       if (!isAuthorized)
       {

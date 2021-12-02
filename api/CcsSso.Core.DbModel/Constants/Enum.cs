@@ -26,4 +26,14 @@ namespace CcsSso.Core.DbModel.Constants
     User,
     Site
   }
+
+  public enum BulkUploadStatus
+  {
+    Processing,
+    DocUploadValidationFail,
+    Validating,
+    ValidationFail,
+    Migrating,
+    MigrationCompleted
+  }
 }

@@ -460,7 +460,7 @@ namespace CcsSso.Core.Service.External
     {
       _userHelper.ValidateUserName(userName);
       var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
-      if(user == null)
+      if (user == null)
       {
         throw new ResourceNotFoundException();
       }
@@ -826,6 +826,7 @@ namespace CcsSso.Core.Service.External
       _userHelper.ValidateUserName(userName);
 
       var user = await _dataContext.User
+        .Include(u => u.UserIdentityProviders)
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation)
         .Include(u => u.UserAccessRoles)
         .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
@@ -835,6 +836,8 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
+      var orgId = user.Party.Person.OrganisationId;
+
       var organisationAdminAccessRole = await _dataContext.OrganisationEligibleRole
         .FirstOrDefaultAsync(oer => !oer.IsDeleted && oer.OrganisationId == user.Party.Person.OrganisationId && oer.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey);
 
@@ -842,6 +845,27 @@ namespace CcsSso.Core.Service.External
       {
         throw new CcsSsoException("NO_ADMIN_ROLE_FOR_ORGANISATION");
       }
+
+      var userNamePasswordConnection = await _dataContext.OrganisationEligibleIdentityProvider.FirstOrDefaultAsync(oidp => oidp.OrganisationId == orgId &&
+                                         oidp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
+      var hasConclaveConnection = user.UserIdentityProviders.Any(uip => uip.OrganisationEligibleIdentityProviderId == userNamePasswordConnection.Id && !uip.IsDeleted);
+
+      var mfaConfiguredInDBForUser = user.MfaEnabled;
+
+      user.MfaEnabled = true;
+
+      if (!hasConclaveConnection)
+      {       
+        user.UserIdentityProviders.Add(new UserIdentityProvider()
+        {
+          OrganisationEligibleIdentityProviderId = userNamePasswordConnection.Id,
+          UserId = user.Id
+        });
+      }
+
+      //Admins should only have username-password option
+      var nonConclaveConnections = user.UserIdentityProviders.Where(uip => uip.OrganisationEligibleIdentityProviderId != userNamePasswordConnection.Id && !uip.IsDeleted).ToList();
+      nonConclaveConnections.ForEach(c => c.IsDeleted = true);
 
       user.UserAccessRoles.Add(new UserAccessRole
       {
@@ -862,6 +886,29 @@ namespace CcsSso.Core.Service.External
 
       // Send permission upadate email
       await _ccsSsoEmailService.SendUserPermissionUpdateEmailAsync(userName);
+
+      if (!hasConclaveConnection)
+      {
+        SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+        {
+          FirstName = user.Party.Person.FirstName,
+          LastName = user.Party.Person.LastName,
+          Email = userName,
+          MfaEnabled = true,
+          SendUserRegistrationEmail = true
+        };
+        await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
+      }
+      else if (!mfaConfiguredInDBForUser)
+      {
+        SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+        {
+          Email = userName,
+          MfaEnabled = true,
+          SendUserRegistrationEmail = false
+        };
+        await _idamService.UpdateUserMfaInIdamAsync(securityApiUserInfo);
+      }
     }
 
     private async Task<bool> IsOrganisationOnlyAdminAsync(User user, string userName)

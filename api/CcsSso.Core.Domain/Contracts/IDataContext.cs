@@ -85,6 +85,8 @@ namespace CcsSso.Domain.Contracts
 
     DbSet<OrganisationEligibleIdentityProvider> OrganisationEligibleIdentityProvider { get; set; }
 
+    DbSet<BulkUploadDetail> BulkUploadDetail { get; set; }
+
     Task<PagedResultSet<T>> GetPagedResultAsync<T>(IQueryable<T> query, ResultSetCriteria resultSetCriteria);
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

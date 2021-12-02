@@ -1,0 +1,597 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.JobScheduler/CcsSso.Core.JobScheduler.csproj": {}
+  },
+  "projects": {
+    "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/CcsSso.Core.DbModel.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/CcsSso.Core.DbModel.csproj",
+        "projectName": "CcsSso.Core.DbModel",
+        "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/CcsSso.Core.DbModel.csproj",
+        "packagesPath": "/Users/dreamsguys/.nuget/packages/",
+        "outputPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/NuGet.Config",
+          "/Users/dreamsguys/.config/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0": {
+            "targetAlias": "net5.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/5.0.302/RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbPersistence/CcsSso.Core.DbPersistence.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbPersistence/CcsSso.Core.DbPersistence.csproj",
+        "projectName": "CcsSso.Core.DbPersistence",
+        "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbPersistence/CcsSso.Core.DbPersistence.csproj",
+        "packagesPath": "/Users/dreamsguys/.nuget/packages/",
+        "outputPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbPersistence/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/NuGet.Config",
+          "/Users/dreamsguys/.config/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0": {
+            "targetAlias": "net5.0",
+            "projectReferences": {
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/CcsSso.Core.DbModel.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/CcsSso.Core.DbModel.csproj"
+              },
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Domain/CcsSso.Core.Domain.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Domain/CcsSso.Core.Domain.csproj"
+              },
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[5.0.10, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/5.0.302/RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Domain/CcsSso.Core.Domain.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Domain/CcsSso.Core.Domain.csproj",
+        "projectName": "CcsSso.Core.Domain",
+        "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Domain/CcsSso.Core.Domain.csproj",
+        "packagesPath": "/Users/dreamsguys/.nuget/packages/",
+        "outputPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Domain/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/NuGet.Config",
+          "/Users/dreamsguys/.config/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0": {
+            "targetAlias": "net5.0",
+            "projectReferences": {
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/CcsSso.Core.DbModel.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/CcsSso.Core.DbModel.csproj"
+              },
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[5.0.10, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/5.0.302/RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.JobScheduler/CcsSso.Core.JobScheduler.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.JobScheduler/CcsSso.Core.JobScheduler.csproj",
+        "projectName": "CcsSso.Core.JobScheduler",
+        "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.JobScheduler/CcsSso.Core.JobScheduler.csproj",
+        "packagesPath": "/Users/dreamsguys/.nuget/packages/",
+        "outputPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.JobScheduler/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/NuGet.Config",
+          "/Users/dreamsguys/.config/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0": {
+            "targetAlias": "net5.0",
+            "projectReferences": {
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbPersistence/CcsSso.Core.DbPersistence.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbPersistence/CcsSso.Core.DbPersistence.csproj"
+              },
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Domain/CcsSso.Core.Domain.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Domain/CcsSso.Core.Domain.csproj"
+              },
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Service/CcsSso.Core.Service.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Service/CcsSso.Core.Service.csproj"
+              },
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "dependencies": {
+            "Microsoft.Extensions.Hosting": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[5.0.10, )"
+            },
+            "System.Configuration.ConfigurationManager": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "VaultSharp": {
+              "target": "Package",
+              "version": "[1.7.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/5.0.302/RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Service/CcsSso.Core.Service.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Service/CcsSso.Core.Service.csproj",
+        "projectName": "CcsSso.Core.Service",
+        "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Service/CcsSso.Core.Service.csproj",
+        "packagesPath": "/Users/dreamsguys/.nuget/packages/",
+        "outputPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Service/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/NuGet.Config",
+          "/Users/dreamsguys/.config/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0": {
+            "targetAlias": "net5.0",
+            "projectReferences": {
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Domain/CcsSso.Core.Domain.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.Domain/CcsSso.Core.Domain.csproj"
+              },
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Domain/CcsSso.Security.Domain.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Domain/CcsSso.Security.Domain.csproj"
+              },
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Cache/CcsSso.Shared.Cache.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Cache/CcsSso.Shared.Cache.csproj"
+              },
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "dependencies": {
+            "Microsoft.AspNetCore.Http.Abstractions": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "Microsoft.Extensions.Configuration.Abstractions": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "Microsoft.Extensions.Http": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "Microsoft.Net.Http.Headers": {
+              "target": "Package",
+              "version": "[2.2.8, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.1, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/5.0.302/RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Domain/CcsSso.Security.Domain.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Domain/CcsSso.Security.Domain.csproj",
+        "projectName": "CcsSso.Security.Domain",
+        "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Domain/CcsSso.Security.Domain.csproj",
+        "packagesPath": "/Users/dreamsguys/.nuget/packages/",
+        "outputPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Domain/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/NuGet.Config",
+          "/Users/dreamsguys/.config/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0": {
+            "targetAlias": "net5.0",
+            "projectReferences": {
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "dependencies": {
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.1, )"
+            },
+            "System.ComponentModel.Annotations": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[6.12.2, )"
+            },
+            "System.Text.Json": {
+              "target": "Package",
+              "version": "[5.0.2, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/5.0.302/RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Cache/CcsSso.Shared.Cache.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Cache/CcsSso.Shared.Cache.csproj",
+        "projectName": "CcsSso.Shared.Cache",
+        "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Cache/CcsSso.Shared.Cache.csproj",
+        "packagesPath": "/Users/dreamsguys/.nuget/packages/",
+        "outputPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Cache/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/NuGet.Config",
+          "/Users/dreamsguys/.config/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0": {
+            "targetAlias": "net5.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "dependencies": {
+            "Microsoft.Extensions.Caching.Abstractions": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.1, )"
+            },
+            "StackExchange.Redis": {
+              "target": "Package",
+              "version": "[2.2.50, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/5.0.302/RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj",
+        "projectName": "CcsSso.Shared",
+        "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/CcsSso.Shared.csproj",
+        "packagesPath": "/Users/dreamsguys/.nuget/packages/",
+        "outputPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/NuGet.Config",
+          "/Users/dreamsguys/.config/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0": {
+            "targetAlias": "net5.0",
+            "projectReferences": {
+              "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Cache/CcsSso.Shared.Cache.csproj": {
+                "projectPath": "/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Cache/CcsSso.Shared.Cache.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "dependencies": {
+            "AWSSDK.S3": {
+              "target": "Package",
+              "version": "[3.7.4.10, )"
+            },
+            "AWSSDK.SQS": {
+              "target": "Package",
+              "version": "[3.7.1.14, )"
+            },
+            "GovukNotify": {
+              "target": "Package",
+              "version": "[4.0.1, )"
+            },
+            "Microsoft.AspNetCore.Http.Abstractions": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "Microsoft.Extensions.Http": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "Microsoft.IdentityModel.Tokens": {
+              "target": "Package",
+              "version": "[6.12.2, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[6.12.2, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/5.0.302/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
