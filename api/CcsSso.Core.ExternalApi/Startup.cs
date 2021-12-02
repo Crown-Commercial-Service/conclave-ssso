@@ -186,7 +186,7 @@ namespace CcsSso.ExternalApi
       services.AddScoped<IAuditLoginService, AuditLoginService>();
       services.AddScoped<IDateTimeService, DateTimeService>(); 
       services.AddScoped<IUserService, UserService>(); 
-      services.AddScoped<IAuthService, AuthService>(); 
+      services.AddScoped<IAuthService, AuthService>();
       services.AddHttpClient();
       services.AddHttpContextAccessor();
 

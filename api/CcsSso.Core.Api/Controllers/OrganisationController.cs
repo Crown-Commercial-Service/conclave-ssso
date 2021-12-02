@@ -1,4 +1,6 @@
 using CcsSso.Core.Authorisation;
+using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Dtos;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Domain.Contracts;
 using CcsSso.Dtos.Domain.Models;
@@ -15,10 +17,12 @@ namespace CcsSso.Api.Controllers
   public class OrganisationController : ControllerBase
   {
     private readonly IOrganisationService _organisationService;
+    private readonly IBulkUploadService _bulkUploadService;
 
-    public OrganisationController(IOrganisationService organisationService)
+    public OrganisationController(IOrganisationService organisationService, IBulkUploadService bulkUploadService)
     {
       _organisationService = organisationService;
+      _bulkUploadService = bulkUploadService;
     }
 
     [HttpPost("registrations")]
@@ -107,6 +111,25 @@ namespace CcsSso.Api.Controllers
     public async Task SendOrgAdminJoinRequestEmail(OrganisationJoinRequest organisationJoinRequest)
     {
       await _organisationService.NotifyOrgAdminToJoinAsync(organisationJoinRequest);
+    }
+
+    [HttpPost("{organisationId}/bulk-users")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [Consumes("multipart/form-data")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    public async Task<AcceptedResult> InitiateBulkUserUpload(string organisationId, IFormFile file)
+    {
+      var result = await _bulkUploadService.BulkUploadUsersAsync(organisationId, file);
+      return new AcceptedResult($"organisations/{organisationId}/bulk-users/status", result);
+    }
+
+    [HttpGet("{organisationId}/bulk-users/status")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    public async Task<BulkUploadStatusResponse> GetBulkUserUploadStatus(string organisationId, string id)
+    {
+      var result = await _bulkUploadService.CheckBulkUploadStatusAsync(organisationId, id);
+      return result;
     }
   }
 }

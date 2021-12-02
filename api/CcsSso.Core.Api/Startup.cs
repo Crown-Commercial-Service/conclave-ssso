@@ -53,7 +53,7 @@ namespace CcsSso.Api
         bool.TryParse(Configuration["RedisCacheSettings:IsEnabled"], out bool isRedisEnabled);
         int.TryParse(Configuration["RedisCacheSettings:CacheExpirationInMinutes"], out int cacheExpirationInMinutes);
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
-        
+
         if (cacheExpirationInMinutes == 0)
         {
           cacheExpirationInMinutes = 10;
@@ -119,6 +119,26 @@ namespace CcsSso.Api
         };
         return ciiConfigInfo;
       });
+
+      services.AddSingleton(s =>
+      {
+        int.TryParse(Configuration["DocUpload:SizeValidationValue"], out int docUploadSizeValidationValue);
+
+        if (docUploadSizeValidationValue == 0)
+        {
+          docUploadSizeValidationValue = 100000000;
+        }
+
+        DocUploadConfig docUploadConfig = new DocUploadConfig
+        {
+          BaseUrl = Configuration["DocUpload:Url"],
+          Token = Configuration["DocUpload:Token"],
+          DefaultSizeValidationValue = docUploadSizeValidationValue,
+          DefaultTypeValidationValue = Configuration["DocUpload:TypeValidationValue"],
+        };
+        return docUploadConfig;
+      }); 
+
       services.AddSingleton(s =>
       {
         int.TryParse(Configuration["QueueInfo:RecieveMessagesMaxCount"], out int recieveMessagesMaxCount);
@@ -140,6 +160,25 @@ namespace CcsSso.Api
 
       services.AddSingleton(s =>
       {
+        int.TryParse(Configuration["S3ConfigurationInfo:FileAccessExpirationInHours"], out int fileAccessExpirationInHours);
+        fileAccessExpirationInHours = fileAccessExpirationInHours == 0 ? 36 : fileAccessExpirationInHours;
+
+        var s3Configuration = new S3ConfigurationInfo
+        {
+          ServiceUrl = Configuration["S3ConfigurationInfo:ServiceUrl"],
+          AccessKeyId = Configuration["S3ConfigurationInfo:AccessKeyId"],
+          AccessSecretKey = Configuration["S3ConfigurationInfo:AccessSecretKey"],
+          BulkUploadBucketName = Configuration["S3ConfigurationInfo:BulkUploadBucketName"],
+          BulkUploadFolderName = Configuration["S3ConfigurationInfo:BulkUploadFolderName"],
+          BulkUploadTemplateFolderName = Configuration["S3ConfigurationInfo:BulkUploadTemplateFolderName"],
+          FileAccessExpirationInHours = fileAccessExpirationInHours
+        };
+
+        return s3Configuration;
+      });
+
+      services.AddSingleton(s =>
+      {
         EmailConfigurationInfo emailConfigurationInfo = new()
         {
           ApiKey = Configuration["Email:ApiKey"],
@@ -150,6 +189,7 @@ namespace CcsSso.Api
 
       services.AddControllers();
       services.AddSingleton<IAwsSqsService, AwsSqsService>();
+      services.AddSingleton<IAwsS3Service, AwsS3Service>();
       services.AddSingleton<IEmailProviderService, EmailProviderService>();
       services.AddSingleton<ICcsSsoEmailService, CcsSsoEmailService>();
       services.AddSingleton<ITokenService, TokenService>();
@@ -180,6 +220,9 @@ namespace CcsSso.Api
       services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
       services.AddScoped<IIdamService, IdamService>();
       services.AddScoped<IConfigurationDetailService, ConfigurationDetailService>();
+      services.AddScoped<IDocUploadService, DocUploadService>(); 
+      services.AddScoped<IBulkUploadService, BulkUploadService>(); 
+      services.AddScoped<IBulkUploadFileValidatorService, BulkUploadFileValidatorService>(); 
 
       services.AddHttpContextAccessor();
 
@@ -187,6 +230,12 @@ namespace CcsSso.Api
       {
         c.BaseAddress = new Uri(Configuration["Cii:Url"]);
         c.DefaultRequestHeaders.Add("x-api-key", Configuration["Cii:Token"]);
+      });
+
+      services.AddHttpClient("DocUploadApi", c =>
+      {
+        c.BaseAddress = new Uri(Configuration["DocUpload:Url"]);
+        c.DefaultRequestHeaders.Add("x-api-key", $"Basic {Configuration["DocUpload:Token"]}");
       });
 
       services.AddSwaggerGen(c =>

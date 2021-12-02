@@ -1,0 +1,12 @@
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Logs/bin/Release/net5.0/CcsSso.Security.Logs.deps.json
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Logs/bin/Release/net5.0/CcsSso.Security.Logs.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Logs/bin/Release/net5.0/ref/CcsSso.Security.Logs.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Logs/bin/Release/net5.0/CcsSso.Security.Logs.pdb
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Logs/obj/Release/net5.0/CcsSso.Security.Logs.csproj.AssemblyReference.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Logs/obj/Release/net5.0/CcsSso.Security.Logs.GeneratedMSBuildEditorConfig.editorconfig
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Logs/obj/Release/net5.0/CcsSso.Security.Logs.AssemblyInfoInputs.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Logs/obj/Release/net5.0/CcsSso.Security.Logs.AssemblyInfo.cs
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Logs/obj/Release/net5.0/CcsSso.Security.Logs.csproj.CoreCompileInputs.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Logs/obj/Release/net5.0/CcsSso.Security.Logs.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Logs/obj/Release/net5.0/ref/CcsSso.Security.Logs.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Security.Logs/obj/Release/net5.0/CcsSso.Security.Logs.pdb

@@ -90,6 +90,9 @@ namespace CcsSso.DbPersistence
         .HasIndex(o => o.CiiOrganisationId);
       modelBuilder.Entity<User>()
        .HasIndex(u => u.UserName);
+      modelBuilder.Entity<BulkUploadDetail>()
+       .HasIndex(o => o.FileKeyId)
+       .IsUnique();
     }
 
     public async Task<PagedResultSet<T>> GetPagedResultAsync<T>(IQueryable<T> query, ResultSetCriteria resultSetCriteria)
@@ -184,7 +187,9 @@ namespace CcsSso.DbPersistence
     public DbSet<OrganisationEligibleIdentityProvider> OrganisationEligibleIdentityProvider { get; set; }
 
     public DbSet<UserIdentityProvider> UserIdentityProvider { get; set; }
-    
+
+    public DbSet<BulkUploadDetail> BulkUploadDetail { get; set; }
+
 
     public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
