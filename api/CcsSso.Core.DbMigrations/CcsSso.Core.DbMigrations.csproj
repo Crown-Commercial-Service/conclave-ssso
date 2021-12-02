@@ -23,6 +23,7 @@
     <None Remove="Scripts\Sprint-23\20211109132208_DropOrganisationEligibleIdpIdOnUser.sql" />
     <None Remove="Scripts\Sprint-23\20211110035511_CanActivateColumntoOrganiation.sql" />
     <None Remove="Scripts\Sprint-23\20211111112648_AccountVerifiedColumnToUser.sql" />
+    <None Remove="Scripts\Sprint-24\20211124003023_BulkUploadDetails.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\20210401142220_DropTable.sql" />
@@ -36,6 +37,7 @@
     <EmbeddedResource Include="Scripts\Sprint-23\20211110035511_CanActivateColumntoOrganiation.sql" />
     <EmbeddedResource Include="Scripts\Sprint-23\20211104055058_CcsServiceIdColumnToOrganisation.sql" />
     <EmbeddedResource Include="Scripts\Sprint-23\20211103081721_ExternalServiceRoleMapping.sql" />
+    <EmbeddedResource Include="Scripts\Sprint-24\20211124003023_BulkUploadDetails.sql" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />

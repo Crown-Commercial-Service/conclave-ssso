@@ -52,6 +52,59 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.ToTable("AuditLog");
                 });
 
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.BulkUploadDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<int>("BulkUploadStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("ConcurrencyKey")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CreatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DocUploadId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FileKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FileKeyId")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastUpdatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("LastUpdatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("OrganisationId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ValidationErrorDetails")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileKeyId")
+                        .IsUnique();
+
+                    b.ToTable("BulkUploadDetail");
+                });
+
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.CcsService", b =>
                 {
                     b.Property<int>("Id")

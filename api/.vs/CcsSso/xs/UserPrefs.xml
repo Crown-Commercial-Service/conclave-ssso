@@ -1,0 +1,26 @@
+﻿<Properties StartupConfiguration="{2A445B86-7346-4965-8C64-0CAAF5438ABA}|CcsSso.Api">
+  <MonoDevelop.Ide.ItemProperties.Core.CcsSso.Core.Api PreferredExecutionTarget="/Applications/Google Chrome.app" />
+  <MonoDevelop.Ide.Workbench>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="CcsSso" expanded="True" selected="True">
+            <Node name="Core" expanded="True">
+              <Node name="CcsSso.Core.DbMigrations" expanded="True">
+                <Node name="Scripts" expanded="True">
+                  <Node name="Sprint-24" expanded="True" />
+                </Node>
+              </Node>
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations />
+</Properties>

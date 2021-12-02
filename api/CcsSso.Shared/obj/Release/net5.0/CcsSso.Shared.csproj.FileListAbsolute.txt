@@ -1,0 +1,15 @@
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/bin/Release/net5.0/CcsSso.Shared.deps.json
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/bin/Release/net5.0/CcsSso.Shared.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/bin/Release/net5.0/ref/CcsSso.Shared.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/bin/Release/net5.0/CcsSso.Shared.pdb
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/bin/Release/net5.0/CcsSso.Shared.Cache.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/bin/Release/net5.0/CcsSso.Shared.Cache.pdb
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/obj/Release/net5.0/CcsSso.Shared.csproj.AssemblyReference.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/obj/Release/net5.0/CcsSso.Shared.GeneratedMSBuildEditorConfig.editorconfig
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/obj/Release/net5.0/CcsSso.Shared.AssemblyInfoInputs.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/obj/Release/net5.0/CcsSso.Shared.AssemblyInfo.cs
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/obj/Release/net5.0/CcsSso.Shared.csproj.CoreCompileInputs.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/obj/Release/net5.0/CcsSso.Shared.csproj.CopyComplete
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/obj/Release/net5.0/CcsSso.Shared.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/obj/Release/net5.0/ref/CcsSso.Shared.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared/obj/Release/net5.0/CcsSso.Shared.pdb

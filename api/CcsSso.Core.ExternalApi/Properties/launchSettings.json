@@ -17,15 +17,21 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
+    "CcsSso.Core.ExternalApi": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:27817;http://localhost:65066",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
     "CcsSso.ExternalApi": {
       "commandName": "Project",
       "launchUrl": "swagger",
+      "applicationUrl": "https://localhost:44309",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "sqlDebugging": true,
-      "dotnetRunMessages": "true",
-      "applicationUrl": "https://localhost:44309"
+      }
     }
   }
 }

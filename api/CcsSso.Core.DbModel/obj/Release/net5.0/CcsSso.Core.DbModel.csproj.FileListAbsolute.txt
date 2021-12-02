@@ -1,0 +1,11 @@
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/bin/Release/net5.0/CcsSso.Core.DbModel.deps.json
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/bin/Release/net5.0/CcsSso.Core.DbModel.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/bin/Release/net5.0/ref/CcsSso.Core.DbModel.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/bin/Release/net5.0/CcsSso.Core.DbModel.pdb
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/obj/Release/net5.0/CcsSso.Core.DbModel.GeneratedMSBuildEditorConfig.editorconfig
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/obj/Release/net5.0/CcsSso.Core.DbModel.AssemblyInfoInputs.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/obj/Release/net5.0/CcsSso.Core.DbModel.AssemblyInfo.cs
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/obj/Release/net5.0/CcsSso.Core.DbModel.csproj.CoreCompileInputs.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/obj/Release/net5.0/CcsSso.Core.DbModel.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/obj/Release/net5.0/ref/CcsSso.Core.DbModel.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Core.DbModel/obj/Release/net5.0/CcsSso.Core.DbModel.pdb

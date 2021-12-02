@@ -68,6 +68,15 @@ namespace CcsSso.Api.CustomOptions
       Data.Add("Cii:Token", _cii.token);
       Data.Add("Cii:Delete_Token", _cii.token_delete);
 
+      if (_secrets.Data.ContainsKey("DocUpload"))
+      {
+        var docUploadInfo = JsonConvert.DeserializeObject<DocUploadInfo>(_secrets.Data["DocUpload"].ToString());
+        Data.Add("DocUpload:Url", docUploadInfo.Url);
+        Data.Add("DocUpload:Token", docUploadInfo.Token);
+        Data.Add("DocUpload:SizeValidationValue", docUploadInfo.SizeValidationValue);
+        Data.Add("DocUpload:TypeValidationValue", docUploadInfo.TypeValidationValue);
+      }
+
       if (_secrets.Data.ContainsKey("Email"))
       {
         var emailInfo = JsonConvert.DeserializeObject<EmailInfoVault>(_secrets.Data["Email"].ToString());
@@ -112,6 +121,18 @@ namespace CcsSso.Api.CustomOptions
         Data.Add("QueueInfo:AdaptorNotificationQueueUrl", queueInfo.AdaptorNotificationQueueUrl);
       }
 
+      if (_secrets.Data.ContainsKey("S3ConfigurationInfo"))
+      {
+        var s3ConfigInfo = JsonConvert.DeserializeObject<S3ConfigurationInfoVault>(_secrets.Data["S3ConfigurationInfo"].ToString());
+        Data.Add("S3ConfigurationInfo:AccessKeyId", s3ConfigInfo.AccessKeyId);
+        Data.Add("S3ConfigurationInfo:AccessSecretKey", s3ConfigInfo.AccessSecretKey);
+        Data.Add("S3ConfigurationInfo:ServiceUrl", s3ConfigInfo.ServiceUrl);
+        Data.Add("S3ConfigurationInfo:BulkUploadBucketName", s3ConfigInfo.BulkUploadBucketName);
+        Data.Add("S3ConfigurationInfo:BulkUploadFolderName", s3ConfigInfo.BulkUploadFolderName);
+        Data.Add("S3ConfigurationInfo:BulkUploadTemplateFolderName", s3ConfigInfo.BulkUploadTemplateFolderName);
+        Data.Add("S3ConfigurationInfo:FileAccessExpirationInHours", s3ConfigInfo.FileAccessExpirationInHours);
+      }
+
       if (_secrets.Data.ContainsKey("RedisCacheSettings"))
       {
         var redisCacheSettingsVault = JsonConvert.DeserializeObject<RedisCacheSettingsVault>(_secrets.Data["RedisCacheSettings"].ToString());
@@ -149,6 +170,17 @@ namespace CcsSso.Api.CustomOptions
     public string token { get; set; }
     public string token_delete { get; set; }
     public string client_id { get; set; }
+  }
+
+  public class DocUploadInfo
+  {
+    public string Url { get; set; }
+
+    public string Token { get; set; }
+
+    public string SizeValidationValue { get; set; }
+
+    public string TypeValidationValue { get; set; }
   }
 
   public static class VaultExtensions
@@ -211,6 +243,23 @@ namespace CcsSso.Api.CustomOptions
     public string EnableAdaptorNotifications { get; set; }
 
     public string AdaptorNotificationQueueUrl { get; set; }
+  }
+
+  public class S3ConfigurationInfoVault
+  {
+    public string AccessKeyId { get; set; }
+
+    public string AccessSecretKey { get; set; }
+
+    public string ServiceUrl { get; set; }
+
+    public string BulkUploadBucketName { get; set; }
+
+    public string BulkUploadTemplateFolderName { get; set; }
+
+    public string BulkUploadFolderName { get; set; }
+
+    public string FileAccessExpirationInHours { get; set; }
   }
 
   public class RedisCacheSettingsVault

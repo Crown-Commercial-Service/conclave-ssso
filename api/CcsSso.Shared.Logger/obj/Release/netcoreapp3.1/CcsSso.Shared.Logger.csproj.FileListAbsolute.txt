@@ -1,0 +1,9 @@
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Logger/bin/Release/netcoreapp3.1/CcsSso.Shared.Logger.deps.json
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Logger/bin/Release/netcoreapp3.1/CcsSso.Shared.Logger.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Logger/bin/Release/netcoreapp3.1/CcsSso.Shared.Logger.pdb
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Logger/obj/Release/netcoreapp3.1/CcsSso.Shared.Logger.csproj.AssemblyReference.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Logger/obj/Release/netcoreapp3.1/CcsSso.Shared.Logger.AssemblyInfoInputs.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Logger/obj/Release/netcoreapp3.1/CcsSso.Shared.Logger.AssemblyInfo.cs
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Logger/obj/Release/netcoreapp3.1/CcsSso.Shared.Logger.csproj.CoreCompileInputs.cache
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Logger/obj/Release/netcoreapp3.1/CcsSso.Shared.Logger.dll
+/Users/dreamsguys/Desktop/Conclave/Cf-azure/Sprint-24/CCS-Conclave-P1/api/CcsSso.Shared.Logger/obj/Release/netcoreapp3.1/CcsSso.Shared.Logger.pdb
