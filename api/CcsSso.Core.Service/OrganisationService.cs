@@ -360,7 +360,7 @@ namespace CcsSso.Service
         await DeleteAsync(ciiOrgId);
         throw new CcsSsoException("ERROR_USER_ALREADY_EXISTS");
       }
-      catch (Exception)
+      catch (Exception e)
       {
         await DeleteAsync(ciiOrgId);
         throw;

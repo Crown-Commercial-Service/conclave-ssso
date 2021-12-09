@@ -51,6 +51,11 @@ namespace CcsSso.Security.Services
       return result;
     }
 
+    public string GetSAMLEndpoint(string clientId)
+    {
+      return _identityProviderService.GetSAMLAuthenticationEndPoint(clientId);
+    }
+
     public async Task<TokenResponseInfo> GetRenewedTokenAsync(TokenRequestInfo tokenRequestInfo, string opbsValue, string host, string sid)
     {
       TokenResponseInfo tokenResponseInfo;

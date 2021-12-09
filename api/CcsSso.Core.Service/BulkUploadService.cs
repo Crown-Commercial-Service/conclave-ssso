@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -48,6 +49,11 @@ namespace CcsSso.Core.Service
     /// <returns></returns>
     public async Task<BulkUploadStatusResponse> BulkUploadUsersAsync(string organisationId, IFormFile file)
     {
+      var extension = Path.GetExtension(file.FileName);
+      if (extension.ToLower() != ".csv")
+      {
+        throw new CcsSsoException("INVALID_BULKUPLOAD_FILE_TYPE");
+      }
       var bulkUploadStatusResponse = new BulkUploadStatusResponse { ErrorDetails = new List<KeyValuePair<string, string>>() };
       var fileKeyId = Guid.NewGuid().ToString();
       var fileKey = GetUploadFileKey(organisationId, fileKeyId);

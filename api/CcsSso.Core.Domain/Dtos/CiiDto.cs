@@ -6,7 +6,7 @@ namespace CcsSso.Dtos.Domain.Models
 {
   public class CiiPostResponceDto
   {
-    public string CcsOrgId { get; set; }
+    public string OrganisationId { get; set; }
   }
 
   public class CiiDto
@@ -75,18 +75,6 @@ namespace CcsSso.Dtos.Domain.Models
     public string schemeCountryCode { get; set; }
 
     public string schemeName { get; set; }
-  }
-
-  public class CiiOrg
-  {
-    public string ccsOrgId { get; set; }
-  }
-
-  public class CiiPutDto
-  {
-    public string ccsOrgId { get; set; }
-
-    public CiiIdentifier identifier { get; set; }
   }
 
   public class CiiConfig

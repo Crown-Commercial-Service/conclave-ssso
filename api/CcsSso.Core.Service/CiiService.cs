@@ -262,7 +262,7 @@ namespace CcsSso.Service
       {
         var content = await response.Content.ReadAsStringAsync();
         var result = JsonConvert.DeserializeObject<CiiPostResponceDto>(content);
-        return result.CcsOrgId;
+        return result.OrganisationId;
       }
       else if (response.StatusCode == HttpStatusCode.NotFound)
       {
