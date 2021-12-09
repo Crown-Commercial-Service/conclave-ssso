@@ -68,6 +68,18 @@ namespace CcsSso.Security.Api.Controllers
     }
 
     /// <summary>
+    /// Redirects the user to the SAML endpoint of the identify server
+    /// </summary>
+    [HttpGet("security/samlp/{clientId}")]
+    [ProducesResponseType(302)]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    public IActionResult Samlp(string clientId)
+    {
+      var url = _securityService.GetSAMLEndpoint(clientId);
+      return Redirect(url);
+    }
+
+    /// <summary>
     /// Redirects the user to the configured identity and access management login URL
     /// </summary>
     [HttpGet("security/authorize")]
