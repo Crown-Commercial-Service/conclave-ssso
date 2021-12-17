@@ -131,7 +131,8 @@ namespace CcsSso.Service
       }
       else if (response.StatusCode == HttpStatusCode.Conflict)
       {
-        throw new ResourceAlreadyExistsException();
+        var conflictResultContent = await response.Content.ReadAsStringAsync();
+        throw new ResourceAlreadyExistsException(conflictResultContent);
       }
       else
       {

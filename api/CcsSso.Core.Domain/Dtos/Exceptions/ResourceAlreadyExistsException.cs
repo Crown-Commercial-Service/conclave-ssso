@@ -8,5 +8,10 @@ namespace CcsSso.Core.Domain.Dtos.Exceptions
         : base()
     {
     }
+
+    public ResourceAlreadyExistsException(string message)
+        : base(message)
+    {
+    }
   }
 }
