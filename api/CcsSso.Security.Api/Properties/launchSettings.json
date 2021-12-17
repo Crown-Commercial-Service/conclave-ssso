@@ -17,27 +17,21 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
+    "ccs_sso_api": {
+      "commandName": "Project",
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": "true",
+      "applicationUrl": "https://localhost:44352"
+    },
     "Docker": {
       "commandName": "Docker",
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/swagger",
-      "environmentVariables": {}
-    },
-    "CcsSso.Security.Api": {
-      "commandName": "Project",
-      "launchBrowser": true,
-      "applicationUrl": "https://localhost:32876;http://localhost:17249",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
-    },
-    "ccs_sso_api": {
-      "commandName": "Project",
-      "launchUrl": "swagger",
-      "applicationUrl": "https://localhost:44352",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      "publishAllPorts": true,
+      "useSSL": true
     }
   }
 }

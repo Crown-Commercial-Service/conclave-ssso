@@ -223,9 +223,17 @@ namespace CcsSso.Service
         throw new CcsSsoException("ORGANIZATION_ID_REQUIRED");
       }
 
-      var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
-       .FirstOrDefaultAsync(or => !or.IsDeleted && or.Organisation.CiiOrganisationId == organisationJoinRequest.CiiOrgId &&
-       or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+      var organisation = await _dataContext.Organisation
+        .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
+        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId== organisationJoinRequest.CiiOrgId);
+
+      if (organisation == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+
+      var orgAdminAccessRoleId = (organisation.OrganisationEligibleRoles
+        .FirstOrDefault(or => !or.IsDeleted && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
 
       var orgAdmins = await _dataContext.User.Where(u => !u.IsDeleted
        && u.Party.Person.Organisation.CiiOrganisationId == organisationJoinRequest.CiiOrgId
@@ -360,7 +368,7 @@ namespace CcsSso.Service
         await DeleteAsync(ciiOrgId);
         throw new CcsSsoException("ERROR_USER_ALREADY_EXISTS");
       }
-      catch (Exception)
+      catch (Exception e)
       {
         await DeleteAsync(ciiOrgId);
         throw;

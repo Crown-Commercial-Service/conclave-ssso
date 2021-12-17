@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service
@@ -12,7 +13,7 @@ namespace CcsSso.Core.Service
   {
     private readonly IUserProfileHelperService _userProfileHelperService;
     private IReadOnlyList<string> validHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "title", "firstName", "lastName", "Role", "contactEmail", "contactMobile", "contactPhone", "contactFax", "contactSocial" };
-    private IReadOnlyList<string> requiredHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "firstName", "lastName" };
+    private IReadOnlyList<string> requiredHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "firstName", "lastName", "Role" };
     public BulkUploadFileValidatorService(IUserProfileHelperService userProfileHelperService)
     {
       _userProfileHelperService = userProfileHelperService;
@@ -35,15 +36,15 @@ namespace CcsSso.Core.Service
         return errorDetails;
       }
 
-      var headers = fileRows[1].Split(",");
-      var headerValidationErrors = ValidateHeaders(headers.ToList());
+      var headers = fileRows[1].Split(',').Select(c => c).ToList();
+      var headerValidationErrors = ValidateHeaders(headers);
       if (headerValidationErrors.Any())
       {
         errorDetails.AddRange(headerValidationErrors);
         return errorDetails;
       }
 
-      var dataValidationErrors = ValidateRows(headers.ToList(), fileRows.Skip(2).ToList());
+      var dataValidationErrors = ValidateRows(headers, fileRows.Skip(2).ToList());
       errorDetails.AddRange(dataValidationErrors);
       return errorDetails;
     }
@@ -60,9 +61,14 @@ namespace CcsSso.Core.Service
 
       foreach (var validHeader in validHeaders)
       {
-        if (!fileHeaders.Any(h => h == validHeader))
+        var headerCount = fileHeaders.Count(h => h == validHeader);
+        if (headerCount == 0)
         {
           errorDetails.Add(new KeyValuePair<string, string>("Header not available", $"Header '{validHeader}' not found"));
+        }
+        else if(headerCount > 1)
+        {
+          errorDetails.Add(new KeyValuePair<string, string>("Duplicate headers found", $"Header '{validHeader}' is duplicated"));
         }
       }
       return errorDetails;
@@ -82,7 +88,8 @@ namespace CcsSso.Core.Service
       foreach (var row in rows.Select((data, i) => new { i, data }))
       {
         var fileRowNumber = row.i + 3;
-        var rowDataColumns = row.data.Split(",");
+        Regex regx = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))");
+        var rowDataColumns = regx.Split(row.data);
         foreach (var requiredHeader in requiredHeaders)
         {
           var actualHeaderIndex = fileHeaders.FindIndex(h => h == requiredHeader);
@@ -96,6 +103,13 @@ namespace CcsSso.Core.Service
         if (!string.IsNullOrWhiteSpace(rowDataColumns[emailHeaderIndex]) && _userProfileHelperService.IsInvalidUserName(rowDataColumns[emailHeaderIndex]))
         {
           errorDetails.Add(new KeyValuePair<string, string>("Invalid email value", $"Invalid email in row {fileRowNumber}"));
+        }
+
+        //boolean field validation
+        var rightToBuyHeaderIndex = fileHeaders.FindIndex(h => h == "rightToBuy");
+        if (!string.IsNullOrWhiteSpace(rowDataColumns[rightToBuyHeaderIndex]) && !Boolean.TryParse(rowDataColumns[rightToBuyHeaderIndex], out bool parsedValue))
+        {
+          errorDetails.Add(new KeyValuePair<string, string>("Invalid rightToBuy value", $"Invalid value for rightToBuy in row {fileRowNumber}"));
         }
       }
 

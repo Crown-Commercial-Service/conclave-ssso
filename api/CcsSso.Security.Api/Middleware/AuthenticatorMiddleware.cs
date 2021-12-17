@@ -1,6 +1,7 @@
 using CcsSso.Security.Domain.Dtos;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -15,6 +16,11 @@ namespace CcsSso.Security.Api.Middleware
       "security/nominate"
     };
 
+    private List<string> urlparamPaths = new List<string>()
+    {
+      "security/samlp"
+    };
+
     public AuthenticatorMiddleware(RequestDelegate next, ApplicationConfigurationInfo appSetting)
     {
       _next = next;
@@ -26,7 +32,7 @@ namespace CcsSso.Security.Api.Middleware
       var apiKey = context.Request.Headers["X-API-Key"];
       var path = context.Request.Path.Value.TrimStart('/').TrimEnd('/');
 
-      if (allowedPaths.Contains(path))
+      if (allowedPaths.Contains(path) || urlparamPaths.Any(p => path.StartsWith(p)))
       {
         await _next(context);
         return;

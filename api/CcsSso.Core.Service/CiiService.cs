@@ -131,7 +131,8 @@ namespace CcsSso.Service
       }
       else if (response.StatusCode == HttpStatusCode.Conflict)
       {
-        throw new ResourceAlreadyExistsException();
+        var conflictResultContent = await response.Content.ReadAsStringAsync();
+        throw new ResourceAlreadyExistsException(conflictResultContent);
       }
       else
       {
@@ -262,7 +263,7 @@ namespace CcsSso.Service
       {
         var content = await response.Content.ReadAsStringAsync();
         var result = JsonConvert.DeserializeObject<CiiPostResponceDto>(content);
-        return result.CcsOrgId;
+        return result.OrganisationId;
       }
       else if (response.StatusCode == HttpStatusCode.NotFound)
       {

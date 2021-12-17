@@ -24,7 +24,7 @@ namespace CcsSso.Adaptor.Service.Cii
     public async Task<CiiIdentifierAllDto> GetOrgIdentifierInfoAsync(string ciiOrgId)
     {
 
-      var ciiDto = await _ciiApiService.GetAsync<CiiIdentifierAllDto>($"identities/organisations/sso/{ciiOrgId}/all", "ERROR_RETRIEVING_IDENTIFIERS_FROM_CII");
+      var ciiDto = await _ciiApiService.GetAsync<CiiIdentifierAllDto>($"identities/organisations/{ciiOrgId}/all", "ERROR_RETRIEVING_IDENTIFIERS_FROM_CII");
 
       return ciiDto;
     }
