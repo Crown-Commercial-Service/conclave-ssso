@@ -40,7 +40,7 @@ namespace CcsSso.Api.Middleware
       }
       catch (ResourceAlreadyExistsException ex)
       {
-        await HandleException(context, string.Empty, ex, HttpStatusCode.Conflict);
+        await HandleException(context, ex.Message, ex, HttpStatusCode.Conflict);
       }
       catch (DbUpdateConcurrencyException ex)
       {
