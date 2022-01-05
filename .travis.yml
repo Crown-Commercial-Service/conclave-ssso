@@ -16,8 +16,8 @@ script:
   - pwd
 deploy:
   - provider: cloudfoundry
-    username: $username_prod
-    password: $password_prod
+    username: $username
+    password: $password
     api: $api
     organization: $organisation
     space: $TRAVIS_BRANCH
