@@ -21,6 +21,11 @@ then
     CF_SPACE="preprod"
 fi
 
+if [ "$TRAVIS_BRANCH" = "production" ]
+then
+    CF_SPACE="prod"
+fi
+
 if [ "$TRAVIS_BRANCH" = "sandbox" ]
 then
     CF_SPACE="sand"
