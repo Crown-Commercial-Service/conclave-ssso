@@ -10,23 +10,23 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CcsSso.Adaptor.DbMigration.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20210513051809_AddClientIdForConsumer")]
-    partial class AddClientIdForConsumer
+    [Migration("20211224055350_InitialMigration")]
+    partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .UseIdentityByDefaultColumns()
                 .HasAnnotation("Relational:MaxIdentifierLength", 63)
-                .HasAnnotation("ProductVersion", "5.0.2");
+                .HasAnnotation("ProductVersion", "5.0.10")
+                .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
             modelBuilder.Entity("CcsSso.Adaptor.DbDomain.Entity.AdapterConclaveAttributeMapping", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<int>("AdapterConsumerEntityAttributeId")
                         .HasColumnType("integer");
@@ -57,12 +57,9 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<string>("ClientId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ConsumerKey")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedOnUtc")
@@ -90,7 +87,7 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<int>("AdapterConsumerId")
                         .HasColumnType("integer");
@@ -111,6 +108,9 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
 
                     b.HasIndex("AdapterConsumerId");
 
+                    b.HasIndex("Name", "AdapterConsumerId")
+                        .IsUnique();
+
                     b.ToTable("AdapterConsumerEntity");
                 });
 
@@ -119,7 +119,7 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<int>("AdapterConsumerEntityId")
                         .HasColumnType("integer");
@@ -148,7 +148,7 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
@@ -172,9 +172,12 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<int>("AdapterConsumerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AdapterFormatId")
                         .HasColumnType("integer");
 
                     b.Property<int>("ConclaveEntityId")
@@ -199,6 +202,8 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
 
                     b.HasIndex("AdapterConsumerId");
 
+                    b.HasIndex("AdapterFormatId");
+
                     b.HasIndex("ConclaveEntityId");
 
                     b.ToTable("AdapterSubscription");
@@ -209,7 +214,7 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<DateTime>("CreatedOnUtc")
                         .HasColumnType("timestamp without time zone");
@@ -233,7 +238,7 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .UseIdentityByDefaultColumn();
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
                     b.Property<string>("AttributeName")
                         .HasColumnType("text");
@@ -306,6 +311,12 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CcsSso.Adaptor.DbDomain.Entity.AdapterFormat", "AdapterFormat")
+                        .WithMany("AdapterSubscriptions")
+                        .HasForeignKey("AdapterFormatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("CcsSso.Adaptor.DbDomain.Entity.ConclaveEntity", "ConclaveEntity")
                         .WithMany("AdapterSubscriptions")
                         .HasForeignKey("ConclaveEntityId")
@@ -313,6 +324,8 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                         .IsRequired();
 
                     b.Navigation("AdapterConsumer");
+
+                    b.Navigation("AdapterFormat");
 
                     b.Navigation("ConclaveEntity");
                 });
@@ -343,6 +356,11 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
             modelBuilder.Entity("CcsSso.Adaptor.DbDomain.Entity.AdapterConsumerEntityAttribute", b =>
                 {
                     b.Navigation("AdapterConclaveAttributeMappings");
+                });
+
+            modelBuilder.Entity("CcsSso.Adaptor.DbDomain.Entity.AdapterFormat", b =>
+                {
+                    b.Navigation("AdapterSubscriptions");
                 });
 
             modelBuilder.Entity("CcsSso.Adaptor.DbDomain.Entity.ConclaveEntity", b =>

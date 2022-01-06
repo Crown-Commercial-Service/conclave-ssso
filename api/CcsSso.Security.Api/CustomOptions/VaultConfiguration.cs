@@ -1,4 +1,5 @@
 using CcsSso.Logs;
+using CcsSso.Security.Domain.Dtos;
 using CcsSso.Shared.Domain;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -131,6 +132,12 @@ namespace CcsSso.Security.Api.CustomOptions
       if (_secrets.Data.ContainsKey("Serilog"))
       {
         Data.Add("Serilog", _secrets.Data["Serilog"].ToString());
+      }
+
+      if (_secrets.Data.ContainsKey("MockProvider"))
+      {
+        var mockProvider = JsonConvert.DeserializeObject<MockProvider>(_secrets.Data["MockProvider"].ToString());
+        Data.Add("MockProvider:LoginUrl", mockProvider.LoginUrl);
       }
 
       if (_secrets.Data.ContainsKey("SecurityDbConnection"))

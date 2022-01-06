@@ -34,5 +34,7 @@ namespace CcsSso.Security.Domain.Contracts
 
     bool ValidateToken(string clientId, string token);
 
+    Task<ServiceAccessibilityResultDto> CheckServiceAccessForUserAsync(string clientId, string email);
+
   }
 }

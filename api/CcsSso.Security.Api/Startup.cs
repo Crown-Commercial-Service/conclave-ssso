@@ -180,12 +180,16 @@ namespace CcsSso.Security.Api
           CryptoSettings = new CryptoSettings()
           {
             CookieEncryptionKey = Configuration["Crypto:CookieEncryptionKey"]
-          } ,
+          },
           MfaSetting = new MfaSetting()
           {
             TicketExpirationInMinutes = ticketExpirationInMinutes,
             MfaResetRedirectUri = Configuration["MfaSettings:MfaResetRedirectUri"],
             MFAResetPersistentTicketListExpirationInDays = mfaResetPersistentTicketListExpirationInDays
+          },
+          MockProvider = new MockProvider()
+          {
+            LoginUrl = Configuration["MockProvider:LoginUrl"]
           }
         };
         return appConfigInfo;
@@ -208,8 +212,15 @@ namespace CcsSso.Security.Api
       }
 
       services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+      if (Configuration["IdentityProvider"] == "AUTH0")
+      {
+        services.AddSingleton<IIdentityProviderService, Auth0IdentityProviderService>();
+      }
+      else if (Configuration["IdentityProvider"] == "MOCK")
+      {
+        services.AddSingleton<IIdentityProviderService, MockIdentityProviderService>();
+      }
 
-      services.AddSingleton<IIdentityProviderService, Auth0IdentityProviderService>();
       services.AddSingleton<TokenHelper>();
 
       services.AddSingleton<ISecurityCacheService, SecurityCacheService>();
@@ -281,7 +292,7 @@ namespace CcsSso.Security.Api
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-    {      
+    {
       app.AddLoggerMiddleware();// Registers the logger configured on the core library
       app.UseHsts();
       app.Use(async (context, next) =>

@@ -10,8 +10,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CcsSso.Core.DbMigrations.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20211108030518_UserMultipleIdpAndServiceId")]
-    partial class UserMultipleIdpAndServiceId
+    [Migration("20211224054428_InitialMigration")]
+    partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -54,12 +54,68 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.ToTable("AuditLog");
                 });
 
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.BulkUploadDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<int>("BulkUploadStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("ConcurrencyKey")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CreatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DocUploadId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FileKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FileKeyId")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastUpdatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("LastUpdatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("OrganisationId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ValidationErrorDetails")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileKeyId")
+                        .IsUnique();
+
+                    b.ToTable("BulkUploadDetail");
+                });
+
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.CcsService", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<bool>("ActivateOrganisations")
+                        .HasColumnType("boolean");
 
                     b.Property<byte[]>("ConcurrencyKey")
                         .IsConcurrencyToken()
@@ -1339,6 +1395,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .HasColumnType("integer")
                         .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
+                    b.Property<bool>("AccountVerified")
+                        .HasColumnType("boolean");
+
                     b.Property<int?>("CcsServiceId")
                         .HasColumnType("integer");
 
@@ -1368,9 +1427,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<bool>("MfaEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("OrganisationEligibleIdentityProviderId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("PartyId")
                         .HasColumnType("integer");
 
@@ -1383,8 +1439,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CcsServiceId");
-
-                    b.HasIndex("OrganisationEligibleIdentityProviderId");
 
                     b.HasIndex("PartyId")
                         .IsUnique();
@@ -2003,14 +2057,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
             modelBuilder.Entity("CcsSso.DbModel.Entity.User", b =>
                 {
                     b.HasOne("CcsSso.Core.DbModel.Entity.CcsService", "CcsService")
-                        .WithMany()
+                        .WithMany("CreatedUsers")
                         .HasForeignKey("CcsServiceId");
-
-                    b.HasOne("CcsSso.Core.DbModel.Entity.OrganisationEligibleIdentityProvider", "OrganisationEligibleIdentityProvider")
-                        .WithMany()
-                        .HasForeignKey("OrganisationEligibleIdentityProviderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.HasOne("CcsSso.DbModel.Entity.Party", "Party")
                         .WithOne("User")
@@ -2019,8 +2067,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .IsRequired();
 
                     b.Navigation("CcsService");
-
-                    b.Navigation("OrganisationEligibleIdentityProvider");
 
                     b.Navigation("Party");
                 });
@@ -2106,6 +2152,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Navigation("CcsServiceLogins");
 
                     b.Navigation("CreatedOrganisations");
+
+                    b.Navigation("CreatedUsers");
 
                     b.Navigation("ExternalServiceRoleMappings");
 

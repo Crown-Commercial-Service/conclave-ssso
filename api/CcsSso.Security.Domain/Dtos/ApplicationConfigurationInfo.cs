@@ -28,6 +28,8 @@ namespace CcsSso.Security.Domain.Dtos
 
     public MfaSetting MfaSetting { get; set; }
 
+    public MockProvider MockProvider { get; set; }
+
     public string CustomDomain { get; set; }
   }
 
@@ -150,5 +152,10 @@ namespace CcsSso.Security.Domain.Dtos
     public string MfaResetRedirectUri { get; set; }
 
     public int MFAResetPersistentTicketListExpirationInDays { get; set; }
+  }
+
+  public class MockProvider
+  {
+    public string LoginUrl { get; set; }
   }
 }

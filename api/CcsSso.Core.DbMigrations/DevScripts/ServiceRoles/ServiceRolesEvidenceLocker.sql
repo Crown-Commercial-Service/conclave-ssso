@@ -37,9 +37,9 @@ DELETE FROM public."CcsService"
 
 INSERT INTO public."CcsService"(
 	"ServiceName", "TimeOutLength", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc",
-	"IsDeleted", "ServiceClientId", "ServiceUrl", "Description", "ServiceCode")
+	"IsDeleted", "ServiceClientId", "ServiceUrl", "Description", "ServiceCode", "GlobalLevelOrganisationAccess", "ActivateOrganisations")
 	VALUES (serviceName, 0, 0, 0, now(), now(), false, clientId, 
-			clientUrl, serviceDescription, serviceCode);
+			clientUrl, serviceDescription, serviceCode, false, false);
 			
 			
 SELECT "Id" into elServiceId From public."CcsService" WHERE "ServiceName" = serviceName LIMIT 1;

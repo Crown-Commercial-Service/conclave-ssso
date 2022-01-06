@@ -15,7 +15,7 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "text", nullable: true),
-                    ConsumerKey = table.Column<string>(type: "text", nullable: true),
+                    ClientId = table.Column<string>(type: "text", nullable: true),
                     CreatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     LastUpdatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
@@ -90,6 +90,7 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                     SubscriptionUrl = table.Column<string>(type: "text", nullable: true),
                     AdapterConsumerId = table.Column<int>(type: "integer", nullable: false),
                     ConclaveEntityId = table.Column<int>(type: "integer", nullable: false),
+                    AdapterFormatId = table.Column<int>(type: "integer", nullable: false),
                     CreatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     LastUpdatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
@@ -101,6 +102,12 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                         name: "FK_AdapterSubscription_AdapterConsumer_AdapterConsumerId",
                         column: x => x.AdapterConsumerId,
                         principalTable: "AdapterConsumer",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AdapterSubscription_AdapterFormat_AdapterFormatId",
+                        column: x => x.AdapterFormatId,
+                        principalTable: "AdapterFormat",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -197,9 +204,21 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                 column: "ConclaveEntityAttributeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AdapterConsumer_ClientId",
+                table: "AdapterConsumer",
+                column: "ClientId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AdapterConsumerEntity_AdapterConsumerId",
                 table: "AdapterConsumerEntity",
                 column: "AdapterConsumerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AdapterConsumerEntity_Name_AdapterConsumerId",
+                table: "AdapterConsumerEntity",
+                columns: new[] { "Name", "AdapterConsumerId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AdapterConsumerEntityAttribute_AdapterConsumerEntityId",
@@ -210,6 +229,11 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                 name: "IX_AdapterSubscription_AdapterConsumerId",
                 table: "AdapterSubscription",
                 column: "AdapterConsumerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AdapterSubscription_AdapterFormatId",
+                table: "AdapterSubscription",
+                column: "AdapterFormatId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AdapterSubscription_ConclaveEntityId",
@@ -228,9 +252,6 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                 name: "AdapterConclaveAttributeMapping");
 
             migrationBuilder.DropTable(
-                name: "AdapterFormat");
-
-            migrationBuilder.DropTable(
                 name: "AdapterSubscription");
 
             migrationBuilder.DropTable(
@@ -238,6 +259,9 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
 
             migrationBuilder.DropTable(
                 name: "ConclaveEntityAttribute");
+
+            migrationBuilder.DropTable(
+                name: "AdapterFormat");
 
             migrationBuilder.DropTable(
                 name: "AdapterConsumerEntity");

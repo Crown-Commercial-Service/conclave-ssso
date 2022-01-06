@@ -73,9 +73,12 @@ namespace CcsSso.Security.Api.Controllers
     [HttpGet("security/samlp/{clientId}")]
     [ProducesResponseType(302)]
     [SwaggerOperation(Tags = new[] { "security" })]
-    public IActionResult Samlp(string clientId)
+    public async Task<IActionResult> Samlp(string clientId)
     {
       var url = _securityService.GetSAMLEndpoint(clientId);
+
+      await GenerateCookiesAsync(clientId);
+
       return Redirect(url);
     }
 
@@ -273,6 +276,16 @@ namespace CcsSso.Security.Api.Controllers
     public async Task UpdateUserMfaFlag(UserInfo userInfo)
     {
       await _userManagerService.UpdateUserMfaFlagAsync(userInfo);
+    }
+
+    [HttpGet("security/users/saml")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    public async Task<ServiceAccessibilityResultDto> CheckUserClientId(string email, [FromQuery(Name = "client-id")] string clientId)
+    {
+      var result = await _securityService.CheckServiceAccessForUserAsync(clientId, email);
+      return result;
     }
 
     /// <summary>

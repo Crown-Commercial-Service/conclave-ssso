@@ -332,8 +332,6 @@ namespace CcsSso.Security.Services
       }
     }
 
-
-
     public async Task<TokenResponseInfo> GetMachineTokenAsync(string clientId, string clientSecret, string audience)
     {
       try
@@ -740,6 +738,19 @@ namespace CcsSso.Security.Services
       return null;
     }
 
+    public async Task<ServiceAccessibilityResultDto> CheckServiceAccessForUserAsync(string clientId, string email)
+    {
+      ServiceAccessibilityResultDto response = new ServiceAccessibilityResultDto { IsAccessible = false };
+      var userDetails = await GetUserAsync(email);
+
+      if (userDetails.Detail.RolePermissionInfo.Where(rp => rp.ServiceClientId == clientId).Any() ||
+        userDetails.Detail.UserGroups.Where(ugr => ugr.ServiceClientId == clientId).Any())
+      {
+        response.IsAccessible = true;
+      }
+      return response;
+    }
+
     private async Task<string> GetResetPasswordTicketAsync(string userName, string managementApiToken, int expirationTimeInMinutes)
     {
       var client = _httpClientFactory.CreateClient();
@@ -827,7 +838,6 @@ namespace CcsSso.Security.Services
       }
       throw new RecordNotFoundException();
     }
-
 
     private string GetAccessToken(string clientId, string email, UserProfileInfo userDetails)
     {

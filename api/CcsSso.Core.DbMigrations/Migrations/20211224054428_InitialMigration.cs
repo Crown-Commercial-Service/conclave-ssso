@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace CcsSso.Core.DbMigrations.Migrations
 {
-    public partial class Initial : Migration
+    public partial class InitialMigration : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -25,6 +25,30 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AuditLog", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BulkUploadDetail",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    OrganisationId = table.Column<string>(type: "text", nullable: true),
+                    FileKey = table.Column<string>(type: "text", nullable: true),
+                    FileKeyId = table.Column<string>(type: "text", nullable: true),
+                    DocUploadId = table.Column<string>(type: "text", nullable: true),
+                    BulkUploadStatus = table.Column<int>(type: "integer", nullable: false),
+                    ValidationErrorDetails = table.Column<string>(type: "text", nullable: true),
+                    CreatedUserId = table.Column<int>(type: "integer", nullable: false),
+                    LastUpdatedUserId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    LastUpdatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    ConcurrencyKey = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BulkUploadDetail", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -64,6 +88,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     ServiceUrl = table.Column<string>(type: "text", nullable: true),
                     ServiceClientId = table.Column<string>(type: "text", nullable: true),
                     TimeOutLength = table.Column<long>(type: "bigint", nullable: false),
+                    GlobalLevelOrganisationAccess = table.Column<bool>(type: "boolean", nullable: false),
+                    ActivateOrganisations = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedUserId = table.Column<int>(type: "integer", nullable: false),
                     LastUpdatedUserId = table.Column<int>(type: "integer", nullable: false),
                     CreatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
@@ -425,6 +451,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     BusinessType = table.Column<string>(type: "text", nullable: true),
                     SupplierBuyerType = table.Column<int>(type: "integer", nullable: true),
                     PartyId = table.Column<int>(type: "integer", nullable: false),
+                    CcsServiceId = table.Column<int>(type: "integer", nullable: true),
                     IsActivated = table.Column<bool>(type: "boolean", nullable: false),
                     IsSme = table.Column<bool>(type: "boolean", nullable: false),
                     IsVcse = table.Column<bool>(type: "boolean", nullable: false),
@@ -439,7 +466,50 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 {
                     table.PrimaryKey("PK_Organisation", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Organisation_CcsService_CcsServiceId",
+                        column: x => x.CcsServiceId,
+                        principalTable: "CcsService",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_Organisation_Party_PartyId",
+                        column: x => x.PartyId,
+                        principalTable: "Party",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "User",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserName = table.Column<string>(type: "text", nullable: true),
+                    JobTitle = table.Column<string>(type: "text", nullable: true),
+                    UserTitle = table.Column<int>(type: "integer", nullable: false),
+                    PartyId = table.Column<int>(type: "integer", nullable: false),
+                    MfaEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    AccountVerified = table.Column<bool>(type: "boolean", nullable: false),
+                    CcsServiceId = table.Column<int>(type: "integer", nullable: true),
+                    CreatedUserId = table.Column<int>(type: "integer", nullable: false),
+                    LastUpdatedUserId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    LastUpdatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    ConcurrencyKey = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_User", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_User_CcsService_CcsServiceId",
+                        column: x => x.CcsServiceId,
+                        principalTable: "CcsService",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_User_Party_PartyId",
                         column: x => x.PartyId,
                         principalTable: "Party",
                         principalColumn: "Id",
@@ -713,74 +783,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "User",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserName = table.Column<string>(type: "text", nullable: true),
-                    JobTitle = table.Column<string>(type: "text", nullable: true),
-                    UserTitle = table.Column<int>(type: "integer", nullable: false),
-                    PartyId = table.Column<int>(type: "integer", nullable: false),
-                    MfaEnabled = table.Column<bool>(type: "boolean", nullable: false),
-                    OrganisationEligibleIdentityProviderId = table.Column<int>(type: "integer", nullable: false),
-                    CreatedUserId = table.Column<int>(type: "integer", nullable: false),
-                    LastUpdatedUserId = table.Column<int>(type: "integer", nullable: false),
-                    CreatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    LastUpdatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    ConcurrencyKey = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_User", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_User_OrganisationEligibleIdentityProvider_OrganisationEligi~",
-                        column: x => x.OrganisationEligibleIdentityProviderId,
-                        principalTable: "OrganisationEligibleIdentityProvider",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_User_Party_PartyId",
-                        column: x => x.PartyId,
-                        principalTable: "Party",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "OrganisationGroupEligibleRole",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    OrganisationUserGroupId = table.Column<int>(type: "integer", nullable: false),
-                    OrganisationEligibleRoleId = table.Column<int>(type: "integer", nullable: false),
-                    CreatedUserId = table.Column<int>(type: "integer", nullable: false),
-                    LastUpdatedUserId = table.Column<int>(type: "integer", nullable: false),
-                    CreatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    LastUpdatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    ConcurrencyKey = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OrganisationGroupEligibleRole", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_OrganisationGroupEligibleRole_OrganisationEligibleRole_Orga~",
-                        column: x => x.OrganisationEligibleRoleId,
-                        principalTable: "OrganisationEligibleRole",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_OrganisationGroupEligibleRole_OrganisationUserGroup_Organis~",
-                        column: x => x.OrganisationUserGroupId,
-                        principalTable: "OrganisationUserGroup",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "IdamUserLogin",
                 columns: table => new
                 {
@@ -819,6 +821,103 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "UserSetting",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    UserSettingTypeId = table.Column<int>(type: "integer", nullable: false),
+                    UserSettingValue = table.Column<string>(type: "text", nullable: true),
+                    CreatedUserId = table.Column<int>(type: "integer", nullable: false),
+                    LastUpdatedUserId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    LastUpdatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    ConcurrencyKey = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserSetting", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserSetting_User_UserId",
+                        column: x => x.UserId,
+                        principalTable: "User",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserSetting_UserSettingType_UserSettingTypeId",
+                        column: x => x.UserSettingTypeId,
+                        principalTable: "UserSettingType",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserIdentityProvider",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    OrganisationEligibleIdentityProviderId = table.Column<int>(type: "integer", nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedUserId = table.Column<int>(type: "integer", nullable: false),
+                    LastUpdatedUserId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    LastUpdatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    ConcurrencyKey = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserIdentityProvider", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserIdentityProvider_OrganisationEligibleIdentityProvider_O~",
+                        column: x => x.OrganisationEligibleIdentityProviderId,
+                        principalTable: "OrganisationEligibleIdentityProvider",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserIdentityProvider_User_UserId",
+                        column: x => x.UserId,
+                        principalTable: "User",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ExternalServiceRoleMapping",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    CcsServiceId = table.Column<int>(type: "integer", nullable: false),
+                    OrganisationEligibleRoleId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedUserId = table.Column<int>(type: "integer", nullable: false),
+                    LastUpdatedUserId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    LastUpdatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    ConcurrencyKey = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExternalServiceRoleMapping", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ExternalServiceRoleMapping_CcsService_CcsServiceId",
+                        column: x => x.CcsServiceId,
+                        principalTable: "CcsService",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ExternalServiceRoleMapping_OrganisationEligibleRole_Organis~",
+                        column: x => x.OrganisationEligibleRoleId,
+                        principalTable: "OrganisationEligibleRole",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserAccessRole",
                 columns: table => new
                 {
@@ -846,6 +945,38 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         name: "FK_UserAccessRole_User_UserId",
                         column: x => x.UserId,
                         principalTable: "User",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrganisationGroupEligibleRole",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    OrganisationUserGroupId = table.Column<int>(type: "integer", nullable: false),
+                    OrganisationEligibleRoleId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedUserId = table.Column<int>(type: "integer", nullable: false),
+                    LastUpdatedUserId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    LastUpdatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    ConcurrencyKey = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrganisationGroupEligibleRole", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrganisationGroupEligibleRole_OrganisationEligibleRole_Orga~",
+                        column: x => x.OrganisationEligibleRoleId,
+                        principalTable: "OrganisationEligibleRole",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrganisationGroupEligibleRole_OrganisationUserGroup_Organis~",
+                        column: x => x.OrganisationUserGroupId,
+                        principalTable: "OrganisationUserGroup",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -880,39 +1011,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         name: "FK_UserGroupMembership_User_UserId",
                         column: x => x.UserId,
                         principalTable: "User",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserSetting",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
-                    UserSettingTypeId = table.Column<int>(type: "integer", nullable: false),
-                    UserSettingValue = table.Column<string>(type: "text", nullable: true),
-                    CreatedUserId = table.Column<int>(type: "integer", nullable: false),
-                    LastUpdatedUserId = table.Column<int>(type: "integer", nullable: false),
-                    CreatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    LastUpdatedOnUtc = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    ConcurrencyKey = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserSetting", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserSetting_User_UserId",
-                        column: x => x.UserId,
-                        principalTable: "User",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_UserSetting_UserSettingType_UserSettingTypeId",
-                        column: x => x.UserSettingTypeId,
-                        principalTable: "UserSettingType",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -990,6 +1088,12 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_BulkUploadDetail_FileKeyId",
+                table: "BulkUploadDetail",
+                column: "FileKeyId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CcsServiceLogin_CcsServiceId",
                 table: "CcsServiceLogin",
                 column: "CcsServiceId");
@@ -1020,6 +1124,16 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 column: "PartyTypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ExternalServiceRoleMapping_CcsServiceId",
+                table: "ExternalServiceRoleMapping",
+                column: "CcsServiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExternalServiceRoleMapping_OrganisationEligibleRoleId",
+                table: "ExternalServiceRoleMapping",
+                column: "OrganisationEligibleRoleId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_IdamUserLogin_IdentityProviderId",
                 table: "IdamUserLogin",
                 column: "IdentityProviderId");
@@ -1043,6 +1157,11 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 name: "IX_IdamUserLoginRole_UserId",
                 table: "IdamUserLoginRole",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Organisation_CcsServiceId",
+                table: "Organisation",
+                column: "CcsServiceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Organisation_CiiOrganisationId",
@@ -1158,9 +1277,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 column: "OrganisationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_User_OrganisationEligibleIdentityProviderId",
+                name: "IX_User_CcsServiceId",
                 table: "User",
-                column: "OrganisationEligibleIdentityProviderId");
+                column: "CcsServiceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_User_PartyId",
@@ -1194,6 +1313,16 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserIdentityProvider_OrganisationEligibleIdentityProviderId",
+                table: "UserIdentityProvider",
+                column: "OrganisationEligibleIdentityProviderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserIdentityProvider_UserId",
+                table: "UserIdentityProvider",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserSetting_UserId",
                 table: "UserSetting",
                 column: "UserId");
@@ -1220,7 +1349,13 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 name: "AuditLog");
 
             migrationBuilder.DropTable(
+                name: "BulkUploadDetail");
+
+            migrationBuilder.DropTable(
                 name: "CcsServiceLogin");
+
+            migrationBuilder.DropTable(
+                name: "ExternalServiceRoleMapping");
 
             migrationBuilder.DropTable(
                 name: "IdamUserLoginRole");
@@ -1259,6 +1394,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 name: "UserGroupMembership");
 
             migrationBuilder.DropTable(
+                name: "UserIdentityProvider");
+
+            migrationBuilder.DropTable(
                 name: "UserSetting");
 
             migrationBuilder.DropTable(
@@ -1283,6 +1421,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 name: "OrganisationUserGroup");
 
             migrationBuilder.DropTable(
+                name: "OrganisationEligibleIdentityProvider");
+
+            migrationBuilder.DropTable(
                 name: "UserSettingType");
 
             migrationBuilder.DropTable(
@@ -1290,9 +1431,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
             migrationBuilder.DropTable(
                 name: "User");
-
-            migrationBuilder.DropTable(
-                name: "CcsService");
 
             migrationBuilder.DropTable(
                 name: "ContactDetail");
@@ -1304,13 +1442,13 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 name: "CcsAccessRole");
 
             migrationBuilder.DropTable(
-                name: "OrganisationEligibleIdentityProvider");
-
-            migrationBuilder.DropTable(
                 name: "IdentityProvider");
 
             migrationBuilder.DropTable(
                 name: "Organisation");
+
+            migrationBuilder.DropTable(
+                name: "CcsService");
 
             migrationBuilder.DropTable(
                 name: "Party");

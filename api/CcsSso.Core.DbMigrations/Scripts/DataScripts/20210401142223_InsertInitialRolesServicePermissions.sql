@@ -44,8 +44,8 @@ CREATE OR REPLACE FUNCTION create_initial_role_service_permissions() RETURNS int
 		SELECT "Id" into orgUserAccessRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'ORG_DEFAULT_USER' LIMIT 1;
 		
 		INSERT INTO public."CcsService"(
-			"ServiceName", "TimeOutLength", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
-			VALUES ('Dashboard Service', 0, 0, 0, now(), now(), false);
+			"ServiceName", "TimeOutLength", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "GlobalLevelOrganisationAccess", "ActivateOrganisations")
+			VALUES ('Dashboard Service', 0, 0, 0, now(), now(), false, true, false);
 			
 		SELECT "Id" into dashboardServiceId From public."CcsService" WHERE "ServiceName" = 'Dashboard Service' LIMIT 1;
 		
