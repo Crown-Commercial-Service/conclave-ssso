@@ -28,12 +28,13 @@ INSERT INTO public."VirtualAddressType"("Name", "Description", "CreatedUserId", 
 INSERT INTO public."VirtualAddressType"("Name", "Description", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 	VALUES ('MOBILE','Mobile', 0, 0, now(), now(), false);
 
+
+
 INSERT INTO public."ContactPointReason"("Name", "Description", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
   VALUES ('GENERAL','General', 0, 0, now(), now(), false);
 
 INSERT INTO public."ContactPointReason"("Name", "Description", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
   VALUES ('PERSONAL','Personal', 0, 0, now(), now(), false);
-
 
 INSERT INTO public."ContactPointReason"("Name", "Description", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 	VALUES ('OTHER','Other reason', 0, 0, now(), now(), false);
@@ -61,11 +62,5 @@ INSERT INTO public."ContactPointReason"("Name", "Description", "CreatedUserId", 
 
 INSERT INTO public."ContactPointReason"("Name", "Description", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
   VALUES ('UNSPECIFIED','Unspecified', 0, 0, now(), now(), false);
-
-INSERT INTO public."ContactPointReason"("Name", "Description", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
-  VALUES ('GENERAL','General', 0, 0, now(), now(), false);
-
-INSERT INTO public."ContactPointReason"("Name", "Description", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
-  VALUES ('PERSONAL','Personal', 0, 0, now(), now(), false);
 
 

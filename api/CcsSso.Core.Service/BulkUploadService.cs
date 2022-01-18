@@ -27,9 +27,9 @@ namespace CcsSso.Core.Service
     private readonly IDocUploadService _docUploadService;
     private readonly IDataContext _dataContext;
     private readonly DocUploadConfig _docUploadConfig;
-    private readonly IBulkUploadFileValidatorService _bulkUploadFileValidatorService;
+    private readonly IBulkUploadFileContentService _bulkUploadFileValidatorService;
     public BulkUploadService(S3ConfigurationInfo s3ConfigurationInfo, IAwsS3Service awsS3Service, IDocUploadService docUploadService,
-      IDataContext dataContext, DocUploadConfig docUploadConfig, IBulkUploadFileValidatorService bulkUploadFileValidatorService)
+      IDataContext dataContext, DocUploadConfig docUploadConfig, IBulkUploadFileContentService bulkUploadFileValidatorService)
     {
       _s3ConfigurationInfo = s3ConfigurationInfo;
       _awsS3Service = awsS3Service;
@@ -79,6 +79,44 @@ namespace CcsSso.Core.Service
       return bulkUploadStatusResponse;
     }
 
+    ///// <summary>
+    ///// This method checks the bulk uplod status.
+    ///// </summary>
+    ///// <param name="organisationId"></param>
+    ///// <param name="fileKeyId"></param>
+    ///// <returns></returns>
+    //public async Task<BulkUploadStatusResponse> CheckBulkUploadStatusAsync(string organisationId, string fileKeyId)
+    //{
+    //  var bulkUploadStatusResponse = new BulkUploadStatusResponse { Id = fileKeyId, ErrorDetails = new List<KeyValuePair<string, string>>() };
+
+    //  var bulkUploadDetail = await _dataContext.BulkUploadDetail.FirstOrDefaultAsync(b => !b.IsDeleted && b.FileKeyId == fileKeyId && b.OrganisationId == organisationId);
+
+    //  if (bulkUploadDetail == null)
+    //  {
+    //    throw new ResourceNotFoundException();
+    //  }
+
+    //  bulkUploadStatusResponse.BulkUploadStatus = bulkUploadDetail.BulkUploadStatus;
+    //  bulkUploadStatusResponse.ErrorDetails = JsonConvert.DeserializeObject<List<KeyValuePair<string, string>>>(bulkUploadDetail.ValidationErrorDetails);
+
+    //  if (bulkUploadDetail.BulkUploadStatus == BulkUploadStatus.MigrationCompleted)
+    //  {
+    //    BulkUploadMigrationReportDetails bulkUploadMigrationReportDetails = new ()
+    //    {
+    //      TotalOrganisationCount= bulkUploadDetail.TotalOrganisationCount,
+    //      TotalUserCount= bulkUploadDetail.TotalUserCount,
+    //      ProcessedUserCount = bulkUploadDetail.ProcessedUserCount,
+    //      FailedUserCount = bulkUploadDetail.FailedUserCount,
+    //      MigrationStartedTime = bulkUploadDetail.MigrationStartedOnUtc,
+    //      MigrationEndTime = bulkUploadDetail.MigrationEndedOnUtc,
+    //      // TODO send the content
+    //    };
+    //  }
+
+    //  return bulkUploadStatusResponse;
+    //}
+
+
     /// <summary>
     /// This method checks the bulk uplod status. And used to poll from the UI untill validation is completed.
     /// This check the status in the DB and if processing check the actual file status if not send the validation information available in the db.
@@ -102,6 +140,21 @@ namespace CcsSso.Core.Service
         var validationStatus = await GetValidationProcessingStatusAsync(bulkUploadDetail.FileKey, bulkUploadDetail);
         bulkUploadStatusResponse.BulkUploadStatus = validationStatus.bulkUploadStatus;
         bulkUploadStatusResponse.ErrorDetails = validationStatus.errorDetails;
+      }
+      else if (bulkUploadDetail.BulkUploadStatus == BulkUploadStatus.MigrationCompleted)
+      {
+        BulkUploadMigrationReportDetails bulkUploadMigrationReportDetails = new()
+        {
+          TotalOrganisationCount = bulkUploadDetail.TotalOrganisationCount,
+          TotalUserCount = bulkUploadDetail.TotalUserCount,
+          ProcessedUserCount = bulkUploadDetail.ProcessedUserCount,
+          FailedUserCount = bulkUploadDetail.FailedUserCount,
+          MigrationStartedTime = bulkUploadDetail.MigrationStartedOnUtc,
+          MigrationEndTime = bulkUploadDetail.MigrationEndedOnUtc,
+          BulkUploadFileContentRowList = _bulkUploadFileValidatorService.GetFileContentObject(bulkUploadDetail.MigrationStringContent),
+        };
+        bulkUploadStatusResponse.BulkUploadStatus = bulkUploadDetail.BulkUploadStatus;
+        bulkUploadStatusResponse.BulkUploadMigrationReportDetails = bulkUploadMigrationReportDetails;
       }
       else
       {
@@ -137,7 +190,7 @@ namespace CcsSso.Core.Service
         if (!errors.Any()) // No errors
         {
           // TODO Push to DM
-          await SaveValidationStatusAsync(BulkUploadStatus.Migrating, bulkUploadDetail, errorDetails);
+          await SaveValidationStatusAsync(BulkUploadStatus.Migrating, bulkUploadDetail, errorDetails, DateTime.UtcNow);
           bulkUploadStatus = BulkUploadStatus.Migrating;
         }
         else
@@ -164,22 +217,15 @@ namespace CcsSso.Core.Service
     /// <param name="bulkUploadDetail"></param>
     /// <param name="errorDetails"></param>
     /// <returns></returns>
-    private async Task SaveValidationStatusAsync(BulkUploadStatus status, BulkUploadDetail bulkUploadDetail, List<KeyValuePair<string, string>> errorDetails)
+    private async Task SaveValidationStatusAsync(BulkUploadStatus status, BulkUploadDetail bulkUploadDetail, List<KeyValuePair<string, string>> errorDetails, DateTime? migrationStartedTime = null)
     {
       bulkUploadDetail.BulkUploadStatus = status;
       bulkUploadDetail.ValidationErrorDetails = JsonConvert.SerializeObject(errorDetails);
+      if (migrationStartedTime != null)
+      {
+        bulkUploadDetail.MigrationStartedOnUtc = migrationStartedTime.Value;
+      }
       await _dataContext.SaveChangesAsync();
-    }
-
-    /// <summary>
-    /// Get the full file key in "folderName/organisationId/fileKeyId" format.
-    /// </summary>
-    /// <param name="organisationId"></param>
-    /// <param name="fileKeyId"></param>
-    /// <returns></returns>
-    private string GetUploadFileKey(string organisationId, string fileKeyId)
-    {
-      return $"{_s3ConfigurationInfo.BulkUploadFolderName}/{organisationId}/{fileKeyId}.{_docUploadConfig.DefaultTypeValidationValue}";
     }
 
     /// <summary>
@@ -193,7 +239,17 @@ namespace CcsSso.Core.Service
       var errorDetails = _bulkUploadFileValidatorService.ValidateUploadedFile(fileKey, fileContentString);
       return errorDetails;
     }
+
+    /// <summary>
+    /// Get the full file key in "folderName/organisationId/fileKeyId" format.
+    /// </summary>
+    /// <param name="organisationId"></param>
+    /// <param name="fileKeyId"></param>
+    /// <returns></returns>
+    private string GetUploadFileKey(string organisationId, string fileKeyId)
+    {
+      return $"{_s3ConfigurationInfo.BulkUploadFolderName}/{organisationId}/{fileKeyId}.{_docUploadConfig.DefaultTypeValidationValue}";
+    }
+
   }
-
-
 }

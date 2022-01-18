@@ -17,6 +17,8 @@ namespace CcsSso.Core.Domain.Jobs
     public SecurityApiSettings SecurityApiSettings { get; set; }
 
     public List<UserDeleteJobSetting> UserDeleteJobSettings { get; set; }
+
+    public BulkUploadSettings BulkUploadSettings { get; set; }
   }
 
   public class CiiSettings
@@ -33,6 +35,9 @@ namespace CcsSso.Core.Domain.Jobs
     public int UnverifiedUserDeletionJobExecutionFrequencyInMinutes { get; set; }
 
     public int OrganizationRegistrationExpiredThresholdInMinutes { get; set; }
+
+    public int BulkUploadJobExecutionFrequencyInMinutes { get; set; }
+
   }
 
   public class SecurityApiSettings
@@ -56,5 +61,38 @@ namespace CcsSso.Core.Domain.Jobs
   public class RedisCacheSettingsVault
   {
     public string ConnectionString { get; set; }
+  }
+
+  public class DocUploadInfoVault
+  {
+    public string Url { get; set; }
+
+    public string Token { get; set; }
+
+    public string SizeValidationValue { get; set; }
+
+    public string TypeValidationValue { get; set; }
+  }
+
+  public class S3ConfigurationInfoVault
+  {
+    public string AccessKeyId { get; set; }
+
+    public string AccessSecretKey { get; set; }
+
+    public string ServiceUrl { get; set; }
+
+    public string BulkUploadBucketName { get; set; }
+
+    public string BulkUploadTemplateFolderName { get; set; }
+
+    public string BulkUploadFolderName { get; set; }
+
+    public string FileAccessExpirationInHours { get; set; }
+  }
+
+  public class BulkUploadSettings
+  {
+    public string BulkUploadReportUrl { get; set; }
   }
 }
