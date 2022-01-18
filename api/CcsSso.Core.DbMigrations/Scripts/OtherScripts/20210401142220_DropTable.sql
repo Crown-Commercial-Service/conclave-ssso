@@ -2,7 +2,9 @@
 
 START TRANSACTION;
 
-DROP TABLE IF EXISTS "GroupAccess";
+DROP TABLE IF EXISTS "AuditLog";
+
+DROP TABLE IF EXISTS "BulkUploadDetail";
 
 DROP TABLE IF EXISTS "CcsServiceLogin";
 
@@ -42,6 +44,8 @@ DROP TABLE IF EXISTS "ContactPoint";
 
 DROP TABLE IF EXISTS "OrganisationAccessRole";
 
+DROP TABLE IF EXISTS "ExternalServiceRoleMapping";
+
 DROP TABLE IF EXISTS "OrganisationEligibleRole";
 
 DROP TABLE IF EXISTS "OrganisationUserGroup";
@@ -50,7 +54,13 @@ DROP TABLE IF EXISTS "UserSettingType";
 
 DROP TABLE IF EXISTS "VirtualAddressType";
 
+DROP TABLE IF EXISTS "UserIdentityProvider";
+
 DROP TABLE IF EXISTS "User";
+
+DROP TABLE IF EXISTS "OrganisationEligibleIdentityProvider";
+
+DROP TABLE IF EXISTS "Organisation";
 
 DROP TABLE IF EXISTS "CcsService";
 
@@ -60,11 +70,7 @@ DROP TABLE IF EXISTS "ContactPointReason";
 
 DROP TABLE IF EXISTS "CcsAccessRole";
 
-DROP TABLE IF EXISTS "OrganisationEligibleIdentityProvider";
-
 DROP TABLE IF EXISTS "IdentityProvider";
-
-DROP TABLE IF EXISTS "Organisation";
 
 DROP TABLE IF EXISTS "Party";
 
@@ -73,4 +79,3 @@ DROP TABLE IF EXISTS "PartyType";
 DROP TABLE IF EXISTS "__EFMigrationsHistory";
 
 COMMIT;
-

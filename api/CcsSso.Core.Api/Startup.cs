@@ -222,7 +222,7 @@ namespace CcsSso.Api
       services.AddScoped<IConfigurationDetailService, ConfigurationDetailService>();
       services.AddScoped<IDocUploadService, DocUploadService>(); 
       services.AddScoped<IBulkUploadService, BulkUploadService>(); 
-      services.AddScoped<IBulkUploadFileValidatorService, BulkUploadFileValidatorService>(); 
+      services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>(); 
 
       services.AddHttpContextAccessor();
 

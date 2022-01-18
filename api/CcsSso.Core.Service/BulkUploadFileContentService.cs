@@ -1,20 +1,22 @@
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Dtos;
+using CcsSso.Core.Domain.Jobs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service
 {
-  public class BulkUploadFileValidatorService : IBulkUploadFileValidatorService
+  public class BulkUploadFileContentService : IBulkUploadFileContentService
   {
     private readonly IUserProfileHelperService _userProfileHelperService;
     private IReadOnlyList<string> validHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "title", "firstName", "lastName", "Role", "contactEmail", "contactMobile", "contactPhone", "contactFax", "contactSocial" };
     private IReadOnlyList<string> requiredHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "firstName", "lastName", "Role" };
-    public BulkUploadFileValidatorService(IUserProfileHelperService userProfileHelperService)
+    private IReadOnlyList<string> reportHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "title", "firstName", "lastName", "Role", "Status", "Status description" };
+    private const int migrationFileHeaderCount = 15;
+    public BulkUploadFileContentService(IUserProfileHelperService userProfileHelperService)
     {
       _userProfileHelperService = userProfileHelperService;
     }
@@ -36,7 +38,7 @@ namespace CcsSso.Core.Service
         return errorDetails;
       }
 
-      var headers = fileRows[1].Split(',').Select(c => c).ToList();
+      var headers = GetFileHeaders(fileRows);
       var headerValidationErrors = ValidateHeaders(headers);
       if (headerValidationErrors.Any())
       {
@@ -49,10 +51,107 @@ namespace CcsSso.Core.Service
       return errorDetails;
     }
 
+    public BulkUploadMigrationResult CheckMigrationStatus(string fileContentString)
+    {
+      var fileRows = GetFileRows(fileContentString);
+      var fileHeaders = GetFileHeaders(fileRows);
+      bool isCompleted = true;
+      List<string> organisationIdentifiers = new();
+      List<string> users = new();
+      List<string> failedUsers = new();
+      List<string> succeededUsers = new();
+
+      var statusHeaderIndex = fileHeaders.FindIndex(h => h == "Status");
+      var organisationHeaderIndex = fileHeaders.FindIndex(h => h == "identifier-id");
+      var emailHeaderIndex = fileHeaders.FindIndex(h => h == "email");
+
+      foreach (var row in fileRows.Skip(2).ToList())
+      {
+        var rowDataColumns = GetRowColumnData(row);
+
+        if (rowDataColumns.Count() != migrationFileHeaderCount || string.IsNullOrWhiteSpace(rowDataColumns[statusHeaderIndex]))
+        {
+          isCompleted = false;
+          break;
+        }
+        else
+        {
+          organisationIdentifiers.Add(rowDataColumns[organisationHeaderIndex]);
+          users.Add(rowDataColumns[emailHeaderIndex]);
+          if (rowDataColumns[statusHeaderIndex] == "Success")
+          {
+            succeededUsers.Add(rowDataColumns[emailHeaderIndex]);
+          }
+          else
+          {
+            failedUsers.Add(rowDataColumns[emailHeaderIndex]);
+          }
+        }
+      }
+
+      var totalOrganisationCount = organisationIdentifiers.Distinct().Count();
+      var totalUserCount = users.Distinct().Count();
+      var totalProceedUserCount = succeededUsers.Distinct().Count();
+      var failedUserCount = failedUsers.Distinct().Count();
+
+      return new BulkUploadMigrationResult
+      {
+        IsCompleted = isCompleted,
+        TotalOrganisationCount = totalOrganisationCount,
+        TotalUserCount = totalUserCount,
+        FailedUserCount = failedUserCount,
+        ProceededUserCount = totalProceedUserCount
+      };
+    }
+
+    public List<BulkUploadFileContentRowDetails> GetFileContentObject(string fileContentString)
+    {
+      List<BulkUploadFileContentRowDetails> bulkUploadFileContentRowDetails = new();
+
+      var fileRows = GetFileRows(fileContentString);
+
+      foreach (var row in fileRows.Skip(2).ToList())
+      {
+        var rowDataColumns = GetRowColumnData(row);
+        if (rowDataColumns.Count() == migrationFileHeaderCount)
+        {
+          var bulkUploadFileContentRowDetail = new BulkUploadFileContentRowDetails
+          {
+            IdentifierId = rowDataColumns[0],
+            SchemeId = rowDataColumns[1],
+            RightToBuy = rowDataColumns[2],
+            Email = rowDataColumns[3],
+            Title = rowDataColumns[4],
+            FirstName = rowDataColumns[5],
+            LastName = rowDataColumns[6],
+            Roles = rowDataColumns[7],
+            Status = rowDataColumns[13],
+            StatusDescription = rowDataColumns[14]
+          };
+          bulkUploadFileContentRowDetails.Add(bulkUploadFileContentRowDetail);
+        }
+      }
+
+      return bulkUploadFileContentRowDetails;
+    }
+
     private string[] GetFileRows(string fileContentString)
     {
       var fileRows = fileContentString.Split("\r\n");
       return fileRows.Where(r => !string.IsNullOrWhiteSpace(r)).ToArray();
+    }
+
+    private List<string> GetFileHeaders(string[] fileRows)
+    {
+      var headers = fileRows[1].Split(',').Select(c => c).ToList();
+      return headers;
+    }
+
+    private string[] GetRowColumnData(string row)
+    {
+      Regex regx = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))");
+      var rowDataColumns = regx.Split(row);
+      return rowDataColumns;
     }
 
     private List<KeyValuePair<string, string>> ValidateHeaders(List<string> fileHeaders)
@@ -66,7 +165,7 @@ namespace CcsSso.Core.Service
         {
           errorDetails.Add(new KeyValuePair<string, string>("Header not available", $"Header '{validHeader}' not found"));
         }
-        else if(headerCount > 1)
+        else if (headerCount > 1)
         {
           errorDetails.Add(new KeyValuePair<string, string>("Duplicate headers found", $"Header '{validHeader}' is duplicated"));
         }
@@ -88,8 +187,7 @@ namespace CcsSso.Core.Service
       foreach (var row in rows.Select((data, i) => new { i, data }))
       {
         var fileRowNumber = row.i + 3;
-        Regex regx = new Regex(",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))");
-        var rowDataColumns = regx.Split(row.data);
+        var rowDataColumns = GetRowColumnData(row.data);
         foreach (var requiredHeader in requiredHeaders)
         {
           var actualHeaderIndex = fileHeaders.FindIndex(h => h == requiredHeader);
