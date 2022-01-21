@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION create_el_service() RETURNS integer AS $$
 
 -- Add values to clientId and clientUrl
-DECLARE serviceName text = 'Evidence Locker';
+DECLARE serviceName text = 'Buyer/Supplier Information';
 DECLARE serviceDescription text = 'Store procurement information from previous bids so you don’t need to provide the same evidence over and over';
 DECLARE serviceCode text = 'EVIDENCE_LOCKER';
 DECLARE clientUrl text = '';
