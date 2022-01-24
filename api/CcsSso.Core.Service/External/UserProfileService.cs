@@ -624,8 +624,8 @@ namespace CcsSso.Core.Service.External
           });
         }
 
-        hasIdpChange = user.UserIdentityProviders
-          .Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id) != userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id);
+        hasIdpChange = !user.UserIdentityProviders
+          .Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id).SequenceEqual(userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id));
 
         previousIdentityProviderIds = user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).ToList();
 

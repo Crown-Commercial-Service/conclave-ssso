@@ -161,6 +161,9 @@ namespace CcsSso.Security.Api.Controllers
       if (tokenRequest.GrantType != "client_credentials")
       {
         (sid, opbsValue) = await GenerateCookiesAsync(tokenRequestInfo.ClientId, tokenRequestInfo.State);
+      }
+      if (tokenRequest.GrantType != "client_credentials" && tokenRequest.GrantType != "refresh_token")
+      {
         var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
         host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
       }
