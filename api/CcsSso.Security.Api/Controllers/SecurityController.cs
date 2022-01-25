@@ -376,10 +376,16 @@ namespace CcsSso.Security.Api.Controllers
         Console.WriteLine($"Logout_Client_ID: {clientId}");
         Console.WriteLine($"Logout_Session_ID: {sid}");
 
+        if (!string.IsNullOrWhiteSpace(sid))
+        {
+          await _securityService.InvalidateSessionAsync(sid);
+        }
+
         string visitedSiteCookie = "ccs-sso-visitedsites";
         if (Request.Cookies.ContainsKey(visitedSiteCookie))
         {
           Request.Cookies.TryGetValue(visitedSiteCookie, out string visitedSites);
+          Console.WriteLine($"Logout_VisitedSites: {visitedSites}");
           var visitedSiteList = visitedSites.Split(',').ToList();
           // Perform back chanel logout - This should be performed as a queue triggered background job
           await _securityService.PerformBackChannelLogoutAsync(clientId, sid, visitedSiteList);

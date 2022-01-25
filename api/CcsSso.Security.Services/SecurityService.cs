@@ -282,15 +282,22 @@ namespace CcsSso.Security.Services
 
     public async Task<ServiceAccessibilityResultDto> CheckServiceAccessForUserAsync(string clientId, string email)
     {
-      if (string.IsNullOrEmpty(clientId)){
+      if (string.IsNullOrEmpty(clientId))
+      {
         throw new CcsSsoException("ERROR_INVALID_CLIENTID");
       }
 
-      if (string.IsNullOrEmpty(email)){
+      if (string.IsNullOrEmpty(email))
+      {
         throw new CcsSsoException("ERROR_INVALID_EMAIL");
       }
 
       return await _identityProviderService.CheckServiceAccessForUserAsync(clientId, email);
+    }
+
+    public async Task InvalidateSessionAsync(string sessionId)
+    {
+      await _securityCacheService.SetValueAsync(sessionId, true, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes, 0));
     }
 
   }
