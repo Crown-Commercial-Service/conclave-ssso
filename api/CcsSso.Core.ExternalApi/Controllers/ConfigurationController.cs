@@ -55,9 +55,17 @@ namespace CcsSso.Core.ExternalApi.Controllers
 
     [HttpGet("services/{clientId}")]
     [SwaggerOperation(Tags = new[] { "Configuration" })]
-    public async Task<ServiceProfile> GetServiceProfile(string clientId, [FromQuery(Name = "organisation-id")]string organisationId)
+    public async Task<ServiceProfile> GetServiceProfile(string clientId, [FromQuery(Name = "organisation-id")] string organisationId)
     {
       return await _configurationDetailService.GetServiceProfieAsync(clientId, organisationId);
+    }
+
+    [HttpGet("country-details")]
+    [SwaggerOperation(Tags = new[] { "Configuration" })]
+    [ProducesResponseType(typeof(List<CountryDetail>), 200)]
+    public async Task<List<CountryDetail>> GetCountryCodes()
+    {
+      return await _configurationDetailService.GetCountryDetailAsync();
     }
   }
 }
