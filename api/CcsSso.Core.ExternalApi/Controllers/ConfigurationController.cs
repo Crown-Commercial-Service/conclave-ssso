@@ -60,7 +60,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
       return await _configurationDetailService.GetServiceProfieAsync(clientId, organisationId);
     }
 
-    [HttpGet("Country-Details")]
+    [HttpGet("country-details")]
     [SwaggerOperation(Tags = new[] { "Configuration" })]
     [ProducesResponseType(typeof(List<CountryDetail>), 200)]
     public async Task<List<CountryDetail>> GetCountryCodes()
