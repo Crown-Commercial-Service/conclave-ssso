@@ -96,17 +96,14 @@ namespace CcsSso.Core.Api.Middleware
             {
               var sessionId = result.ClaimValues["sid"];
               var isInvalidSession = await _remoteCacheService.GetValueAsync<bool>(sessionId);
-              Console.WriteLine($"SessionId : {sessionId} **==** invalid: {isInvalidSession}");
-              if (isInvalidSession) //if session was invalidated due to logout from other clients
-              {
-                throw new UnauthorizedAccessException();
-              }
               var forceSignout = await _remoteCacheService.GetValueAsync<bool>(CacheKeyConstant.ForceSignoutKey + sub);
-              //check if user is entitled to force signout
-              if (forceSignout)
+              
+              //check if user is entitled to force signout or invalid session (due to logout from other service)
+              if (isInvalidSession || forceSignout)
               {
                 if (path == "auth/sessions")
                 {
+                  await _remoteCacheService.RemoveAsync(sessionId);
                   await _remoteCacheService.RemoveAsync(CacheKeyConstant.ForceSignoutKey + sub);
                 }
                 else

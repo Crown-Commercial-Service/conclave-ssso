@@ -129,7 +129,9 @@ namespace CcsSso.Security.Api.Controllers
     /// </response>
     /// <remarks>
     /// Sample requests:
-    /// POST client_id=abdgt refreshtoken=abcs123 granttype=refresh_token client_secret=xxx redirect_uri=http://redirect_url state=123"
+    /// POST client_id=abdgt refreshtoken=abcs123 granttype=authorization_code redirect_uri=http://redirect_url state=123"
+    /// POST client_id=abdgt refreshtoken=abcs123 granttype=refresh_token"
+    /// POST client_id=abdgt granttype=client_credentials client_secret=xxx "
     /// </remarks>
     [HttpPost("security/token")]
     [Consumes("application/x-www-form-urlencoded")]
@@ -373,9 +375,6 @@ namespace CcsSso.Security.Api.Controllers
         Request.Cookies.TryGetValue(sessionCookie, out string sid);
         Response.Cookies.Delete(sessionCookie);
 
-        Console.WriteLine($"Logout_Client_ID: {clientId}");
-        Console.WriteLine($"Logout_Session_ID: {sid}");
-
         if (!string.IsNullOrWhiteSpace(sid))
         {
           await _securityService.InvalidateSessionAsync(sid);
@@ -385,7 +384,6 @@ namespace CcsSso.Security.Api.Controllers
         if (Request.Cookies.ContainsKey(visitedSiteCookie))
         {
           Request.Cookies.TryGetValue(visitedSiteCookie, out string visitedSites);
-          Console.WriteLine($"Logout_VisitedSites: {visitedSites}");
           var visitedSiteList = visitedSites.Split(',').ToList();
           // Perform back chanel logout - This should be performed as a queue triggered background job
           await _securityService.PerformBackChannelLogoutAsync(clientId, sid, visitedSiteList);
@@ -614,19 +612,31 @@ namespace CcsSso.Security.Api.Controllers
 
       List<CookieOptions> cookieOptionsList = new();
 
-      foreach (var domain in _applicationConfigurationInfo.AllowedDomains)
+      if (_applicationConfigurationInfo.AllowedDomains == null || _applicationConfigurationInfo.AllowedDomains.Count == 0)
       {
-        CookieOptions cookieOptions = new CookieOptions()
+        CookieOptions cookieOptions = new ()
         {
           HttpOnly = httpOnly,
           Expires = expiresOnUTC,
-          Secure = true
+          Secure = true,
+          SameSite = SameSiteMode.None
         };
-
-        cookieOptions.SameSite = SameSiteMode.Lax;
-        cookieOptions.Domain = domain;
-
         cookieOptionsList.Add(cookieOptions);
+      }
+      else
+      {
+        foreach (var domain in _applicationConfigurationInfo.AllowedDomains)
+        {
+          CookieOptions cookieOptions = new ()
+          {
+            HttpOnly = httpOnly,
+            Expires = expiresOnUTC,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            Domain = domain
+          };
+          cookieOptionsList.Add(cookieOptions);
+        }
       }
 
       return cookieOptionsList;
