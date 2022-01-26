@@ -36,5 +36,7 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task<ServiceAccessibilityResultDto> CheckServiceAccessForUserAsync(string clientId, string email);
 
+    Task InvalidateSessionAsync(string sessionId);
+
   }
 }

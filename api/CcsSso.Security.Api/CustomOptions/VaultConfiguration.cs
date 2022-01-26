@@ -70,6 +70,16 @@ namespace CcsSso.Security.Api.CustomOptions
         }
       }
 
+      if (_secrets.Data.ContainsKey("AllowedDomains"))
+      {
+        var domainList = JsonConvert.DeserializeObject<List<string>>(_secrets.Data["AllowedDomains"].ToString());
+        int index = 0;
+        foreach (var domain in domainList)
+        {
+          Data.Add($"AllowedDomains:{index++}", domain);
+        }
+      }
+
       if (_secrets.Data.ContainsKey("PasswordPolicy"))
       {
         var passwordPolicy = JsonConvert.DeserializeObject<PasswordPolicyVault>(_secrets.Data["PasswordPolicy"].ToString());
