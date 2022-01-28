@@ -17,6 +17,7 @@
     <None Remove="Scripts\20210401142224_InsertIdentityProviderData.sql" />
     <None Remove="Scripts\SingleMigrationScript\20211224054428_InitialMigration.sql" />
     <None Remove="Scripts\Sprint26\20220112054931_BulkUploadMugrationDetails.sql" />
+    <None Remove="Scripts\Sprint27\20220119113124_CountryDetails.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\OtherScripts\20210401142220_DropTable.sql" />
@@ -24,6 +25,7 @@
     <EmbeddedResource Include="Scripts\DataScripts\20210401142224_InsertIdentityProviderData.sql" />
     <EmbeddedResource Include="Scripts\SingleMigrationScript\20211224054428_InitialMigration.sql" />
     <EmbeddedResource Include="Scripts\Sprint26\20220112054931_BulkUploadMugrationDetails.sql" />
+    <EmbeddedResource Include="Scripts\Sprint27\20220119113124_CountryDetails.sql" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />

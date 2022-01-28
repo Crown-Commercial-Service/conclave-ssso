@@ -106,6 +106,7 @@ namespace CcsSso.Security.Api
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
           CustomDomain = Configuration["CustomDomain"],
+          AllowedDomains = Configuration.GetSection("AllowedDomains").Get<List<string>>(),
           Auth0ConfigurationInfo = new Auth0Configuration()
           {
             ClientId = Configuration["Auth0:ClientId"],

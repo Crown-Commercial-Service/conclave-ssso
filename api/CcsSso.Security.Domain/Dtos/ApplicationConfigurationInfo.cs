@@ -31,6 +31,8 @@ namespace CcsSso.Security.Domain.Dtos
     public MockProvider MockProvider { get; set; }
 
     public string CustomDomain { get; set; }
+
+    public List<string> AllowedDomains { get; set; }
   }
 
   public class SecurityApiKeySettings
