@@ -1,5 +1,6 @@
 using CcsSso.Security.Domain.Dtos;
 using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -31,15 +32,18 @@ namespace CcsSso.Security.Api.Middleware
     {
       var apiKey = context.Request.Headers["X-API-Key"];
       var path = context.Request.Path.Value.TrimStart('/').TrimEnd('/');
+      Console.WriteLine($"Path {path}");
 
       if (allowedPaths.Contains(path) || urlparamPaths.Any(p => path.StartsWith(p)))
       {
+        Console.WriteLine($"Allowed Path");
         await _next(context);
         return;
       }
 
       if (!_appSetting.SecurityApiKeySettings.ApiKeyValidationExcludedRoutes.Contains(path) && ((string.IsNullOrEmpty(apiKey) || apiKey != _appSetting.SecurityApiKeySettings.SecurityApiKey)))
       {
+        Console.WriteLine($"Not in Allowed Paths and no key");
         context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
       }
       else

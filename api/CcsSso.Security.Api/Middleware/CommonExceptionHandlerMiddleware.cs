@@ -53,6 +53,9 @@ namespace CcsSso.Security.Api.Middleware
     {
       context.Response.StatusCode = (int)statusCode;
 
+      Console.WriteLine($"Security API error:  {ex}");
+
+
       if (displayError == "SECURITY_ERROR")
       {
         var errorInfo = JsonConvert.DeserializeObject<ErrorInfo>(ex.Message);
