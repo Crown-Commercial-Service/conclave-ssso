@@ -171,57 +171,57 @@ namespace CcsSso.Security.Api.CustomOptions
 
       if (_secrets.Data.ContainsKey("OpenIdConfigurationSettings"))
       {
-        var openIdConfigurationSettings = JsonConvert.DeserializeObject<OpenIdConfigurationSettingsVault>(_secrets.Data["OpenIdConfigurations"].ToString());
-        Data.Add("OpenIdConfigurations:Issuer", openIdConfigurationSettings.Issuer);
-        Data.Add("OpenIdConfigurations:AuthorizationEndpoint", openIdConfigurationSettings.AuthorizationEndpoint);
-        Data.Add("OpenIdConfigurations:TokenEndpoint", openIdConfigurationSettings.TokenEndpoint);
-        Data.Add("OpenIdConfigurations:DeviceAuthorizationEndpoint", openIdConfigurationSettings.DeviceAuthorizationEndpoint);
-        Data.Add("OpenIdConfigurations:UserinfoEndpoint", openIdConfigurationSettings.UserinfoEndpoint);
-        Data.Add("OpenIdConfigurations:MfaChallengeEndpoint", openIdConfigurationSettings.MfaChallengeEndpoint);
-        Data.Add("OpenIdConfigurations:JwksUri", openIdConfigurationSettings.JwksUri);
-        Data.Add("OpenIdConfigurations:RegistrationEndpoint", openIdConfigurationSettings.RegistrationEndpoint);
-        Data.Add("OpenIdConfigurations:RevocationEndpoint", openIdConfigurationSettings.RevocationEndpoint);
+        var openIdConfigurationSettings = JsonConvert.DeserializeObject<OpenIdConfigurationSettingsVault>(_secrets.Data["OpenIdConfigurationSettings"].ToString());
+        Data.Add("OpenIdConfigurationSettings:Issuer", openIdConfigurationSettings.Issuer);
+        Data.Add("OpenIdConfigurationSettings:AuthorizationEndpoint", openIdConfigurationSettings.AuthorizationEndpoint);
+        Data.Add("OpenIdConfigurationSettings:TokenEndpoint", openIdConfigurationSettings.TokenEndpoint);
+        Data.Add("OpenIdConfigurationSettings:DeviceAuthorizationEndpoint", openIdConfigurationSettings.DeviceAuthorizationEndpoint);
+        Data.Add("OpenIdConfigurationSettings:UserinfoEndpoint", openIdConfigurationSettings.UserinfoEndpoint);
+        Data.Add("OpenIdConfigurationSettings:MfaChallengeEndpoint", openIdConfigurationSettings.MfaChallengeEndpoint);
+        Data.Add("OpenIdConfigurationSettings:JwksUri", openIdConfigurationSettings.JwksUri);
+        Data.Add("OpenIdConfigurationSettings:RegistrationEndpoint", openIdConfigurationSettings.RegistrationEndpoint);
+        Data.Add("OpenIdConfigurationSettings:RevocationEndpoint", openIdConfigurationSettings.RevocationEndpoint);
         int i = 0;
         foreach (var route in openIdConfigurationSettings.ScopesSupported)
         {
-          Data.Add($"OpenIdConfigurations.ScopesSupported:{i++}", route);
+          Data.Add($"OpenIdConfigurationSettings:ScopesSupported:{i++}", route);
         }
         i = 0;
         foreach (var route in openIdConfigurationSettings.ResponseTypesSupported)
         {
-          Data.Add($"OpenIdConfigurations.ResponseTypesSupported:{i++}", route);
+          Data.Add($"OpenIdConfigurationSettings:ResponseTypesSupported:{i++}", route);
         }
         i = 0;
         foreach (var route in openIdConfigurationSettings.CodeChallengeMethodsSupported)
         {
-          Data.Add($"OpenIdConfigurations.CodeChallengeMethodsSupported:{i++}", route);
+          Data.Add($"OpenIdConfigurationSettings:CodeChallengeMethodsSupported:{i++}", route);
         }
         i = 0;
         foreach (var route in openIdConfigurationSettings.ResponseModesSupported)
         {
-          Data.Add($"OpenIdConfigurations.ResponseModesSupported:{i++}", route);
+          Data.Add($"OpenIdConfigurationSettings:ResponseModesSupported:{i++}", route);
         }
         i = 0;
         foreach (var route in openIdConfigurationSettings.SubjectTypesSupported)
         {
-          Data.Add($"OpenIdConfigurations.SubjectTypesSupported:{i++}", route);
+          Data.Add($"OpenIdConfigurationSettings:SubjectTypesSupported:{i++}", route);
         }
         i = 0;
         foreach (var route in openIdConfigurationSettings.IdTokenSigningAlgValuesSupported)
         {
-          Data.Add($"OpenIdConfigurations.IdTokenSigningAlgValuesSupported:{i++}", route);
+          Data.Add($"OpenIdConfigurationSettings:IdTokenSigningAlgValuesSupported:{i++}", route);
         }
         i = 0;
         foreach (var route in openIdConfigurationSettings.TokenEndpointAuthMethodsSupported)
         {
-          Data.Add($"OpenIdConfigurations.TokenEndpointAuthMethodsSupported:{i++}", route);
+          Data.Add($"OpenIdConfigurationSettings:TokenEndpointAuthMethodsSupported:{i++}", route);
         }
         i = 0;
         foreach (var route in openIdConfigurationSettings.ClaimsSupported)
         {
-          Data.Add($"OpenIdConfigurations.ClaimsSupported:{i++}", route);
+          Data.Add($"OpenIdConfigurationSettings:ClaimsSupported:{i++}", route);
         }
-        Data.Add("OpenIdConfigurations:RequestUriParameterSupported", openIdConfigurationSettings.RequestUriParameterSupported.ToString());
+        Data.Add("OpenIdConfigurationSettings:RequestUriParameterSupported", openIdConfigurationSettings.RequestUriParameterSupported.ToString());
       }
 
       Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
