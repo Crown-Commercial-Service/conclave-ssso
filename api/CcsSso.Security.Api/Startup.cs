@@ -178,6 +178,27 @@ namespace CcsSso.Security.Api
             ConnectionString = Configuration["RedisCacheSettings:ConnectionString"],
             IsEnabled = isRedisEnabled
           },
+          OpenIdConfigurationSettings = new OpenIdConfigurationSettings()
+          {
+            Issuer = Configuration["OpenIdConfigurationSettings:Issuer"],
+            AuthorizationEndpoint = Configuration["OpenIdConfigurationSettings:AuthorizationEndpoint"],
+            TokenEndpoint = Configuration["OpenIdConfigurationSettings:TokenEndpoint"],
+            DeviceAuthorizationEndpoint = Configuration["OpenIdConfigurationSettings:DeviceAuthorizationEndpoint"],
+            UserinfoEndpoint = Configuration["OpenIdConfigurationSettings:UserinfoEndpoint"],
+            MfaChallengeEndpoint = Configuration["OpenIdConfigurationSettings:MfaChallengeEndpoint"],
+            JwksUri = Configuration["OpenIdConfigurationSettings:JwksUri"],
+            RegistrationEndpoint = Configuration["OpenIdConfigurationSettings:RegistrationEndpoint"],
+            RevocationEndpoint = Configuration["OpenIdConfigurationSettings:RevocationEndpoint"],
+            ScopesSupported = Configuration.GetSection("OpenIdConfigurationSettings:ScopesSupported").Get<List<string>>(),
+            ResponseTypesSupported = Configuration.GetSection("OpenIdConfigurationSettings:ScopesSupported").Get<List<string>>(),
+            CodeChallengeMethodsSupported = Configuration.GetSection("OpenIdConfigurationSettings:ScopesSupported").Get<List<string>>(),
+            ResponseModesSupported = Configuration.GetSection("OpenIdConfigurationSettings:ScopesSupported").Get<List<string>>(),
+            SubjectTypesSupported = Configuration.GetSection("OpenIdConfigurationSettings:ScopesSupported").Get<List<string>>(),
+            IdTokenSigningAlgValuesSupported = Configuration.GetSection("OpenIdConfigurationSettings:ScopesSupported").Get<List<string>>(),
+            TokenEndpointAuthMethodsSupported = Configuration.GetSection("OpenIdConfigurationSettings:ScopesSupported").Get<List<string>>(),
+            ClaimsSupported = Configuration.GetSection("OpenIdConfigurationSettings:ScopesSupported").Get<List<string>>(),
+            RequestUriParameterSupported = bool.Parse(Configuration["OpenIdConfigurationSettings:RequestUriParameterSupported"]),
+          },
           CryptoSettings = new CryptoSettings()
           {
             CookieEncryptionKey = Configuration["Crypto:CookieEncryptionKey"]
