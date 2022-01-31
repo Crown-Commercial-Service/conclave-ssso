@@ -642,7 +642,7 @@ namespace CcsSso.Security.Api.Controllers
       return cookieOptionsList;
     }
 
-    [HttpPost]
+    [HttpGet]
     [Produces("application/json")]
     [Route("security/.well-known/openid-configuration")]
     [SwaggerOperation(Tags = new[] { "security" })]
