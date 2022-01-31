@@ -644,7 +644,7 @@ namespace CcsSso.Security.Api.Controllers
 
     [HttpGet]
     [Produces("application/json")]
-    [Route("security/.well-known/openid-configuration")]
+    [Route(".well-known/openid-configuration")]
     [SwaggerOperation(Tags = new[] { "security" })]
     [ProducesResponseType(200)]
     public OpenIdConfigurationSettings GetOpenIdConfiguration()
