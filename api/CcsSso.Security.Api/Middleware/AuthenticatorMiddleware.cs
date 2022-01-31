@@ -14,7 +14,7 @@ namespace CcsSso.Security.Api.Middleware
     private readonly ApplicationConfigurationInfo _appSetting;
     private List<string> allowedPaths = new List<string>()
     {
-      "security/nominate", "security/.well-known/openid-configuration"
+      "security/nominate", "security/.well-known/openid-configuration", ".well-known/openid-configuration"
     };
 
     private List<string> urlparamPaths = new List<string>()
