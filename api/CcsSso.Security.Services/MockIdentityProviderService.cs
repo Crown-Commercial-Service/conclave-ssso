@@ -84,7 +84,7 @@ namespace CcsSso.Security.Services
       var userDetails = await GetUserAsync(refreshToken);
       var customClaims = GetCustomClaimsForIdToken(clientId, refreshToken, userDetails);
       var idToken = _jwtTokenHandler.CreateToken(clientId, customClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
-      var accessToken = GetAccessToken(clientId, refreshToken, userDetails);
+      var accessToken = GetAccessToken(clientId, refreshToken, userDetails, sid);
       return new TokenResponseInfo
       {
         IdToken = idToken,
@@ -98,9 +98,9 @@ namespace CcsSso.Security.Services
       throw new NotImplementedException();
     }
 
-    public async Task<TokenResponseInfo> GetTokensAsync(TokenRequestInfo tokenRequestInfo, string sid)
+    public async Task<TokenResponseInfo> GetTokensAsync(TokenRequestInfo tokenRequestInfo, string sid= null)
     {
-      return await GetTokensAsync(tokenRequestInfo.ClientId, tokenRequestInfo.Code);
+      return await GetTokensAsync(tokenRequestInfo.ClientId, tokenRequestInfo.Code, sid);
     }
 
     public async Task InitiateResetPasswordAsync(ChangePasswordInitiateRequest changePasswordInitiateRequest)
@@ -163,7 +163,7 @@ namespace CcsSso.Security.Services
     }
 
 
-    private async Task<TokenResponseInfo> GetTokensAsync(string clientId, string email)
+    private async Task<TokenResponseInfo> GetTokensAsync(string clientId, string email, string sid = null)
     {
       if (string.IsNullOrEmpty(email))
       {
@@ -175,7 +175,7 @@ namespace CcsSso.Security.Services
       var customClaims = GetCustomClaimsForIdToken(clientId, email, userDetails);
       var idToken = _jwtTokenHandler.CreateToken(clientId, customClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
 
-      var accessToken = GetAccessToken(clientId, email, userDetails);
+      var accessToken = GetAccessToken(clientId, email, userDetails, sid);
 
       if (!userDetails.AccountVerified)
       {
@@ -213,7 +213,7 @@ namespace CcsSso.Security.Services
       return customClaims;
     }
 
-    private string GetAccessToken(string clientId, string email, UserProfileInfo userDetails)
+    private string GetAccessToken(string clientId, string email, UserProfileInfo userDetails, string sid)
     {
       var rolesFromUserRoles = userDetails.Detail.RolePermissionInfo.Where(rp => rp.ServiceClientId == clientId).ToList();
       var rolesFromUserGroups = userDetails.Detail.UserGroups.Where(ug => ug.ServiceClientId == clientId).ToList();
@@ -224,6 +224,10 @@ namespace CcsSso.Security.Services
         accesstokenClaims.Add(new ClaimInfo("uid", userDetails.Detail.Id.ToString()));
         accesstokenClaims.Add(new ClaimInfo("caller", "user"));
         accesstokenClaims.Add(new ClaimInfo("ciiOrgId", userDetails.OrganisationId));
+        if (!string.IsNullOrWhiteSpace(sid))
+        {
+          accesstokenClaims.Add(new ClaimInfo("sid", sid));
+        }
         foreach (var role in roles)
         {
           accesstokenClaims.Add(new ClaimInfo("roles", role));
