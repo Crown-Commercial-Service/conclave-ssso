@@ -7,6 +7,15 @@ DECLARE serviceRoleKey1 text = 'FP_USER';
 
 BEGIN
 
+	DELETE FROM public."CcsService"
+	WHERE "ServiceName" = serviceName;
+
+	DELETE FROM public."CcsAccessRole"
+	WHERE "CcsAccessRoleNameKey" = dashboardAccessRoleKey;
+
+	DELETE FROM public."CcsAccessRole"
+	WHERE "CcsAccessRoleNameKey" = serviceRoleKey1;
+
 	RETURN 1;
 	END;
 $$ LANGUAGE plpgsql;
