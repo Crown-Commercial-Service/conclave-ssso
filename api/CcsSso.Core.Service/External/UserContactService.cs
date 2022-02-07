@@ -145,6 +145,26 @@ namespace CcsSso.Service.External
     {
       _userHelper.ValidateUserName(userName);
 
+      Console.WriteLine($"Strating User Contact deletion for user: {userName} and id: {contactId}");
+
+      var contactPoint1 = await _dataContext.ContactPoint
+        .Where(c => c.Id == contactId && !c.IsDeleted && !c.ContactDetail.IsDeleted && c.Party.User.UserName == userName)
+        .FirstOrDefaultAsync();
+
+      if (contactPoint1 == null)
+      {
+        Console.WriteLine($"User ContactPoint1 is null for user: {userName} and id: {contactId}");
+      }
+
+      var contactPoint2 = await _dataContext.ContactPoint
+       .Where(c => c.Id == contactId && !c.IsDeleted && c.Party.User.UserName == userName && !c.Party.User.IsDeleted)
+       .FirstOrDefaultAsync();
+
+      if (contactPoint2 == null)
+      {
+        Console.WriteLine($"User ContactPoint2 is null for user: {userName} and id: {contactId}");
+      }
+
       var deletingContactPoint = await _dataContext.ContactPoint.Where(c => c.Id == contactId && !c.IsDeleted &&
         c.Party.User.UserName == userName && !c.Party.User.IsDeleted)
         .Include(c => c.ContactDetail).ThenInclude(cd => cd.VirtualAddresses).ThenInclude(va => va.VirtualAddressType)
@@ -155,6 +175,8 @@ namespace CcsSso.Service.External
 
       if (deletingContactPoint != null)
       {
+        Console.WriteLine($"Processing User Contact deletion for user: {userName} and id: {contactId}");
+
         deletingContactPoint.IsDeleted = true;
         deletingContactPoint.ContactDetail.IsDeleted = true;
 
@@ -190,6 +212,7 @@ namespace CcsSso.Service.External
       }
       else
       {
+        Console.WriteLine($"User DeletingContactPoint is null for user: {userName} and id: {contactId}");
         throw new ResourceNotFoundException();
       }
     }
