@@ -2,6 +2,7 @@ using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos;
 using CcsSso.Core.Domain.Jobs;
+using CcsSso.Domain.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,14 +13,16 @@ namespace CcsSso.Core.Service
   public class BulkUploadFileContentService : IBulkUploadFileContentService
   {
     private readonly IUserProfileHelperService _userProfileHelperService;
+    private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private IReadOnlyList<string> validHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "title", "firstName", "lastName", "Role", "contactEmail", "contactMobile", "contactPhone", "contactFax", "contactSocial" };
     private IReadOnlyList<string> requiredHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "firstName", "lastName", "Role" };
     private IReadOnlyList<string> reportHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "title", "firstName", "lastName", "Role", "Status", "Status description" };
     private const int migrationFileHeaderCount = 15;
     private const int headerTitleRowCount = 2;
-    public BulkUploadFileContentService(IUserProfileHelperService userProfileHelperService)
+    public BulkUploadFileContentService(IUserProfileHelperService userProfileHelperService, ApplicationConfigurationInfo applicationConfigurationInfo)
     {
       _userProfileHelperService = userProfileHelperService;
+      _applicationConfigurationInfo = applicationConfigurationInfo;
     }
 
     public List<KeyValuePair<string, string>> ValidateUploadedFile(string fileKey, string fileContentString)
@@ -184,6 +187,13 @@ namespace CcsSso.Core.Service
     private List<KeyValuePair<string, string>> ValidateRows(List<string> fileHeaders, List<string> rows)
     {
       var errorDetails = new List<KeyValuePair<string, string>>();
+
+      var userRowCount = rows.Count - headerTitleRowCount;
+      if (userRowCount > _applicationConfigurationInfo.BulkUploadMaxUserCount)
+      {
+        errorDetails.Add(new KeyValuePair<string, string>("Exceeds max number of users", $"Number of users (${userRowCount}) in the csv file exceeds max number of users (${_applicationConfigurationInfo.BulkUploadMaxUserCount}) allowed. Reduce number of users in csv file and try again."));
+        return errorDetails;
+      }
 
       foreach (var row in rows.Select((data, i) => new { i, data }))
       {
