@@ -188,10 +188,9 @@ namespace CcsSso.Core.Service
     {
       var errorDetails = new List<KeyValuePair<string, string>>();
 
-      var userRowCount = rows.Count - headerTitleRowCount;
-      if (userRowCount > _applicationConfigurationInfo.BulkUploadMaxUserCount)
+      if (rows.Count > _applicationConfigurationInfo.BulkUploadMaxUserCount)
       {
-        errorDetails.Add(new KeyValuePair<string, string>("Exceeds max number of users", $"Number of users (${userRowCount}) in the csv file exceeds max number of users (${_applicationConfigurationInfo.BulkUploadMaxUserCount}) allowed. Reduce number of users in csv file and try again."));
+        errorDetails.Add(new KeyValuePair<string, string>("Exceeds max number of users", $"Number of users ({rows.Count}) in the csv file exceeds max number of users ({_applicationConfigurationInfo.BulkUploadMaxUserCount}) allowed. Reduce number of users in csv file and try again."));
         return errorDetails;
       }
 
