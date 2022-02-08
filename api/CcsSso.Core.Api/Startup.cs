@@ -53,16 +53,20 @@ namespace CcsSso.Api
         bool.TryParse(Configuration["RedisCacheSettings:IsEnabled"], out bool isRedisEnabled);
         int.TryParse(Configuration["RedisCacheSettings:CacheExpirationInMinutes"], out int cacheExpirationInMinutes);
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
+        int.TryParse(Configuration["BulkUploadMaxUserCount"], out int bulkUploadMaxUserCount);
 
         if (cacheExpirationInMinutes == 0)
         {
           cacheExpirationInMinutes = 10;
         }
 
+        bulkUploadMaxUserCount = bulkUploadMaxUserCount == 0 ? 10 : bulkUploadMaxUserCount;
+
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
           CustomDomain = Configuration["CustomDomain"],
           DashboardServiceClientId = Configuration["DashboardServiceClientId"],
+          BulkUploadMaxUserCount = bulkUploadMaxUserCount,
           JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
           {
             IdamClienId = Configuration["JwtTokenValidationInfo:IdamClienId"],
