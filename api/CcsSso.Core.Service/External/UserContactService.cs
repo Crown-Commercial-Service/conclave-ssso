@@ -146,7 +146,7 @@ namespace CcsSso.Service.External
       _userHelper.ValidateUserName(userName);
 
       var deletingContactPoint = await _dataContext.ContactPoint.Where(c => c.Id == contactId && !c.IsDeleted &&
-        c.Party.User.UserName == userName && !c.Party.User.IsDeleted)
+        c.Party.User.UserName == userName)
         .Include(c => c.ContactDetail).ThenInclude(cd => cd.VirtualAddresses).ThenInclude(va => va.VirtualAddressType)
         .Include(c => c.ContactPointReason)
         .Include(c => c.Party).ThenInclude(p => p.User)
