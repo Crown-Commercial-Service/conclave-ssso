@@ -125,8 +125,8 @@ namespace CcsSso.Core.Service.External
       {
         Id = i.Id,
         CountryCode = i.Code,
-        ContryName = i.Name
-      }).OrderBy(a => a.ContryName).ToListAsync();
+        CountryName = i.Name
+      }).OrderBy(a => a.CountryName).ToListAsync();
 
       return countryDetail;
     }
