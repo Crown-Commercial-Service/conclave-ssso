@@ -169,6 +169,7 @@ namespace CcsSso.Core.JobScheduler
             new RedisConnectionPoolService(redisCacheSettingsVault.ConnectionString)
           );
           services.AddSingleton<IAwsS3Service, AwsS3Service>();
+          services.AddSingleton<ApplicationConfigurationInfo, ApplicationConfigurationInfo>();
 
           services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(dbConnection));
           services.AddScoped<IOrganisationSupportService, OrganisationSupportService>();
