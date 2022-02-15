@@ -282,7 +282,7 @@ namespace CcsSso.Core.Service.External
 
             if (!string.IsNullOrEmpty(contactPoint.ContactDetail.PhysicalAddress?.CountryCode))
             {
-              address.CountryName = CultureSupport.GetCountryNameByCode(contactPoint.ContactDetail.PhysicalAddress.CountryCode);
+              address.CountryName = GetCountryNameByCode(contactPoint.ContactDetail.PhysicalAddress?.CountryCode);
             }
             organisationInfo.Address = address;
           }
@@ -687,11 +687,38 @@ namespace CcsSso.Core.Service.External
           throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
         }
 
-        if (!string.IsNullOrWhiteSpace(organisationProfileInfo.Address.CountryCode) && !CultureSupport.IsValidCountryCode(organisationProfileInfo.Address.CountryCode))
+        string CountryName=String.Empty;
+        if (!string.IsNullOrEmpty(organisationProfileInfo.Address.CountryCode))
+        {
+          CountryName = GetCountryNameByCode(organisationProfileInfo.Address.CountryCode);
+        }
+        if (!string.IsNullOrWhiteSpace(organisationProfileInfo.Address.CountryCode) && string.IsNullOrWhiteSpace(CountryName))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidCountryCode);
         }
       }
+    }
+
+    /// <summary>
+    /// Retrieves CountryName based on country code
+    /// </summary>
+    /// <returns></returns>
+    public string GetCountryNameByCode(string countyCode)
+    {
+      try
+      {
+        string CountryName = string.Empty;
+        CountryName = CultureSupport.GetCountryNameByCode(countyCode);
+        if (string.IsNullOrEmpty(CountryName))
+        {
+          CountryName = _dataContext.CountryDetails.FirstOrDefault(x => x.IsDeleted == false && x.Code == countyCode).Name;
+        }
+        return CountryName;
+      }
+      catch (ArgumentException)
+      {
+      }
+      return null;
     }
 
     private async Task<List<OrganisationEligibleRole>> GetOrganisationEligibleRolesAsync(Organisation org, int supplierBuyerType)
