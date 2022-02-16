@@ -111,7 +111,7 @@ namespace CcsSso.Service
     /// <summary>
     /// Retrieves organisation details from CII by scheme and identifier
     /// And also checks whther this identifier has already been used
-    /// </summary>
+    /// </summary>rd
     /// <param name="scheme"></param>
     /// <param name="identifier"></param>
     /// <returns></returns>
@@ -245,7 +245,7 @@ namespace CcsSso.Service
       {
         string CountryName = string.Empty;
         CountryName = CultureSupport.GetCountryNameByCode(countyCode);
-        if (string.IsNullOrEmpty(CountryName))
+        if (string.IsNullOrEmpty(CountryName) && !string.IsNullOrEmpty(countyCode))
         {
           CountryName = _dataContext.CountryDetails.FirstOrDefault(x => x.IsDeleted == false && x.Code == countyCode).Name;
         }
