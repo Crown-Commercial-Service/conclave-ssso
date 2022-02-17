@@ -109,10 +109,12 @@ namespace CcsSso.Service
       await _dataContext.SaveChangesAsync();
     }
 
-    public async Task<List<OrganisationDto>> GetByNameAsync(string name)
+    public async Task<List<OrganisationDto>> GetByNameAsync(string name, bool isExact = true)
     {
       var organisations = await _dataContext.Organisation
-        .Where(o => !o.IsDeleted && !string.IsNullOrWhiteSpace(name) && o.LegalName.ToLower().StartsWith(name.ToLower()))
+        .Where(o => !o.IsDeleted && !string.IsNullOrWhiteSpace(name)
+        && ((isExact && o.LegalName.ToLower() == name.ToLower())
+        || (!isExact && o.LegalName.ToLower().StartsWith(name.ToLower()))))
         .Select(organisation => new OrganisationDto
         {
           OrganisationId = organisation.Id,
@@ -225,7 +227,7 @@ namespace CcsSso.Service
 
       var organisation = await _dataContext.Organisation
         .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
-        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId== organisationJoinRequest.CiiOrgId);
+        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationJoinRequest.CiiOrgId);
 
       if (organisation == null)
       {
