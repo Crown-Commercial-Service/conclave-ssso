@@ -169,6 +169,61 @@ namespace CcsSso.Security.Api.CustomOptions
         Data.Add("MfaSettings:MFAResetPersistentTicketListExpirationInDays", mfaSettingVault.MFAResetPersistentTicketListExpirationInDays);
       }
 
+      if (_secrets.Data.ContainsKey("OpenIdConfigurationSettings"))
+      {
+        var openIdConfigurationSettings = JsonConvert.DeserializeObject<OpenIdConfigurationSettingsVault>(_secrets.Data["OpenIdConfigurationSettings"].ToString());
+        Data.Add("OpenIdConfigurationSettings:Issuer", openIdConfigurationSettings.Issuer);
+        Data.Add("OpenIdConfigurationSettings:AuthorizationEndpoint", openIdConfigurationSettings.AuthorizationEndpoint);
+        Data.Add("OpenIdConfigurationSettings:TokenEndpoint", openIdConfigurationSettings.TokenEndpoint);
+        Data.Add("OpenIdConfigurationSettings:DeviceAuthorizationEndpoint", openIdConfigurationSettings.DeviceAuthorizationEndpoint);
+        Data.Add("OpenIdConfigurationSettings:UserinfoEndpoint", openIdConfigurationSettings.UserinfoEndpoint);
+        Data.Add("OpenIdConfigurationSettings:MfaChallengeEndpoint", openIdConfigurationSettings.MfaChallengeEndpoint);
+        Data.Add("OpenIdConfigurationSettings:JwksUri", openIdConfigurationSettings.JwksUri);
+        Data.Add("OpenIdConfigurationSettings:RegistrationEndpoint", openIdConfigurationSettings.RegistrationEndpoint);
+        Data.Add("OpenIdConfigurationSettings:RevocationEndpoint", openIdConfigurationSettings.RevocationEndpoint);
+        int i = 0;
+        foreach (var route in openIdConfigurationSettings.ScopesSupported)
+        {
+          Data.Add($"OpenIdConfigurationSettings:ScopesSupported:{i++}", route);
+        }
+        i = 0;
+        foreach (var route in openIdConfigurationSettings.ResponseTypesSupported)
+        {
+          Data.Add($"OpenIdConfigurationSettings:ResponseTypesSupported:{i++}", route);
+        }
+        i = 0;
+        foreach (var route in openIdConfigurationSettings.CodeChallengeMethodsSupported)
+        {
+          Data.Add($"OpenIdConfigurationSettings:CodeChallengeMethodsSupported:{i++}", route);
+        }
+        i = 0;
+        foreach (var route in openIdConfigurationSettings.ResponseModesSupported)
+        {
+          Data.Add($"OpenIdConfigurationSettings:ResponseModesSupported:{i++}", route);
+        }
+        i = 0;
+        foreach (var route in openIdConfigurationSettings.SubjectTypesSupported)
+        {
+          Data.Add($"OpenIdConfigurationSettings:SubjectTypesSupported:{i++}", route);
+        }
+        i = 0;
+        foreach (var route in openIdConfigurationSettings.IdTokenSigningAlgValuesSupported)
+        {
+          Data.Add($"OpenIdConfigurationSettings:IdTokenSigningAlgValuesSupported:{i++}", route);
+        }
+        i = 0;
+        foreach (var route in openIdConfigurationSettings.TokenEndpointAuthMethodsSupported)
+        {
+          Data.Add($"OpenIdConfigurationSettings:TokenEndpointAuthMethodsSupported:{i++}", route);
+        }
+        i = 0;
+        foreach (var route in openIdConfigurationSettings.ClaimsSupported)
+        {
+          Data.Add($"OpenIdConfigurationSettings:ClaimsSupported:{i++}", route);
+        }
+        Data.Add("OpenIdConfigurationSettings:RequestUriParameterSupported", openIdConfigurationSettings.RequestUriParameterSupported.ToString());
+      }
+
       Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
       Data.Add("Auth0:ClientId", _auth0.ClientId);
       Data.Add("Auth0:Secret", _auth0.Secret);
@@ -343,4 +398,44 @@ namespace CcsSso.Security.Api.CustomOptions
       return configuration;
     }
   }
+
+  public class OpenIdConfigurationSettingsVault
+  {
+    public string Issuer { get; set; }
+
+    public string AuthorizationEndpoint { get; set; }
+
+    public string TokenEndpoint { get; set; }
+
+    public string DeviceAuthorizationEndpoint { get; set; }
+
+    public string UserinfoEndpoint { get; set; }
+
+    public string MfaChallengeEndpoint { get; set; }
+
+    public string JwksUri { get; set; }
+
+    public string RevocationEndpoint { get; set; }
+
+    public string RegistrationEndpoint { get; set; }
+
+    public string[] ScopesSupported { get; set; }
+
+    public string[] ResponseTypesSupported { get; set; }
+
+    public string[] CodeChallengeMethodsSupported { get; set; }
+
+    public string[] ResponseModesSupported { get; set; }
+
+    public string[] SubjectTypesSupported { get; set; }
+
+    public string[] IdTokenSigningAlgValuesSupported { get; set; }
+
+    public string[] TokenEndpointAuthMethodsSupported { get; set; }
+
+    public string[] ClaimsSupported { get; set; }
+
+    public string RequestUriParameterSupported { get; set; }
+  }
 }
+
