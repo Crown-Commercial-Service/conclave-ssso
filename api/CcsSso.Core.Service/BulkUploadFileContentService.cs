@@ -2,6 +2,7 @@ using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos;
 using CcsSso.Core.Domain.Jobs;
+using CcsSso.Domain.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,13 +13,16 @@ namespace CcsSso.Core.Service
   public class BulkUploadFileContentService : IBulkUploadFileContentService
   {
     private readonly IUserProfileHelperService _userProfileHelperService;
+    private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private IReadOnlyList<string> validHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "title", "firstName", "lastName", "Role", "contactEmail", "contactMobile", "contactPhone", "contactFax", "contactSocial" };
     private IReadOnlyList<string> requiredHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "firstName", "lastName", "Role" };
     private IReadOnlyList<string> reportHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "title", "firstName", "lastName", "Role", "Status", "Status description" };
     private const int migrationFileHeaderCount = 15;
-    public BulkUploadFileContentService(IUserProfileHelperService userProfileHelperService)
+    private const int headerTitleRowCount = 2;
+    public BulkUploadFileContentService(IUserProfileHelperService userProfileHelperService, ApplicationConfigurationInfo applicationConfigurationInfo)
     {
       _userProfileHelperService = userProfileHelperService;
+      _applicationConfigurationInfo = applicationConfigurationInfo;
     }
 
     public List<KeyValuePair<string, string>> ValidateUploadedFile(string fileKey, string fileContentString)
@@ -32,7 +36,7 @@ namespace CcsSso.Core.Service
       }
 
       var fileRows = GetFileRows(fileContentString);
-      if (fileRows.Count() <= 2)
+      if (fileRows.Count() <= headerTitleRowCount)
       {
         errorDetails.Add(new KeyValuePair<string, string>("File content error", "No upload data found in the file"));
         return errorDetails;
@@ -46,7 +50,7 @@ namespace CcsSso.Core.Service
         return errorDetails;
       }
 
-      var dataValidationErrors = ValidateRows(headers, fileRows.Skip(2).ToList());
+      var dataValidationErrors = ValidateRows(headers, fileRows.Skip(headerTitleRowCount).ToList());
       errorDetails.AddRange(dataValidationErrors);
       return errorDetails;
     }
@@ -65,7 +69,7 @@ namespace CcsSso.Core.Service
       var organisationHeaderIndex = fileHeaders.FindIndex(h => h == "identifier-id");
       var emailHeaderIndex = fileHeaders.FindIndex(h => h == "email");
 
-      foreach (var row in fileRows.Skip(2).ToList())
+      foreach (var row in fileRows.Skip(headerTitleRowCount).ToList())
       {
         var rowDataColumns = GetRowColumnData(row);
 
@@ -110,7 +114,7 @@ namespace CcsSso.Core.Service
 
       var fileRows = GetFileRows(fileContentString);
 
-      foreach (var row in fileRows.Skip(2).ToList())
+      foreach (var row in fileRows.Skip(headerTitleRowCount).ToList())
       {
         var rowDataColumns = GetRowColumnData(row);
         if (rowDataColumns.Count() == migrationFileHeaderCount)
@@ -183,6 +187,12 @@ namespace CcsSso.Core.Service
     private List<KeyValuePair<string, string>> ValidateRows(List<string> fileHeaders, List<string> rows)
     {
       var errorDetails = new List<KeyValuePair<string, string>>();
+
+      if (rows.Count > _applicationConfigurationInfo.BulkUploadMaxUserCount)
+      {
+        errorDetails.Add(new KeyValuePair<string, string>("Exceeds max number of users", $"Number of users ({rows.Count}) in the csv file exceeds max number of users ({_applicationConfigurationInfo.BulkUploadMaxUserCount}) allowed. Reduce number of users in csv file and try again."));
+        return errorDetails;
+      }
 
       foreach (var row in rows.Select((data, i) => new { i, data }))
       {

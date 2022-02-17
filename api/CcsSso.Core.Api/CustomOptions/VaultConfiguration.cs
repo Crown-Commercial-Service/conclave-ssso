@@ -54,6 +54,7 @@ namespace CcsSso.Api.CustomOptions
       Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
       Data.Add("CustomDomain", _secrets.Data["CustomDomain"].ToString());
       Data.Add("DashboardServiceClientId", _secrets.Data["DashboardServiceClientId"].ToString());
+      Data.Add("BulkUploadMaxUserCount", _secrets.Data["BulkUploadMaxUserCount"].ToString());
 
       if (_secrets.Data.ContainsKey("CorsDomains"))
       {
