@@ -542,7 +542,7 @@ namespace CcsSso.Security.Api.Controllers
         var sidEncrypted = _cryptographyService.EncryptString(sid, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
         foreach (var httpCookieOption in httpCookieOptions)
         {
-          Response.Cookies.Append(sessionCookieName, sidEncrypted, httpCookieOption); 
+          Response.Cookies.Append(sessionCookieName, sidEncrypted, httpCookieOption);
         }
       }
       else
@@ -614,7 +614,7 @@ namespace CcsSso.Security.Api.Controllers
 
       if (_applicationConfigurationInfo.AllowedDomains == null || _applicationConfigurationInfo.AllowedDomains.Count == 0)
       {
-        CookieOptions cookieOptions = new ()
+        CookieOptions cookieOptions = new()
         {
           HttpOnly = httpOnly,
           Expires = expiresOnUTC,
@@ -627,7 +627,7 @@ namespace CcsSso.Security.Api.Controllers
       {
         foreach (var domain in _applicationConfigurationInfo.AllowedDomains)
         {
-          CookieOptions cookieOptions = new ()
+          CookieOptions cookieOptions = new()
           {
             HttpOnly = httpOnly,
             Expires = expiresOnUTC,
@@ -640,6 +640,37 @@ namespace CcsSso.Security.Api.Controllers
       }
 
       return cookieOptionsList;
+    }
+
+    [HttpGet]
+    [Produces("application/json")]
+    [Route(".well-known/openid-configuration")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(200)]
+    public OpenIdConfigurationSettings GetOpenIdConfiguration()
+    {
+      OpenIdConfigurationSettings lstOpenIdConfiguration = new OpenIdConfigurationSettings
+      {
+        Issuer = _applicationConfigurationInfo.OpenIdConfigurationSettings.Issuer,
+        AuthorizationEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.AuthorizationEndpoint,
+        TokenEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.TokenEndpoint,
+        DeviceAuthorizationEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.DeviceAuthorizationEndpoint,
+        UserinfoEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.UserinfoEndpoint,
+        MfaChallengeEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.MfaChallengeEndpoint,
+        JwksUri = _applicationConfigurationInfo.OpenIdConfigurationSettings.JwksUri,
+        RevocationEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.RevocationEndpoint,
+        RegistrationEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.RegistrationEndpoint,
+        ScopesSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.ScopesSupported,
+        ResponseTypesSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.ResponseTypesSupported,
+        CodeChallengeMethodsSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.CodeChallengeMethodsSupported,
+        ResponseModesSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.ResponseModesSupported,
+        SubjectTypesSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.SubjectTypesSupported,
+        IdTokenSigningAlgValuesSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.IdTokenSigningAlgValuesSupported,
+        TokenEndpointAuthMethodsSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.TokenEndpointAuthMethodsSupported,
+        ClaimsSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.ClaimsSupported,
+        RequestUriParameterSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.RequestUriParameterSupported
+      };
+      return lstOpenIdConfiguration;
     }
   }
 }
