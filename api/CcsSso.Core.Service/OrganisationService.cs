@@ -112,7 +112,7 @@ namespace CcsSso.Service
     public async Task<List<OrganisationDto>> GetByNameAsync(string name)
     {
       var organisations = await _dataContext.Organisation
-        .Where(o => !o.IsDeleted && o.LegalName.ToLower().StartsWith(name.ToLower()))
+        .Where(o => !o.IsDeleted && !string.IsNullOrWhiteSpace(name) && o.LegalName.ToLower().StartsWith(name.ToLower()))
         .Select(organisation => new OrganisationDto
         {
           OrganisationId = organisation.Id,
