@@ -13,7 +13,7 @@ namespace CcsSso.Domain.Contracts
 
     Task<OrganisationDto> GetAsync(string id);
 
-    Task<List<OrganisationDto>> GetByNameAsync(string name);
+    Task<List<OrganisationDto>> GetByNameAsync(string name, bool isExact = true);
 
     Task<OrganisationListResponse> GetAllAsync(string orgName, ResultSetCriteria resultSetCriteria);
 
