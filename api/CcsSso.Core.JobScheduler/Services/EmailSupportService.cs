@@ -2,6 +2,7 @@ using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,16 +33,36 @@ namespace CcsSso.Core.JobScheduler.Services
       List<Task> emailTaskList = new List<Task>();
       foreach (var toEmail in toEmails)
       {
-        var emailInfo = new EmailInfo()
-        {
-          To = toEmail,
-          TemplateId = _emailConfigurationInfo.UnverifiedUserDeletionNotificationTemplateId,
-          BodyContent = data
-        };
+        var emailInfo = GetEmailInfo(toEmail, _emailConfigurationInfo.UnverifiedUserDeletionNotificationTemplateId, data);
 
         emailTaskList.Add(_emaillProviderService.SendEmailAsync(emailInfo));
       }
       await Task.WhenAll(emailTaskList);
+    }
+
+    public async Task SendBulUploadResultEmailAsync(string toEmail, string resultStatus, string reportUrl)
+    {
+      var data = new Dictionary<string, dynamic>
+      {
+        { "resultStatus", resultStatus },
+        { "reportUrl",  reportUrl}
+      };
+
+      var emailInfo = GetEmailInfo(toEmail, _emailConfigurationInfo.BulkUploadReportTemplateId, data);
+
+      await _emaillProviderService.SendEmailAsync(emailInfo);
+    }
+
+    private EmailInfo GetEmailInfo(string toEmail, string templateId, Dictionary<string, dynamic> data)
+    {
+      var emailInfo = new EmailInfo
+      {
+        To = toEmail,
+        TemplateId = templateId,
+        BodyContent = data
+      };
+
+      return emailInfo;
     }
   }
 }

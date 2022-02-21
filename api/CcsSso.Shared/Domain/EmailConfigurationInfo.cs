@@ -9,5 +9,7 @@ namespace CcsSso.Shared.Domain
     public string ApiKey { get; set; }
 
     public string UnverifiedUserDeletionNotificationTemplateId { get; set; }
+
+    public string BulkUploadReportTemplateId { get; set; }
   }
 }

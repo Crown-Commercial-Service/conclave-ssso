@@ -29,6 +29,8 @@ namespace CcsSso.Domain.Dtos
     public string CustomDomain { get; set; }
 
     public ServiceDefaultRoleInfo ServiceDefaultRoleInfo { get; set; }
+
+    public int BulkUploadMaxUserCount { get; set; }
   }
 
   public class ServiceDefaultRoleInfo

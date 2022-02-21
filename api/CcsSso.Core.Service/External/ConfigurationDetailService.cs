@@ -118,5 +118,17 @@ namespace CcsSso.Core.Service.External
         .FirstOrDefaultAsync(s => s.ServiceClientId == _applicationConfigurationInfo.DashboardServiceClientId)).Id);
       return serviceId;
     }
+
+    public async Task<List<CountryDetail>> GetCountryDetailAsync()
+    {
+      var countryDetail = await _dataContext.CountryDetails.Select(i => new CountryDetail
+      {
+        Id = i.Id,
+        CountryCode = i.Code,
+        CountryName = i.Name
+      }).OrderBy(a => a.CountryName).ToListAsync();
+
+      return countryDetail;
+    }
   }
 }

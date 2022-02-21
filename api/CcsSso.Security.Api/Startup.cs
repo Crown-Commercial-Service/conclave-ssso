@@ -106,6 +106,7 @@ namespace CcsSso.Security.Api
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
           CustomDomain = Configuration["CustomDomain"],
+          AllowedDomains = Configuration.GetSection("AllowedDomains").Get<List<string>>(),
           Auth0ConfigurationInfo = new Auth0Configuration()
           {
             ClientId = Configuration["Auth0:ClientId"],
@@ -177,15 +178,40 @@ namespace CcsSso.Security.Api
             ConnectionString = Configuration["RedisCacheSettings:ConnectionString"],
             IsEnabled = isRedisEnabled
           },
+          OpenIdConfigurationSettings = new OpenIdConfigurationSettings()
+          {
+            Issuer = Configuration["OpenIdConfigurationSettings:Issuer"],
+            AuthorizationEndpoint = Configuration["OpenIdConfigurationSettings:AuthorizationEndpoint"],
+            TokenEndpoint = Configuration["OpenIdConfigurationSettings:TokenEndpoint"],
+            DeviceAuthorizationEndpoint = Configuration["OpenIdConfigurationSettings:DeviceAuthorizationEndpoint"],
+            UserinfoEndpoint = Configuration["OpenIdConfigurationSettings:UserinfoEndpoint"],
+            MfaChallengeEndpoint = Configuration["OpenIdConfigurationSettings:MfaChallengeEndpoint"],
+            JwksUri = Configuration["OpenIdConfigurationSettings:JwksUri"],
+            RegistrationEndpoint = Configuration["OpenIdConfigurationSettings:RegistrationEndpoint"],
+            RevocationEndpoint = Configuration["OpenIdConfigurationSettings:RevocationEndpoint"],
+            ScopesSupported = Configuration.GetSection("OpenIdConfigurationSettings:ScopesSupported").Get<List<string>>() ?? new List<string>(),
+            ResponseTypesSupported = Configuration.GetSection("OpenIdConfigurationSettings:ResponseTypesSupported").Get<List<string>>() ?? new List<string>(),
+            CodeChallengeMethodsSupported = Configuration.GetSection("OpenIdConfigurationSettings:CodeChallengeMethodsSupported").Get<List<string>>() ?? new List<string>(),
+            ResponseModesSupported = Configuration.GetSection("OpenIdConfigurationSettings:ResponseModesSupported").Get<List<string>>() ?? new List<string>(),
+            SubjectTypesSupported = Configuration.GetSection("OpenIdConfigurationSettings:SubjectTypesSupported").Get<List<string>>() ?? new List<string>(),
+            IdTokenSigningAlgValuesSupported = Configuration.GetSection("OpenIdConfigurationSettings:IdTokenSigningAlgValuesSupported").Get<List<string>>() ?? new List<string>(),
+            TokenEndpointAuthMethodsSupported = Configuration.GetSection("OpenIdConfigurationSettings:TokenEndpointAuthMethodsSupported").Get<List<string>>() ?? new List<string>(),
+            ClaimsSupported = Configuration.GetSection("OpenIdConfigurationSettings:ClaimsSupported").Get<List<string>>() ?? new List<string>(),
+            RequestUriParameterSupported = bool.Parse(Configuration["OpenIdConfigurationSettings:RequestUriParameterSupported"]),
+          },
           CryptoSettings = new CryptoSettings()
           {
             CookieEncryptionKey = Configuration["Crypto:CookieEncryptionKey"]
-          } ,
+          },
           MfaSetting = new MfaSetting()
           {
             TicketExpirationInMinutes = ticketExpirationInMinutes,
             MfaResetRedirectUri = Configuration["MfaSettings:MfaResetRedirectUri"],
             MFAResetPersistentTicketListExpirationInDays = mfaResetPersistentTicketListExpirationInDays
+          },
+          MockProvider = new MockProvider()
+          {
+            LoginUrl = Configuration["MockProvider:LoginUrl"]
           }
         };
         return appConfigInfo;
@@ -208,8 +234,15 @@ namespace CcsSso.Security.Api
       }
 
       services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+      if (Configuration["IdentityProvider"] == "AUTH0")
+      {
+        services.AddSingleton<IIdentityProviderService, Auth0IdentityProviderService>();
+      }
+      else if (Configuration["IdentityProvider"] == "MOCK")
+      {
+        services.AddSingleton<IIdentityProviderService, MockIdentityProviderService>();
+      }
 
-      services.AddSingleton<IIdentityProviderService, Auth0IdentityProviderService>();
       services.AddSingleton<TokenHelper>();
 
       services.AddSingleton<ISecurityCacheService, SecurityCacheService>();
@@ -281,7 +314,7 @@ namespace CcsSso.Security.Api
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-    {      
+    {
       app.AddLoggerMiddleware();// Registers the logger configured on the core library
       app.UseHsts();
       app.Use(async (context, next) =>

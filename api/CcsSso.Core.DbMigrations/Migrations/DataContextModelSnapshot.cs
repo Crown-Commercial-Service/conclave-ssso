@@ -76,6 +76,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<string>("DocUploadId")
                         .HasColumnType("text");
 
+                    b.Property<int>("FailedUserCount")
+                        .HasColumnType("integer");
+
                     b.Property<string>("FileKey")
                         .HasColumnType("text");
 
@@ -91,8 +94,26 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("LastUpdatedUserId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime>("MigrationEndedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("MigrationStartedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("MigrationStringContent")
+                        .HasColumnType("text");
+
                     b.Property<string>("OrganisationId")
                         .HasColumnType("text");
+
+                    b.Property<int>("ProcessedUserCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalOrganisationCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalUserCount")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ValidationErrorDetails")
                         .HasColumnType("text");
@@ -204,6 +225,44 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.HasIndex("IdamUserLoginId");
 
                     b.ToTable("CcsServiceLogin");
+                });
+
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.CountryDetails", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<string>("Code")
+                        .HasColumnType("text");
+
+                    b.Property<byte[]>("ConcurrencyKey")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CreatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastUpdatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("LastUpdatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CountryDetails");
                 });
 
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.ExternalServiceRoleMapping", b =>

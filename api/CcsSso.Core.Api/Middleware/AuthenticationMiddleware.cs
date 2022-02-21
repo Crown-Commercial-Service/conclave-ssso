@@ -78,7 +78,7 @@ namespace CcsSso.Core.Api.Middleware
           var token = bearerToken.Split(' ').Last();
           var result = await _tokenService.ValidateTokenAsync(token, _applicationConfigurationInfo.JwtTokenValidationInfo.JwksUrl,
             _applicationConfigurationInfo.JwtTokenValidationInfo.IdamClienId, _applicationConfigurationInfo.JwtTokenValidationInfo.Issuer,
-            new List<string>() { "uid", "ciiOrgId", "sub", JwtRegisteredClaimNames.Jti, JwtRegisteredClaimNames.Exp, "roles", "caller" });
+            new List<string>() { "uid", "ciiOrgId", "sub", JwtRegisteredClaimNames.Jti, JwtRegisteredClaimNames.Exp, "roles", "caller", "sid" });
 
           if (result.IsValid)
           {
@@ -94,12 +94,16 @@ namespace CcsSso.Core.Api.Middleware
             }
             else
             {
+              var sessionId = result.ClaimValues["sid"];
+              var isInvalidSession = await _remoteCacheService.GetValueAsync<bool>(sessionId);
               var forceSignout = await _remoteCacheService.GetValueAsync<bool>(CacheKeyConstant.ForceSignoutKey + sub);
-              //check if user is entitled to force signout
-              if (forceSignout)
+              
+              //check if user is entitled to force signout or invalid session (due to logout from other service)
+              if (isInvalidSession || forceSignout)
               {
                 if (path == "auth/sessions")
                 {
+                  await _remoteCacheService.RemoveAsync(sessionId);
                   await _remoteCacheService.RemoveAsync(CacheKeyConstant.ForceSignoutKey + sub);
                 }
                 else

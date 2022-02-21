@@ -9,5 +9,7 @@ namespace CcsSso.Core.JobScheduler.Contracts
   public interface IEmailSupportService
   {
     Task SendUnVerifiedUserDeletionEmailToAdminAsync(string name, string email, List<string> toEmails);
+
+    Task SendBulUploadResultEmailAsync(string toEmail, string resultStatus, string reportUrl);
   }
 }

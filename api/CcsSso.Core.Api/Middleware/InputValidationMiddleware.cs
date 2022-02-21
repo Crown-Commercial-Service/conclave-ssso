@@ -21,8 +21,9 @@ namespace CcsSso.Core.Api.Middleware
     public async Task Invoke(HttpContext context)
     {
       var contentType = context.Request.ContentType;
+
       //Probably other types could be filtered but temporary added multipart/form-data to be ignored as there can files which should skip
-      if (contentType.Contains("multipart/form-data"))
+      if (contentType != null && contentType.Contains("multipart/form-data"))
       {
         await _next(context);
         return;

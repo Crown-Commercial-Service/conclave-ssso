@@ -7,16 +7,18 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Contracts.External
 {
-  public interface IConfigurationDetailService
-  {
-    Task<List<IdentityProviderDetail>> GetIdentityProvidersAsync();
+    public interface IConfigurationDetailService
+    {
+        Task<List<IdentityProviderDetail>> GetIdentityProvidersAsync();
 
-    Task<List<OrganisationRole>> GetRolesAsync();
+        Task<List<OrganisationRole>> GetRolesAsync();
 
-    Task<List<CcsServiceInfo>> GetCcsServicesAsync();
+        Task<List<CcsServiceInfo>> GetCcsServicesAsync();
 
-    Task<ServiceProfile> GetServiceProfieAsync(string clientId, string organisationId);
+        Task<ServiceProfile> GetServiceProfieAsync(string clientId, string organisationId);
 
-    Task<int> GetDashboardServiceIdAsync();
-  }
+        Task<int> GetDashboardServiceIdAsync();
+
+        Task<List<CountryDetail>> GetCountryDetailAsync();
+    }
 }

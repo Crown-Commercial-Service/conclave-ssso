@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION create_el_service() RETURNS integer AS $$
 
 -- Add values to clientId and clientUrl
-DECLARE serviceName text = 'Evidence Locker';
+DECLARE serviceName text = 'Buyer/Supplier Information';
 DECLARE serviceDescription text = 'Store procurement information from previous bids so you don’t need to provide the same evidence over and over';
 DECLARE serviceCode text = 'EVIDENCE_LOCKER';
 DECLARE clientUrl text = '';
@@ -37,9 +37,9 @@ DELETE FROM public."CcsService"
 
 INSERT INTO public."CcsService"(
 	"ServiceName", "TimeOutLength", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc",
-	"IsDeleted", "ServiceClientId", "ServiceUrl", "Description", "ServiceCode")
+	"IsDeleted", "ServiceClientId", "ServiceUrl", "Description", "ServiceCode", "GlobalLevelOrganisationAccess", "ActivateOrganisations")
 	VALUES (serviceName, 0, 0, 0, now(), now(), false, clientId, 
-			clientUrl, serviceDescription, serviceCode);
+			clientUrl, serviceDescription, serviceCode, false, false);
 			
 			
 SELECT "Id" into elServiceId From public."CcsService" WHERE "ServiceName" = serviceName LIMIT 1;

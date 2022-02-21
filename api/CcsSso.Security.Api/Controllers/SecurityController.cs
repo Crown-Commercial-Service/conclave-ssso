@@ -73,9 +73,12 @@ namespace CcsSso.Security.Api.Controllers
     [HttpGet("security/samlp/{clientId}")]
     [ProducesResponseType(302)]
     [SwaggerOperation(Tags = new[] { "security" })]
-    public IActionResult Samlp(string clientId)
+    public async Task<IActionResult> Samlp(string clientId)
     {
       var url = _securityService.GetSAMLEndpoint(clientId);
+
+      await GenerateCookiesAsync(clientId);
+
       return Redirect(url);
     }
 
@@ -126,7 +129,9 @@ namespace CcsSso.Security.Api.Controllers
     /// </response>
     /// <remarks>
     /// Sample requests:
-    /// POST client_id=abdgt refreshtoken=abcs123 granttype=refresh_token client_secret=xxx redirect_uri=http://redirect_url state=123"
+    /// POST client_id=abdgt refreshtoken=abcs123 granttype=authorization_code redirect_uri=http://redirect_url state=123"
+    /// POST client_id=abdgt refreshtoken=abcs123 granttype=refresh_token"
+    /// POST client_id=abdgt granttype=client_credentials client_secret=xxx "
     /// </remarks>
     [HttpPost("security/token")]
     [Consumes("application/x-www-form-urlencoded")]
@@ -158,6 +163,9 @@ namespace CcsSso.Security.Api.Controllers
       if (tokenRequest.GrantType != "client_credentials")
       {
         (sid, opbsValue) = await GenerateCookiesAsync(tokenRequestInfo.ClientId, tokenRequestInfo.State);
+      }
+      if (tokenRequest.GrantType != "client_credentials" && tokenRequest.GrantType != "refresh_token")
+      {
         var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
         host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
       }
@@ -275,6 +283,16 @@ namespace CcsSso.Security.Api.Controllers
       await _userManagerService.UpdateUserMfaFlagAsync(userInfo);
     }
 
+    [HttpGet("security/users/saml")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    public async Task<ServiceAccessibilityResultDto> CheckUserClientId(string email, [FromQuery(Name = "client-id")] string clientId)
+    {
+      var result = await _securityService.CheckServiceAccessForUserAsync(clientId, email);
+      return result;
+    }
+
     /// <summary>
     /// Change the old password to the new password
     /// </summary>
@@ -357,6 +375,10 @@ namespace CcsSso.Security.Api.Controllers
         Request.Cookies.TryGetValue(sessionCookie, out string sid);
         Response.Cookies.Delete(sessionCookie);
 
+        if (!string.IsNullOrWhiteSpace(sid))
+        {
+          await _securityService.InvalidateSessionAsync(sid);
+        }
 
         string visitedSiteCookie = "ccs-sso-visitedsites";
         if (Request.Cookies.ContainsKey(visitedSiteCookie))
@@ -483,71 +505,51 @@ namespace CcsSso.Security.Api.Controllers
     {
       clientId = clientId ?? string.Empty;
       string opbsCookieName = "opbs";
+      string sessionCookieName = "ccs-sso";
+      string visitedSiteCookieName = "ccs-sso-visitedsites";
       DateTime expiresOnUTC = DateTime.UtcNow.AddMinutes(_applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes);
 
 
-      CookieOptions opbsCookieOptions = new CookieOptions()
-      {
-        Expires = expiresOnUTC,
-        Secure = true
-      };
-
-      if (!string.IsNullOrEmpty(_applicationConfigurationInfo.CustomDomain))
-      {
-        opbsCookieOptions.SameSite = SameSiteMode.Lax;
-        opbsCookieOptions.Domain = _applicationConfigurationInfo.CustomDomain;
-      }
-      else
-      {
-        opbsCookieOptions.SameSite = SameSiteMode.None;
-      }
+      List<CookieOptions> opbsCookieOptions = GetCookieOptionsListForAllowedDomains(expiresOnUTC, false);
 
       string opbsValue;
       // Generate OPBS cookie if not exists in request
       if (!Request.Cookies.ContainsKey(opbsCookieName))
       {
         opbsValue = Guid.NewGuid().ToString();
-        Response.Cookies.Append(opbsCookieName, opbsValue, opbsCookieOptions);
+        foreach (var opbsCookieOption in opbsCookieOptions)
+        {
+          Response.Cookies.Append(opbsCookieName, opbsValue, opbsCookieOption);
+        }
       }
       else
       {
         Request.Cookies.TryGetValue(opbsCookieName, out opbsValue);
         Response.Cookies.Delete(opbsCookieName);
-        Response.Cookies.Append(opbsCookieName, opbsValue, opbsCookieOptions);
+        foreach (var opbsCookieOption in opbsCookieOptions)
+        {
+          Response.Cookies.Append(opbsCookieName, opbsValue, opbsCookieOption);
+        }
       }
 
 
-      CookieOptions httpCookieOptions = new CookieOptions()
-      {
-        HttpOnly = true,
-        Expires = expiresOnUTC,
-        Secure = true
-      };
-
-      if (!string.IsNullOrEmpty(_applicationConfigurationInfo.CustomDomain))
-      {
-        httpCookieOptions.SameSite = SameSiteMode.Lax;
-        httpCookieOptions.Domain = _applicationConfigurationInfo.CustomDomain;
-      }
-      else
-      {
-        httpCookieOptions.SameSite = SameSiteMode.None;
-      }
-
-      string sessionCookie = "ccs-sso";
+      List<CookieOptions> httpCookieOptions = GetCookieOptionsListForAllowedDomains(expiresOnUTC, true);
 
       string sid;
-      if (!Request.Cookies.ContainsKey(sessionCookie) && string.IsNullOrEmpty(state))
+      if (!Request.Cookies.ContainsKey(sessionCookieName) && string.IsNullOrEmpty(state))
       {
         sid = Guid.NewGuid().ToString();
         var sidEncrypted = _cryptographyService.EncryptString(sid, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
-        Response.Cookies.Append(sessionCookie, sidEncrypted, httpCookieOptions);
+        foreach (var httpCookieOption in httpCookieOptions)
+        {
+          Response.Cookies.Append(sessionCookieName, sidEncrypted, httpCookieOption);
+        }
       }
       else
       {
-        if (Request.Cookies.ContainsKey(sessionCookie))
+        if (Request.Cookies.ContainsKey(sessionCookieName))
         {
-          Request.Cookies.TryGetValue(sessionCookie, out sid);
+          Request.Cookies.TryGetValue(sessionCookieName, out sid);
         }
         else
         {
@@ -555,46 +557,120 @@ namespace CcsSso.Security.Api.Controllers
           sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
         }
         //Re-assign the same session id with new expiration time
-        Response.Cookies.Delete(sessionCookie);
-        Response.Cookies.Append(sessionCookie, sid, httpCookieOptions);
+        Response.Cookies.Delete(sessionCookieName);
+        foreach (var httpCookieOption in httpCookieOptions)
+        {
+          Response.Cookies.Append(sessionCookieName, sid, httpCookieOption);
+        }
       }
 
-      CookieOptions visitedSiteCookieOptions = new CookieOptions()
+      CookieOptions visitedSiteCookieOptions = GetCookieOptions(expiresOnUTC, true);
+      if (!Request.Cookies.ContainsKey(visitedSiteCookieName))
       {
-        HttpOnly = true,
+        Response.Cookies.Append(visitedSiteCookieName, clientId, visitedSiteCookieOptions);
+      }
+      else
+      {
+        Request.Cookies.TryGetValue(visitedSiteCookieName, out string visitedSites);
+        var visitedSiteList = visitedSites.Split(',').ToList();
+        if (!visitedSiteList.Contains(clientId))
+        {
+          visitedSiteList.Add(clientId);
+          visitedSites = string.Join(",", visitedSiteList);
+          Response.Cookies.Delete(visitedSiteCookieName);
+          Response.Cookies.Append(visitedSiteCookieName, visitedSites, visitedSiteCookieOptions);
+        }
+      }
+
+      return (sid, opbsValue);
+    }
+
+    private CookieOptions GetCookieOptions(DateTime expiresOnUTC, bool httpOnly)
+    {
+      CookieOptions cookieOptions = new CookieOptions()
+      {
+        HttpOnly = httpOnly,
         Expires = expiresOnUTC,
         Secure = true
       };
 
       if (!string.IsNullOrEmpty(_applicationConfigurationInfo.CustomDomain))
       {
-        visitedSiteCookieOptions.SameSite = SameSiteMode.Lax;
-        visitedSiteCookieOptions.Domain = _applicationConfigurationInfo.CustomDomain;
+        cookieOptions.SameSite = SameSiteMode.Lax;
+        cookieOptions.Domain = _applicationConfigurationInfo.CustomDomain;
       }
       else
       {
-        visitedSiteCookieOptions.SameSite = SameSiteMode.None;
+        cookieOptions.SameSite = SameSiteMode.None;
       }
 
-      string visitedSiteCookie = "ccs-sso-visitedsites";
-      if (!Request.Cookies.ContainsKey(visitedSiteCookie))
+      return cookieOptions;
+    }
+
+    private List<CookieOptions> GetCookieOptionsListForAllowedDomains(DateTime expiresOnUTC, bool httpOnly)
+    {
+
+      List<CookieOptions> cookieOptionsList = new();
+
+      if (_applicationConfigurationInfo.AllowedDomains == null || _applicationConfigurationInfo.AllowedDomains.Count == 0)
       {
-        Response.Cookies.Append(visitedSiteCookie, clientId, httpCookieOptions);
+        CookieOptions cookieOptions = new()
+        {
+          HttpOnly = httpOnly,
+          Expires = expiresOnUTC,
+          Secure = true,
+          SameSite = SameSiteMode.None
+        };
+        cookieOptionsList.Add(cookieOptions);
       }
       else
       {
-        Request.Cookies.TryGetValue(visitedSiteCookie, out string visitedSites);
-        var visitedSiteList = visitedSites.Split(',').ToList();
-        if (!visitedSiteList.Contains(clientId))
+        foreach (var domain in _applicationConfigurationInfo.AllowedDomains)
         {
-          visitedSiteList.Add(clientId);
-          visitedSites = string.Join(",", visitedSiteList);
-          Response.Cookies.Delete(visitedSiteCookie);
-          Response.Cookies.Append(visitedSiteCookie, visitedSites, visitedSiteCookieOptions);
+          CookieOptions cookieOptions = new()
+          {
+            HttpOnly = httpOnly,
+            Expires = expiresOnUTC,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            Domain = domain
+          };
+          cookieOptionsList.Add(cookieOptions);
         }
       }
 
-      return (sid, opbsValue);
+      return cookieOptionsList;
+    }
+
+    [HttpGet]
+    [Produces("application/json")]
+    [Route(".well-known/openid-configuration")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(200)]
+    public OpenIdConfigurationSettings GetOpenIdConfiguration()
+    {
+      OpenIdConfigurationSettings lstOpenIdConfiguration = new OpenIdConfigurationSettings
+      {
+        Issuer = _applicationConfigurationInfo.OpenIdConfigurationSettings.Issuer,
+        AuthorizationEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.AuthorizationEndpoint,
+        TokenEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.TokenEndpoint,
+        DeviceAuthorizationEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.DeviceAuthorizationEndpoint,
+        UserinfoEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.UserinfoEndpoint,
+        MfaChallengeEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.MfaChallengeEndpoint,
+        JwksUri = _applicationConfigurationInfo.OpenIdConfigurationSettings.JwksUri,
+        RevocationEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.RevocationEndpoint,
+        RegistrationEndpoint = _applicationConfigurationInfo.OpenIdConfigurationSettings.RegistrationEndpoint,
+        ScopesSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.ScopesSupported,
+        ResponseTypesSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.ResponseTypesSupported,
+        CodeChallengeMethodsSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.CodeChallengeMethodsSupported,
+        ResponseModesSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.ResponseModesSupported,
+        SubjectTypesSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.SubjectTypesSupported,
+        IdTokenSigningAlgValuesSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.IdTokenSigningAlgValuesSupported,
+        TokenEndpointAuthMethodsSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.TokenEndpointAuthMethodsSupported,
+        ClaimsSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.ClaimsSupported,
+        RequestUriParameterSupported = _applicationConfigurationInfo.OpenIdConfigurationSettings.RequestUriParameterSupported
+      };
+      return lstOpenIdConfiguration;
     }
   }
 }

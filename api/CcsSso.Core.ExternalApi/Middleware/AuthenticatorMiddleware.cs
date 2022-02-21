@@ -49,12 +49,20 @@ namespace CcsSso.Core.ExternalApi.Middleware
           var token = bearerToken.Split(' ').Last();
           var result = await _tokenService.ValidateTokenAsync(token, _appConfig.JwtTokenValidationInfo.JwksUrl,
             _appConfig.JwtTokenValidationInfo.IdamClienId, _appConfig.JwtTokenValidationInfo.Issuer,
-            new List<string>() { "uid", "ciiOrgId", "sub", JwtRegisteredClaimNames.Jti, JwtRegisteredClaimNames.Exp, "roles", "caller" });
+            new List<string>() { "uid", "ciiOrgId", "sub", JwtRegisteredClaimNames.Jti, JwtRegisteredClaimNames.Exp, "roles", "caller", "sid" });
 
           if (result.IsValid)
           {
             var sub = result.ClaimValues["sub"];
             var jti = result.ClaimValues[JwtRegisteredClaimNames.Jti];
+            var sessionId = result.ClaimValues["sid"];
+
+            var isInvalidSession = await _remoteCacheService.GetValueAsync<bool>(sessionId);
+            Console.WriteLine($"SessionId : {sessionId} **==** invalid: {isInvalidSession}");
+            if (isInvalidSession) //if session was invalidated due to logout from other clients
+            {
+              throw new UnauthorizedAccessException();
+            }
 
             var forceSignout = await _remoteCacheService.GetValueAsync<bool>(CacheKeyConstant.ForceSignoutKey + sub);
             if (forceSignout) //check if user is entitled to force signout

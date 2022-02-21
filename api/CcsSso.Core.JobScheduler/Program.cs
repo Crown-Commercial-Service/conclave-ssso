@@ -1,10 +1,13 @@
 using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
 using CcsSso.Core.JobScheduler.Services;
 using CcsSso.Core.Service;
+using CcsSso.Core.Service.External;
 using CcsSso.DbPersistence;
 using CcsSso.Domain.Contracts;
+using CcsSso.Domain.Dtos;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Cache.Services;
 using CcsSso.Shared.Contracts;
@@ -55,8 +58,12 @@ namespace CcsSso.Core.JobScheduler
           List<UserDeleteJobSetting> userDeleteJobSettings;
           SecurityApiSettings securityApiSettings;
           ScheduleJobSettings scheduleJobSettings;
+          BulkUploadSettings bulkUploadSettings;
           RedisCacheSettingsVault redisCacheSettingsVault;
           EmailConfigurationInfo emailConfigurationInfo;
+          DocUploadInfoVault docUploadConfig;
+          S3ConfigurationInfoVault s3ConfigurationInfo;
+
           if (vaultEnabled)
           {
             var secrets = LoadSecretsAsync().Result;
@@ -66,7 +73,10 @@ namespace CcsSso.Core.JobScheduler
             emailConfigurationInfo = JsonConvert.DeserializeObject<EmailConfigurationInfo>(secrets["Email"].ToString());
             securityApiSettings = JsonConvert.DeserializeObject<SecurityApiSettings>(secrets["SecurityApiSettings"].ToString());
             scheduleJobSettings = JsonConvert.DeserializeObject<ScheduleJobSettings>(secrets["ScheduleJobSettings"].ToString());
+            bulkUploadSettings = JsonConvert.DeserializeObject<BulkUploadSettings>(secrets["BulkUploadSettings"].ToString());
             redisCacheSettingsVault = JsonConvert.DeserializeObject<RedisCacheSettingsVault>(secrets["RedisCacheSettings"].ToString());
+            docUploadConfig = JsonConvert.DeserializeObject<DocUploadInfoVault>(secrets["DocUpload"].ToString());
+            s3ConfigurationInfo = JsonConvert.DeserializeObject<S3ConfigurationInfoVault>(secrets["S3ConfigurationInfo"].ToString());
           }
           else
           {
@@ -76,8 +86,11 @@ namespace CcsSso.Core.JobScheduler
             userDeleteJobSettings = config.GetSection("UserDeleteJobSettings").Get<List<UserDeleteJobSetting>>();
             securityApiSettings = config.GetSection("SecurityApiSettings").Get<SecurityApiSettings>();
             scheduleJobSettings = config.GetSection("ScheduleJobSettings").Get<ScheduleJobSettings>();
+            bulkUploadSettings = config.GetSection("BulkUploadSettings").Get<BulkUploadSettings>();
             emailConfigurationInfo = config.GetSection("Email").Get<EmailConfigurationInfo>();
             redisCacheSettingsVault = config.GetSection("RedisCacheSettings").Get<RedisCacheSettingsVault>();
+            docUploadConfig = config.GetSection("DocUpload").Get<DocUploadInfoVault>();
+            s3ConfigurationInfo = config.GetSection("S3ConfigurationInfo").Get<S3ConfigurationInfoVault>();
           }
 
           services.AddSingleton(s =>
@@ -92,6 +105,7 @@ namespace CcsSso.Core.JobScheduler
                 Url = securityApiSettings.Url
               },
               ScheduleJobSettings = scheduleJobSettings,
+              BulkUploadSettings = bulkUploadSettings,
               CiiSettings = new CiiSettings()
               {
                 Token = ciiSettings.Token,
@@ -113,21 +127,59 @@ namespace CcsSso.Core.JobScheduler
             return emailConfigurationInfo;
           });
 
+          services.AddSingleton(s =>
+          {
+            int.TryParse(docUploadConfig.SizeValidationValue, out int sizeValidationValue);
+            sizeValidationValue = sizeValidationValue == 0 ? 100000000 : sizeValidationValue;
+
+            return new DocUploadConfig
+            {
+              BaseUrl = docUploadConfig.Url,
+              Token = docUploadConfig.Token,
+              DefaultTypeValidationValue = docUploadConfig.TypeValidationValue,
+              DefaultSizeValidationValue = sizeValidationValue
+            };
+          });
+
+          services.AddSingleton(s => {
+
+            int.TryParse(s3ConfigurationInfo.FileAccessExpirationInHours, out int fileAccessExpirationInHours);
+            fileAccessExpirationInHours = fileAccessExpirationInHours == 0 ? 36 : fileAccessExpirationInHours;
+
+            return new S3ConfigurationInfo
+            {
+              AccessKeyId = s3ConfigurationInfo.AccessKeyId,
+              AccessSecretKey = s3ConfigurationInfo.AccessSecretKey,
+              BulkUploadBucketName = s3ConfigurationInfo.BulkUploadBucketName,
+              BulkUploadFolderName = s3ConfigurationInfo.BulkUploadFolderName,
+              BulkUploadTemplateFolderName = s3ConfigurationInfo.BulkUploadTemplateFolderName,
+              ServiceUrl = s3ConfigurationInfo.ServiceUrl,
+              FileAccessExpirationInHours = fileAccessExpirationInHours
+            };
+          });
+
           services.AddSingleton<IDateTimeService, DateTimeService>();
-          services.AddSingleton<IIdamSupportService, IdamSupportService>();
-          services.AddScoped<IOrganisationSupportService, OrganisationSupportService>(); 
-          services.AddScoped<IContactSupportService, ContactSupportService>(); 
+          services.AddSingleton<IIdamSupportService, IdamSupportService>(); 
           services.AddSingleton<IEmailSupportService, EmailSupportService>();
           services.AddSingleton<IEmailProviderService, EmailProviderService>();
-          services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(dbConnection));
-          services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
-          services.AddHostedService<UnverifiedUserDeleteJob>();
           services.AddSingleton<RequestContext>(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
           services.AddSingleton<IRemoteCacheService, RedisCacheService>();
           services.AddSingleton<ICacheInvalidateService, CacheInvalidateService>();
           services.AddSingleton<RedisConnectionPoolService>(_ =>
             new RedisConnectionPoolService(redisCacheSettingsVault.ConnectionString)
           );
+          services.AddSingleton<IAwsS3Service, AwsS3Service>();
+
+          services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(dbConnection));
+          services.AddScoped<IOrganisationSupportService, OrganisationSupportService>();
+          services.AddScoped<IContactSupportService, ContactSupportService>();
+          services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
+          services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
+
+          services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
+          services.AddHostedService<UnverifiedUserDeleteJob>();
+          services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
+
         });
 
     private static async Task<Dictionary<string, object>> LoadSecretsAsync()
