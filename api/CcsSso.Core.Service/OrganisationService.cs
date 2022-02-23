@@ -113,8 +113,8 @@ namespace CcsSso.Service
     {
       var organisations = await _dataContext.Organisation
         .Where(o => !o.IsDeleted && !string.IsNullOrWhiteSpace(name)
-        && ((isExact && o.LegalName.ToLower() == name.ToLower())
-        || (!isExact && o.LegalName.ToLower().StartsWith(name.ToLower()))))
+        && ((isExact && o.LegalName.ToLower() == name.Trim().ToLower())
+        || (!isExact && o.LegalName.ToLower().StartsWith(name.Trim().ToLower()))))
         .Select(organisation => new OrganisationDto
         {
           OrganisationId = organisation.Id,
