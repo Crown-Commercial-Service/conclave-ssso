@@ -314,7 +314,8 @@ namespace CcsSso.Service
             StreetAddress = organisationRegistrationDto.CiiDetails.Address.StreetAddress,
             Locality = organisationRegistrationDto.CiiDetails.Address.Locality,
             PostalCode = organisationRegistrationDto.CiiDetails.Address.PostalCode,
-            Region = organisationRegistrationDto.CiiDetails.Address.Region
+            Region = organisationRegistrationDto.CiiDetails.Address.Region,
+            CountryCode = organisationRegistrationDto.CiiDetails.Address.CountryCode
           } : null,
           Detail = new OrganisationDetail
           {
