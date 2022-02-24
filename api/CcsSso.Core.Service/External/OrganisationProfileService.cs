@@ -708,8 +708,7 @@ namespace CcsSso.Core.Service.External
       try
       {
         string CountryName = string.Empty;
-        CountryName = CultureSupport.GetCountryNameByCode(countyCode);
-        if (string.IsNullOrEmpty(CountryName))
+        if (!string.IsNullOrEmpty(countyCode))
         {
           CountryName = _dataContext.CountryDetails.FirstOrDefault(x => x.IsDeleted == false && x.Code == countyCode).Name;
         }

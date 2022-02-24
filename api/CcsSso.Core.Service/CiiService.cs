@@ -127,7 +127,7 @@ namespace CcsSso.Service
         string CountryCode = string.Empty;
         if (result.Address.CountryName != null && result.Address.CountryName != "")
         {
-          CountryCode = _dataContext.CountryDetails.FirstOrDefault(x => x.IsDeleted == false && x.Name == result.Address.CountryName).Code;
+          CountryCode = (await _dataContext.CountryDetails.FirstOrDefaultAsync(x => x.IsDeleted == false && x.Name.ToLower() == result.Address.CountryName.ToLower()))?.Code;
         }
         result.Address.CountryCode = CountryCode;
         return result;
@@ -244,8 +244,7 @@ namespace CcsSso.Service
       try
       {
         string CountryName = string.Empty;
-        CountryName = CultureSupport.GetCountryNameByCode(countyCode);
-        if (string.IsNullOrEmpty(CountryName) && !string.IsNullOrEmpty(countyCode))
+        if (!string.IsNullOrEmpty(countyCode))
         {
           CountryName = _dataContext.CountryDetails.FirstOrDefault(x => x.IsDeleted == false && x.Code == countyCode).Name;
         }
