@@ -62,6 +62,7 @@ namespace CcsSso.Api.Middleware
 
     private async Task HandleException(HttpContext context, string displayError, Exception ex, HttpStatusCode statusCode)
     {
+      Console.WriteLine(ex);
       _logger.LogError(ex, displayError);
       context.Response.StatusCode = (int)statusCode;
       await context.Response.WriteAsync(displayError);
