@@ -211,3 +211,12 @@ INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdate
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('ZM','Zambia',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('ZW','Zimbabwe',0, 0, now(), now(), false);
 
+UPDATE public."CountryDetails" 
+SET "Name"='Mauritania',
+"LastUpdatedOnUtc"=Now()
+where "Code"='MR';
+
+UPDATE public."CountryDetails" 
+SET "Name"='France',
+"LastUpdatedOnUtc"=Now()
+where "Code"='FR';
