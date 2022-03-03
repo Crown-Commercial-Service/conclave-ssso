@@ -3,9 +3,8 @@ using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
 using CcsSso.Security.Services.Helpers;
-using CcsSso.Shared.Cache.Contracts;
-using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
+using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -116,7 +115,7 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException("OLD_PASSWORD_REQUIRED");
       }
       if ((_applicationConfigurationInfo.PasswordPolicy.LowerAndUpperCaseWithDigits &&
-        !UtilitiesHelper.IsPasswordValidForRequiredCharactors(changePassword.NewPassword))
+        !UtilityHelper.IsPasswordValidForRequiredCharactors(changePassword.NewPassword))
         || changePassword.NewPassword.Length < _applicationConfigurationInfo.PasswordPolicy.RequiredLength)
       {
         throw new CcsSsoException("ERROR_PASSWORD_TOO_WEAK");

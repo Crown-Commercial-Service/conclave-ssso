@@ -1,7 +1,7 @@
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Exceptions;
-using CcsSso.Services.Helpers;
+using CcsSso.Shared.Domain.Helpers;
 
 namespace CcsSso.Core.Service.External
 {
@@ -18,11 +18,15 @@ namespace CcsSso.Core.Service.External
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidUserId);
       }
+      if (userName.Length > 256)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorUserIdTooLong);
+      }
     }
 
     public bool IsInvalidUserName(string userName)
     {
-      return (string.IsNullOrWhiteSpace(userName) || !UtilitiesHelper.IsEmailValid(userName));
+      return (string.IsNullOrWhiteSpace(userName) || !UtilityHelper.IsEmailValid(userName));
     }
   }
 }

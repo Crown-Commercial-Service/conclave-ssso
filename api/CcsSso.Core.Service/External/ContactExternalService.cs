@@ -5,13 +5,12 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
-using CcsSso.Services.Helpers;
 using CcsSso.Shared.Domain.Constants;
+using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
@@ -136,22 +135,22 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidContactValue);
       }
 
-      if (contactRequestDetail.ContactType == VirtualContactTypeName.Email && !UtilitiesHelper.IsEmailValid(contactRequestDetail.ContactValue))
+      if (contactRequestDetail.ContactType == VirtualContactTypeName.Email && !UtilityHelper.IsEmailValid(contactRequestDetail.ContactValue))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidEmail);
       }
 
-      if (contactRequestDetail.ContactType == VirtualContactTypeName.Phone && !UtilitiesHelper.IsPhoneNumberValid(contactRequestDetail.ContactValue))
+      if (contactRequestDetail.ContactType == VirtualContactTypeName.Phone && !UtilityHelper.IsPhoneNumberValid(contactRequestDetail.ContactValue))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidPhoneNumber);
       }
 
-      if (contactRequestDetail.ContactType == VirtualContactTypeName.Fax && !UtilitiesHelper.IsPhoneNumberValid(contactRequestDetail.ContactValue))
+      if (contactRequestDetail.ContactType == VirtualContactTypeName.Fax && !UtilityHelper.IsPhoneNumberValid(contactRequestDetail.ContactValue))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidFaxNumber);
       }
 
-      if (contactRequestDetail.ContactType == VirtualContactTypeName.Mobile && !UtilitiesHelper.IsPhoneNumberValid(contactRequestDetail.ContactValue))
+      if (contactRequestDetail.ContactType == VirtualContactTypeName.Mobile && !UtilityHelper.IsPhoneNumberValid(contactRequestDetail.ContactValue))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidMobileNumber);
       }
