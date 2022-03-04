@@ -2,7 +2,7 @@ using CcsSso.Security.Domain.Constants;
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
-using CcsSso.Security.Services.Helpers;
+using CcsSso.Shared.Domain.Helpers;
 using System;
 using System.Threading.Tasks;
 using static CcsSso.Security.Domain.Constants.Constants;
@@ -45,22 +45,27 @@ namespace CcsSso.Security.Services
     {
       if (string.IsNullOrWhiteSpace(userInfo.FirstName))
       {
-        throw new CcsSsoException(Constants.ErrorCodes.FirstNameRequired);
+        throw new CcsSsoException(ErrorCodes.FirstNameRequired);
       }
 
       if (string.IsNullOrWhiteSpace(userInfo.LastName))
       {
-        throw new CcsSsoException(Constants.ErrorCodes.LastNameRequired);
+        throw new CcsSsoException(ErrorCodes.LastNameRequired);
       }
 
       if (string.IsNullOrWhiteSpace(userInfo.Email))
       {
-        throw new CcsSsoException(Constants.ErrorCodes.EmailRequired);
+        throw new CcsSsoException(ErrorCodes.EmailRequired);
       }
 
-      if (!UtilitiesHelper.IsEmailValid(userInfo.Email))
+      if (!UtilityHelper.IsEmailValid(userInfo.Email))
       {
-        throw new CcsSsoException(Constants.ErrorCodes.EmailFormatError);
+        throw new CcsSsoException(ErrorCodes.EmailFormatError);
+      }
+
+      if (userInfo.Email.Length > 256)
+      {
+        throw new CcsSsoException(ErrorCodes.EmailTooLongError);
       }
     }
 
@@ -105,7 +110,7 @@ namespace CcsSso.Security.Services
 
     public async Task SendResetMfaNotificationAsync(MfaResetRequest mfaResetRequest)
     {
-      if(string.IsNullOrEmpty(mfaResetRequest.UserName))
+      if (string.IsNullOrEmpty(mfaResetRequest.UserName))
       {
         throw new CcsSsoException(Constants.ErrorCodes.UserIdRequired);
       }

@@ -33,6 +33,7 @@ namespace CcsSso.Domain.Constants
     public const string ErrorInvalidSiteAddress = "INVALID_SITE_ADDRESS";
     public const string ErrorInsufficientDetails = "INSUFFICIENT_DETAILS";
     public const string ErrorInvalidUserId = "INVALID_USER_ID";
+    public const string ErrorUserIdTooLong = "ERROR_USER_ID_TOO_LONG";
     public const string ErrorInvalidFirstName = "INVALID_FIRST_NAME";
     public const string ErrorInvalidLastName = "INVALID_LAST_NAME";
     public const string ErrorInvalidUserDetail = "INVALID_USER_DETAIL";

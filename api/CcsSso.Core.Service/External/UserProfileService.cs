@@ -8,10 +8,10 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
-using CcsSso.Services.Helpers;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
+using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -968,7 +968,7 @@ namespace CcsSso.Core.Service.External
         var orgRoleIds = organisation.OrganisationEligibleRoles.Select(r => r.Id);
         var orgIdpIds = organisation.OrganisationEligibleIdentityProviders.Select(i => i.Id);
 
-        if (userProfileReqestInfo.Title != null && !UtilitiesHelper.IsEnumValueValid<UserTitle>((int)userProfileReqestInfo.Title))
+        if (userProfileReqestInfo.Title != null && !UtilityHelper.IsEnumValueValid<UserTitle>((int)userProfileReqestInfo.Title))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidTitle);
         }
