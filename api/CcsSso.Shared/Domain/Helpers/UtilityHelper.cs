@@ -1,23 +1,24 @@
-using CcsSso.Domain.Constants;
+﻿using CcsSso.Shared.Domain.Constants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace CcsSso.Services.Helpers
+namespace CcsSso.Shared.Domain.Helpers
 {
-  public static class UtilitiesHelper
+  public static class UtilityHelper
   {
     public static bool IsEmailValid(string emailaddress)
     {
-      Regex regex = new Regex(RegexExpressions.VALID_EMAIL_FORMAT_REGEX);
+
+      Regex regex = new Regex(RegexExpression.VALID_EMAIL_FORMAT_REGEX);
       Match match = regex.Match(emailaddress);
       return match.Success;
     }
 
     public static bool IsPhoneNumberValid(string phoneNumber)
     {
-      Regex regex = new Regex(RegexExpressions.VALID_PHONE_E164_FORMAT_REGEX);
+      Regex regex = new Regex(RegexExpression.VALID_PHONE_E164_FORMAT_REGEX);
       Match match = regex.Match(phoneNumber);
       return match.Success;
     }
@@ -30,6 +31,13 @@ namespace CcsSso.Services.Helpers
       var highest = enumVals.OrderByDescending(i => i).First();
 
       return value >= lowest && value <= highest;
+    }
+
+    public static bool IsPasswordValidForRequiredCharactors(string password)
+    {
+      Regex regex = new Regex(RegexExpression.VALID_PASSWORD_FORMAT_REGEX);
+      Match match = regex.Match(password);
+      return match.Success;
     }
   }
 }

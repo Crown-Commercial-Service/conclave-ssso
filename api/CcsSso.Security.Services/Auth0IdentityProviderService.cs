@@ -872,6 +872,7 @@ namespace CcsSso.Security.Services
       accesstokenClaims.Add(new ClaimInfo("uid", serviceProfile.ServiceId.ToString()));
       accesstokenClaims.Add(new ClaimInfo("ciiOrgId", ciiOrgId));
       accesstokenClaims.Add(new ClaimInfo("caller", "service"));
+      accesstokenClaims.Add(new ClaimInfo("sid", ""));
       foreach (var role in serviceProfile.RoleKeys)
       {
         accesstokenClaims.Add(new ClaimInfo("roles", role));
