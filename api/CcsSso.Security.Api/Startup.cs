@@ -154,7 +154,9 @@ namespace CcsSso.Security.Api
             RsaPrivateKey = Configuration["JwtTokenConfig:RsaPrivateKey"],
             RsaPublicKey = Configuration["JwtTokenConfig:RsaPublicKey"],
             IDTokenExpirationTimeInMinutes = tokenExpirationTimeInMinutes,
-            LogoutTokenExpireTimeInMinutes = logoutTokenExpirationTimeInMinutes
+            LogoutTokenExpireTimeInMinutes = logoutTokenExpirationTimeInMinutes,
+            JwksUrl = Configuration["JwtTokenConfig:JwksUrl"],
+            IdamClienId = Configuration["JwtTokenConfig:IdamClienId"]
           },
           UserExternalApiDetails = new WrapperApi()
           {

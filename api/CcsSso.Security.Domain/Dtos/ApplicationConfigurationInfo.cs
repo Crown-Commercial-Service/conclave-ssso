@@ -127,11 +127,18 @@ namespace CcsSso.Security.Domain.Dtos
   public class JwtTokenConfiguration
   {
     public string Issuer { get; set; }
+
     public string RsaPrivateKey { get; set; }
+
     public string RsaPublicKey { get; set; }
+
     public int IDTokenExpirationTimeInMinutes { get; set; }
 
     public int LogoutTokenExpireTimeInMinutes { get; set; }
+
+    public string JwksUrl { get; set; }
+
+    public string IdamClienId { get; set; }
   }
 
   public class WrapperApi

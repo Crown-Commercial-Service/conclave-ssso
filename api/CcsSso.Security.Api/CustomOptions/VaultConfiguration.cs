@@ -121,6 +121,8 @@ namespace CcsSso.Security.Api.CustomOptions
         Data.Add("JwtTokenConfig:RsaPublicKey", jwtTokenInfo.RsaPublicKey);
         Data.Add("JwtTokenConfig:IDTokenExpirationTimeInMinutes", jwtTokenInfo.IDTokenExpirationTimeInMinutes);
         Data.Add("JwtTokenConfig:LogoutTokenExpireTimeInMinutes", jwtTokenInfo.LogoutTokenExpireTimeInMinutes);
+        Data.Add("JwtTokenConfig:JwksUrl", jwtTokenInfo.JwksUrl);
+        Data.Add("JwtTokenConfig:IdamClienId", jwtTokenInfo.IdamClienId);
       }
 
       // Keep the trailing "/" for all the urls. Ex: "https://abc.com/user-profiles/"
@@ -325,11 +327,18 @@ namespace CcsSso.Security.Api.CustomOptions
   public class JwtTokenConfigVault
   {
     public string Issuer { get; set; }
+
     public string RsaPrivateKey { get; set; }
+
     public string RsaPublicKey { get; set; }
+
     public string IDTokenExpirationTimeInMinutes { get; set; }
 
     public string LogoutTokenExpireTimeInMinutes { get; set; }
+
+    public string JwksUrl { get; set; }
+
+    public string IdamClienId { get; set; }
   }
 
   public class SessionConfigVault
