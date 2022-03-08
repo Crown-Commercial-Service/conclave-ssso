@@ -135,9 +135,17 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidContactValue);
       }
 
-      if (contactRequestDetail.ContactType == VirtualContactTypeName.Email && !UtilityHelper.IsEmailValid(contactRequestDetail.ContactValue))
+      if (contactRequestDetail.ContactType == VirtualContactTypeName.Email)
       {
-        throw new CcsSsoException(ErrorConstant.ErrorInvalidEmail);
+        if (!UtilityHelper.IsEmailValid(contactRequestDetail.ContactValue))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidEmail);
+
+        }
+        if (contactRequestDetail.ContactValue.Length > 256)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorUserIdTooLong);
+        }
       }
 
       if (contactRequestDetail.ContactType == VirtualContactTypeName.Phone && !UtilityHelper.IsPhoneNumberValid(contactRequestDetail.ContactValue))
