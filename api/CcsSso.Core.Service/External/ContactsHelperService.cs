@@ -300,7 +300,7 @@ namespace CcsSso.Service.External
         }
         if (email.Length > 256)
         {
-          throw new CcsSsoException(ErrorConstant.ErrorUserIdTooLong);
+          throw new CcsSsoException(ErrorConstant.ErrorEmailTooLong);
         }
       }
 

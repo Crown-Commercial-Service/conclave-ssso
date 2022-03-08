@@ -144,7 +144,7 @@ namespace CcsSso.Core.Service.External
         }
         if (contactRequestDetail.ContactValue.Length > 256)
         {
-          throw new CcsSsoException(ErrorConstant.ErrorUserIdTooLong);
+          throw new CcsSsoException(ErrorConstant.ErrorEmailTooLong);
         }
       }
 
