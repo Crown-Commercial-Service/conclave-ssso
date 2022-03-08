@@ -388,7 +388,7 @@ namespace CcsSso.Adaptor.Service
     /// <returns></returns>
     private WrapperContactRequest GetContactRequestObject(Dictionary<string, object> contactData, Dictionary<string, string> contactMappingDictionary)
     {
-      var validContactTypes = new List<string> { "PHONE", "EMAIL", "FAX", "WEB_ADDRESS" };
+      var validContactTypes = new List<string> { "PHONE", "EMAIL", "FAX", "MOBILE", "WEB_ADDRESS" };
       var contactTypeConsumerFieldName = contactMappingDictionary["ContactType"];
       var contactValueConsumerFieldName = contactMappingDictionary["ContactValue"];
       if (contactTypeConsumerFieldName == null || contactValueConsumerFieldName == null)
