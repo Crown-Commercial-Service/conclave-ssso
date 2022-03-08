@@ -63,7 +63,7 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException(ErrorCodes.EmailFormatError);
       }
 
-      if (userInfo.Email.Length > 256)
+      if (userInfo.Email.Length > Shared.Domain.Constants.Constants.EmailMaxCharaters)
       {
         throw new CcsSsoException(ErrorCodes.EmailTooLongError);
       }

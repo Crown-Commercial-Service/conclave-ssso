@@ -7,6 +7,7 @@ using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -291,9 +292,17 @@ namespace CcsSso.Service.External
 
       var email = contactInfo.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Email)?.ContactValue;
 
-      if (!string.IsNullOrEmpty(email) && !UtilityHelper.IsEmailValid(email))
+      if (!string.IsNullOrEmpty(email))
       {
-        throw new CcsSsoException(ErrorConstant.ErrorInvalidEmail);
+        if (!UtilityHelper.IsEmailValid(email))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidEmail);
+
+        }
+        if (email.Length > Constants.EmailMaxCharaters)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorEmailTooLong);
+        }
       }
 
       var phoneNumber = contactInfo.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Phone)?.ContactValue;
