@@ -7,6 +7,7 @@ using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -298,7 +299,7 @@ namespace CcsSso.Service.External
           throw new CcsSsoException(ErrorConstant.ErrorInvalidEmail);
 
         }
-        if (email.Length > 256)
+        if (email.Length > Constants.EmailMaxCharaters)
         {
           throw new CcsSsoException(ErrorConstant.ErrorEmailTooLong);
         }

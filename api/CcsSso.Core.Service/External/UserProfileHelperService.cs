@@ -1,6 +1,7 @@
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Helpers;
 
 namespace CcsSso.Core.Service.External
@@ -18,7 +19,7 @@ namespace CcsSso.Core.Service.External
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidUserId);
       }
-      if (userName.Length > 256)
+      if (userName.Length > Constants.EmailMaxCharaters)
       {
         throw new CcsSsoException(ErrorConstant.ErrorUserIdTooLong);
       }

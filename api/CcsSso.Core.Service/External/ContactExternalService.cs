@@ -142,7 +142,7 @@ namespace CcsSso.Core.Service.External
           throw new CcsSsoException(ErrorConstant.ErrorInvalidEmail);
 
         }
-        if (contactRequestDetail.ContactValue.Length > 256)
+        if (contactRequestDetail.ContactValue.Length > Constants.EmailMaxCharaters)
         {
           throw new CcsSsoException(ErrorConstant.ErrorEmailTooLong);
         }
