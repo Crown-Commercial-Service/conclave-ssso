@@ -2,6 +2,7 @@ using CcsSso.Security.Domain.Constants;
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
+using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Domain.Helpers;
 using System;
 using System.Threading.Tasks;
@@ -15,13 +16,15 @@ namespace CcsSso.Security.Services
     private readonly ISecurityCacheService _securityCacheService;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
+    private readonly RequestContext _requestContext;
     public UserManagerService(IIdentityProviderService identityProviderService, ISecurityCacheService securityCacheService,
-      ApplicationConfigurationInfo applicationConfigurationInfo, ICcsSsoEmailService ccsSsoEmailService)
+      ApplicationConfigurationInfo applicationConfigurationInfo, ICcsSsoEmailService ccsSsoEmailService, RequestContext requestContext)
     {
       _identityProviderService = identityProviderService;
       _securityCacheService = securityCacheService;
       _applicationConfigurationInfo = applicationConfigurationInfo;
       _ccsSsoEmailService = ccsSsoEmailService;
+      _requestContext = requestContext;
     }
 
     public async Task<UserRegisterResult> CreateUserAsync(UserInfo userInfo)
@@ -53,20 +56,7 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException(ErrorCodes.LastNameRequired);
       }
 
-      if (string.IsNullOrWhiteSpace(userInfo.Email))
-      {
-        throw new CcsSsoException(ErrorCodes.EmailRequired);
-      }
-
-      if (!UtilityHelper.IsEmailValid(userInfo.Email))
-      {
-        throw new CcsSsoException(ErrorCodes.EmailFormatError);
-      }
-
-      if (userInfo.Email.Length > Shared.Domain.Constants.Constants.EmailMaxCharaters)
-      {
-        throw new CcsSsoException(ErrorCodes.EmailTooLongError);
-      }
+      ValidateEmail(userInfo.Email);
     }
 
     public async Task DeleteUserAsync(string email)
@@ -138,6 +128,10 @@ namespace CcsSso.Security.Services
 
     public async Task<IdamUser> GetUserAsync(string email)
     {
+      email = string.IsNullOrWhiteSpace(email) ? _requestContext.UserName : email;
+
+      ValidateEmail(email);
+
       return await _identityProviderService.GetIdamUserAsync(email);
     }
 
@@ -148,6 +142,22 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException(ErrorCodes.EmailRequired);
       }
       await _identityProviderService.SendUserActivationEmailAsync(email.ToLower(), null, isExpired);
+    }
+
+    private void ValidateEmail(string email)
+    {
+      if (string.IsNullOrWhiteSpace(email))
+      {
+        throw new CcsSsoException(ErrorCodes.EmailRequired);
+      }
+      if (!UtilityHelper.IsEmailValid(email))
+      {
+        throw new CcsSsoException(ErrorCodes.EmailFormatError);
+      }
+      if (email.Length > Shared.Domain.Constants.Constants.EmailMaxCharaters)
+      {
+        throw new CcsSsoException(ErrorCodes.EmailTooLongError);
+      }
     }
   }
 }

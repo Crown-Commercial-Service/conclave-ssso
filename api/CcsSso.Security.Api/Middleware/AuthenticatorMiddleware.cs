@@ -52,7 +52,11 @@ namespace CcsSso.Security.Api.Middleware
       }
       else
       {
-        if (!string.IsNullOrWhiteSpace(bearerToken))
+        if (!string.IsNullOrEmpty(apiKey))
+        {
+          await _next(context);
+        }
+        else if (!string.IsNullOrWhiteSpace(bearerToken))
         {
           var token = bearerToken.Split(' ').Last();
           var result = await _tokenService.ValidateTokenAsync(token, _appSetting.JwtTokenConfiguration.JwksUrl,
@@ -78,13 +82,17 @@ namespace CcsSso.Security.Api.Middleware
 
             requestContext.CiiOrganisationId = result.ClaimValues["ciiOrgId"];
             requestContext.Roles = result.ClaimValues["roles"].Split(",").ToList();
+            await _next(context);
           }
           else
           {
             throw new UnauthorizedAccessException();
           }
         }
-        await _next(context);
+        else // For ApiKeyValidationExcludedRoutes
+        {
+          await _next(context);
+        }
       }
     }
   }

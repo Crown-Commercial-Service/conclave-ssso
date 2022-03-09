@@ -10,6 +10,7 @@ using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Cache.Services;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
+using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -246,7 +247,7 @@ namespace CcsSso.Security.Api
       }
 
       services.AddSingleton<TokenHelper>();
-
+      services.AddSingleton<ITokenService, TokenService>();
       services.AddSingleton<ISecurityCacheService, SecurityCacheService>();
       services.AddSingleton<IJwtTokenHandler, JwtTokenHandler>();
       services.AddSingleton<IEmailProviderService, EmailProviderService>();
@@ -259,6 +260,7 @@ namespace CcsSso.Security.Api
         new RedisConnectionPoolService(Configuration["RedisCacheSettings:ConnectionString"])
       );
       services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(Configuration["SecurityDbConnection"]));
+      services.AddScoped<RequestContext>();
       services.AddScoped<ISecurityService, SecurityService>();
       services.AddScoped<IUserManagerService, UserManagerService>();
       services.AddHttpClient("default").ConfigurePrimaryHttpMessageHandler(() =>

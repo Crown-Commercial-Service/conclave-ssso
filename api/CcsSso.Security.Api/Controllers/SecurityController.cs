@@ -196,6 +196,19 @@ namespace CcsSso.Security.Api.Controllers
     }
 
     /// <summary>
+    /// Returns all external identity providers that are listed
+    /// </summary>
+    /// <response code="200">List of external identity providers</response>
+    [HttpGet("security/external-idps")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(200)]
+    public async Task<List<IdentityProviderInfoDto>> GetIdentityProvidersList()
+    {
+      var idProviders = await _securityService.GetIdentityProvidersListAsync();
+      return idProviders;
+    }
+
+    /// <summary>
     /// Registers a new user in Identity Provider 
     /// </summary>
     /// <response code="201">user is created successfully</response>
@@ -228,16 +241,26 @@ namespace CcsSso.Security.Api.Controllers
     }
 
     /// <summary>
-    /// Returns all external identity providers that are listed
+    /// Get a user
     /// </summary>
-    /// <response code="200">List of external identity providers</response>
-    [HttpGet("security/external-idps")]
+    /// <response code="200">User details</response>
+    /// <response code="404">User not found </response>
+    /// <response  code="400">
+    /// Code: INVALID_EMAIL (Invalid Email address)
+    /// </response>
+    /// <remarks>
+    /// /// Sample requests:
+    /// POST security/users?email=user@mail.com /n
+    /// POST security/users
+    /// </remarks>
+    [HttpGet("security/users")]
     [SwaggerOperation(Tags = new[] { "security" })]
-    [ProducesResponseType(200)]
-    public async Task<List<IdentityProviderInfoDto>> GetIdentityProvidersList()
+    [ProducesResponseType(204)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(400)]
+    public async Task<IdamUser> GetUser([FromQuery] string email, [FromHeader] string authorization)
     {
-      var idProviders = await _securityService.GetIdentityProvidersListAsync();
-      return idProviders;
+      return await _userManagerService.GetUserAsync(email);
     }
 
     /// <summary>
@@ -272,6 +295,23 @@ namespace CcsSso.Security.Api.Controllers
     public async Task UpdateUser(UserInfo userInfo)
     {
       await _userManagerService.UpdateUserAsync(userInfo);
+    }
+
+    /// <summary>
+    /// Delete a user
+    /// </summary>
+    /// <response code="204">Successfully delete the user</response>
+    /// <response code="404">User not found </response>
+    /// <response  code="400">
+    /// Code: INVALID_EMAIL (Invalid Email address)
+    /// </response>
+    [HttpDelete("security/users")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(404)]
+    public async Task DeleteUser(string email)
+    {
+      await _userManagerService.DeleteUserAsync(email);
     }
 
     [HttpPost("security/users/mfa")]
@@ -427,23 +467,6 @@ namespace CcsSso.Security.Api.Controllers
     }
 
     /// <summary>
-    /// Delete a user
-    /// </summary>
-    /// <response code="204">Successfully delete the user</response>
-    /// <response code="404">User not found </response>
-    /// <response  code="400">
-    /// Code: INVALID_EMAIL (Invalid Email address)
-    /// </response>
-    [HttpDelete("security/users")]
-    [SwaggerOperation(Tags = new[] { "security" })]
-    [ProducesResponseType(204)]
-    [ProducesResponseType(404)]
-    public async Task DeleteUser(string email)
-    {
-      await _userManagerService.DeleteUserAsync(email);
-    }
-
-    /// <summary>
     /// Reset Mfa by ticket
     /// </summary>
     /// <response code="204">Successfully reset the mfa</response>
@@ -472,24 +495,6 @@ namespace CcsSso.Security.Api.Controllers
     public async Task SendMfaEamil(MfaResetRequest mfaResetInfo)
     {
       await _userManagerService.SendResetMfaNotificationAsync(mfaResetInfo);
-    }
-
-    /// <summary>
-    /// Get a user
-    /// </summary>
-    /// <response code="200">User details</response>
-    /// <response code="404">User not found </response>
-    /// <response  code="400">
-    /// Code: INVALID_EMAIL (Invalid Email address)
-    /// </response>
-    [HttpGet("security/users")]
-    [SwaggerOperation(Tags = new[] { "security" })]
-    [ProducesResponseType(204)]
-    [ProducesResponseType(404)]
-    [ProducesResponseType(400)]
-    public async Task<IdamUser> GetUser(string email)
-    {
-      return await _userManagerService.GetUserAsync(email);
     }
 
     [HttpPost("security/users/activation-emails")]
