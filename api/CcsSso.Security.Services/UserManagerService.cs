@@ -44,21 +44,6 @@ namespace CcsSso.Security.Services
       await _identityProviderService.UpdateUserAsync(userInfo);
     }
 
-    private void ValidateUser(UserInfo userInfo)
-    {
-      if (string.IsNullOrWhiteSpace(userInfo.FirstName))
-      {
-        throw new CcsSsoException(ErrorCodes.FirstNameRequired);
-      }
-
-      if (string.IsNullOrWhiteSpace(userInfo.LastName))
-      {
-        throw new CcsSsoException(ErrorCodes.LastNameRequired);
-      }
-
-      ValidateEmail(userInfo.Email);
-    }
-
     public async Task DeleteUserAsync(string email)
     {
       await _identityProviderService.DeleteAsync(email);
@@ -126,13 +111,16 @@ namespace CcsSso.Security.Services
       }
     }
 
+    public async Task<IdamUserInfo> GetUserAsync()
+    {
+      return await _identityProviderService.GetIdamUserInfoAsync(_requestContext.UserName);
+    }
+
     public async Task<IdamUser> GetUserAsync(string email)
     {
-      email = string.IsNullOrWhiteSpace(email) ? _requestContext.UserName : email;
-
       ValidateEmail(email);
 
-      return await _identityProviderService.GetIdamUserAsync(email);
+      return await _identityProviderService.GetIdamUserByEmailAsync(email);
     }
 
     public async Task SendUserActivationEmailAsync(string email, bool isExpired = false)
@@ -144,6 +132,20 @@ namespace CcsSso.Security.Services
       await _identityProviderService.SendUserActivationEmailAsync(email.ToLower(), null, isExpired);
     }
 
+    private void ValidateUser(UserInfo userInfo)
+    {
+      if (string.IsNullOrWhiteSpace(userInfo.FirstName))
+      {
+        throw new CcsSsoException(ErrorCodes.FirstNameRequired);
+      }
+
+      if (string.IsNullOrWhiteSpace(userInfo.LastName))
+      {
+        throw new CcsSsoException(ErrorCodes.LastNameRequired);
+      }
+
+      ValidateEmail(userInfo.Email);
+    }
     private void ValidateEmail(string email)
     {
       if (string.IsNullOrWhiteSpace(email))

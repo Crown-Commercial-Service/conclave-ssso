@@ -285,11 +285,9 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(404)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
-    public async Task<IdamUser> GetUser([FromHeader][Required] string authorization )
+    public async Task<IdamUserInfo> GetUser([FromHeader][Required] string authorization )
     {
-
-      var authHeader = Request.Headers.GetCommaSeparatedValues("Authorization");
-      return await _userManagerService.GetUserAsync(string.Empty);
+      return await _userManagerService.GetUserAsync();
     }
 
     /// <summary>

@@ -164,7 +164,7 @@ namespace CcsSso.Security.Services
 
       if (isExpired) // If link expired check whether link was useractivation or resetpassword
       {
-        var user = await GetIdamUserAsync(email);
+        var user = await GetIdamUserByEmailAsync(email);
         isActivationEmail = user.LoginCount == 0;
       }
 
@@ -679,38 +679,33 @@ namespace CcsSso.Security.Services
       }
     }
 
-    public async Task<IdamUser> GetIdamUserAsync(string email)
+    public async Task<IdamUser> GetIdamUserByEmailAsync(string email)
     {
-      var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
-      using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
+      var user = await GetIdamUserAsync(email);
+      return new IdamUser()
       {
-        try
-        {
-          var user = (await _managementApiClient.Users.GetUsersByEmailAsync(email)).FirstOrDefault();
-          if (user != null)
-          {
-            return new IdamUser()
-            {
-              FirstName = user.FirstName,
-              LastName = user.LastName,
-              EmailVerified = user.EmailVerified.HasValue ? user.EmailVerified.Value : false,
-              LoginCount = !string.IsNullOrWhiteSpace(user.LoginsCount) ? int.Parse(user.LoginsCount) : 0
-            };
-          }
-          else
-          {
-            throw new RecordNotFoundException();
-          }
-        }
-        catch (ErrorApiException e)
-        {
-          if (e.ApiError.ErrorCode == "invalid_query_string")
-          {
-            throw new CcsSsoException("INVALID_EMAIL");
-          }
-          return null;
-        }
-      }
+        FirstName = user.FirstName,
+        LastName = user.LastName,
+        EmailVerified = user.EmailVerified.HasValue ? user.EmailVerified.Value : false,
+        LoginCount = !string.IsNullOrWhiteSpace(user.LoginsCount) ? int.Parse(user.LoginsCount) : 0
+      };
+    }
+
+    public async Task<IdamUserInfo> GetIdamUserInfoAsync(string email)
+    {
+      var user = await GetIdamUserAsync(email);
+      return new IdamUserInfo()
+      {
+        Sub = email,
+        GivenName = user.FirstName,
+        FamilyName = user.LastName,
+        Name = user.FullName,
+        NickName = user.NickName,
+        Picture = user.Picture,
+        UpdatedAt = user.UpdatedAt,
+        Email = user.Email,
+        EmailVerified = user.EmailVerified ?? false,
+      };
     }
 
     public async Task<string> GetIdentityProviderAuthenticationEndPointAsync()
@@ -970,6 +965,34 @@ namespace CcsSso.Security.Services
         customClaims.Add(new ClaimInfo("email_verified", email_verified, ClaimValueTypes.Boolean));
       }
       return customClaims;
+    }
+
+    private async Task<User> GetIdamUserAsync(string email)
+    {
+      var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
+      using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
+      {
+        try
+        {
+          var user = (await _managementApiClient.Users.GetUsersByEmailAsync(email)).FirstOrDefault();
+          if (user != null)
+          {
+            return user;
+          }
+          else
+          {
+            throw new RecordNotFoundException();
+          }
+        }
+        catch (ErrorApiException e)
+        {
+          if (e.ApiError.ErrorCode == "invalid_query_string")
+          {
+            throw new CcsSsoException("INVALID_EMAIL");
+          }
+          return null;
+        }
+      }
     }
   }
 }
