@@ -111,6 +111,11 @@ namespace CcsSso.Security.Api.CustomOptions
         {
           Data.Add($"SecurityApiKeySettings:ApiKeyValidationExcludedRoutes:{index++}", route);
         }
+        int tokenIndex = 0;
+        foreach (var route in securityApiKeySettings.BearerTokenValidationIncludedRoutes)
+        {
+          Data.Add($"SecurityApiKeySettings:BearerTokenValidationIncludedRoutes:{tokenIndex++}", route);
+        }
       }
 
       if (_secrets.Data.ContainsKey("JwtTokenConfig"))
@@ -322,6 +327,8 @@ namespace CcsSso.Security.Api.CustomOptions
     public string SecurityApiKey { get; set; }
 
     public string[] ApiKeyValidationExcludedRoutes { get; set; }
+
+    public string[] BearerTokenValidationIncludedRoutes { get; set; }
   }
 
   public class JwtTokenConfigVault

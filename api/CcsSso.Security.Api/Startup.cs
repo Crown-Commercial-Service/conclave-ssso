@@ -174,7 +174,8 @@ namespace CcsSso.Security.Api
           SecurityApiKeySettings = new SecurityApiKeySettings()
           {
             SecurityApiKey = Configuration["SecurityApiKeySettings:SecurityApiKey"],
-            ApiKeyValidationExcludedRoutes = Configuration.GetSection("SecurityApiKeySettings:ApiKeyValidationExcludedRoutes").Get<List<string>>()
+            ApiKeyValidationExcludedRoutes = Configuration.GetSection("SecurityApiKeySettings:ApiKeyValidationExcludedRoutes").Get<List<string>>(),
+            BearerTokenValidationIncludedRoutes = Configuration.GetSection("SecurityApiKeySettings:BearerTokenValidationIncludedRoutes").Get<List<string>>()
           },
           RedisCacheSettings = new RedisCacheSettings()
           {

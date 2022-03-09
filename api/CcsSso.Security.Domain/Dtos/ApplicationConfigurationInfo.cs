@@ -43,6 +43,8 @@ namespace CcsSso.Security.Domain.Dtos
     public string SecurityApiKey { get; set; }
 
     public List<string> ApiKeyValidationExcludedRoutes { get; set; }
+
+    public List<string> BearerTokenValidationIncludedRoutes { get; set; }    
   }
 
   public class RedisCacheSettings

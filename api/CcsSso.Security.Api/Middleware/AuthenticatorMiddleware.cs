@@ -56,7 +56,7 @@ namespace CcsSso.Security.Api.Middleware
         {
           await _next(context);
         }
-        else if (!string.IsNullOrWhiteSpace(bearerToken))
+        else if (_appSetting.SecurityApiKeySettings.BearerTokenValidationIncludedRoutes.Contains(path) && !string.IsNullOrWhiteSpace(bearerToken))
         {
           var token = bearerToken.Split(' ').Last();
           var result = await _tokenService.ValidateTokenAsync(token, _appSetting.JwtTokenConfiguration.JwksUrl,
@@ -89,9 +89,14 @@ namespace CcsSso.Security.Api.Middleware
             throw new UnauthorizedAccessException();
           }
         }
-        else // For ApiKeyValidationExcludedRoutes
+        else if (_appSetting.SecurityApiKeySettings.ApiKeyValidationExcludedRoutes.Contains(path))
         {
+          // For ApiKeyValidationExcludedRoutes and bearer token not required (unauthenticated requests)
           await _next(context);
+        }
+        else
+        {
+          throw new UnauthorizedAccessException();
         }
       }
     }
