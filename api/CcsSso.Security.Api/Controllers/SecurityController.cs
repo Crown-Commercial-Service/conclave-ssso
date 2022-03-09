@@ -10,6 +10,7 @@ using Microsoft.Extensions.Primitives;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -245,22 +246,24 @@ namespace CcsSso.Security.Api.Controllers
     /// </summary>
     /// <response code="200">User details</response>
     /// <response code="404">User not found </response>
+    /// <response code="401">Unauthorized </response>
     /// <response  code="400">
     /// Code: INVALID_EMAIL (Invalid Email address)
     /// </response>
     /// <remarks>
     /// /// Sample requests:
-    /// POST security/users?email=user@mail.com /n
-    /// POST security/users
+    /// POST security/users 
+    /// Authorization: Bearer valid_access_token
     /// </remarks>
     [HttpGet("security/users")]
     [SwaggerOperation(Tags = new[] { "security" })]
-    [ProducesResponseType(204)]
+    [ProducesResponseType(200)]
     [ProducesResponseType(404)]
     [ProducesResponseType(400)]
-    public async Task<IdamUser> GetUser([FromQuery] string email, [FromHeader] string authorization)
+    [ProducesResponseType(401)]
+    public async Task<IdamUser> GetUser([FromHeader][Required] string authorization )
     {
-      return await _userManagerService.GetUserAsync(email);
+      return await _userManagerService.GetUserAsync(string.Empty);
     }
 
     /// <summary>
