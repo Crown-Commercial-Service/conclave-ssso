@@ -294,12 +294,12 @@ namespace CcsSso.Service.External
 
       if (!string.IsNullOrEmpty(email))
       {
-        if (!UtilityHelper.IsEmailValid(email))
+        if (!UtilityHelper.IsEmailFormatValid(email))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidEmail);
 
         }
-        if (email.Length > Constants.EmailMaxCharaters)
+        if (!UtilityHelper.IsEmailLengthValid(email))
         {
           throw new CcsSsoException(ErrorConstant.ErrorEmailTooLong);
         }

@@ -58,12 +58,12 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException(ErrorCodes.EmailRequired);
       }
 
-      if (!UtilityHelper.IsEmailValid(userInfo.Email))
+      if (!UtilityHelper.IsEmailFormatValid(userInfo.Email))
       {
         throw new CcsSsoException(ErrorCodes.EmailFormatError);
       }
 
-      if (userInfo.Email.Length > Shared.Domain.Constants.Constants.EmailMaxCharaters)
+      if (!UtilityHelper.IsEmailLengthValid(userInfo.Email))
       {
         throw new CcsSsoException(ErrorCodes.EmailTooLongError);
       }
@@ -115,6 +115,8 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException(Constants.ErrorCodes.UserIdRequired);
       }
 
+      ValidateEmail(mfaResetRequest.UserName);
+
       var ticket = Guid.NewGuid().ToString().Replace("-", string.Empty);
       var cachedTicket = await _securityCacheService.GetValueAsync<string>(Constants.CacheKey.MFA_RESET + mfaResetRequest.UserName);
       if (!string.IsNullOrEmpty(cachedTicket))
@@ -148,6 +150,19 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException(ErrorCodes.EmailRequired);
       }
       await _identityProviderService.SendUserActivationEmailAsync(email.ToLower(), null, isExpired);
+    }
+
+    private void ValidateEmail(string email)
+    {
+      if (!UtilityHelper.IsEmailFormatValid(email))
+      {
+        throw new CcsSsoException(ErrorCodes.EmailFormatError);
+      }
+
+      if (!UtilityHelper.IsEmailLengthValid(email))
+      {
+        throw new CcsSsoException(ErrorCodes.EmailTooLongError);
+      }
     }
   }
 }
