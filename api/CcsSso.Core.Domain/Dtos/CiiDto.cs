@@ -26,6 +26,8 @@ namespace CcsSso.Dtos.Domain.Models
   {
     public string CountryName { get; set; }
 
+    public string CountryCode { get; set; }
+
     public string Locality { get; set; }
 
     public string PostalCode { get; set; }

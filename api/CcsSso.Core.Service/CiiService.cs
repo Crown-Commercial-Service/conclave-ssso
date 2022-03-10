@@ -111,7 +111,7 @@ namespace CcsSso.Service
     /// <summary>
     /// Retrieves organisation details from CII by scheme and identifier
     /// And also checks whther this identifier has already been used
-    /// </summary>
+    /// </summary>rd
     /// <param name="scheme"></param>
     /// <param name="identifier"></param>
     /// <returns></returns>
@@ -123,6 +123,13 @@ namespace CcsSso.Service
       {
         var content = await response.Content.ReadAsStringAsync();
         var result = JsonConvert.DeserializeObject<CiiDto>(content);
+
+        string CountryCode = string.Empty;
+        if (result.Address.CountryName != null && result.Address.CountryName != "")
+        {
+          CountryCode = (await _dataContext.CountryDetails.FirstOrDefaultAsync(x => x.IsDeleted == false && x.Name.ToLower() == result.Address.CountryName.ToLower()))?.Code;
+        }
+        result.Address.CountryCode = CountryCode;
         return result;
       }
       else if (response.StatusCode == HttpStatusCode.NotFound)
@@ -204,7 +211,8 @@ namespace CcsSso.Service
         {
           ciiInfo.Address = new CiiAddress()
           {
-            CountryName = CultureSupport.GetCountryNameByCode(orgDetails.Address.CountryCode),
+            CountryName = GetCountryNameByCode(orgDetails.Address.CountryCode),
+            CountryCode = orgDetails.Address.CountryCode,
             PostalCode = orgDetails.Address.PostalCode,
             Region = orgDetails.Address.Region,
             StreetAddress = orgDetails.Address.StreetAddress,
@@ -225,6 +233,27 @@ namespace CcsSso.Service
       {
         throw new CcsSsoException("ERROR_RETRIEVING_ORGANISATIONS");
       }
+    }
+
+    /// <summary>
+    /// Retrieves CountryName based on country code
+    /// </summary>
+    /// <returns></returns>
+    public string GetCountryNameByCode(string countyCode)
+    {
+      try
+      {
+        string CountryName = string.Empty;
+        if (!string.IsNullOrEmpty(countyCode))
+        {
+          CountryName = _dataContext.CountryDetails.FirstOrDefault(x => x.IsDeleted == false && x.Code == countyCode).Name;
+        }
+        return CountryName;
+      }
+      catch (ArgumentException)
+      {
+      }
+      return null;
     }
 
     /// <summary>
@@ -297,6 +326,12 @@ namespace CcsSso.Service
 
         if (physicalAddress != null)
         {
+          string CountryName = string.Empty;
+          if (physicalAddress.CountryCode != null)
+          {
+            CountryName = GetCountryNameByCode(physicalAddress.CountryCode);
+          }
+
           orgInfo.Address = new Address
           {
             StreetAddress = physicalAddress.StreetAddress,
@@ -304,6 +339,7 @@ namespace CcsSso.Service
             PostalCode = physicalAddress.PostalCode,
             Locality = physicalAddress.Locality,
             CountryCode = physicalAddress.CountryCode,
+            CountryName = CountryName.ToString(),
             Uprn = physicalAddress.Uprn,
           };
         }
