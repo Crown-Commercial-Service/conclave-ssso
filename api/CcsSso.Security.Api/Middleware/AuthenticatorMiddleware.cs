@@ -2,6 +2,7 @@ using CcsSso.Security.Domain.Dtos;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Contexts;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -59,6 +60,7 @@ namespace CcsSso.Security.Api.Middleware
         else if (_appSetting.SecurityApiKeySettings.BearerTokenValidationIncludedRoutes.Contains(path) && !string.IsNullOrWhiteSpace(bearerToken))
         {
           var token = bearerToken.Split(' ').Last();
+          Console.WriteLine($"Token In Header:- {token}");
           var result = await _tokenService.ValidateTokenWithoutAudienceAsync(token, _appSetting.JwtTokenConfiguration.JwksUrl,
             _appSetting.JwtTokenConfiguration.IdamClienId, _appSetting.JwtTokenConfiguration.Issuer,
             new List<string>() { "uid", "ciiOrgId", "sub", JwtRegisteredClaimNames.Jti, JwtRegisteredClaimNames.Exp, "roles", "caller" });

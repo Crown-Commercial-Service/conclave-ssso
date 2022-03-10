@@ -113,6 +113,7 @@ namespace CcsSso.Security.Services
 
     public async Task<IdamUserInfo> GetUserAsync()
     {
+      Console.WriteLine($"User Name Inside the Token:- {_requestContext.UserName}");
       return await _identityProviderService.GetIdamUserInfoAsync(_requestContext.UserName);
     }
 
