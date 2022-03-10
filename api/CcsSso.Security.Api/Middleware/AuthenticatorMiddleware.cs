@@ -59,7 +59,7 @@ namespace CcsSso.Security.Api.Middleware
         else if (_appSetting.SecurityApiKeySettings.BearerTokenValidationIncludedRoutes.Contains(path) && !string.IsNullOrWhiteSpace(bearerToken))
         {
           var token = bearerToken.Split(' ').Last();
-          var result = await _tokenService.ValidateTokenAsync(token, _appSetting.JwtTokenConfiguration.JwksUrl,
+          var result = await _tokenService.ValidateTokenWithoutAudienceAsync(token, _appSetting.JwtTokenConfiguration.JwksUrl,
             _appSetting.JwtTokenConfiguration.IdamClienId, _appSetting.JwtTokenConfiguration.Issuer,
             new List<string>() { "uid", "ciiOrgId", "sub", JwtRegisteredClaimNames.Jti, JwtRegisteredClaimNames.Exp, "roles", "caller" });
 
