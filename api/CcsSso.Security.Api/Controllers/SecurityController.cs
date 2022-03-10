@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Primitives;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
@@ -92,6 +93,11 @@ namespace CcsSso.Security.Api.Controllers
     public async Task<IActionResult> Authorize(string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge,
       string prompt, string state, string nonce, string display, string login_hint, int? max_age, string acr_values)
     {
+
+      Console.WriteLine($"Security API Authorize1 scope:- ${scope}, response_type:- ${response_type}, client_id:- ${client_id}, redirect_uri:- ${redirect_uri}");
+      Console.WriteLine($"Security AP2 Authorize1 code_challenge_method:- ${code_challenge_method}, code_challenge:- ${code_challenge}, prompt:- ${prompt}, state:- ${state}");
+      Console.WriteLine($"Security AP2 Authorize3 nonce:- ${nonce}, display:- ${display}, login_hint:- ${login_hint}, max_age:- ${max_age}, acr_values:- ${acr_values}");
+
       // At the moment Security Api only supports Authorisation code flow
       if (!string.IsNullOrEmpty(response_type) && response_type != "code")
       {
@@ -142,6 +148,16 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(400)]
     public async Task<TokenResponseInfo> Token([FromForm] TokenRequest tokenRequest)
     {
+
+      Console.WriteLine($"Security API Token1 data:- ${JsonConvert.SerializeObject(tokenRequest)}");
+      Console.WriteLine($"Security API Token2 ClientId:- ${tokenRequest.ClientId}");
+      Console.WriteLine($"Security API Token2 ClientSecret:- ${tokenRequest.ClientSecret}");
+      Console.WriteLine($"Security API Token2 GrantType:- ${tokenRequest.GrantType}");
+      Console.WriteLine($"Security API Token2 Code:- ${tokenRequest.Code}");
+      Console.WriteLine($"Security API Token2 CodeVerifier:- ${tokenRequest.CodeVerifier}");
+      Console.WriteLine($"Security API Token2 RedirectUrl:- ${tokenRequest.RedirectUrl}");
+      Console.WriteLine($"Security API Token2 Audience:- ${tokenRequest.Audience}");
+
       var tokenRequestInfo = new TokenRequestInfo()
       {
         ClientId = tokenRequest.ClientId,
