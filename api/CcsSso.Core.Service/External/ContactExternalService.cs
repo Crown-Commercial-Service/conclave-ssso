@@ -137,12 +137,12 @@ namespace CcsSso.Core.Service.External
 
       if (contactRequestDetail.ContactType == VirtualContactTypeName.Email)
       {
-        if (!UtilityHelper.IsEmailValid(contactRequestDetail.ContactValue))
+        if (!UtilityHelper.IsEmailFormatValid(contactRequestDetail.ContactValue))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidEmail);
 
         }
-        if (contactRequestDetail.ContactValue.Length > Constants.EmailMaxCharaters)
+        if (!UtilityHelper.IsEmailLengthValid(contactRequestDetail.ContactValue))
         {
           throw new CcsSsoException(ErrorConstant.ErrorEmailTooLong);
         }

@@ -31,11 +31,12 @@ namespace CcsSso.Service
     private readonly RequestContext _requestContext;
     private readonly ILogger<OrganisationService> _logger;
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
+    private readonly IUserProfileHelperService _userProfileHelperService;
 
     public OrganisationService(IDataContext dataContext, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ICiiService ciiService, IOrganisationProfileService organisationProfileService,
       IUserProfileService userProfileService, IOrganisationContactService organisationContactService,
-      RequestContext requestContext, ILogger<OrganisationService> logger, ICcsSsoEmailService ccsSsoEmailService)
+      RequestContext requestContext, ILogger<OrganisationService> logger, ICcsSsoEmailService ccsSsoEmailService, IUserProfileHelperService userProfileHelperService)
     {
       _dataContext = dataContext;
       _adapterNotificationService = adapterNotificationService;
@@ -210,6 +211,8 @@ namespace CcsSso.Service
 
     public async Task NotifyOrgAdminToJoinAsync(OrganisationJoinRequest organisationJoinRequest)
     {
+      _userProfileHelperService.ValidateUserName(organisationJoinRequest.Email);
+
       if (string.IsNullOrEmpty(organisationJoinRequest.FirstName))
       {
         throw new CcsSsoException("FIRST_NAME_REQUIRED");

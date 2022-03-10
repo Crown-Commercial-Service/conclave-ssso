@@ -3,6 +3,7 @@ using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Domain.Dtos;
+using CcsSso.Shared.Domain.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -208,9 +209,13 @@ namespace CcsSso.Core.Service
         }
 
         var emailHeaderIndex = fileHeaders.FindIndex(h => h == "email");
-        if (!string.IsNullOrWhiteSpace(rowDataColumns[emailHeaderIndex]) && _userProfileHelperService.IsInvalidUserName(rowDataColumns[emailHeaderIndex]))
+        if (!string.IsNullOrWhiteSpace(rowDataColumns[emailHeaderIndex]) && !UtilityHelper.IsEmailFormatValid(rowDataColumns[emailHeaderIndex]))
         {
           errorDetails.Add(new KeyValuePair<string, string>("Invalid email value", $"Invalid email in row {fileRowNumber}"));
+        }
+        else if (!string.IsNullOrWhiteSpace(rowDataColumns[emailHeaderIndex]) && !UtilityHelper.IsEmailLengthValid(rowDataColumns[emailHeaderIndex]))
+        {
+          errorDetails.Add(new KeyValuePair<string, string>("Invalid email length", $"Email length exceeded in row {fileRowNumber}"));
         }
 
         //boolean field validation

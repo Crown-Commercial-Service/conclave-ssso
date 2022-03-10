@@ -15,19 +15,14 @@ namespace CcsSso.Core.Service.External
 
     public void ValidateUserName(string userName)
     {
-      if (IsInvalidUserName(userName))
+      if (!UtilityHelper.IsEmailFormatValid(userName))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidUserId);
       }
-      if (userName.Length > Constants.EmailMaxCharaters)
+      if (!UtilityHelper.IsEmailLengthValid(userName))
       {
         throw new CcsSsoException(ErrorConstant.ErrorUserIdTooLong);
       }
-    }
-
-    public bool IsInvalidUserName(string userName)
-    {
-      return (string.IsNullOrWhiteSpace(userName) || !UtilityHelper.IsEmailValid(userName));
     }
   }
 }
