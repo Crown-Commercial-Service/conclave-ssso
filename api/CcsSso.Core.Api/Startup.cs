@@ -54,6 +54,7 @@ namespace CcsSso.Api
         int.TryParse(Configuration["RedisCacheSettings:CacheExpirationInMinutes"], out int cacheExpirationInMinutes);
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
         int.TryParse(Configuration["BulkUploadMaxUserCount"], out int bulkUploadMaxUserCount);
+        bool.TryParse(Configuration["Email:SendNotificationsEnabled"], out bool sendEmailNotification);
 
         if (cacheExpirationInMinutes == 0)
         {
@@ -91,7 +92,8 @@ namespace CcsSso.Api
           EmailInfo = new CcsEmailInfo
           {
             NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
-            OrganisationJoinRequestTemplateId = Configuration["Email:OrganisationJoinRequestTemplateId"]
+            OrganisationJoinRequestTemplateId = Configuration["Email:OrganisationJoinRequestTemplateId"],
+            SendNotificationsEnabled = sendEmailNotification
           },
           ConclaveSettings = new ConclaveSettings()
           {

@@ -8,12 +8,28 @@ namespace CcsSso.Shared.Domain.Helpers
 {
   public static class UtilityHelper
   {
-    public static bool IsEmailValid(string emailaddress)
+    public static bool IsEmailFormatValid(string emailaddress)
     {
+      if (string.IsNullOrWhiteSpace(emailaddress))
+      {
+        return false;
+      }
+      else
+      {
+        Regex regex = new Regex(RegexExpression.VALID_EMAIL_FORMAT_REGEX);
+        Match match = regex.Match(emailaddress);
+        return match.Success;
+      }
+    }
 
-      Regex regex = new Regex(RegexExpression.VALID_EMAIL_FORMAT_REGEX);
-      Match match = regex.Match(emailaddress);
-      return match.Success;
+    public static bool IsEmailLengthValid(string email)
+    {
+      if (email.Length > Constants.Constants.EmailMaxCharacters ||
+        email.Split('@')?.First()?.Length > Constants.Constants.EmailDomainMaxCharacters)
+      {
+        return false;
+      }
+      return true;
     }
 
     public static bool IsPhoneNumberValid(string phoneNumber)
