@@ -72,7 +72,8 @@ namespace CcsSso.Security.Services
         var result = await _authenticationApiClient.GetTokenAsync(resourceOwnerTokenRequest);
         if (result != null)
         {
-          var tokenInfo = await GetTokensAsync(clientId, result);
+          var sid = Guid.NewGuid().ToString();
+          var tokenInfo = await GetTokensAsync(clientId, result, sid);
           return new AuthResultDto()
           {
             AccessToken = tokenInfo.AccessToken,
