@@ -48,6 +48,7 @@ namespace CcsSso.Service
       _requestContext = requestContext;
       _logger = logger;
       _ccsSsoEmailService = ccsSsoEmailService;
+      _userProfileHelperService = userProfileHelperService;
     }
 
     /// <summary>
