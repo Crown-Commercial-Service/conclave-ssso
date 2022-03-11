@@ -84,6 +84,7 @@ namespace CcsSso.Api.CustomOptions
         Data.Add("Email:NominateEmailTemplateId", emailInfo.NominateEmailTemplateId);
         Data.Add("Email:OrganisationJoinRequestTemplateId", emailInfo.OrganisationJoinRequestTemplateId);        
         Data.Add("Email:ApiKey", emailInfo.ApiKey);
+        Data.Add("Email:SendNotificationsEnabled", emailInfo.SendNotificationsEnabled);
       }
 
       if (_secrets.Data.ContainsKey("ConclaveSettings"))
@@ -198,9 +199,12 @@ namespace CcsSso.Api.CustomOptions
   public class EmailInfoVault
   {
     public string ApiKey { get; set; }
+
     public string NominateEmailTemplateId { get; set; }
 
     public string OrganisationJoinRequestTemplateId { get; set; }
+
+    public string SendNotificationsEnabled { get; set; }
   }
 
   public class ConclaveSettingsVault
