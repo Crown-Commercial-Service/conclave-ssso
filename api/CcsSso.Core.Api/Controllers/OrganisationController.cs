@@ -65,9 +65,9 @@ namespace CcsSso.Api.Controllers
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(OrganisationDto), 200)]
     [ProducesResponseType(204)]
-    public async Task<List<OrganisationDto>> GetByName([FromQuery(Name = "organisation-name")] string orgName)
+    public async Task<List<OrganisationDto>> GetByName([FromQuery(Name = "organisation-name")] string orgName, [FromQuery(Name = "exact-match")] bool isExact = true)
     {
-      return await _organisationService.GetByNameAsync(orgName);
+      return await _organisationService.GetByNameAsync(orgName, isExact);
     }
 
     [HttpGet]

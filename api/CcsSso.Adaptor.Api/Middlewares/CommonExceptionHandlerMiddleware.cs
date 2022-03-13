@@ -1,6 +1,7 @@
 using CcsSso.Shared.Domain.Excecptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System;
 using System.Net;
 using System.Threading.Tasks;
@@ -54,6 +55,8 @@ namespace CcsSso.Adaptor.Api.Middlewares
 
     private async Task HandleException(HttpContext context, string displayError, Exception ex, HttpStatusCode statusCode)
     {
+      Console.WriteLine(ex.Message);
+      Console.WriteLine(JsonConvert.SerializeObject(ex));
       context.Response.StatusCode = (int)statusCode;
       await context.Response.WriteAsync(displayError);
     }

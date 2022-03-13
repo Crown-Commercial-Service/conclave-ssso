@@ -2,7 +2,7 @@ using CcsSso.Security.Domain.Constants;
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
-using CcsSso.Security.Services.Helpers;
+using CcsSso.Shared.Domain.Helpers;
 using System;
 using System.Threading.Tasks;
 using static CcsSso.Security.Domain.Constants.Constants;
@@ -45,22 +45,27 @@ namespace CcsSso.Security.Services
     {
       if (string.IsNullOrWhiteSpace(userInfo.FirstName))
       {
-        throw new CcsSsoException(Constants.ErrorCodes.FirstNameRequired);
+        throw new CcsSsoException(ErrorCodes.FirstNameRequired);
       }
 
       if (string.IsNullOrWhiteSpace(userInfo.LastName))
       {
-        throw new CcsSsoException(Constants.ErrorCodes.LastNameRequired);
+        throw new CcsSsoException(ErrorCodes.LastNameRequired);
       }
 
       if (string.IsNullOrWhiteSpace(userInfo.Email))
       {
-        throw new CcsSsoException(Constants.ErrorCodes.EmailRequired);
+        throw new CcsSsoException(ErrorCodes.EmailRequired);
       }
 
-      if (!UtilitiesHelper.IsEmailValid(userInfo.Email))
+      if (!UtilityHelper.IsEmailFormatValid(userInfo.Email))
       {
-        throw new CcsSsoException(Constants.ErrorCodes.EmailFormatError);
+        throw new CcsSsoException(ErrorCodes.EmailFormatError);
+      }
+
+      if (!UtilityHelper.IsEmailLengthValid(userInfo.Email))
+      {
+        throw new CcsSsoException(ErrorCodes.EmailTooLongError);
       }
     }
 
@@ -105,10 +110,12 @@ namespace CcsSso.Security.Services
 
     public async Task SendResetMfaNotificationAsync(MfaResetRequest mfaResetRequest)
     {
-      if(string.IsNullOrEmpty(mfaResetRequest.UserName))
+      if (string.IsNullOrEmpty(mfaResetRequest.UserName))
       {
         throw new CcsSsoException(Constants.ErrorCodes.UserIdRequired);
       }
+
+      ValidateEmail(mfaResetRequest.UserName);
 
       var ticket = Guid.NewGuid().ToString().Replace("-", string.Empty);
       var cachedTicket = await _securityCacheService.GetValueAsync<string>(Constants.CacheKey.MFA_RESET + mfaResetRequest.UserName);
@@ -143,6 +150,19 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException(ErrorCodes.EmailRequired);
       }
       await _identityProviderService.SendUserActivationEmailAsync(email.ToLower(), null, isExpired);
+    }
+
+    private void ValidateEmail(string email)
+    {
+      if (!UtilityHelper.IsEmailFormatValid(email))
+      {
+        throw new CcsSsoException(ErrorCodes.EmailFormatError);
+      }
+
+      if (!UtilityHelper.IsEmailLengthValid(email))
+      {
+        throw new CcsSsoException(ErrorCodes.EmailTooLongError);
+      }
     }
   }
 }

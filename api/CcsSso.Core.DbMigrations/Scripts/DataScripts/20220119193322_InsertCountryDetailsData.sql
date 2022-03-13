@@ -60,7 +60,7 @@ INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdate
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('FJ','Fiji',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('FK','Falkland Islands',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('FM','Micronesia',0, 0, now(), now(), false);
-INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('FR','Micronesia',0, 0, now(), now(), false);
+INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('FR','France',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('GA','Gabon',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('GB','United Kingdom',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('GB-ENG','England',0, 0, now(), now(), false);
@@ -127,7 +127,7 @@ INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdate
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('ML','Mali',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('MM','Myanmar (Burma)',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('MN','Mongolia',0, 0, now(), now(), false);
-INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('MR','Mongolia',0, 0, now(), now(), false);
+INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('MR','Mauritania',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('MS','Montserrat',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('MT','Malta',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('MU','Mauritius',0, 0, now(), now(), false);
@@ -210,4 +210,3 @@ INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdate
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('ZA','South Africa',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('ZM','Zambia',0, 0, now(), now(), false);
 INSERT INTO public."CountryDetails"("Code", "Name", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted") VALUES ('ZW','Zimbabwe',0, 0, now(), now(), false);
-

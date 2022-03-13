@@ -13,6 +13,7 @@ namespace CcsSso.Security.Domain.Constants
       public const string LastNameRequired = "ERROR_LASTNAME_REQUIRED";
       public const string EmailRequired = "ERROR_EMAIL_REQUIRED";
       public const string EmailFormatError = "ERROR_EMAIL_FORMAT";
+      public const string EmailTooLongError = "ERROR_EMAIL_TOO_LONG";
       public const string InvalidTicket = "INVALID_TICKET";
     }
 

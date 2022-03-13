@@ -51,6 +51,8 @@ namespace CcsSso.Security.Api.Middleware
 
     private async Task HandleException(HttpContext context, string displayError, Exception ex, HttpStatusCode statusCode)
     {
+      Console.WriteLine(ex.Message);
+      Console.WriteLine(JsonConvert.SerializeObject(ex));
       context.Response.StatusCode = (int)statusCode;
 
       if (displayError == "SECURITY_ERROR")

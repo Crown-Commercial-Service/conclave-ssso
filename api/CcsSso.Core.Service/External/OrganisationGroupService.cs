@@ -315,7 +315,7 @@ namespace CcsSso.Core.Service.External
 
         if (mfaDisabledUserExists)
         {
-          //throw new CcsSsoException("MFA_DISABLED_USERS_INCLUDED");
+          throw new CcsSsoException("MFA_DISABLED_USERS_INCLUDED");
         }
       }
       // This field should not let be updated manually as it consumes in user screen to decide mfa enable/disable

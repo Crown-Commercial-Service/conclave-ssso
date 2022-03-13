@@ -1,7 +1,10 @@
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
+using CcsSso.Security.Domain.Exceptions;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -29,7 +32,7 @@ namespace CcsSso.Security.Services
         TemplateId = _appConfigInfo.CcsEmailConfigurationInfo.UserActivationEmailTemplateId,
         BodyContent = data
       };
-      await _emaillProviderService.SendEmailAsync(emailInfo);
+      await SendEmailAsync(emailInfo);
     }
 
     public async Task SendResetPasswordAsync(string email, string verificationLink)
@@ -43,7 +46,7 @@ namespace CcsSso.Security.Services
         TemplateId = _appConfigInfo.CcsEmailConfigurationInfo.ResetPasswordEmailTemplateId,
         BodyContent = data
       };
-      await _emaillProviderService.SendEmailAsync(emailInfo);
+      await SendEmailAsync(emailInfo);
     }
 
     public async Task SendResetMfaEmailAsync(string email, string link)
@@ -59,22 +62,36 @@ namespace CcsSso.Security.Services
         TemplateId = _appConfigInfo.CcsEmailConfigurationInfo.MfaResetEmailTemplateId,
         BodyContent = data
       };
-      await _emaillProviderService.SendEmailAsync(emailInfo);
+      await SendEmailAsync(emailInfo);
     }
 
     public async Task SendChangePasswordNotificationAsync(string email)
     {
-      if (_appConfigInfo.CcsEmailConfigurationInfo.SendNotificationsEnabled)
+      var data = new Dictionary<string, dynamic>();
+      data.Add("emailid", email);
+      var emailInfo = new EmailInfo()
       {
-        var data = new Dictionary<string, dynamic>();
-        data.Add("emailid", email);
-        var emailInfo = new EmailInfo()
+        To = email,
+        TemplateId = _appConfigInfo.CcsEmailConfigurationInfo.ChangePasswordNotificationTemplateId,
+        BodyContent = data
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
+    private async Task SendEmailAsync(EmailInfo emailInfo)
+    {
+      try
+      {
+        if (_appConfigInfo.CcsEmailConfigurationInfo.SendNotificationsEnabled)
         {
-          To = email,
-          TemplateId = _appConfigInfo.CcsEmailConfigurationInfo.ChangePasswordNotificationTemplateId,
-          BodyContent = data
-        };
-        await _emaillProviderService.SendEmailAsync(emailInfo);
+          await _emaillProviderService.SendEmailAsync(emailInfo);
+        }
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
+        Console.WriteLine(JsonConvert.SerializeObject(ex));
+        throw new CcsSsoException("ERROR_SENDING_EMAIL_NOTIFICATION");
       }
     }
   }

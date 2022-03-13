@@ -12,6 +12,8 @@ namespace CcsSso.Dtos.Domain.Models
 
     public string CountryCode { get; set; }
 
+    public string CountryName { get; set; }
+
     public string Uprn { get; set; }
   }
 }

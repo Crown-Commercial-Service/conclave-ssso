@@ -1,5 +1,5 @@
-using CcsSso.Security.Domain.Constants;
 using CcsSso.Security.Domain.Dtos;
+using CcsSso.Shared.Domain.Constants;
 using IdentityModel;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,20 +9,6 @@ namespace CcsSso.Security.Services.Helpers
 {
   public static class UtilitiesHelper
   {
-    public static bool IsEmailValid(string emailaddress)
-    {
-      Regex regex = new Regex(RegexExpressions.VALID_EMAIL_FORMAT_REGEX);
-      Match match = regex.Match(emailaddress);
-      return match.Success;
-    }
-
-    public static bool IsPasswordValidForRequiredCharactors(string password)
-    {
-      Regex regex = new Regex(RegexExpressions.VALID_PASSWORD_FORMAT_REGEX);
-      Match match = regex.Match(password);
-      return match.Success;
-    }
-
     /// <summary>
     /// Generates a Random Password
     /// respecting the given strength requirements.

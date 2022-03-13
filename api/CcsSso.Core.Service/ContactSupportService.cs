@@ -1,5 +1,5 @@
-using CcsSso.Core.JobScheduler.Contracts;
-using CcsSso.DbModel.Entity;
+
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CcsSso.Core.JobScheduler.Services
+namespace CcsSso.Core.Service
 {
   public class ContactSupportService : IContactSupportService
   {

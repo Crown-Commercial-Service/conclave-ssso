@@ -18,4 +18,10 @@ namespace CcsSso.Shared.Domain.Constants
     public const string BlockedListKey = "BLOCKED-LIST";
     public const string UserOrganisation = "USER_ORGANISATION"; // USER_ORGANISATION-{userName}
   }
+
+  public static class Constants
+  {
+    public const int EmailMaxCharacters = 256;
+    public const int EmailDomainMaxCharacters = 64;
+  }
 }

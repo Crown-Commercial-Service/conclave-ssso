@@ -8,10 +8,10 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
-using CcsSso.Services.Helpers;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
+using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -85,7 +85,7 @@ namespace CcsSso.Core.Service.External
       // This is to enforce MFA over any other
       if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
       {
-        //throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
+        throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
       }
 
       //validate mfa and assign mfa if user is part of any admin role or group
@@ -94,7 +94,7 @@ namespace CcsSso.Core.Service.External
         var partOfAdminRole = organisation.OrganisationEligibleRoles.Any(r => userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(role => role == r.Id) && r.MfaEnabled);
         if (partOfAdminRole)
         {
-          //throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+          throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
         }
         else
         {
@@ -102,7 +102,7 @@ namespace CcsSso.Core.Service.External
                               oug.GroupEligibleRoles.Any(er => !er.IsDeleted && er.OrganisationEligibleRole.MfaEnabled));
           if (partOfAdminGroup)
           {
-            //throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+            throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
           }
         }
       }
@@ -543,7 +543,7 @@ namespace CcsSso.Core.Service.External
 
         if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
         {
-          //throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
+          throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
         }
 
         //mfa flag has removed
@@ -555,7 +555,7 @@ namespace CcsSso.Core.Service.External
 
           if (mfaEnabledRoleExists)
           {
-            //throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+            throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
           }
           else if (userProfileRequestInfo.Detail.GroupIds != null && userProfileRequestInfo.Detail.GroupIds.Any())
           {
@@ -563,7 +563,7 @@ namespace CcsSso.Core.Service.External
                               oug.GroupEligibleRoles.Any(er => !er.IsDeleted && er.OrganisationEligibleRole.MfaEnabled));
             if (mfaEnabled)
             {
-              //throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+              throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
             }
           }
         }
@@ -968,7 +968,7 @@ namespace CcsSso.Core.Service.External
         var orgRoleIds = organisation.OrganisationEligibleRoles.Select(r => r.Id);
         var orgIdpIds = organisation.OrganisationEligibleIdentityProviders.Select(i => i.Id);
 
-        if (userProfileReqestInfo.Title != null && !UtilitiesHelper.IsEnumValueValid<UserTitle>((int)userProfileReqestInfo.Title))
+        if (userProfileReqestInfo.Title != null && !UtilityHelper.IsEnumValueValid<UserTitle>((int)userProfileReqestInfo.Title))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidTitle);
         }

@@ -1,3 +1,4 @@
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
 using CcsSso.DbModel.Entity;
@@ -129,11 +130,19 @@ namespace CcsSso.Core.JobScheduler
                 }
               }
 
+              // Delete assigned contact points
+              var contactDetialsIds = user.Party.ContactPoints.Where(cp => !cp.IsDeleted).Select(cp => cp.ContactDetailId).ToList();
+              var assignedContactPoints = await _dataContext.ContactPoint
+                .Where(cd => !cd.IsDeleted && contactDetialsIds.Contains(cd.ContactDetailId) && cd.OriginalContactPointId != 0)
+                .ToListAsync();
+
+              assignedContactPoints.ForEach(assignedContactPoint => assignedContactPoint.IsDeleted = true);
+
               user.Party.ContactPoints.Where(cp => !cp.IsDeleted).ToList().ForEach((cp) =>
               {
                 cp.IsDeleted = true;
                 if (reassigningContactPoint == null || cp.Id != reassigningContactPoint.Id) // Delete the contact details and virtual address of not reassigning contact point
-              {
+                {
                   cp.ContactDetail.IsDeleted = true;
                   cp.ContactDetail.VirtualAddresses.ForEach((va) => { va.IsDeleted = true; });
                 }
