@@ -42,9 +42,10 @@ namespace CcsSso.Api.Controllers
     {
       string registrationDetailsCookie = "rud";
       userDetails.TryGetValue("email", out StringValues email);
-      if (Request.Cookies.ContainsKey(registrationDetailsCookie))
+
+      Request.Cookies.TryGetValue(registrationDetailsCookie, out string details);
+      if ((Request.Cookies.ContainsKey(registrationDetailsCookie)) && isExpired == true && details != "ras")
       {
-        Request.Cookies.TryGetValue(registrationDetailsCookie, out string details);
         if (details == "as")
         {
           await _userService.SendUserActivationEmailAsync(email);
