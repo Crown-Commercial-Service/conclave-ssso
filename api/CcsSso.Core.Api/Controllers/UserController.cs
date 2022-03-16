@@ -44,7 +44,7 @@ namespace CcsSso.Api.Controllers
       userDetails.TryGetValue("email", out StringValues email);
 
       Request.Cookies.TryGetValue(registrationDetailsCookie, out string details);
-      if ((Request.Cookies.ContainsKey(registrationDetailsCookie)) && isExpired == true && details != "ras")
+      if ((Request.Cookies.ContainsKey(registrationDetailsCookie)) && isExpired == false && details != "ras")
       {
         if (details == "as")
         {
