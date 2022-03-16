@@ -38,7 +38,7 @@ namespace CcsSso.Api.Controllers
     [HttpPost("activation-emails")]
     [Consumes("application/x-www-form-urlencoded")]
     [SwaggerOperation(Tags = new[] { "User" })]
-    public async Task SendUserActivationEmail(IFormCollection userDetails, [FromQuery(Name = "is-expired")]bool isExpired = false)
+    public async Task SendUserActivationEmail(IFormCollection userDetails, [FromQuery(Name = "is-expired")]bool isExpired = true)
     {
       string registrationDetailsCookie = "rud";
       userDetails.TryGetValue("email", out StringValues email);
