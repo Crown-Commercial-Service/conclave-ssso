@@ -159,7 +159,7 @@ namespace CcsSso.Core.JobScheduler
 
             await _dataContext.SaveChangesAsync();
 
-            Console.WriteLine($"Unverified User Deletion User: {user.UserName} newOrgContactPoint: {newOrgContactPoint.Id}");
+            Console.WriteLine($"Unverified User Deletion User: {user.UserName} reassigningContactPoint: {reassigningContactPoint.Id}");
 
 
             if (shouldDeleteInIdam)
