@@ -17,7 +17,7 @@ namespace CcsSso.Adaptor.Domain.Dtos.Wrapper
 
     public string LastName { get; set; }
 
-    public int Title { get; set; }
+    public string Title { get; set; }
 
     public UserResponseDetail Detail { get; set; }
   }
