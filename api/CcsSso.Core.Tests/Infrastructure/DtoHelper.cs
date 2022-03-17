@@ -144,7 +144,7 @@ namespace CcsSso.Core.Tests.Infrastructure
         LastName = lastName,
         UserName = userName,
         OrganisationId = organisationId,
-        Title = title,
+        Title = title.ToString(),
         Detail = new UserRequestDetail
         {
           IdentityProviderIds = identityProviderIds,
