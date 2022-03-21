@@ -38,7 +38,9 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task DeleteAsync(string email);
 
-    Task<IdamUser> GetIdamUserAsync(string email);
+    Task<IdamUser> GetIdamUserByEmailAsync(string email);
+
+    Task<IdamUserInfo> GetIdamUserInfoAsync(string email);
 
     Task<string> GetIdentityProviderAuthenticationEndPointAsync();
 

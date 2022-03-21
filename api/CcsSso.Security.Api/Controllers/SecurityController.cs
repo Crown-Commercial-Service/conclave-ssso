@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Primitives;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -91,6 +93,11 @@ namespace CcsSso.Security.Api.Controllers
     public async Task<IActionResult> Authorize(string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge,
       string prompt, string state, string nonce, string display, string login_hint, int? max_age, string acr_values)
     {
+
+      Console.WriteLine($"Security API Authorize1 scope:- ${scope}, response_type:- ${response_type}, client_id:- ${client_id}, redirect_uri:- ${redirect_uri}");
+      Console.WriteLine($"Security AP2 Authorize2 code_challenge_method:- ${code_challenge_method}, code_challenge:- ${code_challenge}, prompt:- ${prompt}, state:- ${state}");
+      Console.WriteLine($"Security AP2 Authorize3 nonce:- ${nonce}, display:- ${display}, login_hint:- ${login_hint}, max_age:- ${max_age}, acr_values:- ${acr_values}");
+
       // At the moment Security Api only supports Authorisation code flow
       if (!string.IsNullOrEmpty(response_type) && response_type != "code")
       {
@@ -141,6 +148,16 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(400)]
     public async Task<TokenResponseInfo> Token([FromForm] TokenRequest tokenRequest)
     {
+
+      Console.WriteLine($"Security API Token1 data:- ${JsonConvert.SerializeObject(tokenRequest)}");
+      Console.WriteLine($"Security API Token2 ClientId:- ${tokenRequest.ClientId}");
+      Console.WriteLine($"Security API Token3 ClientSecret:- ${tokenRequest.ClientSecret}");
+      Console.WriteLine($"Security API Token4 GrantType:- ${tokenRequest.GrantType}");
+      Console.WriteLine($"Security API Token5 Code:- ${tokenRequest.Code}");
+      Console.WriteLine($"Security API Token6 CodeVerifier:- ${tokenRequest.CodeVerifier}");
+      Console.WriteLine($"Security API Token7 RedirectUrl:- ${tokenRequest.RedirectUrl}");
+      Console.WriteLine($"Security API Token8 Audience:- ${tokenRequest.Audience}");
+
       var tokenRequestInfo = new TokenRequestInfo()
       {
         ClientId = tokenRequest.ClientId,
@@ -196,6 +213,19 @@ namespace CcsSso.Security.Api.Controllers
     }
 
     /// <summary>
+    /// Returns all external identity providers that are listed
+    /// </summary>
+    /// <response code="200">List of external identity providers</response>
+    [HttpGet("security/external-idps")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(200)]
+    public async Task<List<IdentityProviderInfoDto>> GetIdentityProvidersList()
+    {
+      var idProviders = await _securityService.GetIdentityProvidersListAsync();
+      return idProviders;
+    }
+
+    /// <summary>
     /// Registers a new user in Identity Provider 
     /// </summary>
     /// <response code="201">user is created successfully</response>
@@ -228,16 +258,52 @@ namespace CcsSso.Security.Api.Controllers
     }
 
     /// <summary>
-    /// Returns all external identity providers that are listed
+    /// Get a user by email
     /// </summary>
-    /// <response code="200">List of external identity providers</response>
-    [HttpGet("security/external-idps")]
+    /// <response code="200">User details</response>
+    /// <response code="404">User not found </response>
+    /// <response code="401">Unauthorized </response>
+    /// <response  code="400">
+    /// Code: INVALID_EMAIL (Invalid Email address)
+    /// </response>
+    /// <remarks>
+    /// /// Sample requests:
+    /// POST security/users?email=user@mail.com
+    /// </remarks>
+    [HttpGet("security/users")]
     [SwaggerOperation(Tags = new[] { "security" })]
     [ProducesResponseType(200)]
-    public async Task<List<IdentityProviderInfoDto>> GetIdentityProvidersList()
+    [ProducesResponseType(404)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    public async Task<IdamUser> GetUserByEmail([FromQuery] string email)
     {
-      var idProviders = await _securityService.GetIdentityProvidersListAsync();
-      return idProviders;
+      return await _userManagerService.GetUserAsync(email);
+    }
+
+    /// <summary>
+    /// Get a user by sending the access token
+    /// </summary>
+    /// <response code="200">User details</response>
+    /// <response code="404">User not found </response>
+    /// <response code="401">Unauthorized </response>
+    /// <response  code="400">
+    /// Code: INVALID_EMAIL (Invalid Email address)
+    /// </response>
+    /// <remarks>
+    /// /// Sample requests:
+    /// POST security/users 
+    /// Authorization: Bearer valid_access_token
+    /// </remarks>
+    [HttpGet("security/user-info")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    public async Task<IdamUserInfo> GetUser([FromHeader][Required] string authorization )
+    {
+      return await _userManagerService.GetUserAsync();
     }
 
     /// <summary>
@@ -272,6 +338,23 @@ namespace CcsSso.Security.Api.Controllers
     public async Task UpdateUser(UserInfo userInfo)
     {
       await _userManagerService.UpdateUserAsync(userInfo);
+    }
+
+    /// <summary>
+    /// Delete a user
+    /// </summary>
+    /// <response code="204">Successfully delete the user</response>
+    /// <response code="404">User not found </response>
+    /// <response  code="400">
+    /// Code: INVALID_EMAIL (Invalid Email address)
+    /// </response>
+    [HttpDelete("security/users")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(404)]
+    public async Task DeleteUser(string email)
+    {
+      await _userManagerService.DeleteUserAsync(email);
     }
 
     [HttpPost("security/users/mfa")]
@@ -427,23 +510,6 @@ namespace CcsSso.Security.Api.Controllers
     }
 
     /// <summary>
-    /// Delete a user
-    /// </summary>
-    /// <response code="204">Successfully delete the user</response>
-    /// <response code="404">User not found </response>
-    /// <response  code="400">
-    /// Code: INVALID_EMAIL (Invalid Email address)
-    /// </response>
-    [HttpDelete("security/users")]
-    [SwaggerOperation(Tags = new[] { "security" })]
-    [ProducesResponseType(204)]
-    [ProducesResponseType(404)]
-    public async Task DeleteUser(string email)
-    {
-      await _userManagerService.DeleteUserAsync(email);
-    }
-
-    /// <summary>
     /// Reset Mfa by ticket
     /// </summary>
     /// <response code="204">Successfully reset the mfa</response>
@@ -472,24 +538,6 @@ namespace CcsSso.Security.Api.Controllers
     public async Task SendMfaEamil(MfaResetRequest mfaResetInfo)
     {
       await _userManagerService.SendResetMfaNotificationAsync(mfaResetInfo);
-    }
-
-    /// <summary>
-    /// Get a user
-    /// </summary>
-    /// <response code="200">User details</response>
-    /// <response code="404">User not found </response>
-    /// <response  code="400">
-    /// Code: INVALID_EMAIL (Invalid Email address)
-    /// </response>
-    [HttpGet("security/users")]
-    [SwaggerOperation(Tags = new[] { "security" })]
-    [ProducesResponseType(204)]
-    [ProducesResponseType(404)]
-    [ProducesResponseType(400)]
-    public async Task<IdamUser> GetUser(string email)
-    {
-      return await _userManagerService.GetUserAsync(email);
     }
 
     [HttpPost("security/users/activation-emails")]
