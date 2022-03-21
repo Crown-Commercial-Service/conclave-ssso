@@ -260,7 +260,7 @@ namespace CcsSso.ExternalApi
       {
         ForwardedHeaders = ForwardedHeaders.XForwardedFor
       });
-
+      app.UseMiddleware<RequestLogMiddleware>();
       app.UseMiddleware<InputValidationMiddleware>();
       app.UseMiddleware<AuthenticatorMiddleware>();
       app.UseMiddleware<RequestOrganisationContextFilterMiddleware>();

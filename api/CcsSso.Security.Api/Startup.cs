@@ -319,6 +319,7 @@ namespace CcsSso.Security.Api
       app.UseHsts();
       app.Use(async (context, next) =>
       {
+        context.Request.EnableBuffering();
         context.Response.Headers.Add(
             "Cache-Control",
             "no-cache");
@@ -346,6 +347,7 @@ namespace CcsSso.Security.Api
         .AllowCredentials()
       );
       app.UseMiddleware<CommonExceptionHandlerMiddleware>();
+      app.UseMiddleware<RequestLogMiddleware>();
       app.UseMiddleware<AuthenticatorMiddleware>();
       app.UseAuthorization();
 

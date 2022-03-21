@@ -318,6 +318,7 @@ namespace CcsSso.Api
         ForwardedHeaders = ForwardedHeaders.XForwardedFor
       });
 
+      app.UseMiddleware<RequestLogMiddleware>();
       app.UseMiddleware<InputValidationMiddleware>();
       app.UseMiddleware<AuthenticationMiddleware>();
 
