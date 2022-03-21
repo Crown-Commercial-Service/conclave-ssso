@@ -263,15 +263,23 @@ namespace CcsSso.Api
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IAntiforgery antiforgery)
     {
-      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
-      app.UseSwagger();
-      app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.Api v1"));
+      
       app.UseHsts();
       app.UseHttpsRedirection();
 
       app.Use(async (context, next) =>
       {
         context.Request.EnableBuffering();
+        await next();
+      });
+
+      app.UseMiddleware<RequestLogMiddleware>();
+      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
+      app.UseSwagger();
+      app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.Api v1"));
+
+      app.Use(async (context, next) =>
+      {
         var customDomain = Configuration.GetSection("CustomDomain").Get<string>();
         context.Response.Headers.Add(
             "Cache-Control",
@@ -318,7 +326,6 @@ namespace CcsSso.Api
         ForwardedHeaders = ForwardedHeaders.XForwardedFor
       });
 
-      app.UseMiddleware<RequestLogMiddleware>();
       app.UseMiddleware<InputValidationMiddleware>();
       app.UseMiddleware<AuthenticationMiddleware>();
 
