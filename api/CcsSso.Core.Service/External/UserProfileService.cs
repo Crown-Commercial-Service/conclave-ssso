@@ -65,6 +65,11 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
+      if(userProfileRequestInfo.Title == null)
+      {
+        userProfileRequestInfo.Title = "Unspecified";
+      }
+
       var user = await _dataContext.User
         .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
 
@@ -72,7 +77,6 @@ namespace CcsSso.Core.Service.External
       {
         throw new ResourceAlreadyExistsException();
       }
-
       Validate(userProfileRequestInfo, false, organisation);
 
       var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
@@ -487,6 +491,11 @@ namespace CcsSso.Core.Service.External
       if (organisation == null)
       {
         throw new ResourceNotFoundException();
+      }
+
+      if (userProfileRequestInfo.Title == null)
+      {
+        userProfileRequestInfo.Title = "Unspecified";
       }
 
       var user = await _dataContext.User
