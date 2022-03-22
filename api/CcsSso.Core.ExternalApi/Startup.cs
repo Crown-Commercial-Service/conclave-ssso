@@ -246,7 +246,11 @@ namespace CcsSso.ExternalApi
         await next();
       });
 
-      app.UseMiddleware<RequestLogMiddleware>();
+      bool additionalLog = Configuration.GetSection("EnableAdditionalLogs").Get<bool>();
+      if (additionalLog)
+      {
+        app.UseMiddleware<RequestLogMiddleware>();
+      }
       app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseSwagger();
       app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.ExternalApi v1"));

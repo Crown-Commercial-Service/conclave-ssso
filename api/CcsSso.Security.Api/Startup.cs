@@ -346,7 +346,12 @@ namespace CcsSso.Security.Api
         .AllowAnyMethod()
         .AllowCredentials()
       );
-      app.UseMiddleware<RequestLogMiddleware>();
+
+      bool additionalLog = Configuration.GetSection("EnableAdditionalLogs").Get<bool>();
+      if (additionalLog)
+      {
+        app.UseMiddleware<RequestLogMiddleware>();
+      }
       app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseMiddleware<AuthenticatorMiddleware>();
       app.UseAuthorization();
