@@ -1,8 +1,11 @@
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Dtos;
 using CcsSso.Domain.Dtos;
+using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -34,7 +37,7 @@ namespace CcsSso.Core.Service
         TemplateId = _appConfigInfo.EmailInfo.UserWelcomeEmailTemplateId,
         BodyContent = data
       };
-      await _emaillProviderService.SendEmailAsync(emailInfo);
+      await SendEmailAsync(emailInfo);
     }
 
     public async Task SendNominateEmailAsync(string email, string link)
@@ -50,7 +53,7 @@ namespace CcsSso.Core.Service
         TemplateId = _appConfigInfo.EmailInfo.NominateEmailTemplateId,
         BodyContent = data
       };
-      await _emaillProviderService.SendEmailAsync(emailInfo);
+      await SendEmailAsync(emailInfo);
     }
 
     public async Task SendOrgProfileUpdateEmailAsync(string email)
@@ -62,7 +65,7 @@ namespace CcsSso.Core.Service
           To = email,
           TemplateId = _appConfigInfo.EmailInfo.OrgProfileUpdateNotificationTemplateId
         };
-        await _emaillProviderService.SendEmailAsync(emailInfo);
+        await SendEmailAsync(emailInfo);
       }
     }
 
@@ -75,7 +78,7 @@ namespace CcsSso.Core.Service
           To = email,
           TemplateId = _appConfigInfo.EmailInfo.UserProfileUpdateNotificationTemplateId
         };
-        await _emaillProviderService.SendEmailAsync(emailInfo);
+        await SendEmailAsync(emailInfo);
       }
     }
 
@@ -88,7 +91,7 @@ namespace CcsSso.Core.Service
           To = email,
           TemplateId = _appConfigInfo.EmailInfo.UserContactUpdateNotificationTemplateId
         };
-        await _emaillProviderService.SendEmailAsync(emailInfo);
+        await SendEmailAsync(emailInfo);
       }
     }
 
@@ -107,27 +110,41 @@ namespace CcsSso.Core.Service
         TemplateId = _appConfigInfo.EmailInfo.OrganisationJoinRequestTemplateId,
         BodyContent = data
       };
-      await _emaillProviderService.SendEmailAsync(emailInfo);
+      await SendEmailAsync(emailInfo);
     }
 
     public async Task SendUserPermissionUpdateEmailAsync(string email)
     {
-      if (_appConfigInfo.EmailInfo.SendNotificationsEnabled)
-      {
-        var data = new Dictionary<string, dynamic>
+      var data = new Dictionary<string, dynamic>
         {
           { "emailid", email }
         };
 
-        var emailInfo = new EmailInfo()
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.EmailInfo.UserPermissionUpdateNotificationTemplateId,
+        BodyContent = data
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
+    private async Task SendEmailAsync(EmailInfo emailInfo)
+    {
+      try
+      {
+        if (_appConfigInfo.EmailInfo.SendNotificationsEnabled)
         {
-          To = email,
-          TemplateId = _appConfigInfo.EmailInfo.UserPermissionUpdateNotificationTemplateId,
-          BodyContent = data
-        };
-        await _emaillProviderService.SendEmailAsync(emailInfo);
+          await _emaillProviderService.SendEmailAsync(emailInfo);
+        }
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
+        Console.WriteLine(JsonConvert.SerializeObject(ex));
+        throw new CcsSsoException("ERROR_SENDING_EMAIL_NOTIFICATION");
       }
     }
-    
+
   }
 }
