@@ -97,6 +97,7 @@ namespace CcsSso.Service
 
     public async Task NominateUserAsync(string email)
     {
+      _userHelper.ValidateUserName(email);
       var url = _applicationConfigurationInfo.ConclaveSettings.BaseUrl + _applicationConfigurationInfo.ConclaveSettings.OrgRegistrationRoute;
       await _ccsSsoEmailService.SendNominateEmailAsync(email, url);
     }
