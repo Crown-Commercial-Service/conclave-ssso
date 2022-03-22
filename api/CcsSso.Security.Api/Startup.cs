@@ -346,8 +346,8 @@ namespace CcsSso.Security.Api
         .AllowAnyMethod()
         .AllowCredentials()
       );
-      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseMiddleware<RequestLogMiddleware>();
+      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseMiddleware<AuthenticatorMiddleware>();
       app.UseAuthorization();
 

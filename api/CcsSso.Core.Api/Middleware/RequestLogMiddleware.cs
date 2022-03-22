@@ -1,5 +1,6 @@
 ﻿using CcsSso.Domain.Dtos;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Linq;
@@ -42,7 +43,6 @@ namespace CcsSso.Core.Api.Middleware
           context.Request.Body.Position = 0;
         }
 
-        Console.WriteLine("LoggingMiddleware invoked.");
         var originalBody = context.Response.Body;
         using var newBody = new MemoryStream();
         context.Response.Body = newBody;
@@ -61,7 +61,7 @@ namespace CcsSso.Core.Api.Middleware
             await newBody.CopyToAsync(originalBody);
           }
 
-          Console.WriteLine($"EXTERNAL-API-LOGS:- Method: {method}, Path: {fullPath}, Query: {queryString}, Token: {token}, ApiKey: {apiKey}, XsrfCookie: {xsrfCookie}, XsrfTHeader: {xsrfTHeader}, RequestBody: {requestBodyString}, Status: {context.Response.StatusCode}, ResponseBody: {responseBodyString}");
+          Console.WriteLine($"CORE-API-LOGS:- Method: {method}, Path: {fullPath}, Query: {queryString}, Token: {token}, ApiKey: {apiKey}, XsrfCookie: {xsrfCookie}, XsrfTHeader: {xsrfTHeader}, RequestBody: {JsonConvert.SerializeObject(requestBodyString)}, Status: {context.Response.StatusCode}, ResponseBody: {responseBodyString}");
         }
       }
       else
