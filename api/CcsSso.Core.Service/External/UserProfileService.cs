@@ -72,7 +72,6 @@ namespace CcsSso.Core.Service.External
       {
         throw new ResourceAlreadyExistsException();
       }
-
       Validate(userProfileRequestInfo, false, organisation);
 
       var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
@@ -153,7 +152,7 @@ namespace CcsSso.Core.Service.External
         User = new User
         {
           UserName = userName,
-          UserTitle = (int)Enum.Parse(typeof(UserTitle), userProfileRequestInfo.Title),
+          UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title),
           UserGroupMemberships = userGroupMemberships,
           UserAccessRoles = userAccessRoles,
           UserIdentityProviders = userProfileRequestInfo.Detail.IdentityProviderIds.Select(idpId => new UserIdentityProvider
@@ -507,7 +506,7 @@ namespace CcsSso.Core.Service.External
       bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
       bool hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
                                     user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
-                                    user.UserTitle != (int)Enum.Parse(typeof(UserTitle), userProfileRequestInfo.Title) ||
+                                    user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title) ||
                                     user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id) != userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id));
 
       user.Party.Person.FirstName = userProfileRequestInfo.FirstName.Trim();
