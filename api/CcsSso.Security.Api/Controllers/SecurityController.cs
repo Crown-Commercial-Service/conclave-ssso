@@ -295,7 +295,7 @@ namespace CcsSso.Security.Api.Controllers
     /// POST security/users 
     /// Authorization: Bearer valid_access_token
     /// </remarks>
-    [HttpGet("security/user-info")]
+    [HttpGet("security/userinfo")]
     [SwaggerOperation(Tags = new[] { "security" })]
     [ProducesResponseType(200)]
     [ProducesResponseType(404)]
