@@ -319,6 +319,7 @@ namespace CcsSso.Security.Api
       app.UseHsts();
       app.Use(async (context, next) =>
       {
+        context.Request.EnableBuffering();
         context.Response.Headers.Add(
             "Cache-Control",
             "no-cache");
@@ -345,6 +346,12 @@ namespace CcsSso.Security.Api
         .AllowAnyMethod()
         .AllowCredentials()
       );
+
+      bool additionalLog = Configuration.GetSection("EnableAdditionalLogs").Get<bool>();
+      if (additionalLog)
+      {
+        app.UseMiddleware<RequestLogMiddleware>();
+      }
       app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseMiddleware<AuthenticatorMiddleware>();
       app.UseAuthorization();

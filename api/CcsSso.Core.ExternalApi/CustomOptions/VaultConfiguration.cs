@@ -72,6 +72,7 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       Data.Add("DbConnection", _dbConnection);
       Data.Add("ApiKey", _key);
       Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
+      Data.Add("EnableAdditionalLogs", _secrets.Data["EnableAdditionalLogs"].ToString());
       Data.Add("ConclaveLoginUrl", _conclaveLoginUrl);
       Data.Add("InMemoryCacheExpirationInMinutes", _inMemoryCacheExpirationInMinutes);
       Data.Add("DashboardServiceClientId", _dashboardServiceClientId);
