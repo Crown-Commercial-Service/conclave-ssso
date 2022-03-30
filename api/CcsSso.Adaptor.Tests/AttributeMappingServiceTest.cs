@@ -103,7 +103,7 @@ namespace CcsSso.Adaptor.Tests
                     FirstName = "UserFN",
                     LastName = "UserLN",
                     OrganisationId = "CiiOrgId1",
-                    Title = 0,
+                    Title = "",
                     Detail = new UserResponseDetail
                     {
                       Id = 1,

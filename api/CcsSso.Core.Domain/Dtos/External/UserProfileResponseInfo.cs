@@ -18,7 +18,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string LastName { get; set; }
 
-    public UserTitle? Title { get; set; }
+    public string Title { get; set; }
 
     public bool MfaEnabled { get; set; }
 

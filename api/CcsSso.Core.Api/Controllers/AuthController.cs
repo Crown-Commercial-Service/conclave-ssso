@@ -6,6 +6,7 @@ using CcsSso.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
+using System;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Api.Controllers
@@ -70,6 +71,7 @@ namespace CcsSso.Core.Api.Controllers
       }
       else
       {
+        Console.WriteLine($"CORE-API:- Refresh Token not available in /sessions, , Status: 400, Response: REFRESH_TOKEN_REQUIRED"); // Add no cookie log
         throw new CcsSsoException("REFRESH_TOKEN_REQUIRED");
       }
     }
@@ -92,6 +94,7 @@ namespace CcsSso.Core.Api.Controllers
         Request.Cookies.TryGetValue(cookieName, out string refreshToken);
         return refreshToken;
       }
+      Console.WriteLine($"CORE-API:- Cookie 'conclave' not available in /refesh-tokens , Status: 404"); // Add no cookie log
       throw new ResourceNotFoundException();
     }
 

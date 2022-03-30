@@ -59,6 +59,8 @@ namespace CcsSso.Security.Api.CustomOptions
       var _awsCognito = JsonConvert.DeserializeObject<AWSCognito>(_secrets.Data["AWSCognito"].ToString());
       var _auth0 = JsonConvert.DeserializeObject<Auth0>(_secrets.Data["Auth0"].ToString());
       var _email = JsonConvert.DeserializeObject<Email>(_secrets.Data["Email"].ToString());
+
+      Data.Add("EnableAdditionalLogs", _secrets.Data["EnableAdditionalLogs"].ToString());
       Data.Add("CustomDomain", _secrets.Data["CustomDomain"].ToString());
       if (_secrets.Data.ContainsKey("CorsDomains"))
       {

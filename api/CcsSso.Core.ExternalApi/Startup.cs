@@ -228,9 +228,7 @@ namespace CcsSso.ExternalApi
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
-      app.UseSwagger();
-      app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.ExternalApi v1"));
+      
       app.UseHsts();
       app.UseHttpsRedirection();
 
@@ -248,6 +246,15 @@ namespace CcsSso.ExternalApi
         await next();
       });
 
+      bool additionalLog = Configuration.GetSection("EnableAdditionalLogs").Get<bool>();
+      if (additionalLog)
+      {
+        app.UseMiddleware<RequestLogMiddleware>();
+      }
+      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
+      app.UseSwagger();
+      app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.ExternalApi v1"));
+
       app.UseRouting();
       var _cors = Configuration.GetSection("CorsDomains").Get<string[]>();
       app.UseCors(builder => builder.WithOrigins(_cors)
@@ -260,7 +267,6 @@ namespace CcsSso.ExternalApi
       {
         ForwardedHeaders = ForwardedHeaders.XForwardedFor
       });
-
       app.UseMiddleware<InputValidationMiddleware>();
       app.UseMiddleware<AuthenticatorMiddleware>();
       app.UseMiddleware<RequestOrganisationContextFilterMiddleware>();
