@@ -52,6 +52,7 @@ namespace CcsSso.Api.CustomOptions
       var _cii = JsonConvert.DeserializeObject<Cii>(_secrets.Data["Cii"].ToString());
       Data.Add("DbConnection", _dbConnection);
       Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
+      Data.Add("EnableAdditionalLogs", _secrets.Data["EnableAdditionalLogs"].ToString());
       Data.Add("CustomDomain", _secrets.Data["CustomDomain"].ToString());
       Data.Add("DashboardServiceClientId", _secrets.Data["DashboardServiceClientId"].ToString());
       Data.Add("BulkUploadMaxUserCount", _secrets.Data["BulkUploadMaxUserCount"].ToString());
