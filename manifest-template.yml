@@ -11,6 +11,7 @@ applications:
     - CF_SPACE-security-pg-service
     - CF_SPACE-vault 
     - CF_SPACE-security-redis-service
+    - CF_SPACE-data-redis-service
   env:
     CACHE_NUGET_PACKAGES: false
 - name: CF_SPACE-api-wrapper
