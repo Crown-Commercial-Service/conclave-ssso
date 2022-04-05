@@ -159,7 +159,7 @@ namespace CcsSso.Core.JobScheduler
 
             await _dataContext.SaveChangesAsync();
 
-            Console.WriteLine($"Unverified User Deletion User: {user.UserName} reassigningContactPoint: {reassigningContactPoint.Id}");
+            Console.WriteLine($"Unverified User Deletion User: {user.UserName} reassigningContactPoint: {reassigningContactPoint?.Id}");
 
 
             if (shouldDeleteInIdam)
@@ -186,7 +186,7 @@ namespace CcsSso.Core.JobScheduler
           }
           catch (Exception ex)
           {
-            Console.WriteLine($"Error UnverifiedUserDeleteJob: {ex}");
+            Console.WriteLine($"Error UnverifiedUserDeleteJob: {JsonConvert.SerializeObject(ex)}");
           }
         }
       }
