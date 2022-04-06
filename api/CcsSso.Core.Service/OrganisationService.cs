@@ -31,11 +31,12 @@ namespace CcsSso.Service
     private readonly RequestContext _requestContext;
     private readonly ILogger<OrganisationService> _logger;
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
+    private readonly IUserProfileHelperService _userProfileHelperService;
 
     public OrganisationService(IDataContext dataContext, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ICiiService ciiService, IOrganisationProfileService organisationProfileService,
       IUserProfileService userProfileService, IOrganisationContactService organisationContactService,
-      RequestContext requestContext, ILogger<OrganisationService> logger, ICcsSsoEmailService ccsSsoEmailService)
+      RequestContext requestContext, ILogger<OrganisationService> logger, ICcsSsoEmailService ccsSsoEmailService, IUserProfileHelperService userProfileHelperService)
     {
       _dataContext = dataContext;
       _adapterNotificationService = adapterNotificationService;
@@ -47,6 +48,7 @@ namespace CcsSso.Service
       _requestContext = requestContext;
       _logger = logger;
       _ccsSsoEmailService = ccsSsoEmailService;
+      _userProfileHelperService = userProfileHelperService;
     }
 
     /// <summary>
@@ -109,10 +111,12 @@ namespace CcsSso.Service
       await _dataContext.SaveChangesAsync();
     }
 
-    public async Task<List<OrganisationDto>> GetByNameAsync(string name)
+    public async Task<List<OrganisationDto>> GetByNameAsync(string name, bool isExact = true)
     {
       var organisations = await _dataContext.Organisation
-        .Where(o => o.IsDeleted == false && o.LegalName.ToLower() == name.ToLower())
+        .Where(o => !o.IsDeleted && !string.IsNullOrWhiteSpace(name)
+        && ((isExact && o.LegalName.ToLower() == name.Trim().ToLower())
+        || (!isExact && o.LegalName.ToLower().StartsWith(name.Trim().ToLower()))))
         .Select(organisation => new OrganisationDto
         {
           OrganisationId = organisation.Id,
@@ -208,6 +212,8 @@ namespace CcsSso.Service
 
     public async Task NotifyOrgAdminToJoinAsync(OrganisationJoinRequest organisationJoinRequest)
     {
+      _userProfileHelperService.ValidateUserName(organisationJoinRequest.Email);
+
       if (string.IsNullOrEmpty(organisationJoinRequest.FirstName))
       {
         throw new CcsSsoException("FIRST_NAME_REQUIRED");
@@ -225,7 +231,7 @@ namespace CcsSso.Service
 
       var organisation = await _dataContext.Organisation
         .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
-        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId== organisationJoinRequest.CiiOrgId);
+        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationJoinRequest.CiiOrgId);
 
       if (organisation == null)
       {
@@ -312,7 +318,8 @@ namespace CcsSso.Service
             StreetAddress = organisationRegistrationDto.CiiDetails.Address.StreetAddress,
             Locality = organisationRegistrationDto.CiiDetails.Address.Locality,
             PostalCode = organisationRegistrationDto.CiiDetails.Address.PostalCode,
-            Region = organisationRegistrationDto.CiiDetails.Address.Region
+            Region = organisationRegistrationDto.CiiDetails.Address.Region,
+            CountryCode = organisationRegistrationDto.CiiDetails.Address.CountryCode
           } : null,
           Detail = new OrganisationDetail
           {

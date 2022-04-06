@@ -287,6 +287,27 @@ namespace CcsSso.Core.Service.External
     }
 
     /// <summary>
+    /// Retrieves CountryName based on country code
+    /// </summary>
+    /// <returns></returns>
+    public string GetCountryNameByCode(string countyCode)
+    {
+      try
+      {
+        string CountryName = string.Empty;
+        if (!string.IsNullOrEmpty(countyCode))
+        {
+          CountryName = _dataContext.CountryDetails.FirstOrDefault(x => x.IsDeleted == false && x.Code == countyCode).Name;
+        }
+        return CountryName;
+      }
+      catch (ArgumentException)
+      {
+      }
+      return null;
+    }
+
+    /// <summary>
     /// Validate
     /// </summary>
     /// <param name="organisationSiteInfo"></param>
@@ -308,7 +329,12 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
       }
 
-      if (!string.IsNullOrWhiteSpace(organisationSiteInfo.Address.CountryCode) && !CultureSupport.IsValidCountryCode(organisationSiteInfo.Address.CountryCode))
+      string CountryName = String.Empty;
+      if (!string.IsNullOrEmpty(organisationSiteInfo.Address.CountryCode))
+      {
+        CountryName = GetCountryNameByCode(organisationSiteInfo.Address.CountryCode);
+      }
+      if (!string.IsNullOrWhiteSpace(organisationSiteInfo.Address.CountryCode) && string.IsNullOrWhiteSpace(CountryName))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidCountryCode);
       }

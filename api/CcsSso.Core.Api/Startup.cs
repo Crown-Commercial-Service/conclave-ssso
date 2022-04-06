@@ -54,6 +54,7 @@ namespace CcsSso.Api
         int.TryParse(Configuration["RedisCacheSettings:CacheExpirationInMinutes"], out int cacheExpirationInMinutes);
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
         int.TryParse(Configuration["BulkUploadMaxUserCount"], out int bulkUploadMaxUserCount);
+        bool.TryParse(Configuration["Email:SendNotificationsEnabled"], out bool sendEmailNotification);
 
         if (cacheExpirationInMinutes == 0)
         {
@@ -91,7 +92,8 @@ namespace CcsSso.Api
           EmailInfo = new CcsEmailInfo
           {
             NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
-            OrganisationJoinRequestTemplateId = Configuration["Email:OrganisationJoinRequestTemplateId"]
+            OrganisationJoinRequestTemplateId = Configuration["Email:OrganisationJoinRequestTemplateId"],
+            SendNotificationsEnabled = sendEmailNotification
           },
           ConclaveSettings = new ConclaveSettings()
           {
@@ -141,7 +143,7 @@ namespace CcsSso.Api
           DefaultTypeValidationValue = Configuration["DocUpload:TypeValidationValue"],
         };
         return docUploadConfig;
-      }); 
+      });
 
       services.AddSingleton(s =>
       {
@@ -224,9 +226,9 @@ namespace CcsSso.Api
       services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
       services.AddScoped<IIdamService, IdamService>();
       services.AddScoped<IConfigurationDetailService, ConfigurationDetailService>();
-      services.AddScoped<IDocUploadService, DocUploadService>(); 
-      services.AddScoped<IBulkUploadService, BulkUploadService>(); 
-      services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>(); 
+      services.AddScoped<IDocUploadService, DocUploadService>();
+      services.AddScoped<IBulkUploadService, BulkUploadService>();
+      services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
 
       services.AddHttpContextAccessor();
 
@@ -261,15 +263,27 @@ namespace CcsSso.Api
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IAntiforgery antiforgery)
     {
-      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
-      app.UseSwagger();
-      app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.Api v1"));
+
       app.UseHsts();
       app.UseHttpsRedirection();
 
       app.Use(async (context, next) =>
       {
         context.Request.EnableBuffering();
+        await next();
+      });
+
+      bool additionalLog = Configuration.GetSection("EnableAdditionalLogs").Get<bool>();
+      if (additionalLog)
+      {
+        app.UseMiddleware<RequestLogMiddleware>();
+      }
+      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
+      app.UseSwagger();
+      app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.Api v1"));
+
+      app.Use(async (context, next) =>
+      {
         var customDomain = Configuration.GetSection("CustomDomain").Get<string>();
         context.Response.Headers.Add(
             "Cache-Control",

@@ -3,9 +3,8 @@ using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
 using CcsSso.Security.Services.Helpers;
-using CcsSso.Shared.Cache.Contracts;
-using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
+using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -19,6 +18,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using static CcsSso.Security.Domain.Constants.Constants;
 
 namespace CcsSso.Security.Services
 {
@@ -107,6 +107,9 @@ namespace CcsSso.Security.Services
       {
         throw new CcsSsoException("USER_NAME_REQUIRED");
       }
+
+      ValidateEmail(changePassword.UserName);
+
       if (string.IsNullOrEmpty(changePassword.NewPassword))
       {
         throw new CcsSsoException("NEW_PASSWORD_REQUIRED");
@@ -116,7 +119,7 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException("OLD_PASSWORD_REQUIRED");
       }
       if ((_applicationConfigurationInfo.PasswordPolicy.LowerAndUpperCaseWithDigits &&
-        !UtilitiesHelper.IsPasswordValidForRequiredCharactors(changePassword.NewPassword))
+        !UtilityHelper.IsPasswordValidForRequiredCharactors(changePassword.NewPassword))
         || changePassword.NewPassword.Length < _applicationConfigurationInfo.PasswordPolicy.RequiredLength)
       {
         throw new CcsSsoException("ERROR_PASSWORD_TOO_WEAK");
@@ -133,6 +136,9 @@ namespace CcsSso.Security.Services
       {
         throw new CcsSsoException("USERNAME_REQUIRED");
       }
+
+      ValidateEmail(changePasswordInitiateRequest.UserName);
+
       await _identityProviderService.InitiateResetPasswordAsync(changePasswordInitiateRequest);
     }
 
@@ -298,6 +304,19 @@ namespace CcsSso.Security.Services
     public async Task InvalidateSessionAsync(string sessionId)
     {
       await _securityCacheService.SetValueAsync(sessionId, true, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes, 0));
+    }
+
+    private void ValidateEmail(string email)
+    {
+      if (!UtilityHelper.IsEmailFormatValid(email))
+      {
+        throw new CcsSsoException(ErrorCodes.EmailFormatError);
+      }
+
+      if (!UtilityHelper.IsEmailLengthValid(email))
+      {
+        throw new CcsSsoException(ErrorCodes.EmailTooLongError);
+      }
     }
 
   }

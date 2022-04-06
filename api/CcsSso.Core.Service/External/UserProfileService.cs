@@ -8,10 +8,10 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
-using CcsSso.Services.Helpers;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
+using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -72,7 +72,6 @@ namespace CcsSso.Core.Service.External
       {
         throw new ResourceAlreadyExistsException();
       }
-
       Validate(userProfileRequestInfo, false, organisation);
 
       var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
@@ -85,7 +84,7 @@ namespace CcsSso.Core.Service.External
       // This is to enforce MFA over any other
       if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
       {
-        //throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
+        throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
       }
 
       //validate mfa and assign mfa if user is part of any admin role or group
@@ -94,7 +93,7 @@ namespace CcsSso.Core.Service.External
         var partOfAdminRole = organisation.OrganisationEligibleRoles.Any(r => userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(role => role == r.Id) && r.MfaEnabled);
         if (partOfAdminRole)
         {
-          //throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+          throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
         }
         else
         {
@@ -102,7 +101,7 @@ namespace CcsSso.Core.Service.External
                               oug.GroupEligibleRoles.Any(er => !er.IsDeleted && er.OrganisationEligibleRole.MfaEnabled));
           if (partOfAdminGroup)
           {
-            //throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+            throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
           }
         }
       }
@@ -153,7 +152,7 @@ namespace CcsSso.Core.Service.External
         User = new User
         {
           UserName = userName,
-          UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified),
+          UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title),
           UserGroupMemberships = userGroupMemberships,
           UserAccessRoles = userAccessRoles,
           UserIdentityProviders = userProfileRequestInfo.Detail.IdentityProviderIds.Select(idpId => new UserIdentityProvider
@@ -246,7 +245,7 @@ namespace CcsSso.Core.Service.External
           FirstName = user.Party.Person.FirstName,
           LastName = user.Party.Person.LastName,
           MfaEnabled = user.MfaEnabled,
-          Title = (UserTitle)user.UserTitle,
+          Title = Enum.GetName(typeof(UserTitle), user.UserTitle),
           AccountVerified = user.AccountVerified,
           Detail = new UserResponseDetail
           {
@@ -507,7 +506,7 @@ namespace CcsSso.Core.Service.External
       bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
       bool hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
                                     user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
-                                    user.UserTitle != (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified) ||
+                                    user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title) ||
                                     user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id) != userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id));
 
       user.Party.Person.FirstName = userProfileRequestInfo.FirstName.Trim();
@@ -522,7 +521,7 @@ namespace CcsSso.Core.Service.External
       List<int> previousIdentityProviderIds = new();
       if (!isMyProfile)
       {
-        user.UserTitle = (int)(userProfileRequestInfo.Title ?? UserTitle.Unspecified);
+        user.UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title);
         requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
         requestRoles = userProfileRequestInfo.Detail.RoleIds == null ? new List<int>() : userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
         hasGroupMembershipsNotChanged = Enumerable.SequenceEqual(requestGroups, user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).OrderBy(e => e));
@@ -543,7 +542,7 @@ namespace CcsSso.Core.Service.External
 
         if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
         {
-          //throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
+          throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
         }
 
         //mfa flag has removed
@@ -555,7 +554,7 @@ namespace CcsSso.Core.Service.External
 
           if (mfaEnabledRoleExists)
           {
-            //throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+            throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
           }
           else if (userProfileRequestInfo.Detail.GroupIds != null && userProfileRequestInfo.Detail.GroupIds.Any())
           {
@@ -563,7 +562,7 @@ namespace CcsSso.Core.Service.External
                               oug.GroupEligibleRoles.Any(er => !er.IsDeleted && er.OrganisationEligibleRole.MfaEnabled));
             if (mfaEnabled)
             {
-              //throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+              throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
             }
           }
         }
@@ -967,8 +966,8 @@ namespace CcsSso.Core.Service.External
         var orgGroupIds = organisation.UserGroups.Select(g => g.Id).ToList();
         var orgRoleIds = organisation.OrganisationEligibleRoles.Select(r => r.Id);
         var orgIdpIds = organisation.OrganisationEligibleIdentityProviders.Select(i => i.Id);
-
-        if (userProfileReqestInfo.Title != null && !UtilitiesHelper.IsEnumValueValid<UserTitle>((int)userProfileReqestInfo.Title))
+        UserTitle enumTitle;
+        if (userProfileReqestInfo.Title != null && !UserTitle.TryParse(userProfileReqestInfo.Title, out enumTitle))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidTitle);
         }

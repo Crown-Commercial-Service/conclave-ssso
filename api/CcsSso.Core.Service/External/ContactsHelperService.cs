@@ -6,8 +6,9 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
-using CcsSso.Services.Helpers;
 using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Shared.Domain.Constants;
+using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -291,15 +292,23 @@ namespace CcsSso.Service.External
 
       var email = contactInfo.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Email)?.ContactValue;
 
-      if (!string.IsNullOrEmpty(email) && !UtilitiesHelper.IsEmailValid(email))
+      if (!string.IsNullOrEmpty(email))
       {
-        throw new CcsSsoException(ErrorConstant.ErrorInvalidEmail);
+        if (!UtilityHelper.IsEmailFormatValid(email))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidEmail);
+
+        }
+        if (!UtilityHelper.IsEmailLengthValid(email))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorEmailTooLong);
+        }
       }
 
       var phoneNumber = contactInfo.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Phone)?.ContactValue;
 
       // Validate the phone number for the E.164 standard
-      if (!string.IsNullOrEmpty(phoneNumber) && !UtilitiesHelper.IsPhoneNumberValid(phoneNumber))
+      if (!string.IsNullOrEmpty(phoneNumber) && !UtilityHelper.IsPhoneNumberValid(phoneNumber))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidPhoneNumber);
       }
@@ -307,7 +316,7 @@ namespace CcsSso.Service.External
       var faxNumber = contactInfo.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Fax)?.ContactValue;
 
       // Validate the fax number for the E.164 standard
-      if (!string.IsNullOrEmpty(faxNumber) && !UtilitiesHelper.IsPhoneNumberValid(faxNumber))
+      if (!string.IsNullOrEmpty(faxNumber) && !UtilityHelper.IsPhoneNumberValid(faxNumber))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidFaxNumber);
       }
@@ -315,7 +324,7 @@ namespace CcsSso.Service.External
       var mobileNumber = contactInfo.Contacts.FirstOrDefault(c => c.ContactType == VirtualContactTypeName.Mobile)?.ContactValue;
 
       // Validate the mobile number for the E.164 standard
-      if (!string.IsNullOrEmpty(mobileNumber) && !UtilitiesHelper.IsPhoneNumberValid(mobileNumber))
+      if (!string.IsNullOrEmpty(mobileNumber) && !UtilityHelper.IsPhoneNumberValid(mobileNumber))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidMobileNumber);
       }

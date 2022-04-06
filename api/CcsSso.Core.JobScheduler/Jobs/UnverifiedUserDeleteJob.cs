@@ -1,3 +1,4 @@
+using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
 using CcsSso.DbModel.Entity;
@@ -7,6 +8,7 @@ using CcsSso.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,6 +44,7 @@ namespace CcsSso.Core.JobScheduler
       {
         while (!stoppingToken.IsCancellationRequested)
         {
+          Console.WriteLine("Unverified User Deletion Job");
           _dataContext = scope.ServiceProvider.GetRequiredService<IDataContext>();
           _organisationSupportService = scope.ServiceProvider.GetRequiredService<IOrganisationSupportService>();
           _contactSupportService = scope.ServiceProvider.GetRequiredService<IContactSupportService>();
@@ -66,9 +69,10 @@ namespace CcsSso.Core.JobScheduler
       var orgAdminList = new List<string>();
       foreach (var orgByUsers in users.GroupBy(u => u.Party.Person.OrganisationId))
       {
+        Console.WriteLine($"Unverified User Deletion Organisation: {orgByUsers.Key}");
         foreach (var user in orgByUsers.Select(ou => ou).ToList())
         {
-
+          Console.WriteLine($"Unverified User Deletion User: {user.UserName} Id:{user.Id}");
           try
           {
             ContactPoint reassigningContactPoint = null;
@@ -104,16 +108,20 @@ namespace CcsSso.Core.JobScheduler
             {
               if (!orgSiteContactAvailabilityStatus.ContainsKey(orgByUsers.Key))
               {
+                Console.WriteLine($"Unverified User Deletion User: {user.UserName} Setting orgSiteContactAvailabilityStatus");
                 var orgSiteContactExists = await _contactSupportService.IsOrgSiteContactExistsAsync(user.Party.ContactPoints.Where(cp => !cp.IsDeleted).Select(cp => cp.Id).ToList(), orgByUsers.Key);
                 orgSiteContactAvailabilityStatus.Add(orgByUsers.Key, orgSiteContactExists);
+                Console.WriteLine($"Unverified User Deletion User: {user.UserName} orgSiteContactAvailabilityStatus: {orgSiteContactExists}");
               }
 
               if (!orgSiteContactAvailabilityStatus[orgByUsers.Key])
               {
+                Console.WriteLine($"Unverified User Deletion User: {user.UserName} NoOrgSiteContacts: {true}");
                 // User contact check should run for every user since other user can be deleted in net execution
                 var otherUserContactExists = await _contactSupportService.IsOtherUserContactExistsAsync(user.UserName, orgByUsers.Key);
                 if (!otherUserContactExists)
                 {
+                  Console.WriteLine($"Unverified User Deletion User: {user.UserName} reassigningContactPoint: {true}");
                   // This is the last user contact of organisation. This will only run once per an organisation
                   reassigningContactPoint = user.Party.ContactPoints.Where(cp => !cp.IsDeleted).OrderByDescending(cp => cp.CreatedOnUtc).FirstOrDefault();
                   var organisation = await _dataContext.Organisation.Include(o => o.Party).Where(o => o.Id == orgByUsers.Key).FirstOrDefaultAsync();
@@ -129,11 +137,20 @@ namespace CcsSso.Core.JobScheduler
                 }
               }
 
+              // Delete assigned contact points
+              var contactDetialsIds = user.Party.ContactPoints.Where(cp => !cp.IsDeleted).Select(cp => cp.ContactDetailId).ToList();
+              var assignedContactPoints = await _dataContext.ContactPoint
+                .Where(cd => !cd.IsDeleted && contactDetialsIds.Contains(cd.ContactDetailId) && cd.OriginalContactPointId != 0)
+                .ToListAsync();
+              Console.WriteLine($"Unverified User Deletion User: {user.UserName} assignedContactPoints: {JsonConvert.SerializeObject(assignedContactPoints)}");
+
+              assignedContactPoints.ForEach(assignedContactPoint => assignedContactPoint.IsDeleted = true);
+
               user.Party.ContactPoints.Where(cp => !cp.IsDeleted).ToList().ForEach((cp) =>
               {
                 cp.IsDeleted = true;
                 if (reassigningContactPoint == null || cp.Id != reassigningContactPoint.Id) // Delete the contact details and virtual address of not reassigning contact point
-              {
+                {
                   cp.ContactDetail.IsDeleted = true;
                   cp.ContactDetail.VirtualAddresses.ForEach((va) => { va.IsDeleted = true; });
                 }
@@ -141,6 +158,9 @@ namespace CcsSso.Core.JobScheduler
             }
 
             await _dataContext.SaveChangesAsync();
+
+            Console.WriteLine($"Unverified User Deletion User: {user.UserName} reassigningContactPoint: {reassigningContactPoint.Id}");
+
 
             if (shouldDeleteInIdam)
             {
