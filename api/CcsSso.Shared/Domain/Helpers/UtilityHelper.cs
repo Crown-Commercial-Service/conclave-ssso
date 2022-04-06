@@ -26,16 +26,17 @@ namespace CcsSso.Shared.Domain.Helpers
     {
      try
       {
-        string[] userIdDomain_SubDomain = email.Split('.');
-        string EmaildomainMaxCharacters = userIdDomain_SubDomain[1];
-        string[] userId_Domain = userIdDomain_SubDomain[0].Split('@');
-        string EmailUserNameMaxCharacters = userId_Domain[0];
-        string EmaildomainnameNameMaxCharacters = userId_Domain[1];
+        string emailUserNameMaxCharacters = email.Split('@')[0];
+        string hostname = email.Split('@')[1];
+
+        string[] userIdDomain_SubDomain= hostname.Split('.');
+        string emaildomainNameMaxCharacters = userIdDomain_SubDomain[0];
+        string emaildomainMaxCharacters = userIdDomain_SubDomain[1];
 
         if (email.Length > Constants.Constants.EmailMaxCharacters ||
-          EmailUserNameMaxCharacters.Length > Constants.Constants.EmailUserNameMaxCharacters ||
-          EmaildomainnameNameMaxCharacters.Length > Constants.Constants.EmaildomainnameNameMaxCharacters ||
-          EmaildomainMaxCharacters.Length > Constants.Constants.EmaildomainMaxCharacters)
+          emailUserNameMaxCharacters.Length > Constants.Constants.EmailUserNameMaxCharacters ||
+          emaildomainNameMaxCharacters.Length > Constants.Constants.EmaildomainnameNameMaxCharacters ||
+          emaildomainMaxCharacters.Length > Constants.Constants.EmaildomainMaxCharacters)
         {
           return false;
         }
