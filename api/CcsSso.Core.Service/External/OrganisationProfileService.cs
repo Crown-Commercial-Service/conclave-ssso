@@ -731,13 +731,6 @@ namespace CcsSso.Core.Service.External
           (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Both)
         ).ToListAsync();
 
-        var defroles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
-        (ar.CcsAccessRoleNameKey == "EL_SNR_SUPPLIER" || ar.CcsAccessRoleNameKey == "EL_JNR_SUPPLIER") &&
-         (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Both)
-       ).ToListAsync();
-
-        roles = roles.Concat(defroles).ToList();
-
         roles.ForEach((role) =>
         {
           var eligibleRole = new OrganisationEligibleRole
@@ -774,13 +767,6 @@ namespace CcsSso.Core.Service.External
           ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
           (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Buyer || ar.TradeEligibility == RoleEligibleTradeType.Both)
         ).ToListAsync();
-
-        var defroles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
-        (ar.CcsAccessRoleNameKey == "EL_SNR_SUPPLIER" || ar.CcsAccessRoleNameKey == "EL_JNR_SUPPLIER") &&
-         (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Both)
-       ).ToListAsync();
-
-        roles = roles.Concat(defroles).ToList();
 
         roles.ForEach((role) =>
         {
