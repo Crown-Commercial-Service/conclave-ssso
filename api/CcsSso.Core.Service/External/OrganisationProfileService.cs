@@ -426,7 +426,7 @@ namespace CcsSso.Core.Service.External
           {
             asyncTaskList.Add(_adapterNotificationService.NotifyUserChangeAsync(OperationType.Update, user.UserName, organisation.CiiOrganisationId));
 
-            
+
             // Delete before add the record
             var recordsToDelete = user.UserIdentityProviders.Where(uip => !uip.IsDeleted && idpRemovedList.Select(i => i).Contains(uip.OrganisationEligibleIdentityProvider.IdentityProviderId)).ToList();
             foreach (var uidp in recordsToDelete)
@@ -687,7 +687,7 @@ namespace CcsSso.Core.Service.External
           throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
         }
 
-        string CountryName=String.Empty;
+        string CountryName = String.Empty;
         if (!string.IsNullOrEmpty(organisationProfileInfo.Address.CountryCode))
         {
           CountryName = GetCountryNameByCode(organisationProfileInfo.Address.CountryCode);
@@ -723,13 +723,14 @@ namespace CcsSso.Core.Service.External
     private async Task<List<OrganisationEligibleRole>> GetOrganisationEligibleRolesAsync(Organisation org, int supplierBuyerType)
     {
       var eligibleRoles = new List<OrganisationEligibleRole>();
-      if (supplierBuyerType == 0)
+      if (supplierBuyerType == 0) //Supplier
       {
         var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
           ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
           ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
           (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Both)
         ).ToListAsync();
+
         roles.ForEach((role) =>
         {
           var eligibleRole = new OrganisationEligibleRole
@@ -741,7 +742,7 @@ namespace CcsSso.Core.Service.External
           eligibleRoles.Add(eligibleRole);
         });
       }
-      else if (supplierBuyerType == 1)
+      else if (supplierBuyerType == 1) //Buyer
       {
         var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
           ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
@@ -759,13 +760,14 @@ namespace CcsSso.Core.Service.External
           eligibleRoles.Add(eligibleRole);
         });
       }
-      else
+      else //Supplier & Buyer
       {
         var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
           ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
           ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
           (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Buyer || ar.TradeEligibility == RoleEligibleTradeType.Both)
         ).ToListAsync();
+
         roles.ForEach((role) =>
         {
           var eligibleRole = new OrganisationEligibleRole
