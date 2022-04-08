@@ -22,6 +22,8 @@ namespace CcsSso.Shared.Domain.Constants
   public static class Constants
   {
     public const int EmailMaxCharacters = 256;
-    public const int EmailDomainMaxCharacters = 64;
+    public const int EmailUserNameMaxCharacters = 64;
+    public const int EmaildomainnameNameMaxCharacters = 63;
+    public const int EmaildomainMaxCharacters = 63;
   }
 }
