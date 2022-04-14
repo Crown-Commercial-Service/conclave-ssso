@@ -4,6 +4,7 @@ using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
 using CcsSso.Security.Services;
 using CcsSso.Security.Tests.Helpers;
+using CcsSso.Shared.Domain.Contexts;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -234,7 +235,7 @@ namespace CcsSso.Security.Tests
         applicationConfigurationInfo = new ApplicationConfigurationInfo();
       }
 
-      var service = new UserManagerService(mockIdentityProviderService.Object, mockSecurityCacheService.Object, applicationConfigurationInfo, mockCcsSsoEmailService.Object);
+      var service = new UserManagerService(mockIdentityProviderService.Object, mockSecurityCacheService.Object, applicationConfigurationInfo, mockCcsSsoEmailService.Object, new RequestContext());
       return service;
     }
   }

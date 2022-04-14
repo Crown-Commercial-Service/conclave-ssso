@@ -57,7 +57,13 @@ namespace CcsSso.Security.Services
       return uri;
     }
 
-    public async Task<IdamUser> GetIdamUserAsync(string email)
+    public async Task<IdamUserInfo> GetIdamUserInfoAsync(string email)
+    {
+      await Task.CompletedTask;
+      return new IdamUserInfo();
+    }
+
+    public async Task<IdamUser> GetIdamUserByEmailAsync(string email)
     {
       await Task.CompletedTask;
       return new IdamUser();
