@@ -10,6 +10,7 @@ using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Cache.Services;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
+using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -154,7 +155,9 @@ namespace CcsSso.Security.Api
             RsaPrivateKey = Configuration["JwtTokenConfig:RsaPrivateKey"],
             RsaPublicKey = Configuration["JwtTokenConfig:RsaPublicKey"],
             IDTokenExpirationTimeInMinutes = tokenExpirationTimeInMinutes,
-            LogoutTokenExpireTimeInMinutes = logoutTokenExpirationTimeInMinutes
+            LogoutTokenExpireTimeInMinutes = logoutTokenExpirationTimeInMinutes,
+            JwksUrl = Configuration["JwtTokenConfig:JwksUrl"],
+            IdamClienId = Configuration["JwtTokenConfig:IdamClienId"]
           },
           UserExternalApiDetails = new WrapperApi()
           {
@@ -171,7 +174,8 @@ namespace CcsSso.Security.Api
           SecurityApiKeySettings = new SecurityApiKeySettings()
           {
             SecurityApiKey = Configuration["SecurityApiKeySettings:SecurityApiKey"],
-            ApiKeyValidationExcludedRoutes = Configuration.GetSection("SecurityApiKeySettings:ApiKeyValidationExcludedRoutes").Get<List<string>>()
+            ApiKeyValidationExcludedRoutes = Configuration.GetSection("SecurityApiKeySettings:ApiKeyValidationExcludedRoutes").Get<List<string>>(),
+            BearerTokenValidationIncludedRoutes = Configuration.GetSection("SecurityApiKeySettings:BearerTokenValidationIncludedRoutes").Get<List<string>>()
           },
           RedisCacheSettings = new RedisCacheSettings()
           {
@@ -244,7 +248,7 @@ namespace CcsSso.Security.Api
       }
 
       services.AddSingleton<TokenHelper>();
-
+      services.AddSingleton<ITokenService, TokenService>();
       services.AddSingleton<ISecurityCacheService, SecurityCacheService>();
       services.AddSingleton<IJwtTokenHandler, JwtTokenHandler>();
       services.AddSingleton<IEmailProviderService, EmailProviderService>();
@@ -257,6 +261,7 @@ namespace CcsSso.Security.Api
         new RedisConnectionPoolService(Configuration["RedisCacheSettings:ConnectionString"])
       );
       services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(Configuration["SecurityDbConnection"]));
+      services.AddScoped<RequestContext>();
       services.AddScoped<ISecurityService, SecurityService>();
       services.AddScoped<IUserManagerService, UserManagerService>();
       services.AddHttpClient("default").ConfigurePrimaryHttpMessageHandler(() =>

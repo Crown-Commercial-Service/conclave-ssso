@@ -2,7 +2,7 @@ CREATE OR REPLACE FUNCTION create_flp_service() RETURNS integer AS $$
 
 -- Add values to clientId and clientUrl
 DECLARE serviceName text = 'Fleet Portal';
-DECLARE serviceDescription text = 'Fleet Portal';
+DECLARE serviceDescription text = 'Vehicle lease and purchase';
 DECLARE serviceCode text = 'FP_CLIENT';
 DECLARE clientUrl text = '';
 DECLARE clientId text = '';

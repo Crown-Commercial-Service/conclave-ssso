@@ -115,7 +115,7 @@ namespace CcsSso.Core.JobScheduler
           }
           catch (Exception e)
           {
-            Console.WriteLine($"Org deletion error " + e.Message);
+            Console.WriteLine($"Org deletion error " + JsonConvert.SerializeObject(e));
             //Console.WriteLine($"*********Error deleting Organization***********************" + e.Message);
           }
         }
