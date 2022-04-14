@@ -24,15 +24,31 @@ namespace CcsSso.Shared.Domain.Helpers
 
     public static bool IsEmailLengthValid(string email)
     {
-      if (email.Length > Constants.Constants.EmailMaxCharacters ||
-        email.Split('@')?.First()?.Length > Constants.Constants.EmailDomainMaxCharacters)
+     try
+      {
+        string emailUserNameMaxCharacters = email.Split('@')[0];
+        string hostname = email.Split('@')[1];
+
+        string[] userIdDomain_SubDomain= hostname.Split('.');
+        string emaildomainNameMaxCharacters = userIdDomain_SubDomain[0];
+        string emaildomainMaxCharacters = userIdDomain_SubDomain[1];
+
+        if (email.Length > Constants.Constants.EmailMaxCharacters ||
+          emailUserNameMaxCharacters.Length > Constants.Constants.EmailUserNameMaxCharacters ||
+          emaildomainNameMaxCharacters.Length > Constants.Constants.EmaildomainnameNameMaxCharacters ||
+          emaildomainMaxCharacters.Length > Constants.Constants.EmaildomainMaxCharacters)
+        {
+          return false;
+        }
+        return true;
+      }
+      catch(Exception ex)
       {
         return false;
       }
-      return true;
     }
 
-    public static bool IsPhoneNumberValid(string phoneNumber)
+      public static bool IsPhoneNumberValid(string phoneNumber)
     {
       Regex regex = new Regex(RegexExpression.VALID_PHONE_E164_FORMAT_REGEX);
       Match match = regex.Match(phoneNumber);

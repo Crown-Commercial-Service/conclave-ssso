@@ -2,6 +2,7 @@ using CcsSso.Security.Domain.Constants;
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
+using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Domain.Helpers;
 using System;
 using System.Threading.Tasks;
@@ -15,13 +16,15 @@ namespace CcsSso.Security.Services
     private readonly ISecurityCacheService _securityCacheService;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
+    private readonly RequestContext _requestContext;
     public UserManagerService(IIdentityProviderService identityProviderService, ISecurityCacheService securityCacheService,
-      ApplicationConfigurationInfo applicationConfigurationInfo, ICcsSsoEmailService ccsSsoEmailService)
+      ApplicationConfigurationInfo applicationConfigurationInfo, ICcsSsoEmailService ccsSsoEmailService, RequestContext requestContext)
     {
       _identityProviderService = identityProviderService;
       _securityCacheService = securityCacheService;
       _applicationConfigurationInfo = applicationConfigurationInfo;
       _ccsSsoEmailService = ccsSsoEmailService;
+      _requestContext = requestContext;
     }
 
     public async Task<UserRegisterResult> CreateUserAsync(UserInfo userInfo)
@@ -138,9 +141,17 @@ namespace CcsSso.Security.Services
       }
     }
 
+    public async Task<IdamUserInfo> GetUserAsync()
+    {
+      Console.WriteLine($"User Name Inside the Token:- {_requestContext.UserName}");
+      return await _identityProviderService.GetIdamUserInfoAsync(_requestContext.UserName);
+    }
+
     public async Task<IdamUser> GetUserAsync(string email)
     {
-      return await _identityProviderService.GetIdamUserAsync(email);
+      ValidateEmail(email);
+
+      return await _identityProviderService.GetIdamUserByEmailAsync(email);
     }
 
     public async Task SendUserActivationEmailAsync(string email, bool isExpired = false)

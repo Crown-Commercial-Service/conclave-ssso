@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
+using System.Text.Json.Serialization;
 
 namespace CcsSso.Security.Domain.Dtos
 {
@@ -39,6 +38,36 @@ namespace CcsSso.Security.Domain.Dtos
     public bool EmailVerified { get; set; }
 
     public int LoginCount { get; set; }
+  }
+
+  public class IdamUserInfo
+  {
+    [JsonPropertyName("sub")]
+    public string Sub { get; set; }
+
+    [JsonPropertyName("given_name")]
+    public string GivenName { get; set; }
+
+    [JsonPropertyName("family_name")]
+    public string FamilyName { get; set; }
+
+    [JsonPropertyName("nick_name")]
+    public string NickName { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("picture")]
+    public string Picture { get; set; }
+
+    [JsonPropertyName("updated_at")]
+    public DateTime? UpdatedAt { get; set; }
+
+    [JsonPropertyName("email")]
+    public string Email { get; set; }
+
+    [JsonPropertyName("email_verified")]
+    public bool EmailVerified { get; set; }
   }
 
 
