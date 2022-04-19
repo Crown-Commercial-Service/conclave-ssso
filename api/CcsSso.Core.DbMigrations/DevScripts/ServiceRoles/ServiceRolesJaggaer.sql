@@ -46,7 +46,7 @@ INSERT INTO public."CcsAccessRole"(
 	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
 	"SubscriptionTypeEligibility", "TradeEligibility", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
 	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('JAGGAER_TMP', 'Jaggaer_Temp', 'Jaggaer_Temp', 2, 0, 2, 0, 0, now(), now(), 
+	VALUES ('JAGGAER_TMP', 'Jaggaer_Temp', 'Jaggaer_Temp', 2, 0, 1, 0, 0, now(), now(), 
 			false, false);
 SELECT "Id" into clientUserRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'JAGGAER_TMP' LIMIT 1;		
 
