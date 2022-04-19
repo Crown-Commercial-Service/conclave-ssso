@@ -142,7 +142,7 @@ namespace CcsSso.Core.JobScheduler
                             var assignedContactPoints = await _dataContext.ContactPoint
                               .Where(cd => !cd.IsDeleted && contactDetialsIds.Contains(cd.ContactDetailId) && cd.OriginalContactPointId != 0)
                               .ToListAsync();
-                            Console.WriteLine($"Unverified User Deletion User: {user.UserName} assignedContactPoints: {JsonConvert.SerializeObject(assignedContactPoints)}");
+                            Console.WriteLine($"Unverified User Deletion User: {user.UserName} assignedContactPoints: {JsonConvert.SerializeObject(assignedContactPoints.Select(c => c.Id).ToList())}");
 
                             assignedContactPoints.ForEach(assignedContactPoint => assignedContactPoint.IsDeleted = true);
 
@@ -150,7 +150,7 @@ namespace CcsSso.Core.JobScheduler
                             {
                                 cp.IsDeleted = true;
                                 if (reassigningContactPoint == null || cp.Id != reassigningContactPoint.Id) // Delete the contact details and virtual address of not reassigning contact point
-                  {
+                                {
                                     cp.ContactDetail.IsDeleted = true;
                                     cp.ContactDetail.VirtualAddresses.ForEach((va) => { va.IsDeleted = true; });
                                 }
