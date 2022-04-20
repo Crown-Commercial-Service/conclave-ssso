@@ -763,10 +763,10 @@ namespace CcsSso.Core.Service.External
       else //Supplier & Buyer
       {
         var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
-          ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
-          ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
-          (ar.TradeEligibility == RoleEligibleTradeType.Both)
-        ).ToListAsync();
+         ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
+         ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
+         (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Buyer || ar.TradeEligibility == RoleEligibleTradeType.Both)
+       ).ToListAsync();
 
         roles.ForEach((role) =>
         {

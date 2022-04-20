@@ -11,9 +11,11 @@ SET "SubscriptionTypeEligibility"=0,
 where "CcsAccessRoleNameKey"='EL_SNR_SUPPLIER';
 
 UPDATE public."CcsAccessRole" 
-SET "TradeEligibility"=1,
+SET "TradeEligibility"=2,
+"SubscriptionTypeEligibility"=1,
 "LastUpdatedOnUtc"=Now()
 where "CcsAccessRoleNameKey"='JAGGAER_TMP';
+
 
 COMMIT;
 
