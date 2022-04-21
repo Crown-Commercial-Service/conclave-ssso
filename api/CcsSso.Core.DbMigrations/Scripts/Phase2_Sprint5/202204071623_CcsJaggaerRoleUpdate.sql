@@ -4,7 +4,7 @@ UPDATE public."CcsAccessRole"
 SET "CcsAccessRoleName"='Jaggaer Supplier',
 "CcsAccessRoleDescription"='Jaggaer Supplier',
 "LastUpdatedOnUtc"=Now()
-where "CcsAccessRoleNameKey"='JAEGGER_SUPPLIER'
+WHERE "CcsAccessRoleNameKey"='JAEGGER_SUPPLIER'
 
 COMMIT;
 

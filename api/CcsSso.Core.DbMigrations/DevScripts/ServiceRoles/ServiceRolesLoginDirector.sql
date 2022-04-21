@@ -68,8 +68,8 @@ INSERT INTO public."CcsAccessRole"(
 	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
 	"SubscriptionTypeEligibility", "TradeEligibility", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
 	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('JAEGGER_SUPPLIER', 'Jaggaer Supplier', 'Jaggaer Supplier', 2, 0, 2, 0, 0, now(), now(), 
-			false, false);
+	VALUES ('JAEGGER_SUPPLIER', 'Jaggaer Supplier', 'Jaggaer Supplier', 2, 0, 2, 0, 0, now(), now(), false, false);
+			
 SELECT "Id" into clientJSRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'JAEGGER_SUPPLIER' AND "CcsAccessRoleName" = 'Jaegger Supplier' LIMIT 1;
 
 INSERT INTO public."CcsAccessRole"(
