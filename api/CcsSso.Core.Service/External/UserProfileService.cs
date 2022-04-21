@@ -504,7 +504,7 @@ namespace CcsSso.Core.Service.External
 
       Validate(userProfileRequestInfo, isMyProfile, organisation);
       bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
-      bool isManageMyAccount_AdminUser = userProfileRequestInfo.isManageMyAccount_AdminUser;
+      bool isAdminUser = userProfileRequestInfo.isAdminUser;
       bool hasProfileInfoChanged;
       if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
       {
@@ -529,7 +529,7 @@ namespace CcsSso.Core.Service.External
       List<int> requestGroups = new();
       List<int> requestRoles = new();
       List<int> previousIdentityProviderIds = new();
-      if (!isMyProfile || isManageMyAccount_AdminUser == true)
+      if (!isMyProfile || isAdminUser == true)
       {
         user.UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title);
         requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
@@ -699,7 +699,7 @@ namespace CcsSso.Core.Service.External
       await _dataContext.SaveChangesAsync();
 
       // Log
-      if (!isMyProfile || isManageMyAccount_AdminUser == true)
+      if (!isMyProfile || isAdminUser == true)
       {
         await _auditLoginService.CreateLogAsync(AuditLogEvent.UserUpdate, AuditLogApplication.ManageUserAccount, $"UserId:{user.Id}");
         if (hasIdpChange)
