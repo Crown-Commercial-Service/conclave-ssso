@@ -504,7 +504,7 @@ namespace CcsSso.Core.Service.External
 
       Validate(userProfileRequestInfo, isMyProfile, organisation);
       bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
-      bool isAdminUser = userProfileRequestInfo.isAdminUser;
+      bool isAdminUser = userProfileRequestInfo.IsAdminUser;
       bool hasProfileInfoChanged;
       if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
       {
