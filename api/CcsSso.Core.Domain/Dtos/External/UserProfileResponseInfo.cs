@@ -27,6 +27,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public bool AccountVerified { get; set; }
 
     public bool SendUserRegistrationEmail { get; set; } = true;
+
+    public bool IsAdminUser { get; set; } = false;
   }
 
   public class UserRequestDetail
