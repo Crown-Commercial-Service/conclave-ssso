@@ -504,11 +504,21 @@ namespace CcsSso.Core.Service.External
 
       Validate(userProfileRequestInfo, isMyProfile, organisation);
       bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
-      bool hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
-                                    user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
-                                    user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title) ||
-                                    user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id) != userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id));
-
+      bool isAdminUser = userProfileRequestInfo.IsAdminUser;
+      bool hasProfileInfoChanged;
+      if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
+      {
+        hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
+                                user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
+                                user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title) ||
+                                user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id) != userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id));
+      }
+      else
+      {
+        hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
+                                user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
+                                user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title)); 
+      }
       user.Party.Person.FirstName = userProfileRequestInfo.FirstName.Trim();
       user.Party.Person.LastName = userProfileRequestInfo.LastName.Trim();
       bool hasGroupMembershipsNotChanged = true;
@@ -519,7 +529,7 @@ namespace CcsSso.Core.Service.External
       List<int> requestGroups = new();
       List<int> requestRoles = new();
       List<int> previousIdentityProviderIds = new();
-      if (!isMyProfile)
+      if (!isMyProfile || isAdminUser == true)
       {
         user.UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title);
         requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
@@ -537,9 +547,13 @@ namespace CcsSso.Core.Service.External
 
         var isPreviouslyUserNamePwdConnectionIncluded = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
         var isPreviouslyNonUserNamePwdConnectionIncluded = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName);
-        var isUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName));
-        var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
-
+        var isUserNamePwdConnectionIncluded = true;
+        var isNonUserNamePwdConnectionIncluded = false;
+        if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
+        {
+          isUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName));
+          isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
+        }
         if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
         {
           throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
@@ -623,30 +637,33 @@ namespace CcsSso.Core.Service.External
           });
         }
 
-        hasIdpChange = !user.UserIdentityProviders
+        if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
+        {
+          hasIdpChange = !user.UserIdentityProviders
           .Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id).SequenceEqual(userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id));
 
-        previousIdentityProviderIds = user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).ToList();
+          previousIdentityProviderIds = user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).ToList();
 
-        // Remove idps
-        user.UserIdentityProviders.Where(uidp => !uidp.IsDeleted).ToList().ForEach((uidp) =>
-        {
-          if (!userProfileRequestInfo.Detail.IdentityProviderIds.Contains(uidp.OrganisationEligibleIdentityProviderId))
+          // Remove idps
+          user.UserIdentityProviders.Where(uidp => !uidp.IsDeleted).ToList().ForEach((uidp) =>
           {
-            uidp.IsDeleted = true;
-          }
-        });
+            if (!userProfileRequestInfo.Detail.IdentityProviderIds.Contains(uidp.OrganisationEligibleIdentityProviderId))
+            {
+              uidp.IsDeleted = true;
+            }
+          });
 
-        // Add new idps
-        List<UserIdentityProvider> newUserIdentityProviderList = new();
-        userProfileRequestInfo.Detail.IdentityProviderIds.ForEach((id) =>
-        {
-          if (!user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProviderId == id))
+          // Add new idps
+          List<UserIdentityProvider> newUserIdentityProviderList = new();
+          userProfileRequestInfo.Detail.IdentityProviderIds.ForEach((id) =>
           {
-            newUserIdentityProviderList.Add(new UserIdentityProvider { UserId = user.Id, OrganisationEligibleIdentityProviderId = id });
-          }
-        });
-        user.UserIdentityProviders.AddRange(newUserIdentityProviderList);
+            if (!user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProviderId == id))
+            {
+              newUserIdentityProviderList.Add(new UserIdentityProvider { UserId = user.Id, OrganisationEligibleIdentityProviderId = id });
+            }
+          });
+          user.UserIdentityProviders.AddRange(newUserIdentityProviderList);
+        }
 
         if (isPreviouslyUserNamePwdConnectionIncluded && !isUserNamePwdConnectionIncluded) // Conclave connection removed
         {
@@ -682,7 +699,7 @@ namespace CcsSso.Core.Service.External
       await _dataContext.SaveChangesAsync();
 
       // Log
-      if (!isMyProfile)
+      if (!isMyProfile || isAdminUser == true)
       {
         await _auditLoginService.CreateLogAsync(AuditLogEvent.UserUpdate, AuditLogApplication.ManageUserAccount, $"UserId:{user.Id}");
         if (hasIdpChange)
@@ -854,7 +871,7 @@ namespace CcsSso.Core.Service.External
       user.MfaEnabled = true;
 
       if (!hasConclaveConnection)
-      {       
+      {
         user.UserIdentityProviders.Add(new UserIdentityProvider()
         {
           OrganisationEligibleIdentityProviderId = userNamePasswordConnection.Id,
