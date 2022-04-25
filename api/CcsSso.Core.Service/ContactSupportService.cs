@@ -35,7 +35,9 @@ namespace CcsSso.Core.Service
       }
       else
       {
-        var siteContactsAvailable = await _dataContext.SiteContact.AnyAsync(sc => !sc.IsDeleted && sc.ContactPoint.PartyId == organisation.PartyId
+        var siteContactsAvailable = await _dataContext.SiteContact.AnyAsync(sc => !sc.IsDeleted && !sc.ContactPoint.IsDeleted
+        && sc.OriginalContactId == 0 //not assigned contacts
+        && sc.ContactPoint.PartyId == organisation.PartyId
         && !userContacPointIds.Contains(sc.OriginalContactId));
         Console.WriteLine($"SiteContactsAvailable: {siteContactsAvailable}");
         return siteContactsAvailable;
