@@ -571,6 +571,7 @@ namespace CcsSso.Core.Service.External
       var organisation = await _dataContext.Organisation
         .Include(er => er.OrganisationEligibleRoles)
        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
+      var ccsAccessRoles = await _dataContext.CcsAccessRole.ToListAsync();
 
       if (organisation != null)
       {
@@ -578,8 +579,6 @@ namespace CcsSso.Core.Service.External
 
         if (rolesToAdd != null && rolesToAdd.Any())
         {
-          var ccsAccessRoles = await _dataContext.CcsAccessRole.ToListAsync();
-
           if (!rolesToAdd.All(ar => ccsAccessRoles.Any(r => r.Id == ar.RoleId)))
           {
             throw new CcsSsoException("INVALID_ROLES_TO_ADD");
@@ -619,7 +618,6 @@ namespace CcsSso.Core.Service.External
             throw new CcsSsoException("INVALID_ROLES_TO_DELETE");
           }
 
-          var ccsAccessRoles = await _dataContext.CcsAccessRole.ToListAsync();
           if (isBuyer == false) //API call do not allow  update Buyer roles to Non-buyer organisation(Org with rightToBuy(isBuyer) = false)
           {
             if (rolesToDelete.All(ar => ccsAccessRoles.Any(r => r.TradeEligibility == RoleEligibleTradeType.Buyer && r.Id == ar.RoleId)))
