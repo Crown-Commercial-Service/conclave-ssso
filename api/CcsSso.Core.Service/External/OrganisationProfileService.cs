@@ -477,7 +477,7 @@ namespace CcsSso.Core.Service.External
           await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeyList);
 
           // Notify the adapter
-          await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Update, ciiOrganisationId);
+          await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Update, organisation.CiiOrganisationId);
         }
         else
         {
