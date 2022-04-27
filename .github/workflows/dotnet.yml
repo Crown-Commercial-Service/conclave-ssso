@@ -1,0 +1,32 @@
+name: .NET
+
+on:
+  push:
+    branches: [ sandbox-cicd ]
+  pull_request:
+    branches: [ sandbox-cicd ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 5.0.x
+    - name: Restore dependencies
+      run: dotnet restore ./api/CcsSso.sln
+    - name: Build
+      run: dotnet build --configuration Release ./api/CcsSso.sln
+      run: pwd
+    - name: push build to jFrog
+      uses: jfrog/setup-jfrog-cli@v1
+      env:
+        JF_ARTIFACTORY_1: ${{ secrets.ccs_nuget_artifactory }}
+      run: |
+        # Ping the server
+        jfrog rt u aether artifacts/
+
