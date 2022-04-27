@@ -21,7 +21,6 @@ jobs:
       run: dotnet restore ./api/CcsSso.sln
     - name: Build
       run: dotnet build --configuration Release ./api/CcsSso.sln
-      run: pwd
     - name: Get jFrog artifactory ready
       uses: jfrog/setup-jfrog-cli@v1
       env:
