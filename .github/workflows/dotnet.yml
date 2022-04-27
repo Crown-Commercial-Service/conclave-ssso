@@ -26,7 +26,7 @@ jobs:
       uses: jfrog/setup-jfrog-cli@v1
       env:
         JF_ARTIFACTORY_1: ${{ secrets.ccs_nuget_artifactory }}
-      run: |
+    - run: |
         # Ping the server
         jfrog rt u aether artifacts/
 
