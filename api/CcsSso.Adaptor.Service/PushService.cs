@@ -141,7 +141,8 @@ namespace CcsSso.Adaptor.Service
         StringCustomAttributes = new Dictionary<string, string>
         {
           { "URL", pushSubscriptionData.SubscriptionUrl },
-          { "FORMAT", pushSubscriptionData.FomatFileType }
+          { "FORMAT", pushSubscriptionData.FomatFileType },
+          { "APIKEY", pushSubscriptionData.SubscriptionApiKey },
         }
       };
 

@@ -5,14 +5,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Scripts\ClientScripts\FleetPortal\1_FP_UserRequestMapping.sql" />
+    <None Remove="Scripts\ClientScripts\FleetPortal\2_FP_OrgRequestMapping.sql" />
+    <None Remove="Scripts\ClientScripts\FleetPortal\3_FP_SubscriptionData.sql" />
     <None Remove="Scripts\ConclaveEntityAttributeDataScript.sql" />
     <None Remove="Scripts\ClientScripts\Create_Attrbiute_Mappings.sql" />
+    <None Remove="Scripts\DataScripts\SubscriptionMethodTypes.sql" />
+    <None Remove="Scripts\p2sprint6\20220427013823_AddAuthenticationSupport.sql" />
     <None Remove="Scripts\SingleMigrationScript\20211224055350_InitialMigration.sql" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Scripts\ClientScripts\FleetPortal\1_FP_UserRequestMapping.sql" />
+    <EmbeddedResource Include="Scripts\ClientScripts\FleetPortal\3_FP_SubscriptionData.sql" />
+    <EmbeddedResource Include="Scripts\ClientScripts\FleetPortal\2_FP_OrgRequestMapping.sql" />
+    <EmbeddedResource Include="Scripts\DataScripts\SubscriptionMethodTypes.sql" />
     <EmbeddedResource Include="Scripts\DataScripts\ConclaveEntityAttributeDataScript.sql" />
     <EmbeddedResource Include="Scripts\ClientScripts\Create_Attrbiute_Mappings.sql" />
+    <EmbeddedResource Include="Scripts\p2sprint6\20220427013823_AddAuthenticationSupport.sql" />
     <EmbeddedResource Include="Scripts\SingleMigrationScript\20211224055350_InitialMigration.sql" />
   </ItemGroup>
 

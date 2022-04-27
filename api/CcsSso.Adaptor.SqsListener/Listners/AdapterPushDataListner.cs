@@ -61,8 +61,13 @@ namespace CcsSso.Adaptor.SqsListener.Listners
       {
         var url = sqsMessageResponseDto.StringCustomAttributes["URL"];
         var mediaType = sqsMessageResponseDto.StringCustomAttributes["FORMAT"];
+        var apiKey = sqsMessageResponseDto.StringCustomAttributes["APIKEY"];
 
         var client = _httpClientFactory.CreateClient("ConsumerClient");
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+        }
 
         HttpContent data = new StringContent(sqsMessageResponseDto.MessageBody, Encoding.UTF8, $"application/{mediaType}");
         var response = await client.PostAsync(new Uri(url), data);
