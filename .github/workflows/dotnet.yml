@@ -22,11 +22,12 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release ./api/CcsSso.sln
       run: pwd
-    - name: push build to jFrog
+    - name: Get jFrog artifactory ready
       uses: jfrog/setup-jfrog-cli@v1
       env:
         JF_ARTIFACTORY_1: ${{ secrets.ccs_nuget_artifactory }}
-    - run: |
+    - name: pulish build to jFrog
+      run: |
         # Ping the server
         jfrog rt u aether artifacts/
 
