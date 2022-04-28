@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION create_fp_subscription_data() RETURNS integer AS $$
 	
 	DECLARE consumerName text = 'Fleet Portal';
 	DECLARE consumerClientId text = 'CLIENT_ID';
-	DECLARE subscriptionAPIKey text = '';
+	DECLARE subscriptionAPIKey text = 'APIKEY';
 	DECLARE subscriptionEndPointsDataType text = 'application/json';
 	DECLARE userSubscriptionEndPointUrl text = 'USER_URL';
 	DECLARE organisationSubscriptionEndPointUrl text = 'ORGANISATION_URL';
