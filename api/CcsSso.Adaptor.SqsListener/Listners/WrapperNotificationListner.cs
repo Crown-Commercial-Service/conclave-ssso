@@ -15,7 +15,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 {
   public class WrapperNotificationListner : BackgroundService
   {
-    private const string LISTNER_JOB_NAME = "Wrapper Notification Listener";
+    private const string LISTNER_JOB_NAME = "WrapperNotificationListener";
     private readonly ILogger<WrapperNotificationListner> _logger;
     private readonly SqsListnerAppSetting _appSetting;
     private readonly IAwsSqsService _awsSqsService;

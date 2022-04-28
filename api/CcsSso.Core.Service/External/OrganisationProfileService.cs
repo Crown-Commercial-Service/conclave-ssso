@@ -475,6 +475,9 @@ namespace CcsSso.Core.Service.External
           //Invalidate redis
           var invalidatingCacheKeyList = users.Select(u => $"{CacheKeyConstant.User}-{u.UserName}").ToArray();
           await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeyList);
+
+          // Notify the adapter
+          await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Update, organisation.CiiOrganisationId);
         }
         else
         {
@@ -656,6 +659,10 @@ namespace CcsSso.Core.Service.External
 
         // Remove service client id inmemory cache since role update
         _localCacheService.Remove($"ORGANISATION_SERVICE_CLIENT_IDS-{ciiOrganisationId}");
+        
+        // Notify the adapter
+        await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Update, ciiOrganisationId);
+
       }
       else
       {

@@ -25,6 +25,8 @@ namespace CcsSso.Adaptor.Domain.Dtos
 
     public string SubscriptionUrl { get; set; }
 
+    public string SubscriptionApiKey { get; set; }
+
     public string FomatFileType { get; set; }
   }
 }
