@@ -596,7 +596,7 @@ namespace CcsSso.Core.Service.External
             throw new CcsSsoException("ROLE_ALREADY_EXISTS_FOR_ORGANISATION");
           }
 
-          if (RightToBuy == false) //API call do not allow  update Buyer roles to Non-buyer organisation(Org with rightToBuy(isBuyer) = false)
+          if (RightToBuy == false && isBuyer==false) //API call do not allow  update Buyer roles to Non-buyer organisation(Org with rightToBuy(isBuyer) = false)
           {
             if (rolesToAdd.All(ar => ccsAccessRoles.Any(r => r.TradeEligibility == RoleEligibleTradeType.Buyer && r.Id == ar.RoleId)))
             {
@@ -625,7 +625,7 @@ namespace CcsSso.Core.Service.External
             throw new CcsSsoException("INVALID_ROLES_TO_DELETE");
           }
 
-          if (RightToBuy == false) //API call do not allow  update Buyer roles to Non-buyer organisation(Org with rightToBuy(isBuyer) = false)
+          if (RightToBuy == false && isBuyer == false) //API call do not allow  update Buyer roles to Non-buyer organisation(Org with rightToBuy(isBuyer) = false)
           {
             if (rolesToDelete.All(ar => ccsAccessRoles.Any(r => r.TradeEligibility == RoleEligibleTradeType.Buyer && r.Id == ar.RoleId)))
             {
