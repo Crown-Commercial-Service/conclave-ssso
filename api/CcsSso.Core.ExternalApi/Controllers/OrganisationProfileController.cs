@@ -828,7 +828,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation Adminusers" })]
     [ProducesResponseType(typeof(UserListResponse), 200)]
-    public async Task<AdminUserListResponse> GetAdminUsers(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria, [FromQuery(Name = "search-string")] string searchString, [FromQuery(Name = "include-self")] bool includeSelf = false)
+    public async Task<AdminUserListResponse> GetAdminUsers(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
     {
       resultSetCriteria ??= new ResultSetCriteria
       {
@@ -837,7 +837,7 @@ namespace CcsSso.ExternalApi.Controllers
       };
       resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
       resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
-      return await _userProfileService.GetAdminUsersAsync(organisationId, resultSetCriteria, searchString, includeSelf);
+      return await _userProfileService.GetAdminUsersAsync(organisationId, resultSetCriteria);
     }
     #endregion
 

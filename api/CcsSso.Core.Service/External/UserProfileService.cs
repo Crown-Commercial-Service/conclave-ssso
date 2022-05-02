@@ -367,39 +367,17 @@ namespace CcsSso.Core.Service.External
       return userListResponse;
     }
 
-    public async Task<AdminUserListResponse> GetAdminUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null, bool includeSelf = false)
+    public async Task<AdminUserListResponse> GetAdminUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria)
     {
-
       if (!await _dataContext.Organisation.AnyAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId))
       {
         throw new ResourceNotFoundException();
       }
 
-      var searchFirstNameLowerCase = string.Empty;
-      var searchLastNameLowerCase = string.Empty;
-      var havingMultipleWords = false;
-
-      if (!string.IsNullOrWhiteSpace(searchString))
-      {
-        searchString = searchString.Trim().ToLower();
-        var searchStringArray = searchString.Split(" ");
-        searchFirstNameLowerCase = searchStringArray[0];
-
-        if (searchStringArray.Length > 1)
-        {
-          havingMultipleWords = true;
-          searchLastNameLowerCase = searchStringArray[1];
-        }
-      }
-
       var userPagedInfo = await _dataContext.GetPagedResultAsync(_dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person)
-        .Where(u => !u.IsDeleted && (includeSelf || u.Id != _requestContext.UserId) &&
-        u.Party.Person.Organisation.CiiOrganisationId == organisationId &&
-        (string.IsNullOrWhiteSpace(searchString) || u.UserName.ToLower().Contains(searchString)
-        || (havingMultipleWords && u.Party.Person.FirstName.ToLower().Contains(searchFirstNameLowerCase) && u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase))
-        || (!havingMultipleWords && (u.Party.Person.FirstName.ToLower().Contains(searchString) || u.Party.Person.LastName.ToLower().Contains(searchString)))
-        ))
+        .Where(u => !u.IsDeleted && 
+        u.Party.Person.Organisation.CiiOrganisationId == organisationId)
         .OrderBy(u => u.Party.Person.FirstName).ThenBy(u => u.Party.Person.LastName), resultSetCriteria);
 
       var UserListResponse = new AdminUserListResponse
