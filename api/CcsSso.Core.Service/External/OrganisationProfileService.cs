@@ -569,15 +569,19 @@ namespace CcsSso.Core.Service.External
     /// <param name="rolesToAdd"></param>
     /// <param name="rolesToDelete"></param>
     /// <returns></returns>
+
+
     public async Task UpdateOrganisationEligibleRolesAsync(string ciiOrganisationId, bool isBuyer, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete)
     {
       var organisation = await _dataContext.Organisation
         .Include(er => er.OrganisationEligibleRoles)
        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
       var ccsAccessRoles = await _dataContext.CcsAccessRole.ToListAsync();
+      var RightToBuy = false;
 
       if (organisation != null)
       {
+        RightToBuy = organisation.RightToBuy.Value;
         organisation.RightToBuy = isBuyer;
 
         if (rolesToAdd != null && rolesToAdd.Any())
@@ -592,9 +596,9 @@ namespace CcsSso.Core.Service.External
             throw new CcsSsoException("ROLE_ALREADY_EXISTS_FOR_ORGANISATION");
           }
 
-          if(isBuyer == false) //API call do not allow  update Buyer roles to Non-buyer organisation(Org with rightToBuy(isBuyer) = false)
+          if (RightToBuy == false && isBuyer==false) //API call do not allow  update Buyer roles to Non-buyer organisation(Org with rightToBuy(isBuyer) = false)
           {
-            if (rolesToAdd.All(ar => ccsAccessRoles.Any(r => r.TradeEligibility==RoleEligibleTradeType.Buyer && r.Id == ar.RoleId)))
+            if (rolesToAdd.All(ar => ccsAccessRoles.Any(r => r.TradeEligibility == RoleEligibleTradeType.Buyer && r.Id == ar.RoleId)))
             {
               throw new CcsSsoException("INVALID_ROLES_TO_ADD");
             }
@@ -621,7 +625,7 @@ namespace CcsSso.Core.Service.External
             throw new CcsSsoException("INVALID_ROLES_TO_DELETE");
           }
 
-          if (isBuyer == false) //API call do not allow  update Buyer roles to Non-buyer organisation(Org with rightToBuy(isBuyer) = false)
+          if (RightToBuy == false && isBuyer == false) //API call do not allow  update Buyer roles to Non-buyer organisation(Org with rightToBuy(isBuyer) = false)
           {
             if (rolesToDelete.All(ar => ccsAccessRoles.Any(r => r.TradeEligibility == RoleEligibleTradeType.Buyer && r.Id == ar.RoleId)))
             {
@@ -659,10 +663,6 @@ namespace CcsSso.Core.Service.External
 
         // Remove service client id inmemory cache since role update
         _localCacheService.Remove($"ORGANISATION_SERVICE_CLIENT_IDS-{ciiOrganisationId}");
-        
-        // Notify the adapter
-        await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Update, ciiOrganisationId);
-
       }
       else
       {
