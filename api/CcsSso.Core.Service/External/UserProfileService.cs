@@ -374,10 +374,17 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
+      var Id = (await _dataContext.Organisation.FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId)).Id;
+
+      var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
+      .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+
       var userPagedInfo = await _dataContext.GetPagedResultAsync(_dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person)
-        .Where(u => !u.IsDeleted && 
-        u.Party.Person.Organisation.CiiOrganisationId == organisationId)
+        .Include(u => u.UserAccessRoles)
+        .Where(u => !u.IsDeleted &&
+        u.Party.Person.Organisation.CiiOrganisationId == organisationId && u.AccountVerified == true &&
+        u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId))
         .OrderBy(u => u.Party.Person.FirstName).ThenBy(u => u.Party.Person.LastName), resultSetCriteria);
 
       var UserListResponse = new AdminUserListResponse
@@ -388,7 +395,7 @@ namespace CcsSso.Core.Service.External
         RowCount = userPagedInfo.RowCount,
         AdminUserList = userPagedInfo.Results != null ? userPagedInfo.Results.Select(up => new AdminUserListInfo
         {
-          FirstName= up.Party.Person.FirstName,
+          FirstName = up.Party.Person.FirstName,
           LastName = up.Party.Person.LastName,
           Email = up.UserName
         }).ToList() : new List<AdminUserListInfo>()
