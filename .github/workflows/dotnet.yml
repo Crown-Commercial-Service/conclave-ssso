@@ -27,8 +27,8 @@ jobs:
         JF_ENV_1: ${{ secrets.JF_ENV_URL }}
         JF_ENV_2: ${{ secrets.JF_ENV_TOKEN }}
     - run: |
-        jfrog config add --url $JF_ENV_1 --user leo.chelliah@brickendon.com --access-token $JF_ENV_2 /
-        jfrog rt upload api/CcsSso.Core.ExternalApi/bin/Release/net5.0/ ccs-nuget --flat=false --build-name=api-wrapper --build-number=release-commit_id100
+        jfrog config add --interactive=false --enc-password=true --url $JF_ENV_1 --user leo.chelliah@brickendon.com --access-token $JF_ENV_2 /
+        jfrog rt upload api/CcsSso.Core.ExternalApi/bin/Release/net5.0/ ccs-nuget --flat=false --build-name=api-wrapper --build-number=release-commit_id100 /
         jfrog rt build-publish api-wrapper release-commit_id100
     - name: Show GitHub context
       env:
