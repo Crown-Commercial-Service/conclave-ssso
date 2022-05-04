@@ -24,9 +24,15 @@ jobs:
     - name: Get jFrog artifactory ready
       uses: jfrog/setup-jfrog-cli@v2
       env:
-        JF_ARTIFACTORY_1: ${{ secrets.ccs_nuget_artifactory }}
+        JF_ENV_1: ${{ secrets.JF_ENV_URL }}
+        JF_ENV_2: ${{ secrets.JF_ENV_TOKEN }}
     - run: |
-        # Ping the server
-        jfrog rt u aether artifacts/
-        echo "$JFROG_CLI_BUILD_NAME $JFROG_CLI_BUILD_NUMBER"
+        jfrog config add --url $JF_ENV_1 --user leo.chelliah@brickendon.com --access-token $JF_ENV_2 /
+        jfrog rt upload api/CcsSso.Core.ExternalApi/bin/Release/net5.0/ ccs-nuget --flat=false --build-name=api-wrapper --build-number=release-commit_id100
+        jfrog rt build-publish api-wrapper release-commit_id100
+    - name: Show GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"
 
+ 
