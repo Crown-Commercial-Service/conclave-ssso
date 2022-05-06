@@ -104,7 +104,7 @@ INSERT INTO public."CcsAccessRole"(
 	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
 	"SubscriptionTypeEligibility", "TradeEligibility", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
 	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('EL_SNR_SUPPLIER', 'Snr Supplier', 'Snr Supplier', 2, 1, 2, 0, 0, now(), now(), 
+	VALUES ('EL_SNR_SUPPLIER', 'Snr Supplier', 'Snr Supplier', 2, 0, 2, 0, 0, now(), now(), 
 			false, false);
 SELECT "Id" into snrSupplierRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'EL_SNR_SUPPLIER' AND "CcsAccessRoleName" = 'Snr Supplier' LIMIT 1;
 
@@ -112,7 +112,7 @@ INSERT INTO public."CcsAccessRole"(
 	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
 	"SubscriptionTypeEligibility", "TradeEligibility", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
 	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('EL_JNR_SUPPLIER', 'Jnr Supplier', 'Jnr Supplier', 2, 1, 2, 0, 0, now(), now(), 
+	VALUES ('EL_JNR_SUPPLIER', 'Jnr Supplier', 'Jnr Supplier', 2, 0, 2, 0, 0, now(), now(), 
 			false, false);
 SELECT "Id" into jnrSupplierRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'EL_JNR_SUPPLIER' AND "CcsAccessRoleName" = 'Jnr Supplier' LIMIT 1;
 
