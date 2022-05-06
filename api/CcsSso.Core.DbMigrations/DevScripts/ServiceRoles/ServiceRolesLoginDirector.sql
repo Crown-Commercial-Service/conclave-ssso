@@ -60,15 +60,15 @@ INSERT INTO public."CcsAccessRole"(
 	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
 	"SubscriptionTypeEligibility", "TradeEligibility", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
 	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('CAT_USER_LOGIN_DIRECTOR', 'CaT User', 'CaT User for login director', 2, 1, 2, 0, 0, now(), now(), 
+	VALUES ('CAT_USER_LOGIN_DIRECTOR', 'CAS User', 'CAS User', 2, 1, 2, 0, 0, now(), now(), 
 			false, false);
-SELECT "Id" into clientCatUserRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'CAT_USER_LOGIN_DIRECTOR' AND "CcsAccessRoleName" = 'CaT User' LIMIT 1;
+SELECT "Id" into clientCatUserRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'CAT_USER_LOGIN_DIRECTOR' AND "CcsAccessRoleName" = 'CAS User' LIMIT 1;
 						
 INSERT INTO public."CcsAccessRole"(
 	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
 	"SubscriptionTypeEligibility", "TradeEligibility", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
 	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('JAEGGER_SUPPLIER', 'Jaegger Supplier', 'Jaegger Supplier', 2, 0, 2, 0, 0, now(), now(), 
+	VALUES ('JAEGGER_SUPPLIER', 'Jaggaer Supplier', 'Jaggaer Supplier', 2, 0, 2, 0, 0, now(), now(), 
 			false, false);
 SELECT "Id" into clientJSRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'JAEGGER_SUPPLIER' AND "CcsAccessRoleName" = 'Jaegger Supplier' LIMIT 1;
 
