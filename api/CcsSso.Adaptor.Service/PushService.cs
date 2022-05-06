@@ -55,15 +55,14 @@ namespace CcsSso.Adaptor.Service
             if (operation != OperationType.Delete)
             {
               result = await _userService.GetUserAsync(userName);
-              // Status can be used for local tests to check the message inside SQS (To check the operation happen to entity). Only for local development. Comment out for actual deployments
-              //result.Add("Status", operation == OperationType.Create ? "Created": "Updated");
+              result.Add("Status", operation == OperationType.Create ? "Created": "Updated");
             }
             else
             {
               result = new Dictionary<string, object>
               {
                 { QueueConstant.UserNameAttribute, userName },
-                //{ "Status", "Deleted" }
+                { "Status", "Deleted" }
               };
             }
             await NotifyPushDataToQueueAsync(result, ConclaveEntityNames.UserProfile);
@@ -78,14 +77,14 @@ namespace CcsSso.Adaptor.Service
             if (operation != OperationType.Delete)
             {
               result = await _organisationService.GetOrganisationAsync(orgId);
-              //result.Add("Status", operation == OperationType.Create ? "Created" : "Updated");
+              result.Add("Status", operation == OperationType.Create ? "Created" : "Updated");
             }
             else
             {
               result = new Dictionary<string, object>
               {
                 { QueueConstant.OrganisationIdAttribute, orgId },
-                //{ "Status", "Deleted" }
+                { "Status", "Deleted" }
               };
             }
             await NotifyPushDataToQueueAsync(result, ConclaveEntityNames.UserProfile);
@@ -102,14 +101,14 @@ namespace CcsSso.Adaptor.Service
             if (operation != OperationType.Delete)
             {
               result = await _contactService.GetContactAsync(contactId);
-              //result.Add("Status", operation == OperationType.Create ? "Created" : "Updated");
+              result.Add("Status", operation == OperationType.Create ? "Created" : "Updated");
             }
             else
             {
               result = new Dictionary<string, object>
               {
                 { QueueConstant.ContactIdAttribute, contactId },
-                //{ "Status", "Deleted" }
+                { "Status", "Deleted" }
               };
             }
             await NotifyPushDataToQueueAsync(result, ConclaveEntityNames.Contact);
@@ -142,8 +141,7 @@ namespace CcsSso.Adaptor.Service
         StringCustomAttributes = new Dictionary<string, string>
         {
           { "URL", pushSubscriptionData.SubscriptionUrl },
-          { "FORMAT", pushSubscriptionData.FomatFileType },
-          { "APIKEY", pushSubscriptionData.SubscriptionApiKey },
+          { "FORMAT", pushSubscriptionData.FomatFileType }
         }
       };
 

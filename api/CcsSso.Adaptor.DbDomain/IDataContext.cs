@@ -27,8 +27,6 @@ namespace CcsSso.Adaptor.DbDomain
 
     DbSet<ConclaveEntityAttribute> ConclaveEntityAttributes { get; set; }
 
-    DbSet<AdapterConsumerSubscriptionAuthMethod> AdapterConsumerSubscriptionAuthMethods { get; set; }
-
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
   }
 }

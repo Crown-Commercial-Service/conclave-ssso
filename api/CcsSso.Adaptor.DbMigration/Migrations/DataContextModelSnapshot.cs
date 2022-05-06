@@ -141,36 +141,6 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                     b.ToTable("AdapterConsumerEntityAttribute");
                 });
 
-            modelBuilder.Entity("CcsSso.Adaptor.DbDomain.Entity.AdapterConsumerSubscriptionAuthMethod", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
-
-                    b.Property<string>("APIKey")
-                        .HasColumnType("text");
-
-                    b.Property<int>("AdapterConsumerId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedOnUtc")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("LastUpdatedOnUtc")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AdapterConsumerId")
-                        .IsUnique();
-
-                    b.ToTable("AdapterConsumerSubscriptionAuthMethod");
-                });
-
             modelBuilder.Entity("CcsSso.Adaptor.DbDomain.Entity.AdapterFormat", b =>
                 {
                     b.Property<int>("Id")
@@ -331,17 +301,6 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
                     b.Navigation("AdapterConsumerEntity");
                 });
 
-            modelBuilder.Entity("CcsSso.Adaptor.DbDomain.Entity.AdapterConsumerSubscriptionAuthMethod", b =>
-                {
-                    b.HasOne("CcsSso.Adaptor.DbDomain.Entity.AdapterConsumer", "AdapterConsumer")
-                        .WithOne("AdapterConsumerSubscriptionAuthMethod")
-                        .HasForeignKey("CcsSso.Adaptor.DbDomain.Entity.AdapterConsumerSubscriptionAuthMethod", "AdapterConsumerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AdapterConsumer");
-                });
-
             modelBuilder.Entity("CcsSso.Adaptor.DbDomain.Entity.AdapterSubscription", b =>
                 {
                     b.HasOne("CcsSso.Adaptor.DbDomain.Entity.AdapterConsumer", "AdapterConsumer")
@@ -383,8 +342,6 @@ namespace CcsSso.Adaptor.DbMigration.Migrations
             modelBuilder.Entity("CcsSso.Adaptor.DbDomain.Entity.AdapterConsumer", b =>
                 {
                     b.Navigation("AdapterConsumerEntities");
-
-                    b.Navigation("AdapterConsumerSubscriptionAuthMethod");
 
                     b.Navigation("AdapterSubscriptions");
                 });

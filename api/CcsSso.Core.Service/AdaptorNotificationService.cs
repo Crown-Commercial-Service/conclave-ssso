@@ -216,7 +216,7 @@ namespace CcsSso.Core.Service
         .FirstOrDefault(o => o.CiiOrganisationId == organisationId);
 
         var serviceClients = organisation.OrganisationEligibleRoles
-          .Where(oer => !oer.IsDeleted && oer.CcsAccessRole.ServiceRolePermissions.Any()) // TODO Check whther therw are any null values in the list whithout this
+          .Where(oer => oer.CcsAccessRole.ServiceRolePermissions.Any()) // TODO Check whther therw are any null values in the list whithout this
           .Select(oer => oer.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService).ToList();
 
         serviceClientIds = serviceClients.Where(sc => sc.ServiceClientId != _appConfig.DashboardServiceClientId && sc.ServiceClientId != null)

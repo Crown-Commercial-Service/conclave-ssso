@@ -120,7 +120,7 @@ namespace CcsSso.Api
         {
           url = Configuration["Cii:Url"],
           token = Configuration["Cii:Token"],
-          deleteToken = Configuration["Cii:Token_Delete"],
+          deleteToken = Configuration["Cii:Delete_Token"],
           clientId = Configuration["JwtTokenValidationInfo:IdamClienId"]
         };
         return ciiConfigInfo;
