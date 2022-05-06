@@ -3,7 +3,6 @@ using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Dto;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -16,7 +15,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
   public class AdapterPushDataListner : BackgroundService
   {
-    private const string LISTNER_JOB_NAME = "AdapterPushDataListener";
+    private const string LISTNER_JOB_NAME = "Adapter Push Data Listener";
     private readonly ILogger<AdapterPushDataListner> _logger;
     private readonly SqsListnerAppSetting _appSetting;
     private readonly IAwsSqsService _awsSqsService;
@@ -61,30 +60,25 @@ namespace CcsSso.Adaptor.SqsListener.Listners
       {
         var url = sqsMessageResponseDto.StringCustomAttributes["URL"];
         var mediaType = sqsMessageResponseDto.StringCustomAttributes["FORMAT"];
-        var apiKey = sqsMessageResponseDto.StringCustomAttributes["APIKEY"];
 
         var client = _httpClientFactory.CreateClient("ConsumerClient");
-        if (!string.IsNullOrWhiteSpace(apiKey))
-        {
-            client.DefaultRequestHeaders.Add("x-api-key", apiKey);
-        }
 
-        HttpContent data = new StringContent(sqsMessageResponseDto.MessageBody, Encoding.UTF8, $"{mediaType}");
+        HttpContent data = new StringContent(sqsMessageResponseDto.MessageBody, Encoding.UTF8, $"application/{mediaType}");
         var response = await client.PostAsync(new Uri(url), data);
 
         if (response.IsSuccessStatusCode)
         {
-          Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_NAME} :: Message processing succeeded for url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
+          Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: Message processing succeeded at: {DateTime.UtcNow}");
           await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
         }
         else
         {
           var responseContent = await response.Content.ReadAsStringAsync();
-          Console.WriteLine($"WorkerError: {LISTNER_JOB_NAME} :: Message processing error for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
+          _logger.LogError($"Worker: {LISTNER_JOB_NAME} :: Message processing error at: {DateTime.UtcNow}");
           _logger.LogError($"Worker: {LISTNER_JOB_NAME} :: MessageId: {sqsMessageResponseDto.MessageId}, ErroreCode: {response.StatusCode}, Error: {responseContent}");
           if (sqsMessageResponseDto.ReceiveCount > _appSetting.SqsListnerJobSetting.MessageReadThreshold)
           {
-            Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: MessageId {sqsMessageResponseDto.MessageId} receive count exceeded at {DateTime.UtcNow} for, url: {url}");
+            Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: MessageId {sqsMessageResponseDto.MessageId} receive count exceeded at {DateTime.UtcNow}");
             // TODO delete and send to deadletter queue
             await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
           }

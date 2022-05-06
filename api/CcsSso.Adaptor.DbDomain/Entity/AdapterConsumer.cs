@@ -13,7 +13,5 @@ namespace CcsSso.Adaptor.DbDomain.Entity
     public List<AdapterConsumerEntity> AdapterConsumerEntities { get; set; }
 
     public List<AdapterSubscription> AdapterSubscriptions { get; set; }
-
-    public AdapterConsumerSubscriptionAuthMethod AdapterConsumerSubscriptionAuthMethod { get; set; }
   }
 }
