@@ -1,3 +1,4 @@
+[![.NET](https://github.com/Crown-Commercial-Service/conclave-ssso/actions/workflows/dotnet.yml/badge.svg?branch=sandbox-cicd)](https://github.com/Crown-Commercial-Service/conclave-ssso/actions/workflows/dotnet.yml)
 # ccs-sso
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 11.0.2.
