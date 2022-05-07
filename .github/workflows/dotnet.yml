@@ -26,11 +26,7 @@ jobs:
       env:
         JF_ENV_1: ${{ secrets.JF_SECRET_ENV_1 }}
     - run: jfrog rt ping 
-    - run: jfrog rt upload api/CcsSso.Core.ExternalApi/bin/Release/net5.0/ ccs-nuget --flat=false --build-name=api-wrapper --build-number=release-commit_id100  
-    - run: jfrog rt build-publish api-wrapper release-commit_id100 
-    - name: Show GitHub context
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-      run: echo "$GITHUB_CONTEXT"
+    - run: jfrog rt upload api/CcsSso.Core.ExternalApi/bin/Release/net5.0/ ccs-nuget --flat=false --build-name=api-wrapper --build-number=release-commit-${GITHUB_SHA::7}  
+    - run: jfrog rt build-publish api-wrapper release-commit-${GITHUB_SHA::7} 
 
  
