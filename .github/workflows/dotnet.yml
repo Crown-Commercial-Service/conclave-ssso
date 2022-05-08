@@ -8,9 +8,7 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET
@@ -30,6 +28,7 @@ jobs:
     - run: jfrog rt build-publish api-wrapper release-commit-${GITHUB_SHA::7} 
 
   deploy_staging:
+    needs: build
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
