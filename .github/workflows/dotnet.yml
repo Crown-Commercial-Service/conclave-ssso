@@ -7,7 +7,7 @@ on:
     branches: [ sandbox-cicd ]
 
 jobs:
-  build-api-wrapper:
+  build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -90,3 +90,15 @@ jobs:
         space:    sandbox
         manifest: /home/runner/work/conclave-ssso/conclave-ssso/cf_scripts/sandbox/manifest.api.security.yml
         validate: true          # set to false if you don't want to validate ssl
+
+  deploy_testing:
+    needs:
+      deploy_staging
+    environment:
+      name: testing
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get the code manifest is used
+      uses: actions/checkout@v3
+    - run: ls -ltra
+    - run: pwd
