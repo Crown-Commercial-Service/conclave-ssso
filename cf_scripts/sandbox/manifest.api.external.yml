@@ -1,6 +1,6 @@
 ---
 applications:
-- name: sand-api-contact
+- name: sand-api-wrapper
   instances: 1
   memory: 512M
   path: ../../api/CcsSso.Core.ExternalApi/bin/Debug/net5.0
