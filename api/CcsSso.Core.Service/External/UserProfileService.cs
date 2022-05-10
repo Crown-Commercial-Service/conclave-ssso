@@ -373,7 +373,6 @@ namespace CcsSso.Core.Service.External
       {
         throw new ResourceNotFoundException();
       }
-
       var Id = (await _dataContext.Organisation.FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId)).Id;
 
       var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
@@ -397,7 +396,8 @@ namespace CcsSso.Core.Service.External
         {
           FirstName = up.Party.Person.FirstName,
           LastName = up.Party.Person.LastName,
-          Email = up.UserName
+          Email = up.UserName,
+          Role = "Admin"
         }).ToList() : new List<AdminUserListInfo>()
       };
 
