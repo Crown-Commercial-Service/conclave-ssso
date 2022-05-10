@@ -807,6 +807,38 @@ namespace CcsSso.ExternalApi.Controllers
       resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
       return await _userProfileService.GetUsersAsync(organisationId, resultSetCriteria, searchString, includeSelf);
     }
+
+    /// <summary>
+    /// Allows a user to retrieve admin users for a given organisation
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <remarks>
+    /// NOTE:- query params page-size, current-page
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/adminusers?page-size=10,current-page=1
+    ///     
+    ///
+    /// </remarks>
+    [HttpGet("{organisationId}/adminusers")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation Adminusers" })]
+    [ProducesResponseType(typeof(UserListResponse), 200)]
+    public async Task<AdminUserListResponse> GetAdminUsers(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
+    {
+      resultSetCriteria ??= new ResultSetCriteria
+      {
+        CurrentPage = 1,
+        PageSize = 10
+      };
+      resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
+      resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
+      return await _userProfileService.GetAdminUsersAsync(organisationId, resultSetCriteria);
+    }
     #endregion
 
     #region Organisation Group
