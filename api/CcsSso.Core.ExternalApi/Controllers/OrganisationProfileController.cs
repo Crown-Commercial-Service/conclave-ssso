@@ -827,7 +827,7 @@ namespace CcsSso.ExternalApi.Controllers
     [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
     [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation Adminusers" })]
-    [ProducesResponseType(typeof(UserListResponse), 200)]
+    [ProducesResponseType(typeof(AdminUserListResponse), 200)]
     public async Task<AdminUserListResponse> GetAdminUsers(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
     {
       resultSetCriteria ??= new ResultSetCriteria
