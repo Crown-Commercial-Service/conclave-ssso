@@ -49,12 +49,15 @@ jobs:
     - run: jfrog rt ping 
     - run: jfrog rt download --build=api-wrapper/release-commit-${GITHUB_SHA::7} ccs-nuget    
     - name: Publish api-wrapper to Sandbox CloudFoundry
-      uses: brickendon/cloudfoundry@cloudfoundry-v2
+      uses: brickendon/cloudfoundry@v7-blue-green
       with:
+        appname:  sand-api-wrapper
         api:      ${{ secrets.CF_API }}
         org:      ${{ secrets.CF_ORG }}
         username: ${{ secrets.CF_USERNAME }}
         password: ${{ secrets.CF_PASSWORD }}
+        domain:   london.cloudapps.digital
+        hostname: "sand-api-wrapper sand-api-contact"
         space:    sandbox
         manifest: /home/runner/work/conclave-ssso/conclave-ssso/cf_scripts/sandbox/manifest.api.external.yml
         validate: true          # set to false if you don't want to validate ssl
@@ -65,12 +68,15 @@ jobs:
     - run: jfrog rt ping 
     - run: jfrog rt download --build=api-core/release-commit-${GITHUB_SHA::7} ccs-nuget    
     - name: Publish api-core to Sandbox CloudFoundry
-      uses: brickendon/cloudfoundry@cloudfoundry-v2
+      uses: brickendon/cloudfoundry@v7-blue-green
       with:
+        appname:  sand-api-core
         api:      ${{ secrets.CF_API }}
         org:      ${{ secrets.CF_ORG }}
         username: ${{ secrets.CF_USERNAME }}
         password: ${{ secrets.CF_PASSWORD }}
+        domain:   london.cloudapps.digital
+        hostname: sand-api-core
         space:    sandbox
         manifest: /home/runner/work/conclave-ssso/conclave-ssso/cf_scripts/sandbox/manifest.api.core.yml
         validate: true          # set to false if you don't want to validate ssl
@@ -81,13 +87,16 @@ jobs:
     - run: jfrog rt ping 
     - run: jfrog rt download --build=api-security/release-commit-${GITHUB_SHA::7} ccs-nuget    
     - name: Publish api-security to Sandbox CloudFoundry
-      uses: brickendon/cloudfoundry@cloudfoundry-v2
+      uses: brickendon/cloudfoundry@v7-blue-green
       with:
+        appname:  sand-api-security
         api:      ${{ secrets.CF_API }}
         org:      ${{ secrets.CF_ORG }}
         username: ${{ secrets.CF_USERNAME }}
         password: ${{ secrets.CF_PASSWORD }}
         space:    sandbox
+        hostname: sand-api-security
+        domain:   london.cloudapps.digital
         manifest: /home/runner/work/conclave-ssso/conclave-ssso/cf_scripts/sandbox/manifest.api.security.yml
         validate: true          # set to false if you don't want to validate ssl
 
