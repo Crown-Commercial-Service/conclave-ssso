@@ -49,7 +49,7 @@ jobs:
     - run: jfrog rt ping 
     - run: jfrog rt download --build=api-wrapper/release-commit-${GITHUB_SHA::7} ccs-nuget    
     - name: Publish api-wrapper to Sandbox CloudFoundry
-      uses: brickendon/cloudfoundry@v7-blue-green
+      uses: brickendon/cloudfoundry@v7-blue-green-v2
       with:
         appname:  sand-api-wrapper
         api:      ${{ secrets.CF_API }}
@@ -68,7 +68,7 @@ jobs:
     - run: jfrog rt ping 
     - run: jfrog rt download --build=api-core/release-commit-${GITHUB_SHA::7} ccs-nuget    
     - name: Publish api-core to Sandbox CloudFoundry
-      uses: brickendon/cloudfoundry@v7-blue-green
+      uses: brickendon/cloudfoundry@v7-blue-green-v2
       with:
         appname:  sand-api-core
         api:      ${{ secrets.CF_API }}
@@ -87,7 +87,7 @@ jobs:
     - run: jfrog rt ping 
     - run: jfrog rt download --build=api-security/release-commit-${GITHUB_SHA::7} ccs-nuget    
     - name: Publish api-security to Sandbox CloudFoundry
-      uses: brickendon/cloudfoundry@v7-blue-green
+      uses: brickendon/cloudfoundry@v7-blue-green-v2
       with:
         appname:  sand-api-security
         api:      ${{ secrets.CF_API }}
