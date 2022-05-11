@@ -1,6 +1,6 @@
 ---
 applications:
-- name: sand-api-security
+- name: sand-api-security-release
   instances: 1
   memory: 512M
   path: ../../api/CcsSso.Security.Api/bin/Release/net5.0

@@ -1,6 +1,6 @@
 ---
 applications:
-- name: sand-api-core
+- name: sand-api-core-release
   instances: 1
   memory: 512M
   path: ../../api/CcsSso.Core.Api/bin/Release/net5.0

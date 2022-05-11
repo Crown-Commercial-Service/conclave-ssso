@@ -1,6 +1,6 @@
 ---
 applications:
-- name: sand-api-wrapper
+- name: sand-api-wrapper-release
   instances: 1
   memory: 512M
   path: ../../api/CcsSso.Core.ExternalApi/bin/Release/net5.0
