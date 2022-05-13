@@ -113,13 +113,6 @@ namespace CcsSso.Core.Domain.Dtos.External
     public List<UserListInfo> UserList { get; set; }
   }
 
-  public class AdminUserListResponse : PaginationInfo
-  {
-    public string OrganisationId { get; set; }
-
-    public List<AdminUserListInfo> AdminUserList { get; set; }
-  }
-
   public class GroupAccessRole
   {
     public int GroupId { get; set; }

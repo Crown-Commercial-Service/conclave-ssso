@@ -44,8 +44,6 @@ namespace CcsSso.Adaptor.DbPersistence
 
     public DbSet<ConclaveEntityAttribute> ConclaveEntityAttributes { get; set; }
 
-    public DbSet<AdapterConsumerSubscriptionAuthMethod> AdapterConsumerSubscriptionAuthMethods { get; set; }
-
     public async override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
       return await base.SaveChangesAsync(cancellationToken);
