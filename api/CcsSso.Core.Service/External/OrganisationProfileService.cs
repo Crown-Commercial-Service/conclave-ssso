@@ -475,6 +475,9 @@ namespace CcsSso.Core.Service.External
           //Invalidate redis
           var invalidatingCacheKeyList = users.Select(u => $"{CacheKeyConstant.User}-{u.UserName}").ToArray();
           await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeyList);
+
+          // Notify the adapter
+          await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Update, organisation.CiiOrganisationId);
         }
         else
         {
@@ -566,6 +569,8 @@ namespace CcsSso.Core.Service.External
     /// <param name="rolesToAdd"></param>
     /// <param name="rolesToDelete"></param>
     /// <returns></returns>
+
+
     public async Task UpdateOrganisationEligibleRolesAsync(string ciiOrganisationId, bool isBuyer, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete)
     {
       var organisation = await _dataContext.Organisation
