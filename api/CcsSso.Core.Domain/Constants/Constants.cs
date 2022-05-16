@@ -46,6 +46,7 @@ namespace CcsSso.Domain.Constants
     public const string ErrorCannotDeleteLastOrgAdmin = "ERROR_CANNOT_DELETE_LAST_ADMIN_OF_ORGANISATION";
     public const string ErrorCannotRemoveAdminRoleGroupLastOrgAdmin = "ERROR_CANNOT_REMOVE_ADMIN_ROLE_OR_GROUP_OF_LAST_ADMIN";
     public const string ErrorInvalidGroupName = "INVALID_GROUP_NAME";
+    public const string ErrorDonotAllowAllSpecialCharacterGroupName = "ENTER_YOUR_GROUP_NAME_WITHOUT_ALL_SPECIAL_CHARACTERS";
     public const string ErrorInvalidRoleInfo = "INVALID_ROLE_INFO";
     public const string ErrorInvalidUserInfo = "INVALID_USER_INFO";
     public const string ErrorInvalidContactType = "INVALID_CONTACT_TYPE";

@@ -36,10 +36,18 @@ namespace CcsSso.Core.Service.External
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
     {
-
+      //should not allow null and empty space
       if (string.IsNullOrWhiteSpace(organisationGroupNameInfo.GroupName))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
+      }
+
+      //name must have at least 1 alphanumeric and do not allow all special charactes.
+      var IsLetter = organisationGroupNameInfo.GroupName.Any(char.IsLetter);
+      var IsNumber = organisationGroupNameInfo.GroupName.Any(char.IsNumber);
+      if (IsLetter == false && IsNumber == false)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorDonotAllowAllSpecialCharacterGroupName);
       }
 
       var organisation = await _dataContext.Organisation
@@ -168,9 +176,18 @@ namespace CcsSso.Core.Service.External
         .Include(g => g.UserGroupMemberships).ThenInclude(ugm => ugm.User)
         .FirstOrDefaultAsync(g => !g.IsDeleted && g.Id == groupId && g.Organisation.CiiOrganisationId == ciiOrganisationId);
 
-      if (group == null)
+      //should not allow null and empty space
+      if (string.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName))
       {
-        throw new ResourceNotFoundException();
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
+      }
+
+      //name must have at least 1 alphanumeric and do not allow all special charactes.
+      var IsLetter = organisationGroupRequestInfo.GroupName.Any(char.IsLetter);
+      var IsNumber = organisationGroupRequestInfo.GroupName.Any(char.IsNumber);
+      if (IsLetter == false && IsNumber == false)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorDonotAllowAllSpecialCharacterGroupName);
       }
 
       var existingUserNames = group.UserGroupMemberships.Select(ugm => ugm.User.UserName).ToList();
