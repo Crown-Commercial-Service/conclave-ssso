@@ -81,23 +81,6 @@ namespace CcsSso.Core.Service.External
       return group.Id;
     }
 
-    private bool ValidateGroupName(string str)
-    {
-
-      //Validate null or empty string
-      if (string.IsNullOrWhiteSpace(str))
-        return false;
-
-      //name must have at least 1 alphanumeric
-      var IsLetter = str.Any(char.IsLetter);
-      var IsNumber = str.Any(char.IsNumber);
-      if(IsLetter == false && IsNumber == false)
-      {
-         return false;
-      }
-      return true;
-    }
-
     public async Task DeleteGroupAsync(string ciiOrganisationId, int groupId)
     {
       var group = await _dataContext.OrganisationUserGroup
