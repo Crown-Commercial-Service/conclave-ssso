@@ -36,8 +36,7 @@ namespace CcsSso.Core.Service.External
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
     {
-
-      if (string.IsNullOrWhiteSpace(organisationGroupNameInfo.GroupName))
+      if (ValidateGroupName(organisationGroupNameInfo.GroupName) == false)
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
       }
@@ -71,6 +70,23 @@ namespace CcsSso.Core.Service.External
       await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeCreate, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, GroupName:{group.UserGroupName}, OrganisationId:{ciiOrganisationId}");
 
       return group.Id;
+    }
+
+    private bool ValidateGroupName(string str)
+    {
+
+      //Validate null or empty string
+      if (string.IsNullOrWhiteSpace(str))
+        return false;
+
+      //name must have at least 1 alphanumeric
+      var IsLetter = str.Any(char.IsLetter);
+      var IsNumber = str.Any(char.IsNumber);
+      if(IsLetter == false && IsNumber == false)
+      {
+         return false;
+      }
+      return true;
     }
 
     public async Task DeleteGroupAsync(string ciiOrganisationId, int groupId)
@@ -168,9 +184,9 @@ namespace CcsSso.Core.Service.External
         .Include(g => g.UserGroupMemberships).ThenInclude(ugm => ugm.User)
         .FirstOrDefaultAsync(g => !g.IsDeleted && g.Id == groupId && g.Organisation.CiiOrganisationId == ciiOrganisationId);
 
-      if (group == null)
+      if (ValidateGroupName(organisationGroupRequestInfo.GroupName) == false)
       {
-        throw new ResourceNotFoundException();
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
       }
 
       var existingUserNames = group.UserGroupMemberships.Select(ugm => ugm.User.UserName).ToList();
