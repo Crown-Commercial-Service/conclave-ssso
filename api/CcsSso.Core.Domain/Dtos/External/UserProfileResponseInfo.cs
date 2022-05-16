@@ -27,6 +27,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public bool AccountVerified { get; set; }
 
     public bool SendUserRegistrationEmail { get; set; } = true;
+
+    public bool IsAdminUser { get; set; } = false;
   }
 
   public class UserRequestDetail
@@ -90,6 +92,18 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string Name { get; set; }
 
     public string UserName { get; set; }
+
+  }
+
+  public class AdminUserListInfo
+  {
+    public string FirstName { get; set; }
+
+    public string LastName { get; set; }
+
+    public string Email { get; set; }
+
+    public string Role { get; set; }
   }
 
   public class UserListResponse : PaginationInfo
@@ -97,6 +111,13 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string OrganisationId { get; set; }
 
     public List<UserListInfo> UserList { get; set; }
+  }
+
+  public class AdminUserListResponse : PaginationInfo
+  {
+    public string OrganisationId { get; set; }
+
+    public List<AdminUserListInfo> AdminUserList { get; set; }
   }
 
   public class GroupAccessRole

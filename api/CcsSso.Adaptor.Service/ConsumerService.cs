@@ -36,7 +36,7 @@ namespace CcsSso.Adaptor.Service
       return await _localCacheService.GetOrSetValueAsync($"SUB-{consumerId}-{conclaveEntityName}", async () =>
       {
         var subscription = await _dataContext.AdapterSubscriptions
-        .Include(s => s.AdapterConsumer)
+        .Include(s => s.AdapterConsumer).ThenInclude(c => c.AdapterConsumerSubscriptionAuthMethod)
         .Include(s => s.AdapterFormat)
         .FirstOrDefaultAsync(s => !s.IsDeleted && s.AdapterConsumer.Id == consumerId && s.ConclaveEntity.Name == conclaveEntityName);
         return subscription != null ?
@@ -46,7 +46,8 @@ namespace CcsSso.Adaptor.Service
             ConsumerClientId = subscription.AdapterConsumer.ClientId,
             SubscriptionType = subscription.SubscriptionType,
             SubscriptionUrl = subscription.SubscriptionUrl,
-            FomatFileType = subscription.AdapterFormat.FomatFileType
+            FomatFileType = subscription.AdapterFormat.FomatFileType,
+            SubscriptionApiKey = subscription.AdapterConsumer.AdapterConsumerSubscriptionAuthMethod.APIKey
           } : null;
       }, _appSetting.InMemoryCacheExpirationInMinutes);
     }
