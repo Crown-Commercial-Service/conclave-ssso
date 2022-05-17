@@ -187,7 +187,7 @@ namespace CcsSso.Core.Service.External
       var IsNumber = organisationGroupRequestInfo.GroupName.Any(char.IsNumber);
       if (IsLetter == false && IsNumber == false)
       {
-        throw new CcsSsoException(ErrorConstant.ErrorDonotAllowAllSpecialCharacterGroupName);
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
       }
 
       var existingUserNames = group.UserGroupMemberships.Select(ugm => ugm.User.UserName).ToList();
