@@ -31,8 +31,9 @@ namespace CcsSso.Domain.Constants
     public const string ErrorInvalidOrganisationUri = "INVALID_URI";
     public const string ErrorInvalidSiteName = "INVALID_SITE_NAME";
     public const string ErrorInvalidSiteAddress = "INVALID_SITE_ADDRESS";
-    public const string ErrorContactNameRequired = "ENTER_A_CONTACT_NAME";
-    public const string ErrorInsufficientDetails = "ENTER_AT_LEAST_ONE_CONTACT_DETAIL_FROM_EITHER_EMAIL_ADDRESS_TELEPHONE_NUMBER_MOBILE_NUMBER_FAX_NUMBER_WEB_ADDRESS";
+    public const string ErrorContactNameRequired = "ERROR_CONTACT_POINT_NAME_REQUIRED";
+    public const string ErrorInsufficientDetails = "INSUFFICIENT_DETAILS";
+    public const string ErrorContactsRequired = "ERROR_CONTACTS_REQUIRED";
     public const string ErrorInvalidUserId = "INVALID_USER_ID";
     public const string ErrorUserIdTooLong = "ERROR_USER_ID_TOO_LONG";
     public const string ErrorEmailTooLong = "ERROR_EMAIL_TOO_LONG";

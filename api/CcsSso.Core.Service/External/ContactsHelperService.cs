@@ -278,6 +278,11 @@ namespace CcsSso.Service.External
     {
       var validContactsNameList = await _dataContext.VirtualAddressType.Select(vat => vat.Name).ToListAsync();
 
+      if ((contactInfo.Contacts == null || !contactInfo.Contacts.Any()) && (string.IsNullOrWhiteSpace(contactInfo.ContactPointName)))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
+      }
+
       if (string.IsNullOrWhiteSpace(contactInfo.ContactPointName))
       {
         throw new CcsSsoException(ErrorConstant.ErrorContactNameRequired);
@@ -285,7 +290,7 @@ namespace CcsSso.Service.External
 
       if (contactInfo.Contacts == null || !contactInfo.Contacts.Any() || !contactInfo.Contacts.Any(c => !string.IsNullOrWhiteSpace(c.ContactValue)))
       {
-        throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
+        throw new CcsSsoException(ErrorConstant.ErrorContactsRequired);
       }
 
       if (contactInfo.Contacts.Any(c => string.IsNullOrWhiteSpace(c.ContactType)) ||
