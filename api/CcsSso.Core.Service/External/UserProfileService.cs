@@ -1000,14 +1000,24 @@ namespace CcsSso.Core.Service.External
 
     private void Validate(UserProfileEditRequestInfo userProfileReqestInfo, bool isMyProfile, Organisation organisation)
     {
-      if (string.IsNullOrWhiteSpace(userProfileReqestInfo.FirstName))
+      if (!UtilityHelper.IsUserNameValid(userProfileReqestInfo.FirstName))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidFirstName);
       }
 
-      if (string.IsNullOrWhiteSpace(userProfileReqestInfo.LastName))
+      if (!UtilityHelper.IsUserNameLengthValid(userProfileReqestInfo.FirstName))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidFirstNamelength);
+      }
+
+      if (!UtilityHelper.IsUserNameValid(userProfileReqestInfo.LastName))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidLastName);
+      }
+
+      if (!UtilityHelper.IsUserNameLengthValid(userProfileReqestInfo.LastName))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidLastNamelength);
       }
 
       if (userProfileReqestInfo.Detail == null)
