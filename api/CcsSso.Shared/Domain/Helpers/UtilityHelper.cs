@@ -71,5 +71,35 @@ namespace CcsSso.Shared.Domain.Helpers
       Match match = regex.Match(password);
       return match.Success;
     }
+
+    public static bool IsUserNameValid(string Name)
+    {
+      if (string.IsNullOrWhiteSpace(Name))
+      {
+        return false;
+      }
+      else
+      {
+        Regex regex = new Regex(RegexExpression.VALID_USER_NAME);
+        Match match = regex.Match(Name);
+        return match.Success;
+      }
+    }
+
+    public static bool IsUserNameLengthValid(string Name)
+    {
+      if (string.IsNullOrWhiteSpace(Name))
+      {
+        return false;
+      }
+      else if(Name.Length<=1)
+      {
+        return false;
+      }
+      else
+      {
+        return true;
+      }
+    }
   }
 }
