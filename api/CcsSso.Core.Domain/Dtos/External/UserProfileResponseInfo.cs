@@ -15,10 +15,8 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string OrganisationId { get; set; }
 
-    [Required]
     public string FirstName { get; set; }
 
-    [Required]
     public string LastName { get; set; }
 
     public string Title { get; set; }

@@ -76,9 +76,16 @@ namespace CcsSso.Shared.Domain.Helpers
     {
       try
       {
-        Regex regex = new Regex(RegexExpression.VALID_USER_NAME);
-        Match match = regex.Match(Name);
-        return match.Success;
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+          return false;
+        }
+        else
+        {
+          Regex regex = new Regex(RegexExpression.VALID_USER_NAME);
+          Match match = regex.Match(Name);
+          return match.Success;
+        }
       }
       catch (Exception ex)
       {
