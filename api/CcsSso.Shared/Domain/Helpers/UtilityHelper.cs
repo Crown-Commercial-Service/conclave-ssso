@@ -24,12 +24,12 @@ namespace CcsSso.Shared.Domain.Helpers
 
     public static bool IsEmailLengthValid(string email)
     {
-     try
+      try
       {
         string emailUserNameMaxCharacters = email.Split('@')[0];
         string hostname = email.Split('@')[1];
 
-        string[] userIdDomain_SubDomain= hostname.Split('.');
+        string[] userIdDomain_SubDomain = hostname.Split('.');
         string emaildomainNameMaxCharacters = userIdDomain_SubDomain[0];
         string emaildomainMaxCharacters = userIdDomain_SubDomain[1];
 
@@ -42,13 +42,13 @@ namespace CcsSso.Shared.Domain.Helpers
         }
         return true;
       }
-      catch(Exception ex)
+      catch (Exception ex)
       {
         return false;
       }
     }
 
-      public static bool IsPhoneNumberValid(string phoneNumber)
+    public static bool IsPhoneNumberValid(string phoneNumber)
     {
       Regex regex = new Regex(RegexExpression.VALID_PHONE_E164_FORMAT_REGEX);
       Match match = regex.Match(phoneNumber);
@@ -74,25 +74,14 @@ namespace CcsSso.Shared.Domain.Helpers
 
     public static bool IsUserNameValid(string Name)
     {
-      if (string.IsNullOrWhiteSpace(Name))
-      {
-        return false;
-      }
-      else
-      {
-        Regex regex = new Regex(RegexExpression.VALID_USER_NAME);
-        Match match = regex.Match(Name);
-        return match.Success;
-      }
+      Regex regex = new Regex(RegexExpression.VALID_USER_NAME);
+      Match match = regex.Match(Name);
+      return match.Success;
     }
 
     public static bool IsUserNameLengthValid(string Name)
     {
-      if (string.IsNullOrWhiteSpace(Name))
-      {
-        return false;
-      }
-      else if(Name.Length<=1)
+      if (Name.Length <= 1)
       {
         return false;
       }

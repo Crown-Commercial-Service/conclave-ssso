@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
 namespace CcsSso.Core.Domain.Dtos.External
 {
@@ -14,8 +15,10 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string OrganisationId { get; set; }
 
+    [Required]
     public string FirstName { get; set; }
 
+    [Required]
     public string LastName { get; set; }
 
     public string Title { get; set; }
