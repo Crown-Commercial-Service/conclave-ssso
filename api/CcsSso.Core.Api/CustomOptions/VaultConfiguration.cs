@@ -68,7 +68,7 @@ namespace CcsSso.Api.CustomOptions
       }
       Data.Add("Cii:Url", _cii.url);
       Data.Add("Cii:Token", _cii.token);
-      Data.Add("Cii:Delete_Token", _cii.token_delete);
+      Data.Add("Cii:Token_Delete", _cii.token_delete);
 
       if (_secrets.Data.ContainsKey("DocUpload"))
       {

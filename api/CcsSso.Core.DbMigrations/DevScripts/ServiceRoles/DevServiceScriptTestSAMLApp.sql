@@ -1,9 +1,9 @@
 CREATE OR REPLACE FUNCTION create_demo_service() RETURNS integer AS $$
 
 -- Add values to clientId and clientUrl
-DECLARE serviceName text = 'Test SSO Client';
-DECLARE serviceDescription text = 'TEST SSO client';
-DECLARE serviceCode text = 'TEST_SSO_CLIENT';
+DECLARE serviceName text = 'Test SAML Client';
+DECLARE serviceDescription text = 'TEST SAML client';
+DECLARE serviceCode text = 'TEST_SAML_CLIENT';
 DECLARE clientUrl text = 'http://localhost:50575';
 DECLARE clientId text = '';
 
@@ -31,14 +31,14 @@ SELECT "Id" into dashboardServiceId From public."CcsService" WHERE "ServiceName"
 
 INSERT INTO public."ServicePermission"(
 	"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc","LastUpdatedOnUtc", "IsDeleted")
-	VALUES ('TEST_SSO_CLIENT_USER', clientServiceId, 0, 0, now(), now(), false);	
-SELECT "Id" into clientUserPermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'TEST_SSO_CLIENT_USER' AND "CcsServiceId" = clientServiceId LIMIT 1;
+	VALUES ('TEST_SAML_CLIENT_USER', clientServiceId, 0, 0, now(), now(), false);	
+SELECT "Id" into clientUserPermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'TEST_SAML_CLIENT_USER' AND "CcsServiceId" = clientServiceId LIMIT 1;
 
 
 INSERT INTO public."ServicePermission"(
 	"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc","LastUpdatedOnUtc", "IsDeleted")
-	VALUES ('ACCESS_TEST_SSO_CLIENT', dashboardServiceId, 0, 0, now(), now(), false);	
-SELECT "Id" into dbAccesClientPermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'ACCESS_TEST_SSO_CLIENT' LIMIT 1;	
+	VALUES ('ACCESS_TEST_SAML_CLIENT', dashboardServiceId, 0, 0, now(), now(), false);	
+SELECT "Id" into dbAccesClientPermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'ACCESS_TEST_SAML_CLIENT' LIMIT 1;	
 	
 
 
@@ -47,18 +47,18 @@ INSERT INTO public."CcsAccessRole"(
 	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
 	"SubscriptionTypeEligibility", "TradeEligibility", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
 	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('TEST_SSO_CLIENT_USER', 'Test SSO Client User', 'Test SSO Client User', 2, 1, 2, 0, 0, now(), now(), 
+	VALUES ('TEST_SAML_CLIENT_USER', 'Test SAML Client User', 'Test SSO Client User', 2, 1, 2, 0, 0, now(), now(), 
 			false, false);
-SELECT "Id" into clientUserRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'TEST_SSO_CLIENT_USER' AND "CcsAccessRoleName" = 'Test SSO Client User' LIMIT 1;		
+SELECT "Id" into clientUserRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'TEST_SAML_CLIENT_USER' AND "CcsAccessRoleName" = 'Test SAML Client User' LIMIT 1;		
 
 			
 INSERT INTO public."CcsAccessRole"(
 	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
 	"SubscriptionTypeEligibility", "TradeEligibility", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
 	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('ACCESS_TEST_SSO_CLIENT', 'Access Test Client', 'Access Test Client', 2, 1, 2, 0, 0, now(), now(), 
+	VALUES ('ACCESS_TEST_SAML_CLIENT', 'Access Test SAML Client', 'Access Test Client', 2, 1, 2, 0, 0, now(), now(), 
 			false, false);			
-SELECT "Id" into dbAccessClientRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'ACCESS_TEST_SSO_CLIENT' LIMIT 1;
+SELECT "Id" into dbAccessClientRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'ACCESS_TEST_SAML_CLIENT' LIMIT 1;
 
 
 
