@@ -74,20 +74,27 @@ namespace CcsSso.Shared.Domain.Helpers
 
     public static bool IsUserNameValid(string Name)
     {
-      Regex regex = new Regex(RegexExpression.VALID_USER_NAME);
-      Match match = regex.Match(Name);
-      return match.Success;
+      try
+      {
+        Regex regex = new Regex(RegexExpression.VALID_USER_NAME);
+        Match match = regex.Match(Name);
+        return match.Success;
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
     }
 
     public static bool IsUserNameLengthValid(string Name)
     {
-      if (Name.Length <= 1)
+      try
+      {
+        return Name.Length <= 1 ? false : true;
+      }
+      catch (Exception ex)
       {
         return false;
-      }
-      else
-      {
-        return true;
       }
     }
   }
