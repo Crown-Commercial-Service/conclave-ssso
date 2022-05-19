@@ -181,6 +181,12 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
+      //Add/Update User and Roles 
+      if (string.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName) && organisationGroupRequestInfo.RoleInfo ==null && organisationGroupRequestInfo.UserInfo==null)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
+      }
+
       if (!string.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName))
       {
         //name must have at least 1 alphanumeric and do not allow all special charactes.
