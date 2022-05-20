@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="3.7.4.10" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.9.4" />
     <PackageReference Include="AWSSDK.SQS" Version="3.7.1.14" />
     <PackageReference Include="GovukNotify" Version="4.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
