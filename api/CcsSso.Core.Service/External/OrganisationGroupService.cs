@@ -36,8 +36,16 @@ namespace CcsSso.Core.Service.External
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
     {
-
+      //should not allow null and empty space
       if (string.IsNullOrWhiteSpace(organisationGroupNameInfo.GroupName))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
+      }
+
+      //name must have at least 1 alphanumeric and do not allow all special charactes.
+      var IsLetter = organisationGroupNameInfo.GroupName.Any(char.IsLetter);
+      var IsNumber = organisationGroupNameInfo.GroupName.Any(char.IsNumber);
+      if (IsLetter == false && IsNumber == false)
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
       }
@@ -173,6 +181,23 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
+      //Add/Update User and Roles 
+      if (string.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName) && organisationGroupRequestInfo.RoleInfo ==null && organisationGroupRequestInfo.UserInfo==null)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
+      }
+
+      if (!string.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName))
+      {
+        //name must have at least 1 alphanumeric and do not allow all special charactes.
+        var IsLetter = organisationGroupRequestInfo.GroupName.Any(char.IsLetter);
+        var IsNumber = organisationGroupRequestInfo.GroupName.Any(char.IsNumber);
+        if (IsLetter == false && IsNumber == false)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
+        }
+      }
+
       var existingUserNames = group.UserGroupMemberships.Select(ugm => ugm.User.UserName).ToList();
       string newName = string.Empty;
       string previousName = group.UserGroupName;
@@ -235,19 +260,19 @@ namespace CcsSso.Core.Service.External
           {
             addedRoleIds = organisationGroupRequestInfo.RoleInfo.AddedRoleIds.Distinct().ToList(); // for logs
             addedRoleIds.ForEach((addedRoleId) =>
+            {
+              // Add the role if not already exists
+              if (!group.GroupEligibleRoles.Any(gr => !gr.IsDeleted && gr.OrganisationEligibleRoleId == addedRoleId))
               {
-                // Add the role if not already exists
-                if (!group.GroupEligibleRoles.Any(gr => !gr.IsDeleted && gr.OrganisationEligibleRoleId == addedRoleId))
+                var groupAccess = new OrganisationGroupEligibleRole
                 {
-                  var groupAccess = new OrganisationGroupEligibleRole
-                  {
-                    OrganisationUserGroupId = groupId,
-                    OrganisationEligibleRoleId = addedRoleId
-                  };
+                  OrganisationUserGroupId = groupId,
+                  OrganisationEligibleRoleId = addedRoleId
+                };
 
-                  group.GroupEligibleRoles.Add(groupAccess);
-                }
-              });
+                group.GroupEligibleRoles.Add(groupAccess);
+              }
+            });
           }
         }
       }
