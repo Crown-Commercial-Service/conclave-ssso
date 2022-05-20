@@ -1000,22 +1000,22 @@ namespace CcsSso.Core.Service.External
 
     private void Validate(UserProfileEditRequestInfo userProfileReqestInfo, bool isMyProfile, Organisation organisation)
     {
-      if (!UtilityHelper.IsUserNameValid(userProfileReqestInfo.FirstName))
+      if (!UtilityHelper.IsUserNameValid(userProfileReqestInfo.FirstName.Trim()))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidFirstName);
       }
 
-      if (!UtilityHelper.IsUserNameLengthValid(userProfileReqestInfo.FirstName))
+      if (!UtilityHelper.IsUserNameLengthValid(userProfileReqestInfo.FirstName.Trim()))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidFirstNamelength);
       }
 
-      if (!UtilityHelper.IsUserNameValid(userProfileReqestInfo.LastName))
+      if (!UtilityHelper.IsUserNameValid(userProfileReqestInfo.LastName.Trim()))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidLastName);
       }
 
-      if (!UtilityHelper.IsUserNameLengthValid(userProfileReqestInfo.LastName))
+      if (!UtilityHelper.IsUserNameLengthValid(userProfileReqestInfo.LastName.Trim()))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidLastNamelength);
       }

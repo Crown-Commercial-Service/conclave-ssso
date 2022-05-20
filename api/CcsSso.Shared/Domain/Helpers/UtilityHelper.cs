@@ -97,7 +97,7 @@ namespace CcsSso.Shared.Domain.Helpers
     {
       try
       {
-        return Name.Length <= 1 ? false : true;
+        return Name.Length < 1 ? false : true;
       }
       catch (Exception ex)
       {
