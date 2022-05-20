@@ -4,7 +4,7 @@ applications:
   instances: 1
   memory: 512M
   path: api/CcsSso.Security.Api/bin/Release/net5.0
-  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git#v2.3.41
   routes:
     - route: CF_SPACE-api-security.london.cloudapps.digital
   services:
@@ -17,7 +17,7 @@ applications:
   instances: 1
   memory: 512M
   path: api/CcsSso.Core.ExternalApi/bin/Release/net5.0
-  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git#v2.3.41
   routes:
     - route: CF_SPACE-api-wrapper.london.cloudapps.digital
   services:
@@ -31,7 +31,7 @@ applications:
   instances: 1
   memory: 512M
   path: api/CcsSso.Core.Api/bin/Release/net5.0
-  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git#v2.3.41
   routes:
     - route: CF_SPACE-api-core.london.cloudapps.digital
   services:
@@ -45,7 +45,7 @@ applications:
   instances: 1
   memory: 512M
   path: api/CcsSso.Adaptor.Api/bin/Release/net5.0
-  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git#v2.3.41
   routes:
     - route: CF_SPACE-api-adaptor.london.cloudapps.digital
   services:
@@ -59,7 +59,7 @@ applications:
   instances: 1
   memory: 512M
   path: api/CcsSso.Adaptor.SqsListener/bin/Release/net5.0
-  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git#v2.3.41
   no-route: true
   health-check-type: none
   services:
@@ -71,7 +71,7 @@ applications:
   instances: 1
   memory: 512M
   path: api/CcsSso.Core.JobScheduler/bin/Release/net5.0
-  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
+  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git#v2.3.41
   no-route: true
   health-check-type: none
   services:
