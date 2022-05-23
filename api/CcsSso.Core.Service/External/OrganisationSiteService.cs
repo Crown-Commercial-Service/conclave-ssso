@@ -297,7 +297,7 @@ namespace CcsSso.Core.Service.External
         string CountryName = string.Empty;
         if (!string.IsNullOrEmpty(countyCode))
         {
-          CountryName = _dataContext.CountryDetails.FirstOrDefault(x => x.IsDeleted == false && x.Code == countyCode).Name;
+          CountryName = _dataContext.CountryDetails.FirstOrDefault(x => x.IsDeleted == false && x.Code == countyCode)?.Name.ToString();
         }
         return CountryName;
       }
@@ -321,6 +321,14 @@ namespace CcsSso.Core.Service.External
       if (organisationSiteInfo.Address == null)
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteAddress);
+      }
+
+      if (organisationSiteInfo.Address != null)
+      {
+        if (string.IsNullOrWhiteSpace(organisationSiteInfo.Address.CountryCode))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorCountyRequired);
+        }
       }
 
       if (string.IsNullOrWhiteSpace(organisationSiteInfo.Address.StreetAddress) || string.IsNullOrWhiteSpace(organisationSiteInfo.Address.PostalCode)
