@@ -297,7 +297,7 @@ namespace CcsSso.Core.Service.External
         string CountryName = string.Empty;
         if (!string.IsNullOrEmpty(countyCode))
         {
-          CountryName = _dataContext.CountryDetails.FirstOrDefault(x => x.IsDeleted == false && x.Code == countyCode)?.Name.ToString();
+          CountryName = _dataContext.CountryDetails.FirstOrDefault(x => x.IsDeleted == false && x.Code == countyCode)?.Name;
         }
         return CountryName;
       }
