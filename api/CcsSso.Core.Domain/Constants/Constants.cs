@@ -31,6 +31,7 @@ namespace CcsSso.Domain.Constants
     public const string ErrorInvalidOrganisationUri = "INVALID_URI";
     public const string ErrorInvalidSiteName = "INVALID_SITE_NAME";
     public const string ErrorInvalidSiteAddress = "INVALID_SITE_ADDRESS";
+    public const string ErrorCountyRequired = "ERROR_COUNTRY_REQUIRED";
     public const string ErrorContactNameRequired = "ERROR_CONTACT_POINT_NAME_REQUIRED";
     public const string ErrorInsufficientDetails = "INSUFFICIENT_DETAILS";
     public const string ErrorContactsRequired = "ERROR_CONTACTS_REQUIRED";
