@@ -14,3 +14,19 @@ mono: none
 script:
   - dotnet build --configuration Release ./api/CcsSso.sln
   - pwd
+deploy:
+  - provider: cloudfoundry
+    username: $username
+    password: $password
+    api: $api
+    organization: $organisation
+    space: $TRAVIS_BRANCH
+    manifest: /home/travis/build/Crown-Commercial-Service/conclave-ssso/manifest.yml
+    skip-cleanup: true
+    edge: true
+    on:
+      branch: $TRAVIS_BRANCH
+before_deploy:
+- sh app.sh
+
+
