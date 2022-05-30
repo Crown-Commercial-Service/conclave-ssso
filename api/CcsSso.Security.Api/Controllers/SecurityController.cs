@@ -180,6 +180,7 @@ namespace CcsSso.Security.Api.Controllers
       if (tokenRequest.GrantType != "client_credentials")
       {
         (sid, opbsValue) = await GenerateCookiesAsync(tokenRequestInfo.ClientId, tokenRequestInfo.State);
+        // await WriteToCacheForBatchLogout(tokenRequestInfo.ClientId, sid);
       }
       if (tokenRequest.GrantType != "client_credentials" && tokenRequest.GrantType != "refresh_token")
       {
@@ -190,6 +191,42 @@ namespace CcsSso.Security.Api.Controllers
       return idToken;
     }
 
+    private async Task WriteToCacheForBatchLogout(String clientId, String sid)
+    {
+      string sessionCookieName = "ccs-sso";
+      string dashBoardSid;
+
+      if (Request.Cookies.ContainsKey(sessionCookieName))
+
+     {
+        Request.Cookies.TryGetValue(sessionCookieName, out dashBoardSid);
+
+
+        var loggedInUserValue = await _securityCacheService.GetValueAsync<List<SessionIdInCache>>(dashBoardSid);
+
+        if (loggedInUserValue != null && loggedInUserValue.Any())
+        {
+          var selectedClient = loggedInUserValue.FirstOrDefault(item => item.clientId == clientId);
+          if (selectedClient != null)
+          {
+            selectedClient.Sid = sid;
+          }
+          else
+          {
+            selectedClient = new SessionIdInCache { clientId = clientId, Sid = sid };
+            loggedInUserValue.Add(selectedClient);
+          }
+        }
+        else
+        {
+          loggedInUserValue = new List<SessionIdInCache>();
+          loggedInUserValue.Add(new SessionIdInCache { clientId = clientId, Sid = sid });
+        }
+        await _securityCacheService.SetValueAsync(dashBoardSid, "test", new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.StateExpirationInMinutes, 0));
+      }
+
+      // Console.WriteLine(decodedToken);
+    }
     /// <summary>
     /// Returns OP IFrame
     /// </summary>
