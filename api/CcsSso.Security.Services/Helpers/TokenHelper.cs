@@ -78,5 +78,13 @@ namespace CcsSso.Security.Services.Helpers
       }
       return true;
     }
+
+    private void ReadTokenPayLoad(string token)
+    {
+      var handler = new JwtSecurityTokenHandler();
+      var decodedToken = handler.ReadToken(token) as JwtSecurityToken;
+
+      Console.WriteLine(decodedToken);
+    }
   }
 }

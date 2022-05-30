@@ -167,6 +167,7 @@ namespace CcsSso.Security.Services
       {
         try
         {
+          
           var claims = new List<ClaimInfo>();
           claims.Add(new ClaimInfo("sid", sid));
           // Indicate this as a logout token.

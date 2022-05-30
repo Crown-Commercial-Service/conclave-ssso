@@ -3,15 +3,18 @@ using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain.Contexts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Primitives;
+using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -26,15 +29,18 @@ namespace CcsSso.Security.Api.Controllers
     private readonly ISecurityCacheService _securityCacheService;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private readonly ICryptographyService _cryptographyService;
+    private readonly RequestContext _requestContext;
     public SecurityController(ISecurityService securityService, IUserManagerService userManagerService,
       ApplicationConfigurationInfo applicationConfigurationInfo,
-      ISecurityCacheService securityCacheService, ICryptographyService cryptographyService)
+      ISecurityCacheService securityCacheService, ICryptographyService cryptographyService,
+      RequestContext requestContext)
     {
       _securityService = securityService;
       _userManagerService = userManagerService;
       _applicationConfigurationInfo = applicationConfigurationInfo;
       _securityCacheService = securityCacheService;
       _cryptographyService = cryptographyService;
+      _requestContext = requestContext;
     }
 
     /// <summary>
@@ -180,14 +186,64 @@ namespace CcsSso.Security.Api.Controllers
       if (tokenRequest.GrantType != "client_credentials")
       {
         (sid, opbsValue) = await GenerateCookiesAsync(tokenRequestInfo.ClientId, tokenRequestInfo.State);
+
+        var test = GetCookieValueFromResponse(Response, tokenRequestInfo.ClientId);
+
+        // Response.Cookies.Delete(tokenRequestInfo.ClientId);
+        // Response.Cookies.Append(tokenRequestInfo.ClientId,sid,GetCookieOptionsTest(DateTime.Now.AddMinutes(10),false));
+
       }
+
+      Console.WriteLine($"VijayTestSid:-" + sid);
+      Console.WriteLine($"VijayTestClientId:-" + tokenRequest.ClientId);
+
       if (tokenRequest.GrantType != "client_credentials" && tokenRequest.GrantType != "refresh_token")
       {
         var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
         host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
       }
       var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
+
+      WriteToCacheForBatchLogout(idToken.IdToken, tokenRequestInfo.ClientId);
       return idToken;
+    }
+
+
+
+    private async void WriteToCacheForBatchLogout(string token,String clientId)
+    {
+      var handler = new JwtSecurityTokenHandler();
+      var decodedToken = handler.ReadToken(token) as JwtSecurityToken;
+
+      var sub = decodedToken.Claims.FirstOrDefault(x => x.Type == "sub");
+      var sid = decodedToken.Claims.FirstOrDefault(x => x.Type == "sid");
+
+      if(sub != null && sid != null)
+      {
+        
+        var loggedInUserValue = await _securityCacheService.GetValueAsync<List<SessionIdCache>>(sub.Value);
+        
+        if (loggedInUserValue != null && loggedInUserValue.Any())
+        {
+          var selectedClient = loggedInUserValue.FirstOrDefault(item => item.clientId == clientId);
+          if (selectedClient != null)
+          {
+            selectedClient.Sid = sid.Value;
+          }
+          else
+          {
+            selectedClient = new SessionIdCache { clientId = clientId, Sid = sid.Value };
+            loggedInUserValue.Add(selectedClient);
+          }
+        } else
+        {
+          loggedInUserValue = new List<SessionIdCache>();
+          loggedInUserValue.Add(new SessionIdCache { clientId = clientId, Sid = sid.Value });
+        }
+        await _securityCacheService.SetValueAsync(sub.Value, loggedInUserValue, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.StateExpirationInMinutes, 0));
+      }
+
+      // Console.WriteLine(decodedToken);
     }
 
     /// <summary>
@@ -211,6 +267,19 @@ namespace CcsSso.Security.Api.Controllers
         ContentType = "text/html"
       };
     }
+
+
+    private SetCookieHeaderValue GetCookieValueFromResponse(HttpResponse response, string cookieName)
+    {
+      var cookieSetHeader = response.GetTypedHeaders().SetCookie;
+      if (cookieSetHeader != null)
+      {
+        var setCookie = cookieSetHeader.FirstOrDefault(x => x.Name == cookieName);
+        return setCookie;
+      }
+      return null;
+    }
+
 
     /// <summary>
     /// Returns all external identity providers that are listed
@@ -301,7 +370,7 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(404)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
-    public async Task<IdamUserInfo> GetUser([FromHeader][Required] string authorization )
+    public async Task<IdamUserInfo> GetUser([FromHeader][Required] string authorization)
     {
       return await _userManagerService.GetUserAsync();
     }
@@ -446,6 +515,15 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(401)]
     public async Task<IActionResult> LogOut([FromQuery(Name = "client-id")] string clientId, [FromQuery(Name = "redirect-uri")] string redirecturi)
     {
+     //var bearerToken = _requestContext.UserName;
+      var apiKey = HttpContext.Items["X-API-Key"];
+      var bearerToken = HttpContext.Items["Authorization"];
+
+
+      //if (Request.Headers.ContainsKey("Authorization"))
+      //{
+      //  var bearerToken = Request.Headers["Authorization"].FirstOrDefault();
+      //}
       var url = await _securityService.LogoutAsync(clientId, redirecturi);
       if (Request.Cookies.ContainsKey("opbs"))
       {
@@ -457,6 +535,8 @@ namespace CcsSso.Security.Api.Controllers
       {
         Request.Cookies.TryGetValue(sessionCookie, out string sid);
         Response.Cookies.Delete(sessionCookie);
+
+        Console.WriteLine($"VijayTestSid:-" + sid);
 
         if (!string.IsNullOrWhiteSpace(sid))
         {
@@ -555,6 +635,8 @@ namespace CcsSso.Security.Api.Controllers
       string opbsCookieName = "opbs";
       string sessionCookieName = "ccs-sso";
       string visitedSiteCookieName = "ccs-sso-visitedsites";
+      string visitedSiteSids = "ccs-sso-visited-sids";
+
       DateTime expiresOnUTC = DateTime.UtcNow.AddMinutes(_applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes);
 
 
@@ -603,6 +685,9 @@ namespace CcsSso.Security.Api.Controllers
         {
           var sidCache = await _securityCacheService.GetValueAsync<string>(state);
           sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
+
+
+
         }
         //Re-assign the same session id with new expiration time
         Response.Cookies.Delete(sessionCookieName);
@@ -610,12 +695,17 @@ namespace CcsSso.Security.Api.Controllers
         {
           Response.Cookies.Append(sessionCookieName, sid, httpCookieOption);
         }
+
       }
 
       CookieOptions visitedSiteCookieOptions = GetCookieOptions(expiresOnUTC, true);
       if (!Request.Cookies.ContainsKey(visitedSiteCookieName))
       {
         Response.Cookies.Append(visitedSiteCookieName, clientId, visitedSiteCookieOptions);
+        Console.WriteLine("VijaySid-" + sid);
+        Console.WriteLine("VijayClientId-" + clientId);
+
+
       }
       else
       {
@@ -627,8 +717,62 @@ namespace CcsSso.Security.Api.Controllers
           visitedSites = string.Join(",", visitedSiteList);
           Response.Cookies.Delete(visitedSiteCookieName);
           Response.Cookies.Append(visitedSiteCookieName, visitedSites, visitedSiteCookieOptions);
+          Console.WriteLine("VijaySid-" + sid);
+          Console.WriteLine("VijayClientId-" + clientId);
+
         }
       }
+
+      ////CookieOptions visitedSiteCookieOptions = GetCookieOptions(expiresOnUTC, true);
+      //if (!Request.Cookies.ContainsKey(visitedSiteSids))
+      //{
+      //  Response.Cookies.Append(visitedSiteSids, sid, visitedSiteCookieOptions);
+      //  Console.WriteLine("VijaySid-" + sid);
+      //  Console.WriteLine("VijayClientId-" + clientId);
+
+
+      //}
+      //else
+      //{
+      //  Request.Cookies.TryGetValue(visitedSiteSids, out string visitedids);
+      //  var visitedSiteListIds = visitedids.Split(',').ToList();
+      //  if (!visitedSiteListIds.Contains(sid))
+      //  {
+      //    visitedSiteListIds.Add(sid);
+      //    visitedids = string.Join(",", visitedSiteListIds);
+      //    Response.Cookies.Delete(visitedSiteSids);
+      //    Response.Cookies.Append(visitedSiteSids, visitedids, visitedSiteCookieOptions);
+      //    Console.WriteLine("VijaySid-" + sid);
+      //    Console.WriteLine("VijayClientId-" + clientId);
+
+      //  }
+      //}
+
+      CookieOptions httpCookieOptionsNew = new CookieOptions()
+      {
+        HttpOnly = true,
+        SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None,
+        Secure = true
+      };
+
+      if (Request.Cookies.ContainsKey(clientId))
+      {
+        string visitedSiteSid;
+        Request.Cookies.TryGetValue(clientId, out visitedSiteSid);
+
+        Console.WriteLine("vijay-keyAlready exist:" + clientId);
+        Console.WriteLine("vijay-keyAlready exist previous sid:" + visitedSiteSid);
+
+        Response.Cookies.Delete(clientId);
+        Response.Cookies.Append(clientId, sid, httpCookieOptionsNew);
+      }
+      else
+      {
+        Console.WriteLine("vijay-Append New key:" + clientId);
+        Console.WriteLine("vijay-Append New key:" + sid);
+        Response.Cookies.Append(clientId, sid, httpCookieOptionsNew);
+      }
+
 
       return (sid, opbsValue);
     }
@@ -644,16 +788,40 @@ namespace CcsSso.Security.Api.Controllers
 
       if (!string.IsNullOrEmpty(_applicationConfigurationInfo.CustomDomain))
       {
-        cookieOptions.SameSite = SameSiteMode.Lax;
+        cookieOptions.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
         cookieOptions.Domain = _applicationConfigurationInfo.CustomDomain;
       }
       else
       {
-        cookieOptions.SameSite = SameSiteMode.None;
+        cookieOptions.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None;
       }
 
       return cookieOptions;
     }
+
+    private CookieOptions GetCookieOptionsTest(DateTime expiresOnUTC, bool httpOnly)
+    {
+      CookieOptions cookieOptions = new CookieOptions()
+      {
+        HttpOnly = httpOnly,
+        Expires = expiresOnUTC,
+        Secure = true
+      };
+      cookieOptions.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None;
+
+      //if (!string.IsNullOrEmpty(_applicationConfigurationInfo.CustomDomain))
+      //{
+      //  cookieOptions.SameSite = SameSiteMode.Lax;
+      //  cookieOptions.Domain = _applicationConfigurationInfo.CustomDomain;
+      //}
+      //else
+      //{
+      //  cookieOptions.SameSite = SameSiteMode.None;
+      //}
+
+      return cookieOptions;
+    }
+
 
     private List<CookieOptions> GetCookieOptionsListForAllowedDomains(DateTime expiresOnUTC, bool httpOnly)
     {
@@ -667,7 +835,7 @@ namespace CcsSso.Security.Api.Controllers
           HttpOnly = httpOnly,
           Expires = expiresOnUTC,
           Secure = true,
-          SameSite = SameSiteMode.None
+          SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None
         };
         cookieOptionsList.Add(cookieOptions);
       }
@@ -680,7 +848,7 @@ namespace CcsSso.Security.Api.Controllers
             HttpOnly = httpOnly,
             Expires = expiresOnUTC,
             Secure = true,
-            SameSite = SameSiteMode.Lax,
+            SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
             Domain = domain
           };
           cookieOptionsList.Add(cookieOptions);
