@@ -1,6 +1,7 @@
 using CcsSso.Security.Api.Models;
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
+using CcsSso.Security.Services;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Contracts;
 using Microsoft.AspNetCore.Http;
@@ -192,7 +193,8 @@ namespace CcsSso.Security.Api.Controllers
 
       var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
 
-      await WriteToCacheForBatchLogout_UsingSid(tokenRequestInfo.ClientId, sid);
+      //await WriteToCacheForBatchLogout_UsingSid(tokenRequestInfo.ClientId, sid);
+      await WriteToCacheForBatchLogout(tokenRequestInfo.ClientId, idToken.IdToken);
 
       return idToken;
     }
@@ -245,10 +247,8 @@ namespace CcsSso.Security.Api.Controllers
           loggedInUserValue = new List<SessionIdInCache>();
           loggedInUserValue.Add(new SessionIdInCache { clientId = clientId, Sid = sid });
         }
-        await _securityCacheService.SetValueAsync(dashboardSid, loggedInUserValue, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.StateExpirationInMinutes, 0));
+        await _securityCacheService.SetValueAsync(dashboardSid, loggedInUserValue, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes, 0));
       }
-
-      // Console.WriteLine(decodedToken);
     }
 
     private async Task WriteToCacheForBatchLogout(String clientId, String token)
@@ -282,25 +282,16 @@ namespace CcsSso.Security.Api.Controllers
           loggedInUserValue = new List<SessionIdInCache>();
           loggedInUserValue.Add(new SessionIdInCache { clientId = clientId, Sid = sid.Value });
         }
-        await _securityCacheService.SetValueAsync(sub.Value, loggedInUserValue, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.StateExpirationInMinutes, 0));
+        await _securityCacheService.SetValueAsync(sub.Value, loggedInUserValue, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes, 0));
 
-        string dashboardSid = "";
         var sessionCookieName = "ccs-sso-user-id";
         DateTime expiresOnUTC = DateTime.UtcNow.AddMinutes(_applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes);
-        
-        if (Request.Cookies.ContainsKey(sessionCookieName))
-        {
-          Request.Cookies.TryGetValue(sessionCookieName, out dashboardSid);
-        }
-        else
-        {
-          dashboardSid = sub.Value;
-          Response.Cookies.Append(sessionCookieName, dashboardSid, GetCookieOptions(expiresOnUTC, true));
-        }
+
+        Response.Cookies.Delete(sessionCookieName);
+        Response.Cookies.Append(sessionCookieName, sub.Value, GetCookieOptions(expiresOnUTC, true));
 
       }
 
-      // Console.WriteLine(decodedToken);
     }
 
     /// <summary>
@@ -564,7 +555,6 @@ namespace CcsSso.Security.Api.Controllers
       {
         Response.Cookies.Delete("opbs");
       }
-      var userEmail = "test.mvc.bc@yopmail.com";
 
       // delete the session cookie
       string sessionCookie = "ccs-sso";
@@ -579,11 +569,11 @@ namespace CcsSso.Security.Api.Controllers
         }
 
         // delete the dashboardCookieName
-        var dashboardCookieName = "ccs-sso-sid-test";
-        string dashboardSid=sid;
+        var dashboardCookieName = "ccs-sso-user-id";
+        string userId= "";
         if (Request.Cookies.ContainsKey(dashboardCookieName))
         {
-          Request.Cookies.TryGetValue(dashboardCookieName, out dashboardSid);
+          Request.Cookies.TryGetValue(dashboardCookieName, out userId);
         }
 
 
@@ -593,11 +583,11 @@ namespace CcsSso.Security.Api.Controllers
           Request.Cookies.TryGetValue(visitedSiteCookie, out string visitedSites);
           var visitedSiteList = visitedSites.Split(',').ToList();
           // Perform back chanel logout - This should be performed as a queue triggered background job
-          await _securityService.PerformBackChannelLogoutAsync(clientId, sid, visitedSiteList);
+          await _securityService.PerformBackChannelLogoutAsync(clientId, userId, visitedSiteList);
           Response.Cookies.Delete(visitedSiteCookie);
         }
 
-        await _securityService.InvalidateSessionAsync(dashboardSid);
+        await _securityCacheService.RemoveAsync(userId);
       }
 
       return Redirect(url);

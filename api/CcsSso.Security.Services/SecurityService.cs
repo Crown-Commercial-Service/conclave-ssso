@@ -157,28 +157,30 @@ namespace CcsSso.Security.Services
       return await _identityProviderService.SignOutAsync(clientId, redirecturi);
     }
 
-    public async Task<List<string>> PerformBackChannelLogoutAsync(string clientId, string sid, List<string> relyingParties)
+    public async Task<List<string>> PerformBackChannelLogoutAsync(string clientId, string userId, List<string> relyingParties)
     {
       //Temporary implementation to initiate backchannel logout     
       var relyingPartiesDB = await _dataContext.RelyingParties.Where(rp => rp.ClientId != clientId && !string.IsNullOrEmpty(rp.BackChannelLogoutUrl)
                                    && relyingParties.Contains(rp.ClientId) && !rp.IsDeleted).Select(r => r).ToListAsync();
       var successRps = new List<string>();
-      var userEmail = "test.mvc.bc@yopmail.com";
 
       foreach (var rp in relyingPartiesDB)
       {
         try
         {
-          var visitedSiteId=sid;
-          //var listOfSids = await _securityCacheService.GetValueAsync<List<SessionIdInCache>>(sid);
-          //if(listOfSids != null)
-          //{
-          //  var clientSid = listOfSids.FirstOrDefault(x => x.clientId == rp.ClientId);
-          // if(clientSid != null)
-          //  {
-          //    visitedSiteId = clientSid.Sid;
-          //  } 
-          //}
+          string visitedSiteId="";
+          var listOfSids = await _securityCacheService.GetValueAsync<List<SessionIdInCache>>(userId);
+          if (listOfSids != null)
+          {
+            var clientSid = listOfSids.FirstOrDefault(x => x.clientId == rp.ClientId);
+            if (clientSid != null)
+            {
+              visitedSiteId = clientSid.Sid;
+            }
+          }
+          if (string.IsNullOrEmpty(visitedSiteId))
+            return successRps;
+
           var claims = new List<ClaimInfo>();
           claims.Add(new ClaimInfo("sid", visitedSiteId));
           // Indicate this as a logout token.
