@@ -1,17 +1,17 @@
 using CcsSso.Security.Api.Models;
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
-using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Security.Services;
 using CcsSso.Shared.Contracts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -186,8 +186,97 @@ namespace CcsSso.Security.Api.Controllers
         var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
         host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
       }
+
       var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
+
+      //await WriteToCacheForBatchLogout_UsingSid(tokenRequestInfo.ClientId, sid);
+      await WriteToCacheForBatchLogout(tokenRequestInfo.ClientId, idToken.IdToken);
+
       return idToken;
+    }
+
+    private async Task WriteToCacheForBatchLogout_UsingSid(String clientId, String sid)
+    {
+      string dashboardSid = "";
+      var sessionCookieName = "ccs-sso-sid-test";
+      DateTime expiresOnUTC = DateTime.UtcNow.AddMinutes(_applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes);
+
+      if (Request.Cookies.ContainsKey(sessionCookieName))
+      {
+        Request.Cookies.TryGetValue(sessionCookieName, out dashboardSid);
+      }
+      else
+      {
+        dashboardSid = Guid.NewGuid().ToString();
+        Response.Cookies.Append(sessionCookieName, dashboardSid, GetCookieOptions(expiresOnUTC, true));
+      }
+
+      if (!string.IsNullOrEmpty(dashboardSid))
+      {
+
+        var loggedInUserValue = await _securityCacheService.GetValueAsync<List<SessionIdInCache>>(dashboardSid);
+
+        if (loggedInUserValue != null && loggedInUserValue.Any())
+        {
+          var selectedClient = loggedInUserValue.FirstOrDefault(item => item.clientId == clientId);
+          if (selectedClient != null)
+          {
+            selectedClient.Sid = sid;
+          }
+          else
+          {
+            selectedClient = new SessionIdInCache { clientId = clientId, Sid = sid };
+            loggedInUserValue.Add(selectedClient);
+          }
+        }
+        else
+        {
+          loggedInUserValue = new List<SessionIdInCache>();
+          loggedInUserValue.Add(new SessionIdInCache { clientId = clientId, Sid = sid });
+        }
+        await _securityCacheService.SetValueAsync(dashboardSid, loggedInUserValue, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes, 0));
+      }
+    }
+
+    private async Task WriteToCacheForBatchLogout(String clientId, String token)
+    {
+      var handler = new JwtSecurityTokenHandler();
+      var decodedToken = handler.ReadToken(token) as JwtSecurityToken;
+
+      var sub = decodedToken.Claims.FirstOrDefault(x => x.Type == "sub");
+      var sid = decodedToken.Claims.FirstOrDefault(x => x.Type == "sid");
+
+      if (sub != null && sid != null)
+      {
+
+        var loggedInUserValue = await _securityCacheService.GetValueAsync<List<SessionIdInCache>>(sub.Value);
+
+        if (loggedInUserValue != null && loggedInUserValue.Any())
+        {
+          var selectedClient = loggedInUserValue.FirstOrDefault(item => item.clientId == clientId);
+          if (selectedClient != null)
+          {
+            selectedClient.Sid = sid.Value;
+          }
+          else
+          {
+            selectedClient = new SessionIdInCache { clientId = clientId, Sid = sid.Value };
+            loggedInUserValue.Add(selectedClient);
+          }
+        }
+        else
+        {
+          loggedInUserValue = new List<SessionIdInCache>();
+          loggedInUserValue.Add(new SessionIdInCache { clientId = clientId, Sid = sid.Value });
+        }
+        await _securityCacheService.SetValueAsync(sub.Value, loggedInUserValue, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes, 0));
+
+        var sessionCookieName = "ccs-sso-user-id";
+        DateTime expiresOnUTC = DateTime.UtcNow.AddMinutes(_applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes);
+
+        Response.Cookies.Delete(sessionCookieName);
+        Response.Cookies.Append(sessionCookieName, sub.Value, GetCookieOptions(expiresOnUTC, true));
+      }
     }
 
     /// <summary>
@@ -301,7 +390,7 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(404)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
-    public async Task<IdamUserInfo> GetUser([FromHeader][Required] string authorization )
+    public async Task<IdamUserInfo> GetUser([FromHeader][Required] string authorization)
     {
       return await _userManagerService.GetUserAsync();
     }
@@ -451,6 +540,7 @@ namespace CcsSso.Security.Api.Controllers
       {
         Response.Cookies.Delete("opbs");
       }
+
       // delete the session cookie
       string sessionCookie = "ccs-sso";
       if (Request.Cookies.ContainsKey(sessionCookie))
@@ -463,17 +553,25 @@ namespace CcsSso.Security.Api.Controllers
           await _securityService.InvalidateSessionAsync(sid);
         }
 
+        // delete the dashboardCookieName
+        var dashboardCookieName = "ccs-sso-user-id";
+        string userId = "";
+        if (Request.Cookies.ContainsKey(dashboardCookieName))
+        {
+          Request.Cookies.TryGetValue(dashboardCookieName, out userId);
+        }
+
         string visitedSiteCookie = "ccs-sso-visitedsites";
         if (Request.Cookies.ContainsKey(visitedSiteCookie))
         {
           Request.Cookies.TryGetValue(visitedSiteCookie, out string visitedSites);
           var visitedSiteList = visitedSites.Split(',').ToList();
           // Perform back chanel logout - This should be performed as a queue triggered background job
-          await _securityService.PerformBackChannelLogoutAsync(clientId, sid, visitedSiteList);
+          await _securityService.PerformBackChannelLogoutAsync(clientId, userId, visitedSiteList);
           Response.Cookies.Delete(visitedSiteCookie);
         }
+        await _securityCacheService.RemoveAsync(userId);
       }
-
       return Redirect(url);
     }
 
@@ -557,7 +655,6 @@ namespace CcsSso.Security.Api.Controllers
       string visitedSiteCookieName = "ccs-sso-visitedsites";
       DateTime expiresOnUTC = DateTime.UtcNow.AddMinutes(_applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes);
 
-
       List<CookieOptions> opbsCookieOptions = GetCookieOptionsListForAllowedDomains(expiresOnUTC, false);
 
       string opbsValue;
@@ -580,7 +677,6 @@ namespace CcsSso.Security.Api.Controllers
         }
       }
 
-
       List<CookieOptions> httpCookieOptions = GetCookieOptionsListForAllowedDomains(expiresOnUTC, true);
 
       string sid;
@@ -602,7 +698,7 @@ namespace CcsSso.Security.Api.Controllers
         else
         {
           var sidCache = await _securityCacheService.GetValueAsync<string>(state);
-          sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
+          sid = sidCache; // _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
         }
         //Re-assign the same session id with new expiration time
         Response.Cookies.Delete(sessionCookieName);
@@ -657,7 +753,6 @@ namespace CcsSso.Security.Api.Controllers
 
     private List<CookieOptions> GetCookieOptionsListForAllowedDomains(DateTime expiresOnUTC, bool httpOnly)
     {
-
       List<CookieOptions> cookieOptionsList = new();
 
       if (_applicationConfigurationInfo.AllowedDomains == null || _applicationConfigurationInfo.AllowedDomains.Count == 0)
