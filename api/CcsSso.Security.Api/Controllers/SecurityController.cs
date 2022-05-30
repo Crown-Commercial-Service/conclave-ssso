@@ -12,6 +12,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -180,29 +181,51 @@ namespace CcsSso.Security.Api.Controllers
       if (tokenRequest.GrantType != "client_credentials")
       {
         (sid, opbsValue) = await GenerateCookiesAsync(tokenRequestInfo.ClientId, tokenRequestInfo.State);
-        // await WriteToCacheForBatchLogout(tokenRequestInfo.ClientId, sid);
+
       }
       if (tokenRequest.GrantType != "client_credentials" && tokenRequest.GrantType != "refresh_token")
       {
         var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
         host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
       }
+
+
       var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
+
+      await WriteToCacheForBatchLogout_UsingSid(tokenRequestInfo.ClientId, sid);
+
       return idToken;
     }
 
-    private async Task WriteToCacheForBatchLogout(String clientId, String sid)
+    private async Task WriteToCacheForBatchLogout_UsingSid(String clientId, String sid)
     {
-      string sessionCookieName = "ccs-sso";
-      string dashBoardSid;
+      string dashboardSid="";
+      var sessionCookieName = "ccs-sso-sid-test";
+      DateTime expiresOnUTC = DateTime.UtcNow.AddMinutes(_applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes);
+      //if (Request.Cookies.ContainsKey(sessionCookieName))
+      //{
+      //  Request.Cookies.TryGetValue(sessionCookieName, out dashboardSid);
+      //}
+      //else
+      //{
+      //  dashboardSid = new Guid().ToString();
+      //}
 
       if (Request.Cookies.ContainsKey(sessionCookieName))
+      {
+        Request.Cookies.TryGetValue(sessionCookieName, out dashboardSid);
+      }
+      else
+      {
+        dashboardSid = Guid.NewGuid().ToString();
+        Response.Cookies.Append(sessionCookieName, dashboardSid, GetCookieOptions(expiresOnUTC, true));
+      }
 
-     {
-        Request.Cookies.TryGetValue(sessionCookieName, out dashBoardSid);
 
+      if (!string.IsNullOrEmpty(dashboardSid))
+      {
 
-        var loggedInUserValue = await _securityCacheService.GetValueAsync<List<SessionIdInCache>>(dashBoardSid);
+        var loggedInUserValue = await _securityCacheService.GetValueAsync<List<SessionIdInCache>>(dashboardSid);
 
         if (loggedInUserValue != null && loggedInUserValue.Any())
         {
@@ -213,7 +236,7 @@ namespace CcsSso.Security.Api.Controllers
           }
           else
           {
-            selectedClient = new SessionIdInCache { clientId = clientId, Sid = sid };
+            selectedClient = new SessionIdInCache { clientId = clientId, Sid = sid};
             loggedInUserValue.Add(selectedClient);
           }
         }
@@ -222,11 +245,64 @@ namespace CcsSso.Security.Api.Controllers
           loggedInUserValue = new List<SessionIdInCache>();
           loggedInUserValue.Add(new SessionIdInCache { clientId = clientId, Sid = sid });
         }
-        await _securityCacheService.SetValueAsync(dashBoardSid, "test", new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.StateExpirationInMinutes, 0));
+        await _securityCacheService.SetValueAsync(dashboardSid, loggedInUserValue, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.StateExpirationInMinutes, 0));
       }
 
       // Console.WriteLine(decodedToken);
     }
+
+    private async Task WriteToCacheForBatchLogout(String clientId, String token)
+    {
+      var handler = new JwtSecurityTokenHandler();
+      var decodedToken = handler.ReadToken(token) as JwtSecurityToken;
+
+      var sub = decodedToken.Claims.FirstOrDefault(x => x.Type == "sub");
+      var sid = decodedToken.Claims.FirstOrDefault(x => x.Type == "sid");
+
+      if (sub != null && sid != null)
+      {
+
+        var loggedInUserValue = await _securityCacheService.GetValueAsync<List<SessionIdInCache>>(sub.Value);
+
+        if (loggedInUserValue != null && loggedInUserValue.Any())
+        {
+          var selectedClient = loggedInUserValue.FirstOrDefault(item => item.clientId == clientId);
+          if (selectedClient != null)
+          {
+            selectedClient.Sid = sid.Value;
+          }
+          else
+          {
+            selectedClient = new SessionIdInCache { clientId = clientId, Sid = sid.Value };
+            loggedInUserValue.Add(selectedClient);
+          }
+        }
+        else
+        {
+          loggedInUserValue = new List<SessionIdInCache>();
+          loggedInUserValue.Add(new SessionIdInCache { clientId = clientId, Sid = sid.Value });
+        }
+        await _securityCacheService.SetValueAsync(sub.Value, loggedInUserValue, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.StateExpirationInMinutes, 0));
+
+        string dashboardSid = "";
+        var sessionCookieName = "ccs-sso-user-id";
+        DateTime expiresOnUTC = DateTime.UtcNow.AddMinutes(_applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes);
+        
+        if (Request.Cookies.ContainsKey(sessionCookieName))
+        {
+          Request.Cookies.TryGetValue(sessionCookieName, out dashboardSid);
+        }
+        else
+        {
+          dashboardSid = sub.Value;
+          Response.Cookies.Append(sessionCookieName, dashboardSid, GetCookieOptions(expiresOnUTC, true));
+        }
+
+      }
+
+      // Console.WriteLine(decodedToken);
+    }
+
     /// <summary>
     /// Returns OP IFrame
     /// </summary>
@@ -338,7 +414,7 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(404)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
-    public async Task<IdamUserInfo> GetUser([FromHeader][Required] string authorization )
+    public async Task<IdamUserInfo> GetUser([FromHeader][Required] string authorization)
     {
       return await _userManagerService.GetUserAsync();
     }
@@ -488,6 +564,8 @@ namespace CcsSso.Security.Api.Controllers
       {
         Response.Cookies.Delete("opbs");
       }
+      var userEmail = "test.mvc.bc@yopmail.com";
+
       // delete the session cookie
       string sessionCookie = "ccs-sso";
       if (Request.Cookies.ContainsKey(sessionCookie))
@@ -500,6 +578,15 @@ namespace CcsSso.Security.Api.Controllers
           await _securityService.InvalidateSessionAsync(sid);
         }
 
+        // delete the dashboardCookieName
+        var dashboardCookieName = "ccs-sso-sid-test";
+        string dashboardSid=sid;
+        if (Request.Cookies.ContainsKey(dashboardCookieName))
+        {
+          Request.Cookies.TryGetValue(dashboardCookieName, out dashboardSid);
+        }
+
+
         string visitedSiteCookie = "ccs-sso-visitedsites";
         if (Request.Cookies.ContainsKey(visitedSiteCookie))
         {
@@ -509,6 +596,8 @@ namespace CcsSso.Security.Api.Controllers
           await _securityService.PerformBackChannelLogoutAsync(clientId, sid, visitedSiteList);
           Response.Cookies.Delete(visitedSiteCookie);
         }
+
+        await _securityService.InvalidateSessionAsync(dashboardSid);
       }
 
       return Redirect(url);
@@ -639,7 +728,7 @@ namespace CcsSso.Security.Api.Controllers
         else
         {
           var sidCache = await _securityCacheService.GetValueAsync<string>(state);
-          sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
+          sid = sidCache; // _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
         }
         //Re-assign the same session id with new expiration time
         Response.Cookies.Delete(sessionCookieName);
@@ -666,6 +755,10 @@ namespace CcsSso.Security.Api.Controllers
           Response.Cookies.Append(visitedSiteCookieName, visitedSites, visitedSiteCookieOptions);
         }
       }
+
+      //WriteToCacheForBatchLogout(clientId, sid);
+      //await _securityCacheService.SetValueAsync("vijay", "test", new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.StateExpirationInMinutes, 0));
+
 
       return (sid, opbsValue);
     }
