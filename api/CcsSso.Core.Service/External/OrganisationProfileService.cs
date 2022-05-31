@@ -745,7 +745,7 @@ namespace CcsSso.Core.Service.External
         {
           return false;
         }
-        if (!CIIOrgID.All(char.IsDigit))
+        else if (!CIIOrgID.All(char.IsDigit)) //All characters are numbers 
         {
           return false;
         }
@@ -753,6 +753,7 @@ namespace CcsSso.Core.Service.External
       }
       catch (ArgumentException)
       {
+         return false;
       }
       return false;
     }
