@@ -670,7 +670,7 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
       }
 
-      if (string.IsNullOrWhiteSpace(organisationProfileInfo.Detail.OrganisationId))
+      if (!ValidateCiiOrganisationID(organisationProfileInfo.Detail.OrganisationId))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidCiiOrganisationId);
       }
@@ -702,6 +702,38 @@ namespace CcsSso.Core.Service.External
           throw new CcsSsoException(ErrorConstant.ErrorInvalidCountryCode);
         }
       }
+    }
+
+    /// <summary>
+    /// Validate organisationId
+    /// </summary>
+    /// <returns></returns>
+    public bool ValidateCiiOrganisationID(string CIIOrgID)
+    {
+      try
+      {
+        if (string.IsNullOrWhiteSpace(CIIOrgID)) //OrgID mandatory
+        {
+          return false;
+        }
+        else if (CIIOrgID.Length != 18) // 18 Digits long
+        {
+          return false;
+        }
+        else if (CIIOrgID.StartsWith("0")) //No starting 0's
+        {
+          return false;
+        }
+        else if (!CIIOrgID.All(char.IsDigit)) //All characters are numbers 
+        {
+          return false;
+        }
+        return true;
+      }
+      catch (ArgumentException)
+      {
+      }
+      return false;
     }
 
     /// <summary>
