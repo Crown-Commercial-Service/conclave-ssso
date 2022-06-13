@@ -42,7 +42,22 @@ namespace CcsSso.Core.Service.External
     /// <returns></returns>
     public async Task<int> CreateSiteAsync(string ciiOrganisationId, OrganisationSiteInfo organisationSiteInfo)
     {
-      Validate(organisationSiteInfo, ciiOrganisationId);
+      Validate(organisationSiteInfo);
+
+      //Validate Sitename duplication in same org
+      var old_sites = _dataContext.ContactPoint
+        .Include(cp => cp.ContactPointReason)
+        .Include(cp => cp.ContactDetail).ThenInclude(cd => cd.PhysicalAddress)
+        .Where(cp => !cp.IsDeleted && cp.IsSite && cp.Party.Organisation.CiiOrganisationId == ciiOrganisationId
+        && cp.SiteName == organisationSiteInfo.SiteName).FirstOrDefault();
+
+      if (old_sites != null)
+      {
+        if (organisationSiteInfo.SiteName.Trim().ToString() == old_sites.SiteName.ToString())
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
+        }
+      }
 
       var organisation = await _dataContext.Organisation
        .Include(o => o.Party)
@@ -242,7 +257,22 @@ namespace CcsSso.Core.Service.External
     /// <returns></returns>
     public async Task UpdateSiteAsync(string ciiOrganisationId, int siteId, OrganisationSiteInfo organisationSiteInfo)
     {
-      Validate(organisationSiteInfo, ciiOrganisationId);
+      Validate(organisationSiteInfo);
+
+      //Validate Sitename duplication in same org
+      var old_sites = _dataContext.ContactPoint
+        .Include(cp => cp.ContactPointReason)
+        .Include(cp => cp.ContactDetail).ThenInclude(cd => cd.PhysicalAddress)
+        .Where(cp => !cp.IsDeleted && cp.IsSite && cp.Party.Organisation.CiiOrganisationId == ciiOrganisationId
+        && cp.SiteName == organisationSiteInfo.SiteName && cp.Id != siteId).FirstOrDefault();
+
+      if (old_sites != null)
+      {
+        if (organisationSiteInfo.SiteName.Trim().ToString() == old_sites.SiteName.ToString())
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
+        }
+      }
 
       var organisationSiteContactPoint = await _dataContext.ContactPoint
        .Include(cp => cp.ContactDetail).ThenInclude(cd => cd.PhysicalAddress)
@@ -311,26 +341,11 @@ namespace CcsSso.Core.Service.External
     /// Validate
     /// </summary>
     /// <param name="organisationSiteInfo"></param>
-    private void Validate(OrganisationSiteInfo organisationSiteInfo, string ciiOrganisationId)
+    private void Validate(OrganisationSiteInfo organisationSiteInfo)
     {
       if (string.IsNullOrWhiteSpace(organisationSiteInfo.SiteName))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
-      }
-
-      //Validate Sitename duplication in same org
-      var old_sites = _dataContext.ContactPoint
-        .Include(cp => cp.ContactPointReason)
-        .Include(cp => cp.ContactDetail).ThenInclude(cd => cd.PhysicalAddress)
-        .Where(cp => !cp.IsDeleted && cp.IsSite && cp.Party.Organisation.CiiOrganisationId == ciiOrganisationId
-        && cp.SiteName == organisationSiteInfo.SiteName).FirstOrDefault();
-
-      if (old_sites != null)
-      {
-        if (organisationSiteInfo.SiteName.Trim().ToString() == old_sites.SiteName.ToString())
-        {
-          throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
-        }
       }
 
       if (organisationSiteInfo.Address == null)
