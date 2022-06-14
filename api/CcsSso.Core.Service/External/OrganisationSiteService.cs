@@ -44,16 +44,16 @@ namespace CcsSso.Core.Service.External
     {
       Validate(organisationSiteInfo);
 
-      //Validate Sitename duplication in same org
-      var old_sites = _dataContext.ContactPoint
+      //Validate duplication  Sitename - Create Site
+      var Prev_SiteInfo = _dataContext.ContactPoint
         .Include(cp => cp.ContactPointReason)
         .Include(cp => cp.ContactDetail).ThenInclude(cd => cd.PhysicalAddress)
         .Where(cp => !cp.IsDeleted && cp.IsSite && cp.Party.Organisation.CiiOrganisationId == ciiOrganisationId
         && cp.SiteName == organisationSiteInfo.SiteName).FirstOrDefault();
 
-      if (old_sites != null)
+      if (Prev_SiteInfo != null)
       {
-        if (organisationSiteInfo.SiteName.Trim().ToString() == old_sites.SiteName.ToString())
+        if (organisationSiteInfo.SiteName.Trim().ToString() == Prev_SiteInfo.SiteName.ToString())
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
         }
@@ -259,25 +259,25 @@ namespace CcsSso.Core.Service.External
     {
       Validate(organisationSiteInfo);
 
-      //Validate Sitename duplication in same org
-      var old_sites = _dataContext.ContactPoint
+      //Validate duplication  Sitename - Update Site
+      var Prev_SiteInfo = _dataContext.ContactPoint
         .Include(cp => cp.ContactPointReason)
         .Include(cp => cp.ContactDetail).ThenInclude(cd => cd.PhysicalAddress)
         .Where(cp => !cp.IsDeleted && cp.IsSite && cp.Party.Organisation.CiiOrganisationId == ciiOrganisationId
         && cp.SiteName == organisationSiteInfo.SiteName && cp.Id != siteId).FirstOrDefault();
 
-      if (old_sites != null)
+      if (Prev_SiteInfo != null)
       {
-        if (organisationSiteInfo.SiteName.Trim().ToString() == old_sites.SiteName.ToString())
+        if (Prev_SiteInfo.SiteName.Trim().ToString() == organisationSiteInfo.SiteName.ToString())
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
         }
       }
 
       var organisationSiteContactPoint = await _dataContext.ContactPoint
-       .Include(cp => cp.ContactDetail).ThenInclude(cd => cd.PhysicalAddress)
-       .Where(cp => !cp.IsDeleted && cp.Id == siteId && cp.IsSite && cp.Party.Organisation.CiiOrganisationId == ciiOrganisationId)
-       .FirstOrDefaultAsync();
+     .Include(cp => cp.ContactDetail).ThenInclude(cd => cd.PhysicalAddress)
+     .Where(cp => !cp.IsDeleted && cp.Id == siteId && cp.IsSite && cp.Party.Organisation.CiiOrganisationId == ciiOrganisationId)
+     .FirstOrDefaultAsync();
 
       if (organisationSiteContactPoint != null)
       {
