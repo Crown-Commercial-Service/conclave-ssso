@@ -588,6 +588,7 @@ namespace CcsSso.Security.Api.Controllers
       {
         sid = Guid.NewGuid().ToString();
         var sidEncrypted = _cryptographyService.EncryptString(sid, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
+        sid = sidEncrypted; //hotfix - to fix the client application opened directly. Without visting the client app from Dashboard.
         foreach (var httpCookieOption in httpCookieOptions)
         {
           Response.Cookies.Append(sessionCookieName, sidEncrypted, httpCookieOption);
@@ -602,7 +603,9 @@ namespace CcsSso.Security.Api.Controllers
         else
         {
           var sidCache = await _securityCacheService.GetValueAsync<string>(state);
-          sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
+          // TODO - This doubel encryption break back channel logout feature. It will be revieved later.
+          // sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
+          sid = sidCache;
         }
         //Re-assign the same session id with new expiration time
         Response.Cookies.Delete(sessionCookieName);
