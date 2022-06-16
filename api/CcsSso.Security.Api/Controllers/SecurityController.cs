@@ -588,6 +588,7 @@ namespace CcsSso.Security.Api.Controllers
       {
         sid = Guid.NewGuid().ToString();
         var sidEncrypted = _cryptographyService.EncryptString(sid, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
+        sid = sidEncrypted; //hotfix - to fix the client application opened directly. Without visting the client app from Dashboard.
         foreach (var httpCookieOption in httpCookieOptions)
         {
           Response.Cookies.Append(sessionCookieName, sidEncrypted, httpCookieOption);
