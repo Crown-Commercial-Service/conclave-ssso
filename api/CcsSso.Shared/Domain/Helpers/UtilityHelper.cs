@@ -104,5 +104,33 @@ namespace CcsSso.Shared.Domain.Helpers
         return false;
       }
     }
+
+    public static bool IsGroupNameValid(string Name)
+    {
+      try
+      {
+        Regex regex = new Regex(RegexExpression.VALID_GROUP_NAME);
+        Match match = regex.Match(Name);
+        return match.Success;
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
+
+    public static bool IsContactNameValid(string Name)
+    {
+      try
+      {
+        Regex regex = new Regex(RegexExpression.VALID_CONTACT_NAME);
+        Match match = regex.Match(Name);
+        return match.Success;
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
   }
 }
