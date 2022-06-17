@@ -32,6 +32,8 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+      Console.WriteLine($"Vijay-ExecuteAsync - PushDataQueueUrl- IsCancellationRequested- {stoppingToken.IsCancellationRequested}");
+
       while (!stoppingToken.IsCancellationRequested)
       {
         _logger.LogInformation($"Worker: {LISTNER_JOB_NAME} running at: {DateTime.UtcNow}");
@@ -44,6 +46,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
     private async Task PerformJobAsync()
     {
+      Console.WriteLine($"Vijay-PerformJobAsync-Before receiving Message from SQS. PushDataQueue url - {_appSetting.QueueUrlInfo.PushDataQueueUrl}");
       var msgs = await _awsSqsService.ReceiveMessagesAsync(_appSetting.QueueUrlInfo.PushDataQueueUrl);
       Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: {msgs.Count} messages received at {DateTime.UtcNow}");
       List<Task> taskList = new List<Task>();

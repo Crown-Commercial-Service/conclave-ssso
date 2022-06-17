@@ -26,6 +26,8 @@ namespace CcsSso.Adaptor.Api.Middlewares
 
       if (string.IsNullOrWhiteSpace(consumerClientId) || string.IsNullOrWhiteSpace(apiKey) || apiKey != _appSetting.ApiKey)
       {
+        Console.WriteLine($"Vijay-Middleware-Invoke-Adaptor-ClientId null or empty-consumerClientId {consumerClientId}");
+
         throw new UnauthorizedAccessException();
       }
       else
@@ -33,6 +35,7 @@ namespace CcsSso.Adaptor.Api.Middlewares
         var consumer = await consumerService.GetConsumerByClientId(consumerClientId);
         if (consumer == null)
         {
+          Console.WriteLine($"Vijay-Middleware-Invoke-Adaptor-consumerClientId {consumerClientId}");
           throw new UnauthorizedAccessException();
         }
         else

@@ -178,7 +178,7 @@ namespace CcsSso.Core.Service
           foreach (var serviceClientId in serviceClientIds)
           {
             SqsMessageDto sqsMessageDto = new()
-            {
+            { 
               MessageBody = serviceClientId,
               StringCustomAttributes = new Dictionary<string, string>
               {
@@ -189,10 +189,16 @@ namespace CcsSso.Core.Service
             };
             sqsMessageDtos.Add(sqsMessageDto);
           }
+
+          Console.WriteLine($"Vijay-NotifyUserChangeAsync-Before sending Message to SQS. url - {_appConfig.QueueUrlInfo.AdaptorNotificationQueueUrl}, Message-{sqsMessageDtos}");
           await _awsSqsService.SendMessageBatchAsync(_appConfig.QueueUrlInfo.AdaptorNotificationQueueUrl, userName, sqsMessageDtos);
+          Console.WriteLine($"Vijay-NotifyUserChangeAsync-After sending Message to SQS. url - {_appConfig.QueueUrlInfo.AdaptorNotificationQueueUrl}");
+
+
         }
         catch (Exception ex)
         {
+          Console.WriteLine($"Vijay-NotifyUserChangeAsync-Exception thrown-{ex}");
           Console.WriteLine($"Error notifying adapter for user change. UserName: {userName}, Error {ex.Message}");
         }
       }
