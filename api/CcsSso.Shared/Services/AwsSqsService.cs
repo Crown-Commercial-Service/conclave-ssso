@@ -48,36 +48,51 @@ namespace CcsSso.Shared.Services
     /// <returns></returns>
     public async Task<List<SqsMessageResponseDto>> ReceiveMessagesAsync(string queueUrl, int? maxMessages = null, int? waitTimeSeconds = null)
     {
+      Console.WriteLine($"Vijay-ReceiveMessagesAsync-Before receiving Message from SQS. RecieveMessagesMaxCount - {_sqsConfiguration.RecieveMessagesMaxCount}");
+      Console.WriteLine($"Vijay-ReceiveMessagesAsync-Before receiving Message from SQS. RecieveWaitTimeInSeconds - {_sqsConfiguration.RecieveWaitTimeInSeconds}");
+
       List<SqsMessageResponseDto> sqsMessageResponseDtos = new List<SqsMessageResponseDto>();
-      var receiveMessageRequest = await _sqsClient.ReceiveMessageAsync(new ReceiveMessageRequest
+
+      try
       {
-        QueueUrl = queueUrl,
-        MaxNumberOfMessages = maxMessages ?? _sqsConfiguration.RecieveMessagesMaxCount,
-        WaitTimeSeconds = waitTimeSeconds ?? _sqsConfiguration.RecieveWaitTimeInSeconds,
-        AttributeNames = new List<string> { "All" },
-        MessageAttributeNames = new List<string> { "*" }
-      });
-
-      receiveMessageRequest?.Messages.ForEach((msg) =>
-      {
-        var stringValueAttributes = msg.MessageAttributes
-        .Where(ma => ma.Value.DataType == StringValueType)
-        .Select(ma => new KeyValuePair<string, string>(ma.Key, ma.Value.StringValue)).ToDictionary(a => a.Key, a => a.Value);
-
-        var numberValueAttributes = msg.MessageAttributes
-        .Where(ma => ma.Value.DataType == NumberValueType)
-        .Select(ma => new KeyValuePair<string, int>(ma.Key, int.Parse(ma.Value.StringValue))).ToDictionary(a => a.Key, a => a.Value);
-
-        sqsMessageResponseDtos.Add(new SqsMessageResponseDto
+        var receiveMessageRequest = await _sqsClient.ReceiveMessageAsync(new ReceiveMessageRequest
         {
-          MessageBody = msg.Body,
-          MessageId = msg.MessageId,
-          ReceiptHandle = msg.ReceiptHandle,
-          StringCustomAttributes = stringValueAttributes,
-          NumberCustomAttributes = numberValueAttributes,
-          ReceiveCount = int.Parse(msg.Attributes.First(a => a.Key == "ApproximateReceiveCount").Value)
+          QueueUrl = queueUrl,
+          MaxNumberOfMessages = maxMessages ?? _sqsConfiguration.RecieveMessagesMaxCount,
+          WaitTimeSeconds = waitTimeSeconds ?? _sqsConfiguration.RecieveWaitTimeInSeconds,
+          AttributeNames = new List<string> { "All" },
+          MessageAttributeNames = new List<string> { "*" }
         });
-      });
+
+        Console.WriteLine($"Vijay-ReceiveMessagesAsync-received Message request - {receiveMessageRequest}");
+        Console.WriteLine($"Vijay-ReceiveMessagesAsync-received Message request - {receiveMessageRequest?.Messages}");
+
+        receiveMessageRequest?.Messages.ForEach((msg) =>
+        {
+          var stringValueAttributes = msg.MessageAttributes
+          .Where(ma => ma.Value.DataType == StringValueType)
+          .Select(ma => new KeyValuePair<string, string>(ma.Key, ma.Value.StringValue)).ToDictionary(a => a.Key, a => a.Value);
+
+          var numberValueAttributes = msg.MessageAttributes
+          .Where(ma => ma.Value.DataType == NumberValueType)
+          .Select(ma => new KeyValuePair<string, int>(ma.Key, int.Parse(ma.Value.StringValue))).ToDictionary(a => a.Key, a => a.Value);
+
+          sqsMessageResponseDtos.Add(new SqsMessageResponseDto
+          {
+            MessageBody = msg.Body,
+            MessageId = msg.MessageId,
+            ReceiptHandle = msg.ReceiptHandle,
+            StringCustomAttributes = stringValueAttributes,
+            NumberCustomAttributes = numberValueAttributes,
+            ReceiveCount = int.Parse(msg.Attributes.First(a => a.Key == "ApproximateReceiveCount").Value)
+          });
+        });
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Vijay-ReceiveMessagesAsync-Exception - {ex}");
+        throw;
+      }
 
       return sqsMessageResponseDtos;
     }

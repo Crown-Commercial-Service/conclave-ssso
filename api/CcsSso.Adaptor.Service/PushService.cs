@@ -5,6 +5,7 @@ using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Dto;
 using CcsSso.Shared.Domain.Excecptions;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -44,6 +45,8 @@ namespace CcsSso.Adaptor.Service
     /// <returns></returns>
     public async Task PublishPushDataAsync(SqsMessageResponseDto sqsMessageResponseDto)
     {
+      Console.WriteLine($"Vijay-PublishPushDataAsync -sqsMessageResponseDto {sqsMessageResponseDto}");
+
       var entityName = sqsMessageResponseDto.StringCustomAttributes.First(a => a.Key == QueueConstant.OperationEntity).Value;
 
       switch (entityName) {
@@ -147,7 +150,23 @@ namespace CcsSso.Adaptor.Service
         }
       };
 
-      await _awsSqsService.SendMessageAsync(_appSetting.QueueUrlInfo.PushDataQueueUrl, pushSubscriptionData.ConsumerClientId, sqsMessageDto);
+      try
+      {
+        Console.WriteLine($"Vijay-Before sending the message to SQS PushDataQueueUrl - {_appSetting.QueueUrlInfo.PushDataQueueUrl}");
+        Console.WriteLine($"Vijay-Before sending the message to SQS ConsumerClientId - {pushSubscriptionData.ConsumerClientId}");
+        Console.WriteLine($"Vijay-Before sending the message to SQS sqsMessageDto - {sqsMessageDto}");
+
+        await _awsSqsService.SendMessageAsync(_appSetting.QueueUrlInfo.PushDataQueueUrl, pushSubscriptionData.ConsumerClientId, sqsMessageDto);
+
+        Console.WriteLine($"Vijay-After sending the message to SQS");
+
+
+      }
+      catch (System.Exception ex)
+      {
+        Console.WriteLine($"Vijay-Adaptor-NotifyPushDataToQueueAsync -exception {ex}");
+        throw;
+      }
     }
   }
 }
