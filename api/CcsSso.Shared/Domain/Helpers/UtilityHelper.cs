@@ -119,7 +119,7 @@ namespace CcsSso.Shared.Domain.Helpers
       }
     }
 
-    public static bool IsContactNameValid(string Name)
+    public static bool IsContactPointNameValid(string Name)
     {
       try
       {

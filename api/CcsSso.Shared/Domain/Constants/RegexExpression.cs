@@ -8,6 +8,6 @@ namespace CcsSso.Shared.Domain.Constants
     public const string VALID_PASSWORD_FORMAT_REGEX = @"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#$%^&*_]).{4,}$";
     public const string VALID_USER_NAME = @"[a-zA-Z-,'.]+$";
     public const string VALID_GROUP_NAME = @"^[a-zA-Z0-9-,.&/()“+#;:@']{3,256}$";
-    public const string VALID_CONTACT_NAME = @"^[a-zA-Z0-9,.-'/&()]{3,256}$";
+    public const string VALID_CONTACT_NAME = @"^[a-zA-Z0-9-.,'/&()]{3,256}$";
   }
 }
