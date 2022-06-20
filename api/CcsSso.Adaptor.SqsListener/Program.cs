@@ -83,7 +83,7 @@ namespace CcsSso.Adaptor.SqsListener
                   },
                   QueueUrlInfo = new Domain.SqsListener.QueueUrlInfo
                   {
-                    AdapterNotificationQueueUrl = queueInfoVault.AdapterNotificationQueueUrl,
+                    AdaptorNotificationQueueUrl = queueInfoVault.AdaptorNotificationQueueUrl,
                     PushDataQueueUrl = queueInfoVault.PushDataQueueUrl
                   }
                 };

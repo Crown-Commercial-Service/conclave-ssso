@@ -31,7 +31,7 @@ namespace CcsSso.Adaptor.Domain.SqsListener
 
   public class QueueUrlInfo
   {
-    public string AdapterNotificationQueueUrl { get; set; }
+    public string AdaptorNotificationQueueUrl { get; set; }
 
     public string PushDataQueueUrl { get; set; }
   }
@@ -55,7 +55,7 @@ namespace CcsSso.Adaptor.Domain.SqsListener
 
     public string RecieveWaitTimeInSeconds { get; set; }
 
-    public string AdapterNotificationQueueUrl { get; set; }
+    public string AdaptorNotificationQueueUrl { get; set; }
 
     public string PushDataQueueUrl { get; set; }
   }
