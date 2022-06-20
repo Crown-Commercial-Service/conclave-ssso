@@ -107,7 +107,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
       try
       {
         Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: Deleteing message from queue. MessageId: {sqsMessageResponseDto.MessageId}");
-        await _awsSqsService.DeleteMessageAsync(_appSetting.QueueUrlInfo.AdapterNotificationQueueUrl, sqsMessageResponseDto.ReceiptHandle);
+        await _awsSqsService.DeleteMessageAsync(_appSetting.QueueUrlInfo.AdaptorNotificationQueueUrl, sqsMessageResponseDto.ReceiptHandle);
       }
       catch (Exception ex)
       {
