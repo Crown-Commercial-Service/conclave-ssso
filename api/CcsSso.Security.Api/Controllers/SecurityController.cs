@@ -644,7 +644,6 @@ namespace CcsSso.Security.Api.Controllers
         {
           Request.Cookies.TryGetValue(sessionCookieName, out sid);
           Console.WriteLine("Vijay-GenerateCookiesAsync-Readfrom Cookies" + sid);
-
         }
 
         //Re-assign the same session id with new expiration time
