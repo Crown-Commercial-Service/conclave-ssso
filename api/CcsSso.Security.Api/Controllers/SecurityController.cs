@@ -93,6 +93,8 @@ namespace CcsSso.Security.Api.Controllers
     public async Task<IActionResult> Authorize(string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge,
       string prompt, string state, string nonce, string display, string login_hint, int? max_age, string acr_values)
     {
+      Console.WriteLine("Vijay-Authorize-start");
+      Console.WriteLine("Vijay-Authorize-clientId " + client_id);
 
       Console.WriteLine($"Security API Authorize1 scope:- ${scope}, response_type:- ${response_type}, client_id:- ${client_id}, redirect_uri:- ${redirect_uri}");
       Console.WriteLine($"Security AP2 Authorize2 code_challenge_method:- ${code_challenge_method}, code_challenge:- ${code_challenge}, prompt:- ${prompt}, state:- ${state}");
@@ -105,10 +107,16 @@ namespace CcsSso.Security.Api.Controllers
         return Redirect(errorUrl);
       }
 
+
       var (sid, opbs) = await GenerateCookiesAsync(client_id);
+
+      Console.WriteLine("Vijay-Authorize-state from Authorize method " + state);
 
       var url = await _securityService.GetAuthenticationEndPointAsync(sid, scope, response_type, client_id, redirect_uri,
         code_challenge_method, code_challenge, prompt, state, nonce, display, login_hint, max_age, acr_values);
+
+      Console.WriteLine("Vijay-Authorize-end");
+
       return Redirect(url);
     }
 
@@ -158,6 +166,8 @@ namespace CcsSso.Security.Api.Controllers
       Console.WriteLine($"Security API Token7 RedirectUrl:- ${tokenRequest.RedirectUrl}");
       Console.WriteLine($"Security API Token8 Audience:- ${tokenRequest.Audience}");
 
+      Console.WriteLine("Vijay-Token-start");
+
       var tokenRequestInfo = new TokenRequestInfo()
       {
         ClientId = tokenRequest.ClientId,
@@ -187,6 +197,9 @@ namespace CcsSso.Security.Api.Controllers
         host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
       }
       var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
+
+      Console.WriteLine("Vijay-Token-end");
+
       return idToken;
     }
 
@@ -301,7 +314,7 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(404)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
-    public async Task<IdamUserInfo> GetUser([FromHeader][Required] string authorization )
+    public async Task<IdamUserInfo> GetUser([FromHeader][Required] string authorization)
     {
       return await _userManagerService.GetUserAsync();
     }
@@ -551,6 +564,9 @@ namespace CcsSso.Security.Api.Controllers
 
     private async Task<(string, string)> GenerateCookiesAsync(string clientId, string state = null)
     {
+      Console.WriteLine("Vijay-GenerateCookiesAsync-start");
+      Console.WriteLine("Vijay-GenerateCookiesAsync-Client Id- " + clientId);
+
       clientId = clientId ?? string.Empty;
       string opbsCookieName = "opbs";
       string sessionCookieName = "ccs-sso";
@@ -589,6 +605,9 @@ namespace CcsSso.Security.Api.Controllers
         sid = Guid.NewGuid().ToString();
         var sidEncrypted = _cryptographyService.EncryptString(sid, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
         sid = sidEncrypted; //hotfix - to fix the client application opened directly. Without visting the client app from Dashboard.
+
+        Console.WriteLine("Vijay-GenerateCookiesAsync-New Sid" + sid);
+
         foreach (var httpCookieOption in httpCookieOptions)
         {
           Response.Cookies.Append(sessionCookieName, sidEncrypted, httpCookieOption);
@@ -596,17 +615,38 @@ namespace CcsSso.Security.Api.Controllers
       }
       else
       {
-        if (Request.Cookies.ContainsKey(sessionCookieName))
-        {
-          Request.Cookies.TryGetValue(sessionCookieName, out sid);
-        }
-        else
+        ////Original logic. Above one is the hot fix
+        //if (Request.Cookies.ContainsKey(sessionCookieName))
+        //{
+        //  Request.Cookies.TryGetValue(sessionCookieName, out sid);
+        //  Console.WriteLine("Vijay-GenerateCookiesAsync-Readfrom Cookies" + sid);
+        //}
+        //else
+        //{
+        //  var sidCache = await _securityCacheService.GetValueAsync<string>(state);
+        //  // TODO - This doubel encryption break back channel logout feature. It will be revieved later.
+        //  // sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
+        //  sid = sidCache;
+        //  Console.WriteLine($"Vijay-GenerateCookiesAsync- read from cache { sid} and state - {state}");
+        //}
+
+        // TODO HotFix - We are reversing the check between state or cookies.
+        // Working in local. Testing in DEV by deploying directly.
+        if (!string.IsNullOrEmpty(state))
         {
           var sidCache = await _securityCacheService.GetValueAsync<string>(state);
           // TODO - This doubel encryption break back channel logout feature. It will be revieved later.
           // sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
           sid = sidCache;
+          Console.WriteLine($"Vijay-GenerateCookiesAsync- read from cache { sid} and state - {state}");
         }
+        else
+        {
+          Request.Cookies.TryGetValue(sessionCookieName, out sid);
+          Console.WriteLine("Vijay-GenerateCookiesAsync-Readfrom Cookies" + sid);
+
+        }
+
         //Re-assign the same session id with new expiration time
         Response.Cookies.Delete(sessionCookieName);
         foreach (var httpCookieOption in httpCookieOptions)
@@ -632,7 +672,7 @@ namespace CcsSso.Security.Api.Controllers
           Response.Cookies.Append(visitedSiteCookieName, visitedSites, visitedSiteCookieOptions);
         }
       }
-
+      Console.WriteLine("Vijay-GenerateCookiesAsync-end");
       return (sid, opbsValue);
     }
 

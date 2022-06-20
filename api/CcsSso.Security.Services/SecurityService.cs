@@ -196,6 +196,7 @@ namespace CcsSso.Security.Services
       if (string.IsNullOrEmpty(state))
       {
         state = Guid.NewGuid().ToString();
+        Console.WriteLine("Vijay-Authorize-New state " + state);
       }
       await _securityCacheService.SetValueAsync(state, sid, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.StateExpirationInMinutes, 0));
       return _identityProviderService.GetAuthenticationEndPoint(state, scope, response_type, client_id, redirect_uri,
