@@ -615,48 +615,6 @@ namespace CcsSso.Security.Api.Controllers
       }
       else
       {
-        //// TODO HotFix - We are reversing the check between state or cookies.
-        //// Working in local. Testing in DEV by deploying directly.
-        //if (!string.IsNullOrEmpty(state))
-        //{
-        //  var sidCache = await _securityCacheService.GetValueAsync<string>(state);
-        //  // TODO - This doubel encryption break back channel logout feature. It will be revieved later.
-        //  // sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
-        //  sid = sidCache;
-        //  Console.WriteLine($"Vijay-GenerateCookiesAsync- read from cache { sid} and state - {state}");
-        //}
-        //else
-        //{
-        //  Request.Cookies.TryGetValue(sessionCookieName, out sid);
-        //  Console.WriteLine("Vijay-GenerateCookiesAsync-Readfrom Cookies" + sid);
-
-        //}
-
-        //Original logic. Above one is the hot fix
-
-        if (Request.Cookies.ContainsKey(sessionCookieName))
-        {
-          Request.Cookies.TryGetValue(sessionCookieName, out sid);
-          Console.WriteLine("Vijay-GenerateCookiesAsync-Readfrom Cookies" + sid);
-        }
-        else
-        {
-          var sidCache = await _securityCacheService.GetValueAsync<string>(state);
-          // TODO - This doubel encryption break back channel logout feature. It will be revieved later.
-          // sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
-          sid = sidCache;
-          Console.WriteLine($"Vijay-GenerateCookiesAsync- read from cache { sid} and state - {state}");
-          sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
-          //sid = sidCache;
-          Console.WriteLine($"Vijay-GenerateCookiesAsync- read from cache { sid} and state - {state}");
-        }
-        else
-        {
-          Request.Cookies.TryGetValue(sessionCookieName, out sid);
-          Console.WriteLine("Vijay-GenerateCookiesAsync-Readfrom Cookies" + sid);
-
-        }
-
         ////Original logic. Above one is the hot fix
         //if (Request.Cookies.ContainsKey(sessionCookieName))
         //{
@@ -671,6 +629,24 @@ namespace CcsSso.Security.Api.Controllers
         //  sid = sidCache;
         //  Console.WriteLine($"Vijay-GenerateCookiesAsync- read from cache { sid} and state - {state}");
         //}
+
+        // TODO HotFix - We are reversing the check between state or cookies.
+        // Working in local. Testing in DEV by deploying directly.
+        if (!string.IsNullOrEmpty(state))
+        {
+          var sidCache = await _securityCacheService.GetValueAsync<string>(state);
+          // TODO - This doubel encryption break back channel logout feature. It will be revieved later.
+          // sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
+          sid = sidCache;
+          Console.WriteLine($"Vijay-GenerateCookiesAsync- read from cache { sid} and state - {state}");
+        }
+        else
+        {
+          Request.Cookies.TryGetValue(sessionCookieName, out sid);
+          Console.WriteLine("Vijay-GenerateCookiesAsync-Readfrom Cookies" + sid);
+
+        }
+
         //Re-assign the same session id with new expiration time
         Response.Cookies.Delete(sessionCookieName);
         foreach (var httpCookieOption in httpCookieOptions)
