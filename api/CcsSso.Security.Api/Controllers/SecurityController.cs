@@ -597,7 +597,6 @@ namespace CcsSso.Security.Api.Controllers
       else
       {
         // TODO HotFix - We are reversing the check between state or cookies.
-        // Working in local. Testing in DEV by deploying directly.
         if (!string.IsNullOrEmpty(state))
         {
           var sidCache = await _securityCacheService.GetValueAsync<string>(state);
