@@ -132,5 +132,33 @@ namespace CcsSso.Shared.Domain.Helpers
         return false;
       }
     }
+
+    public static bool IsStreetAddressValid(string Name)
+    {
+      try
+      {
+        Regex regex = new Regex(RegexExpression.VALID_STREET_ADDRESS);
+        Match match = regex.Match(Name);
+        return match.Success;
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
+
+    public static bool IslocalityValid(string Name)
+    {
+      try
+      {
+        Regex regex = new Regex(RegexExpression.VALID_STREET_ADDRESS);
+        Match match = regex.Match(Name);
+        return match.Success;
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
   }
 }

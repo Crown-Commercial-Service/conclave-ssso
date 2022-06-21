@@ -7,6 +7,7 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Domain.Constants;
+using CcsSso.Shared.Domain.Helpers;
 using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -365,6 +366,16 @@ namespace CcsSso.Core.Service.External
         || string.IsNullOrWhiteSpace(organisationSiteInfo.Address.CountryCode))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
+      }
+
+      if (!UtilityHelper.IsStreetAddressValid(organisationSiteInfo.Address.StreetAddress.Trim()))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidStreetAddress);
+      }
+
+      if (!UtilityHelper.IsStreetAddressValid(organisationSiteInfo.Address.StreetAddress.Trim()))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidStreetAddress);
       }
 
       string CountryName = String.Empty;
