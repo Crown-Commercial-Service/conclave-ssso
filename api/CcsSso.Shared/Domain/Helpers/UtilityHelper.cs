@@ -151,7 +151,21 @@ namespace CcsSso.Shared.Domain.Helpers
     {
       try
       {
-        Regex regex = new Regex(RegexExpression.VALID_STREET_ADDRESS);
+        Regex regex = new Regex(RegexExpression.VALID_LOCALITY);
+        Match match = regex.Match(Name);
+        return match.Success;
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
+
+    public static bool IsSiteNameValid(string Name)
+    {
+      try
+      {
+        Regex regex = new Regex(RegexExpression.VALID_SITENAME);
         Match match = regex.Match(Name);
         return match.Success;
       }

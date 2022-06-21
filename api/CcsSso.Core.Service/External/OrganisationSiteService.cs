@@ -368,14 +368,19 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
       }
 
-      if (!UtilityHelper.IsStreetAddressValid(organisationSiteInfo.Address.StreetAddress.Trim()))
+      if (!UtilityHelper.IsSiteNameValid(organisationSiteInfo.SiteName.Trim()))
       {
-        throw new CcsSsoException(ErrorConstant.ErrorInvalidStreetAddress);
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
       }
 
       if (!UtilityHelper.IsStreetAddressValid(organisationSiteInfo.Address.StreetAddress.Trim()))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidStreetAddress);
+      }
+
+      if (!UtilityHelper.IslocalityValid(organisationSiteInfo.Address.Locality.Trim()))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidlocality);
       }
 
       string CountryName = String.Empty;
