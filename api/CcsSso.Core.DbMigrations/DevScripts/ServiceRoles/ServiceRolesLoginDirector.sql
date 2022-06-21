@@ -76,9 +76,9 @@ INSERT INTO public."CcsAccessRole"(
 	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
 	"SubscriptionTypeEligibility", "TradeEligibility", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
 	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('JAEGGER_BUYER', 'Jaegger Buyer', 'Jaegger Buyer', 2, 1, 1, 0, 0, now(), now(), 
+	VALUES ('JAEGGER_BUYER', 'Jaggaer Buyer', 'Jaegger Buyer', 2, 1, 1, 0, 0, now(), now(), 
 			false, false);
-SELECT "Id" into clientJBRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'JAEGGER_BUYER' AND "CcsAccessRoleName" = 'Jaegger Buyer' LIMIT 1;
+SELECT "Id" into clientJBRoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'JAEGGER_BUYER' AND "CcsAccessRoleName" = 'Jaggaer Buyer' LIMIT 1;
 
 			
 INSERT INTO public."CcsAccessRole"(

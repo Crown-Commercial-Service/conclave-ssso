@@ -1,8 +1,8 @@
 CREATE OR REPLACE FUNCTION create_jaggaer_service() RETURNS integer AS $$
 
 -- Add values to clientId and clientUrl
-DECLARE serviceName text = 'Jaggaer';
-DECLARE serviceDescription text = 'Jaggaer';
+DECLARE serviceName text = 'eSourcing';
+DECLARE serviceDescription text = 'The eSourcing tool will help you supply to, or buy for, the public sector, compliantly';
 DECLARE serviceCode text = 'JAGGAER';
 DECLARE clientUrl text = 'https://crowncommercialservice-prep.bravosolution.co.uk/esop/guest/ssoRequest.do';
 DECLARE clientId text = '';
