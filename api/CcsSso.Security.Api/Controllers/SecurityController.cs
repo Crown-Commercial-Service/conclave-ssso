@@ -596,17 +596,19 @@ namespace CcsSso.Security.Api.Controllers
       }
       else
       {
-        if (Request.Cookies.ContainsKey(sessionCookieName))
-        {
-          Request.Cookies.TryGetValue(sessionCookieName, out sid);
-        }
-        else
+        // TODO HotFix - We are reversing the check between state or cookies.
+        if (!string.IsNullOrEmpty(state))
         {
           var sidCache = await _securityCacheService.GetValueAsync<string>(state);
           // TODO - This doubel encryption break back channel logout feature. It will be revieved later.
           // sid = _cryptographyService.EncryptString(sidCache, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
           sid = sidCache;
         }
+        else
+        {
+          Request.Cookies.TryGetValue(sessionCookieName, out sid);
+        }
+
         //Re-assign the same session id with new expiration time
         Response.Cookies.Delete(sessionCookieName);
         foreach (var httpCookieOption in httpCookieOptions)
