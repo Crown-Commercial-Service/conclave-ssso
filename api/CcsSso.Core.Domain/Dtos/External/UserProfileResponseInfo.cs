@@ -29,7 +29,6 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public bool SendUserRegistrationEmail { get; set; } = true;
 
-    public bool IsAdminUser { get; set; } = false;
   }
 
   public class UserRequestDetail

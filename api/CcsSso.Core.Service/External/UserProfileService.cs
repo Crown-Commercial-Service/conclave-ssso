@@ -541,7 +541,20 @@ namespace CcsSso.Core.Service.External
 
       Validate(userProfileRequestInfo, isMyProfile, organisation);
       bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
-      bool isAdminUser = userProfileRequestInfo.IsAdminUser;
+
+      var UserAccessRole = (from u in _dataContext.User
+                           join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
+                           join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
+                           join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
+                           where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+                           select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
+
+      bool isAdminUser = false;
+      if (UserAccessRole != null && UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+      {
+         isAdminUser = true;
+      }
+     
       bool hasProfileInfoChanged;
       if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
       {
@@ -554,7 +567,7 @@ namespace CcsSso.Core.Service.External
       {
         hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
                                 user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
-                                user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title)); 
+                                user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title));
       }
       user.Party.Person.FirstName = userProfileRequestInfo.FirstName.Trim();
       user.Party.Person.LastName = userProfileRequestInfo.LastName.Trim();
