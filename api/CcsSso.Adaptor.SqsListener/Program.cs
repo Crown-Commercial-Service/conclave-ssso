@@ -99,15 +99,19 @@ namespace CcsSso.Adaptor.SqsListener
                 var sqsConfiguration = new SqsConfiguration
                 {
                   ServiceUrl = queueInfoVault.ServiceUrl,
-                  AccessKeyId = queueInfoVault.AccessKeyId,
-                  AccessSecretKey = queueInfoVault.AccessSecretKey,
+                  AccessKeyId = queueInfoVault.AdaptorNotificationAccessKeyId,
+                  AccessSecretKey = queueInfoVault.AdaptorNotificationAccessSecretKey,
+                  PushDataAccessKeyId = queueInfoVault.PushDataAccessKeyId,
+                  PushDataAccessSecretKey = queueInfoVault.PushDataAccessSecretKey,
                   RecieveMessagesMaxCount = recieveMessagesMaxCount,
                   RecieveWaitTimeInSeconds = recieveWaitTimeInSeconds
                 };
 
                 return sqsConfiguration;
               });
+
               services.AddSingleton<IAwsSqsService, AwsSqsService>();
+              services.AddSingleton<IAwsPushDataSqsService, AwsPushDataSqsService>();
 
               services.AddHttpClient("AdaptorApi", c =>
               {

@@ -19,14 +19,16 @@ namespace CcsSso.Adaptor.SqsListener.Listners
     private const string LISTNER_JOB_NAME = "AdapterPushDataListener";
     private readonly ILogger<AdapterPushDataListner> _logger;
     private readonly SqsListnerAppSetting _appSetting;
-    private readonly IAwsSqsService _awsSqsService;
+    private readonly IAwsPushDataSqsService _awsPushDataSqsService;
+
     private readonly IHttpClientFactory _httpClientFactory;
 
-    public AdapterPushDataListner(ILogger<AdapterPushDataListner> logger, SqsListnerAppSetting appSetting, IAwsSqsService awsSqsService, IHttpClientFactory httpClientFactory)
+    public AdapterPushDataListner(ILogger<AdapterPushDataListner> logger, SqsListnerAppSetting appSetting, IAwsPushDataSqsService AwsPushDataSqsService,
+      IHttpClientFactory httpClientFactory)
     {
       _logger = logger;
       _appSetting = appSetting;
-      _awsSqsService = awsSqsService;
+      _awsPushDataSqsService = AwsPushDataSqsService;
       _httpClientFactory = httpClientFactory;
     }
 
@@ -44,7 +46,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
     private async Task PerformJobAsync()
     {
-      var msgs = await _awsSqsService.ReceiveMessagesAsync(_appSetting.QueueUrlInfo.PushDataQueueUrl);
+      var msgs = await _awsPushDataSqsService.ReceiveMessagesAsync(_appSetting.QueueUrlInfo.PushDataQueueUrl);
       Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: {msgs.Count} messages received at {DateTime.UtcNow}");
       List<Task> taskList = new List<Task>();
       msgs.ForEach((msg) =>
@@ -107,11 +109,12 @@ namespace CcsSso.Adaptor.SqsListener.Listners
       try
       {
         Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: Deleteing message from queue. MessageId: {sqsMessageResponseDto.MessageId}");
-        await _awsSqsService.DeleteMessageAsync(_appSetting.QueueUrlInfo.AdaptorNotificationQueueUrl, sqsMessageResponseDto.ReceiptHandle);
+        await _awsPushDataSqsService.DeleteMessageAsync(_appSetting.QueueUrlInfo.PushDataQueueUrl, sqsMessageResponseDto.ReceiptHandle);
       }
       catch (Exception ex)
       {
         _logger.LogError(ex, $"Worker: {LISTNER_JOB_NAME} :: Message deleting error at: {DateTime.UtcNow}");
+        _logger.LogError(ex, $"Worker: {LISTNER_JOB_NAME} :: SQS url: {_appSetting.QueueUrlInfo.PushDataQueueUrl}");
       }
     }
   }
