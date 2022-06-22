@@ -104,5 +104,75 @@ namespace CcsSso.Shared.Domain.Helpers
         return false;
       }
     }
+
+    public static bool IsGroupNameValid(string Name)
+    {
+      try
+      {
+        Regex regex = new Regex(RegexExpression.VALID_GROUP_NAME);
+        Match match = regex.Match(Name);
+        return match.Success;
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
+
+    public static bool IsContactPointNameValid(string Name)
+    {
+      try
+      {
+        Regex regex = new Regex(RegexExpression.VALID_CONTACT_NAME);
+        Match match = regex.Match(Name);
+        return match.Success;
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
+
+    public static bool IsStreetAddressValid(string Name)
+    {
+      try
+      {
+        Regex regex = new Regex(RegexExpression.VALID_STREET_ADDRESS);
+        Match match = regex.Match(Name);
+        return match.Success;
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
+
+    public static bool IslocalityValid(string Name)
+    {
+      try
+      {
+        Regex regex = new Regex(RegexExpression.VALID_LOCALITY);
+        Match match = regex.Match(Name);
+        return match.Success;
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
+
+    public static bool IsSiteNameValid(string Name)
+    {
+      try
+      {
+        Regex regex = new Regex(RegexExpression.VALID_SITENAME);
+        Match match = regex.Match(Name);
+        return match.Success;
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
   }
 }

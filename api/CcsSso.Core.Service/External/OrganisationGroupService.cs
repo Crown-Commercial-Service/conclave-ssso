@@ -8,6 +8,7 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Domain.Constants;
+using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -42,10 +43,8 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
       }
 
-      //name must have at least 1 alphanumeric and do not allow all special charactes.
-      var IsLetter = organisationGroupNameInfo.GroupName.Any(char.IsLetter);
-      var IsNumber = organisationGroupNameInfo.GroupName.Any(char.IsNumber);
-      if (IsLetter == false && IsNumber == false)
+      //All other special characters not specified in accepted. min 3 max 256
+      if (!UtilityHelper.IsGroupNameValid(organisationGroupNameInfo.GroupName.Trim()))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
       }
@@ -187,15 +186,10 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
       }
 
-      if (!string.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName))
+      //All other special characters not specified in accepted. min 3 max 256
+      if (!UtilityHelper.IsGroupNameValid(organisationGroupRequestInfo.GroupName.Trim()))
       {
-        //name must have at least 1 alphanumeric and do not allow all special charactes.
-        var IsLetter = organisationGroupRequestInfo.GroupName.Any(char.IsLetter);
-        var IsNumber = organisationGroupRequestInfo.GroupName.Any(char.IsNumber);
-        if (IsLetter == false && IsNumber == false)
-        {
-          throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
-        }
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
       }
 
       var existingUserNames = group.UserGroupMemberships.Select(ugm => ugm.User.UserName).ToList();
