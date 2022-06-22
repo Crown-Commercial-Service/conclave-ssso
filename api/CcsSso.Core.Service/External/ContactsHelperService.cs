@@ -291,7 +291,7 @@ namespace CcsSso.Service.External
       //All other special characters not specified in accepted. min 3 max 256
       if (!UtilityHelper.IsContactPointNameValid(contactInfo.ContactPointName.Trim()))
       {
-        throw new CcsSsoException(ErrorConstant.ErrorContactNameRequired);
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidContactPointName);
       }
 
       if (contactInfo.Contacts == null || !contactInfo.Contacts.Any() || !contactInfo.Contacts.Any(c => !string.IsNullOrWhiteSpace(c.ContactValue)))
