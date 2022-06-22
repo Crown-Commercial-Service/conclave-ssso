@@ -1,5 +1,6 @@
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
@@ -56,7 +57,7 @@ namespace CcsSso.Core.Service.External
       {
         if (organisationSiteInfo.SiteName.Trim().ToString() == Prev_SiteInfo.SiteName.ToString())
         {
-          throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
+          throw new ResourceAlreadyExistsException();
         }
       }
 
@@ -271,7 +272,7 @@ namespace CcsSso.Core.Service.External
       {
         if (Prev_SiteInfo.SiteName.Trim().ToString() == organisationSiteInfo.SiteName.ToString())
         {
-          throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
+          throw new ResourceAlreadyExistsException();
         }
       }
 
