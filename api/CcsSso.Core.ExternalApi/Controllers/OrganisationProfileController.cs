@@ -400,6 +400,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
+    /// <response  code="409">Resource already exists</response>
     /// Error Codes: INVALID_SITE_NAME, INSUFFICIENT_DETAILS
     /// </response>
     /// <remarks>
@@ -484,6 +485,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
+    /// <response  code="409">Resource already exists</response>
     /// Error Codes: INVALID_SITE_NAME, INSUFFICIENT_DETAILS
     /// </response>
     /// <remarks>
