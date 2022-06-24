@@ -43,7 +43,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
     private async Task PerformJobAsync()
     {
-      var msgs = await _awsSqsService.ReceiveMessagesAsync(_appSetting.QueueUrlInfo.AdapterNotificationQueueUrl);
+      var msgs = await _awsSqsService.ReceiveMessagesAsync(_appSetting.QueueUrlInfo.AdaptorNotificationQueueUrl);
       Console.WriteLine($"Worker: {LISTNER_JOB_NAME} ::{msgs.Count} messages received at {DateTime.UtcNow}");
       List<Task> taskList = new List<Task>();
       msgs.ForEach((msg) =>
@@ -100,7 +100,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
       try
       {
         Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: Deleteing message from queue. MessageId: {sqsMessageResponseDto.MessageId}");
-        await _awsSqsService.DeleteMessageAsync(_appSetting.QueueUrlInfo.AdapterNotificationQueueUrl, sqsMessageResponseDto.ReceiptHandle);
+        await _awsSqsService.DeleteMessageAsync(_appSetting.QueueUrlInfo.AdaptorNotificationQueueUrl, sqsMessageResponseDto.ReceiptHandle);
       }
       catch (Exception ex)
       {
