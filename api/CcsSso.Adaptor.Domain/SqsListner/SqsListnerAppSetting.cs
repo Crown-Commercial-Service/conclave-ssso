@@ -31,7 +31,7 @@ namespace CcsSso.Adaptor.Domain.SqsListener
 
   public class QueueUrlInfo
   {
-    public string AdapterNotificationQueueUrl { get; set; }
+    public string AdaptorNotificationQueueUrl { get; set; }
 
     public string PushDataQueueUrl { get; set; }
   }
@@ -49,13 +49,19 @@ namespace CcsSso.Adaptor.Domain.SqsListener
 
     public string AccessSecretKey { get; set; } //AWSAccessSecretKey
 
+    public string AdaptorNotificationAccessKeyId { get; set; }
+    public string AdaptorNotificationAccessSecretKey { get; set; }
+    public string PushDataAccessKeyId { get; set; }
+    public string PushDataAccessSecretKey { get; set; }
+
+
     public string ServiceUrl { get; set; } //AWSServiceUrl
 
     public string RecieveMessagesMaxCount { get; set; }
 
     public string RecieveWaitTimeInSeconds { get; set; }
 
-    public string AdapterNotificationQueueUrl { get; set; }
+    public string AdaptorNotificationQueueUrl { get; set; }
 
     public string PushDataQueueUrl { get; set; }
   }

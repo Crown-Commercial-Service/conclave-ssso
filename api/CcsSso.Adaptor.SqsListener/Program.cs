@@ -83,7 +83,7 @@ namespace CcsSso.Adaptor.SqsListener
                   },
                   QueueUrlInfo = new Domain.SqsListener.QueueUrlInfo
                   {
-                    AdapterNotificationQueueUrl = queueInfoVault.AdapterNotificationQueueUrl,
+                    AdaptorNotificationQueueUrl = queueInfoVault.AdaptorNotificationQueueUrl,
                     PushDataQueueUrl = queueInfoVault.PushDataQueueUrl
                   }
                 };
@@ -99,8 +99,10 @@ namespace CcsSso.Adaptor.SqsListener
                 var sqsConfiguration = new SqsConfiguration
                 {
                   ServiceUrl = queueInfoVault.ServiceUrl,
-                  AccessKeyId = queueInfoVault.AccessKeyId,
-                  AccessSecretKey = queueInfoVault.AccessSecretKey,
+                  AccessKeyId = queueInfoVault.AdaptorNotificationAccessKeyId,
+                  AccessSecretKey = queueInfoVault.AdaptorNotificationAccessSecretKey,
+                  PushDataAccessKeyId = queueInfoVault.PushDataAccessKeyId,
+                  PushDataAccessSecretKey = queueInfoVault.PushDataAccessSecretKey,
                   RecieveMessagesMaxCount = recieveMessagesMaxCount,
                   RecieveWaitTimeInSeconds = recieveWaitTimeInSeconds
                 };
@@ -108,6 +110,7 @@ namespace CcsSso.Adaptor.SqsListener
                 return sqsConfiguration;
               });
               services.AddSingleton<IAwsSqsService, AwsSqsService>();
+              services.AddSingleton<IAwsPushDataSqsService, AwsPushDataSqsService>();
 
               services.AddHttpClient("AdaptorApi", c =>
               {
