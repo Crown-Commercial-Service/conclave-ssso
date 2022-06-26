@@ -17,6 +17,7 @@ using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -316,6 +317,11 @@ namespace CcsSso.Core.Service.External
         //  };
         //}
 
+        var jsonString = JsonConvert.SerializeObject(organisationInfo);
+        //JSONConvertorService.jsonStringToCSV_three(jsonString);
+        //JSONConvertorService.jsonStringToCSV(jsonString);
+        //JSONConvertorService.jsonStringToCSV_3(jsonString);
+        JSONConvertorService.jsonStringToCSV_4(jsonString);
         return organisationInfo;
       }
 

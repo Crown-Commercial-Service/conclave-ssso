@@ -7,6 +7,10 @@
   <ItemGroup>
     <PackageReference Include="AWSSDK.S3" Version="3.7.4.10" />
     <PackageReference Include="AWSSDK.SQS" Version="3.7.1.14" />
+    <PackageReference Include="ChoETL" Version="1.2.1.47" />
+    <PackageReference Include="ChoETL.JSON" Version="1.2.1.47" />
+    <PackageReference Include="ChoETL.NETStandard" Version="1.2.1.47" />
+    <PackageReference Include="CsvHelper" Version="27.2.1" />
     <PackageReference Include="GovukNotify" Version="4.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
