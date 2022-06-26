@@ -187,7 +187,7 @@ namespace CcsSso.Core.Service.External
       }
 
       //All other special characters not specified in accepted. min 3 max 256
-      if (!UtilityHelper.IsGroupNameValid(organisationGroupRequestInfo.GroupName.Trim()))
+      if (organisationGroupRequestInfo.GroupName != null && !UtilityHelper.IsGroupNameValid(organisationGroupRequestInfo.GroupName.Trim()))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
       }
