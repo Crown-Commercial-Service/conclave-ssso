@@ -12,7 +12,9 @@ using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Domain.Helpers;
+using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -309,7 +311,8 @@ namespace CcsSso.Core.Service.External
             }
           }
         }
-
+        var jsonString = JsonConvert.SerializeObject(userProfileInfo);
+        //JSONtoCSVConvertorService.jsonStringToCSV(jsonString, fileid, "user");
         return userProfileInfo;
       }
 

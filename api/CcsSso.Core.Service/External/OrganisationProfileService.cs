@@ -17,6 +17,7 @@ using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -315,7 +316,9 @@ namespace CcsSso.Core.Service.External
         //    Uri = ciiOrganisation.contactPoint.uri ?? string.Empty,
         //  };
         //}
-
+        
+        var jsonString = JsonConvert.SerializeObject(organisationInfo);
+        JSONtoCSVConvertorService.jsonStringToCSV(jsonString, "organisation");
         return organisationInfo;
       }
 
