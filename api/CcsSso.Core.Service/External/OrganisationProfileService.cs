@@ -316,9 +316,66 @@ namespace CcsSso.Core.Service.External
         //    Uri = ciiOrganisation.contactPoint.uri ?? string.Empty,
         //  };
         //}
-        
-        var jsonString = JsonConvert.SerializeObject(organisationInfo);
-        JSONtoCSVConvertorService.jsonStringToCSV(jsonString, "organisation");
+
+        //var jsonString = JsonConvert.SerializeObject(organisationInfo);
+
+        string JSONObj = @"[{
+                ""identifier"": {
+                ""id"": ""09174476"",
+                ""legalName"": ""JA ADVISORS LTD"",
+                ""uri"": """",
+                ""scheme"": ""GB-COH""
+            },
+            ""additionalIdentifiers"": [],
+            ""address"": {
+                ""streetAddress"": ""28 Church Road"",
+                ""locality"": ""Stanmore"",
+                ""region"": ""Middlesex"",
+                ""postalCode"": ""HA7 4XR"",
+                ""countryCode"": ""GB-ENG"",
+                ""countryName"": ""England""
+            },
+            ""detail"": {
+                ""organisationId"": ""423331653048384084"",
+                ""creationDate"": ""20-05-2022"",
+                ""businessType"": """",
+                ""supplierBuyerType"": 0,
+                ""isSme"": false,
+                ""isVcse"": false,
+                ""rightToBuy"": true,
+                ""isActive"": false
+            }
+          },
+          {
+                ""identifier"": {
+                ""id"": ""09174476"",
+                ""legalName"": ""Conclave ADVISORS LTD"",
+                ""uri"": """",
+                ""scheme"": ""GB-COH""
+            },
+            ""additionalIdentifiers"": [],
+            ""address"": {
+                ""streetAddress"": ""28 Church Road"",
+                ""locality"": ""Stanmore"",
+                ""region"": ""Middlesex"",
+                ""postalCode"": ""HA7 4XR"",
+                ""countryCode"": ""GB-ENG"",
+                ""countryName"": ""England""
+            },
+            ""detail"": {
+                ""organisationId"": ""555331653048384084"",
+                ""creationDate"": ""20-05-2022"",
+                ""businessType"": """",
+                ""supplierBuyerType"": 0,
+                ""isSme"": false,
+                ""isVcse"": false,    
+                ""rightToBuy"": true,
+                ""isActive"": false
+            }
+          }
+         ]";
+
+        JSONtoCSVConvertorService.jsonStringToCSV(JSONObj, "organisation");
         return organisationInfo;
       }
 
