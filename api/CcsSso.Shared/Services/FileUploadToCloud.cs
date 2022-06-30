@@ -48,6 +48,7 @@ namespace CcsSso.Shared.Services
         BlobClient blobClient = containerClient.GetBlobClient(blobFileName); 
                                 
         MemoryStream blobStream = new MemoryStream(stream);
+        blobStream.Position = 0;
 
         if (!blobClient.Exists())
         {

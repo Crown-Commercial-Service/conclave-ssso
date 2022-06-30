@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Text;
 using CcsSso.Shared.Domain.Dto;
 using Newtonsoft.Json;
 
@@ -22,18 +21,14 @@ namespace CcsSso.Shared.Services
         {
           List<string> csvData = ConstructCSVData(inputModel);
 
-          byte[] data = null;
+          byte[] data;
           using (MemoryStream ms = new MemoryStream())
           {
-            StreamWriter sw = new StreamWriter(ms);
-            sw.Write(csvData.ToArray());
-            sw.Flush();
-            data = ms.ToArray();
+            data = csvData.SelectMany(s => Encoding.UTF8.GetBytes(s + Environment.NewLine)).ToArray();
 
+
+            return data;
           }
-          // File.WriteAllLines(@"E:\BRICK\Export.csv", csvData);
-
-          return data;
         }
         return Array.Empty<Byte>();
 
