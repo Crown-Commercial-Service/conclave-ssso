@@ -118,7 +118,7 @@ namespace CcsSso.Shared.Domain.Helpers
       bool IsRestrictedChar = false;
       try
       {
-        string[] tokens = "* % ! $".Split();
+        string[] tokens = { "*", "%", "!","$" }; 
         IsRestrictedChar = tokens.Any(t => Name.Contains(t));
         if (IsRestrictedChar == true)
         {
@@ -142,7 +142,7 @@ namespace CcsSso.Shared.Domain.Helpers
       bool IsRestrictedChar = false;
       try
       {
-        string[] tokens = "+ * % # ! $".Split();
+        string[] tokens = { "+", "*", "%", "#", "!", "$" };
         IsRestrictedChar = tokens.Any(t => Name.Contains(t));
         if (IsRestrictedChar == true)
         {
@@ -166,7 +166,7 @@ namespace CcsSso.Shared.Domain.Helpers
       bool IsRestrictedChar = false;
       try
       {
-        string[] tokens = "* % ! $".Split();
+        string[] tokens = { "*", "%", "!", "$" };
         IsRestrictedChar = tokens.Any(t => Name.Contains(t));
         if (IsRestrictedChar == true)
         {
@@ -190,7 +190,7 @@ namespace CcsSso.Shared.Domain.Helpers
       bool IsRestrictedChar = false;
       try
       {
-        string[] tokens = "* % ! $".Split();
+        string[] tokens = { "*", "%", "!", "$" };
         IsRestrictedChar = tokens.Any(t => Name.Contains(t));
         if (IsRestrictedChar == true)
         {
@@ -214,7 +214,7 @@ namespace CcsSso.Shared.Domain.Helpers
       bool IsRestrictedChar = false;
       try
       {
-        string[] tokens = "* % ! $".Split();
+        string[] tokens = { "*", "%", "!", "$" };
         IsRestrictedChar = tokens.Any(t => Name.Contains(t));
         if (IsRestrictedChar == true)
         {
