@@ -15,6 +15,7 @@ namespace CcsSso.Shared.Domain
     public string AzureBlobContainer { get; set; }
     public string Fileheader { get; set; }
     public string FileExtension { get; set; }
-
+    public string FilePathPrefix { get; set; }
+     
   }
 }

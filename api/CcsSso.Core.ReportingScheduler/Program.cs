@@ -59,6 +59,21 @@ namespace CcsSso.Core.ReportingScheduler
               };
             });
 
+            services.AddSingleton(s => {
+
+              return new AzureBlobConfiguration
+              {
+                EndpointProtocol = appSettings.AzureBlobConfiguration.EndpointProtocol,
+                AccountName = appSettings.AzureBlobConfiguration.AccountName,
+                AccountKey = appSettings.AzureBlobConfiguration.AccountKey,
+                EndpointAzure = appSettings.AzureBlobConfiguration.EndpointAzure,
+                AzureBlobContainer = appSettings.AzureBlobConfiguration.AzureBlobContainer,
+                Fileheader = appSettings.AzureBlobConfiguration.Fileheader,
+                FileExtension = appSettings.AzureBlobConfiguration.FileExtension,
+                FilePathPrefix = appSettings.AzureBlobConfiguration.FilePathPrefix
+              };
+            });
+
             services.AddSingleton<RequestContext>(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
             services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(appSettings.DbConnection));
 
@@ -90,6 +105,7 @@ namespace CcsSso.Core.ReportingScheduler
       ScheduleJob ScheduleJob;
       ReportDataDuration ReportDataDurations;
       S3Configuration S3Configuration;
+      AzureBlobConfiguration azureBlobConfiguration;
 
       string dbConnection;
 
@@ -102,6 +118,7 @@ namespace CcsSso.Core.ReportingScheduler
         ScheduleJob = JsonConvert.DeserializeObject<ScheduleJob>(secrets["ScheduleJob"].ToString());
         ReportDataDurations = JsonConvert.DeserializeObject<ReportDataDuration>(secrets["ReportDataDuration"].ToString());
         S3Configuration = JsonConvert.DeserializeObject<S3Configuration>(secrets["S3Configuration"].ToString());
+        azureBlobConfiguration = JsonConvert.DeserializeObject<AzureBlobConfiguration>(secrets["AzureBlobConfiguration"].ToString());
       }
       else
       {
@@ -112,6 +129,7 @@ namespace CcsSso.Core.ReportingScheduler
         ScheduleJob = config.GetSection("ScheduleJob").Get<ScheduleJob>();
         ReportDataDurations = config.GetSection("ReportDataDuration").Get<ReportDataDuration>();
         S3Configuration = config.GetSection("S3Configuration").Get<S3Configuration>();
+        azureBlobConfiguration = config.GetSection("AzureBlobConfiguration").Get<AzureBlobConfiguration>();
 
       }
       var appSettings = new AppSettings()
@@ -121,7 +139,8 @@ namespace CcsSso.Core.ReportingScheduler
         ScheduleJobSettings = ScheduleJob,
         SecurityApiSettings = SecurityApi,
         WrapperApiSettings = WrapperApi,
-        S3Configuration =S3Configuration
+        S3Configuration =S3Configuration,
+        AzureBlobConfiguration = azureBlobConfiguration
       };
       return appSettings;
     }
@@ -145,14 +164,3 @@ namespace CcsSso.Core.ReportingScheduler
     }
   }
 }
-
-//using CcsSso.Core.ReportingScheduler;
-
-//IHost host = Host.CreateDefaultBuilder(args)
-//    .ConfigureServices(services =>
-//    {
-//      services.AddHostedService<Worker>();
-//    })
-//    .Build();
-
-//await host.RunAsync();

@@ -6,6 +6,6 @@ namespace CcsSso.Shared.Services
 {
   public interface IFileUploadToCloud
   {
-    Task<AzureResponse> FileUploadToAzureBlobAsync(byte[] stream, string inputStream, string inputFileType, string location);
+    Task<AzureResponse> FileUploadToAzureBlobAsync(byte[] stream, string inputFileType);
   }
 }

@@ -1,15 +1,10 @@
-﻿using CcsSso.Core.Domain.Dtos.External;
-using CcsSso.Core.ReportingScheduler.Models;
+﻿using CcsSso.Core.ReportingScheduler.Models;
 using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain.Dto;
 using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using OrganisationProfileResponseInfo = CcsSso.Shared.Domain.Dto.OrganisationProfileResponseInfo;
 
 
@@ -46,7 +41,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     {
       while (!stoppingToken.IsCancellationRequested)
       {
-        int interval = 15000;// _appSettings.ScheduleJobSettings.OrganisationReportingJobScheduleInMinutes * 60000;
+        int interval = _appSettings.ScheduleJobSettings.OrganisationReportingJobScheduleInMinutes * 60000; //15000;
 
         _logger.LogInformation("Organisation Reporting Job  running at: {time}", DateTimeOffset.Now);
         await PerformJob();
@@ -59,31 +54,47 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
     private async Task PerformJob()
     {
-      var listOfModifiedOrg = await GetExpiredOrganisationIdsAsync();
+      try
+      {
 
-      if (listOfModifiedOrg == null || listOfModifiedOrg.Count() == 0)
-        return;
+        var listOfModifiedOrg = await GetModifiedOrganisationIds();
 
-      var client = _httpClientFactory.CreateClient("WrapperApi");
+        if (listOfModifiedOrg == null || listOfModifiedOrg.Count() == 0)
+          return;
 
-      List<OrganisationProfileResponseInfo> orgDetailList = new List<OrganisationProfileResponseInfo>();
+        _logger.LogInformation($"Trying to transfer the organisation -{string.Join(",", listOfModifiedOrg.Select(x => x.Item2).ToArray())}");
 
-      await GetOrganisationDetails(listOfModifiedOrg.Take(2).ToList(), client, orgDetailList);
 
-      var memoryFileObject = _csvConverter.ConvertToCSV(orgDetailList, "organisation");
+        var client = _httpClientFactory.CreateClient("WrapperApi");
+        List<OrganisationProfileResponseInfo> orgDetailList = new List<OrganisationProfileResponseInfo>();
+        await GetOrganisationDetails(listOfModifiedOrg, client, orgDetailList);
 
-      var result = _fileUploadToCloud.FileUploadToAzureBlobAsync(memoryFileObject, "", "", "");
+        _logger.LogInformation("After calling the wrapper API to get Organisation Details");
 
-      // var result = fileTransfe.performJob(memoryFileObject)
+        var fileByteArray = _csvConverter.ConvertToCSV(orgDetailList, "organisation");
 
-      //  if (result.success)
-      //{
-      //  _logger.LogInformation("success");
-      //}
+        _logger.LogInformation("After converting the list of organisation object into CSV format and returned byte Array");
 
-      // call json converter 
+        AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "organisation");
+        _logger.LogInformation("After Transfered the files to Azure Blob");
 
-      // file upload to s3
+        if (result.responseStatus)
+        {
+          _logger.LogInformation($"Successfully transfered file. FileName - {result.responseFileName}");
+        }
+        else
+        {
+          _logger.LogInformation($"Failed to transfer. Message - {result.responseMessage}");
+          _logger.LogInformation($"Failed to transfer. File Name - {result.responseFileName}");
+        }
+
+      }
+      catch (Exception ex)
+      {
+
+        _logger.LogInformation($"Failed to transfer. Outer exception - {ex.Message}");
+      }
+
 
     }
 
@@ -110,7 +121,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       }
     }
 
-    public async Task<List<Tuple<int, string>>> GetExpiredOrganisationIdsAsync()
+    public async Task<List<Tuple<int, string>>> GetModifiedOrganisationIds()
     {
       var dataDuration = _appSettings.ReportDataDurations.OrganisationReportingDurationInMinutes;
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
@@ -119,7 +130,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       {
         var organisationIds = await _dataContext.Organisation.Where(
                           org => !org.IsActivated && !org.IsDeleted
-                           && org.CreatedOnUtc < untilDateTime)
+                           && org.LastUpdatedOnUtc > untilDateTime)
                           .Select(o => new Tuple<int, string>(o.Id, o.CiiOrganisationId)).ToListAsync();
         return organisationIds;
       }
@@ -128,8 +139,8 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         _logger.LogError(ex, "Error");
         throw;
       }
-  
-      
+
+
     }
   }
 }

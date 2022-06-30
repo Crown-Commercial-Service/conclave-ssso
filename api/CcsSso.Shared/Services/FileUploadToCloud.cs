@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using CcsSso.Shared.Domain;
 using CcsSso.Shared.Domain.Dto;
 using System;
 using System.IO;
@@ -8,41 +9,43 @@ namespace CcsSso.Shared.Services
 {
   public class FileUploadToCloud : IFileUploadToCloud
   {
+    private readonly AzureBlobConfiguration azureBlobConfiguration;
     BlobContainerClient containerClient;
 
-    public FileUploadToCloud()
+    public FileUploadToCloud(AzureBlobConfiguration _azureBlobConfiguration)
     {
-      var csvDate = DateTime.UtcNow;
-      string fileheader = "PPG";
-      string fileType = "Organisations"; // Input Parameter - File Type
-      string fileExtension = ".csv";
-      string blobFileName = csvDate + "_" + fileheader + "_" + fileType + fileExtension; // Sample File Format <date>_PPG_Organisations.csv
+      azureBlobConfiguration = _azureBlobConfiguration;
 
-      string endpointProtocol = "DefaultEndpointsProtocol=https;";
-      string accountName = "AccountName=publicprocurementgateway;";
-      string accountKey = "AccountKey=HU36EZrIjQp+SV5e+1vc0mQltTLMTlxFyDM4t58ChbWRTyHIKQDVqz3xfCgLIawV+2rbstyGv4+uogyHNMyA7w==;";
-      string endpointAzure = "EndpointSuffix=core.windows.net;";
 
-      string azureBlobContainer = "ppg-files";
-      // App Setting Values - End
+      string endpointProtocol = azureBlobConfiguration.EndpointProtocol;
+      string accountName = azureBlobConfiguration.AccountName;
+      string accountKey = azureBlobConfiguration.AccountKey;
+      string endpointAzure = azureBlobConfiguration.EndpointAzure;
 
-        //var localFilePath = @"E:\Text.csv"; // Remove this line of code, once integrate with the ccssso application
+      string azureBlobContainer = azureBlobConfiguration.AzureBlobContainer;
 
-        BlobServiceClient blobServiceClient = new BlobServiceClient(endpointProtocol + accountName + accountKey + endpointAzure);
+      BlobServiceClient blobServiceClient = new BlobServiceClient(endpointProtocol + accountName + accountKey + endpointAzure);
 
-        containerClient = blobServiceClient.GetBlobContainerClient(azureBlobContainer);
+      containerClient = blobServiceClient.GetBlobContainerClient(azureBlobContainer);
 
-       
+    }
 
-      }
-
-    public async Task<AzureResponse> FileUploadToAzureBlobAsync(byte[] stream, string inputStream, string inputFileType, string location)
+    public async Task<AzureResponse> FileUploadToAzureBlobAsync(byte[] stream, string inputFileType)
     {
+      var csvDate = DateTime.UtcNow.ToString("s").Replace(":", "");
+      string fileheader = azureBlobConfiguration.Fileheader;
+      string fileExtension = azureBlobConfiguration.FileExtension;
+      string filePathPrefix = azureBlobConfiguration.FilePathPrefix;
+      string blobFileName = $"{filePathPrefix}{csvDate}_{fileheader}_{inputFileType}{fileExtension}"; 
+
+      Console.WriteLine($"FileUploadToAzureBlobAsync > fileName= {blobFileName }");
+
+
       AzureResponse azureResponse = new AzureResponse();
 
       try
       {
-        BlobClient blobClient = containerClient.GetBlobClient("TestOrgLocal3.csv"); 
+        BlobClient blobClient = containerClient.GetBlobClient(blobFileName); 
                                 
         MemoryStream blobStream = new MemoryStream(stream);
 
@@ -50,6 +53,7 @@ namespace CcsSso.Shared.Services
         {
           blobStream.Position = 0;
           await blobClient.UploadAsync(blobStream);
+
           azureResponse.responseMessage = "Sucess";
           azureResponse.responseStatus = true;
           azureResponse.responseFileName = blobClient.Uri.AbsoluteUri.ToString();
@@ -63,6 +67,7 @@ namespace CcsSso.Shared.Services
       }
       catch (Exception e)
       {
+        Console.WriteLine($"FileUploadToAzureBlobAsync > Exception file type= {e.Message}");
 
         azureResponse.responseMessage = e.Message + "BlobAlreadyExists";
         azureResponse.responseStatus = false;
@@ -70,17 +75,6 @@ namespace CcsSso.Shared.Services
       }
       return azureResponse;
     }
-
-
-    //public async Task<AzureResponse> ReadFromAzureBlobAsync(byte[] stream, string inputStream, string inputFileType, string location, CancellationToken c)
-    //{
-    //  BlobClient blobClient = containerClient.GetBlobClient("TestOrgLocal3.csv");
-
-    //  using var stream = await blobClient.OpenReadAsync(null, c);
-    //    return await JsonSerializer.DeserializeAsync<T>(stream, null, c);
-    //}
-    //https://basantakharel.com/efficiently-transfer-c-objects-to-from-azure-blob-storage/
-
 
   }
 }

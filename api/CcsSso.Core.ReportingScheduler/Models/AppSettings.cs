@@ -1,29 +1,17 @@
 ﻿using CcsSso.Shared.Domain;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CcsSso.Core.ReportingScheduler.Models
 {
   public class AppSettings
   {
-    public string?  DbConnection { get; set; }
+    public string? DbConnection { get; set; }
     public ApiConfig? SecurityApiSettings { get; set; }
     public ApiConfig? WrapperApiSettings { get; set; }
-
     public ScheduleJob? ScheduleJobSettings { get; set; }
     public ReportDataDuration? ReportDataDurations { get; set; }
-
     public S3Configuration? S3Configuration { get; set; }
-
     public AzureBlobConfiguration? AzureBlobConfiguration { get; set; }
-
-
-
   }
-
 
   public class ApiConfig
   {
@@ -50,11 +38,8 @@ namespace CcsSso.Core.ReportingScheduler.Models
   public class S3Configuration
   {
     public string AccessKeyId { get; set; }
-
     public string AccessSecretKey { get; set; }
-
     public string ServiceUrl { get; set; }
-
     public string BucketName { get; set; }
 
   }
