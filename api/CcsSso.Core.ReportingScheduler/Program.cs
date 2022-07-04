@@ -108,6 +108,7 @@ namespace CcsSso.Core.ReportingScheduler
       AzureBlobConfiguration azureBlobConfiguration;
 
       string dbConnection;
+      string maxNumbeOfRecordInAReport;
 
       if (vaultEnabled)
       {
@@ -119,6 +120,7 @@ namespace CcsSso.Core.ReportingScheduler
         ReportDataDurations = JsonConvert.DeserializeObject<ReportDataDuration>(secrets["ReportDataDuration"].ToString());
         S3Configuration = JsonConvert.DeserializeObject<S3Configuration>(secrets["S3Configuration"].ToString());
         azureBlobConfiguration = JsonConvert.DeserializeObject<AzureBlobConfiguration>(secrets["AzureBlobConfiguration"].ToString());
+        maxNumbeOfRecordInAReport = secrets["MaxNumbeOfRecordInAReport"].ToString();
       }
       else
       {
@@ -130,8 +132,9 @@ namespace CcsSso.Core.ReportingScheduler
         ReportDataDurations = config.GetSection("ReportDataDuration").Get<ReportDataDuration>();
         S3Configuration = config.GetSection("S3Configuration").Get<S3Configuration>();
         azureBlobConfiguration = config.GetSection("AzureBlobConfiguration").Get<AzureBlobConfiguration>();
-
+        maxNumbeOfRecordInAReport = config["MaxNumbeOfRecordInAReport"].ToString();
       }
+
       var appSettings = new AppSettings()
       {
         DbConnection = dbConnection,
@@ -140,7 +143,8 @@ namespace CcsSso.Core.ReportingScheduler
         SecurityApiSettings = SecurityApi,
         WrapperApiSettings = WrapperApi,
         S3Configuration =S3Configuration,
-        AzureBlobConfiguration = azureBlobConfiguration
+        AzureBlobConfiguration = azureBlobConfiguration,
+        MaxNumbeOfRecordInAReport = int.Parse(maxNumbeOfRecordInAReport)
       };
       return appSettings;
     }
@@ -159,7 +163,7 @@ namespace CcsSso.Core.ReportingScheduler
       };
       var client = new VaultClient(vaultClientSettings);
       var mountPathValue = vcapSettings.credentials.backends_shared.space.Split("/secret").FirstOrDefault();
-      var _secrets = await client.V1.Secrets.KeyValue.V1.ReadSecretAsync("secret/adaptor-sqs-listener", mountPathValue);
+      var _secrets = await client.V1.Secrets.KeyValue.V1.ReadSecretAsync("secret/reporting-job", mountPathValue);
       return _secrets.Data;
     }
   }
