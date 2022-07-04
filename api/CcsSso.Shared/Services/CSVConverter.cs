@@ -87,11 +87,11 @@ namespace CcsSso.Shared.Services
                               EscapeCharacter(item.Detail.OrganisationId),
                               EscapeCharacter(item.Detail.CreationDate),
                               EscapeCharacter(item.Detail.BusinessType),
-                              EscapeCharacter(item.Detail.SupplierBuyerType.ToString()),
-                              EscapeCharacter(item.Detail.IsSme.ToString()),
-                              EscapeCharacter(item.Detail.IsVcse.ToString()),
-                              EscapeCharacter(item.Detail.RightToBuy.ToString()),
-                              EscapeCharacter(item.Detail.IsActive.ToString())};
+                              EscapeCharacter(item.Detail.SupplierBuyerType!=null?item.Detail.SupplierBuyerType.ToString():""),
+                              EscapeCharacter(item.Detail.IsSme!=null ? item.Detail.IsSme.ToString():""),
+                              EscapeCharacter(item.Detail.IsVcse!=null? item.Detail.IsVcse.ToString():""),
+                              EscapeCharacter(item.Detail.RightToBuy!=null? item.Detail.RightToBuy.ToString():""),
+                              EscapeCharacter(item.Detail.IsActive!=null?item.Detail.IsActive.ToString():"")};
 
         csvData.Add(string.Join(",", row));
     }
@@ -104,8 +104,10 @@ namespace CcsSso.Shared.Services
       char[] CHARACTERS_THAT_MUST_BE_QUOTED = { ',', '"', '\n' };
       const string QUOTE = "\"";
 
-      if (data.IndexOfAny(CHARACTERS_THAT_MUST_BE_QUOTED) > -1)
+      if (data != null && data.IndexOfAny(CHARACTERS_THAT_MUST_BE_QUOTED) > -1)
         data = QUOTE + data + QUOTE;
+      else if (data == null)
+        data = "";
 
       return data;
     }

@@ -11,6 +11,7 @@ namespace CcsSso.Core.ReportingScheduler.Models
     public ReportDataDuration? ReportDataDurations { get; set; }
     public S3Configuration? S3Configuration { get; set; }
     public AzureBlobConfiguration? AzureBlobConfiguration { get; set; }
+    public int MaxNumbeOfRecordInAReport { get; set; }
   }
 
   public class ApiConfig
