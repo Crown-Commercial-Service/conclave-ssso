@@ -43,7 +43,7 @@ begin
 	  UPDATE "UserAccessRole" 
       SET "IsDeleted" =CAST(DisableRoleText as bool),
 	  "LastUpdatedOnUtc"=timezone('UTC',now())
-      WHERE "Id" = roleItems."Id";
+      WHERE "OrganisationEligibleRoleId" = roleItems."Id";
 
    END LOOP;
    
