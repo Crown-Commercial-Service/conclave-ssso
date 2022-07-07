@@ -109,6 +109,7 @@ namespace CcsSso.Adaptor.SqsListener
 
                 return sqsConfiguration;
               });
+
               services.AddSingleton<IAwsSqsService, AwsSqsService>();
               services.AddSingleton<IAwsPushDataSqsService, AwsPushDataSqsService>();
 

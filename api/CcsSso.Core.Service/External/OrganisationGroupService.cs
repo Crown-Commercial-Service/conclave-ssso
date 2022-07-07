@@ -8,6 +8,7 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Domain.Constants;
+using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -46,6 +47,12 @@ namespace CcsSso.Core.Service.External
       var IsLetter = organisationGroupNameInfo.GroupName.Any(char.IsLetter);
       var IsNumber = organisationGroupNameInfo.GroupName.Any(char.IsNumber);
       if (IsLetter == false && IsNumber == false)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
+      }
+
+      //All other special characters not specified in accepted. min 3 max 256
+      if (!UtilityHelper.IsGroupNameValid(organisationGroupNameInfo.GroupName.Trim()))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
       }
@@ -183,6 +190,12 @@ namespace CcsSso.Core.Service.External
 
       //Add/Update User and Roles 
       if (string.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName) && organisationGroupRequestInfo.RoleInfo ==null && organisationGroupRequestInfo.UserInfo==null)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
+      }
+
+      //All other special characters not specified in accepted. min 3 max 256
+      if (organisationGroupRequestInfo.GroupName != null && !UtilityHelper.IsGroupNameValid(organisationGroupRequestInfo.GroupName.Trim()))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
       }

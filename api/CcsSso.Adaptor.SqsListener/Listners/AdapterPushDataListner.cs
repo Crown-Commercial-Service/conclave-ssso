@@ -20,9 +20,11 @@ namespace CcsSso.Adaptor.SqsListener.Listners
     private readonly ILogger<AdapterPushDataListner> _logger;
     private readonly SqsListnerAppSetting _appSetting;
     private readonly IAwsPushDataSqsService _awsPushDataSqsService;
+
     private readonly IHttpClientFactory _httpClientFactory;
 
-    public AdapterPushDataListner(ILogger<AdapterPushDataListner> logger, SqsListnerAppSetting appSetting, IAwsPushDataSqsService AwsPushDataSqsService, IHttpClientFactory httpClientFactory)
+    public AdapterPushDataListner(ILogger<AdapterPushDataListner> logger, SqsListnerAppSetting appSetting, IAwsPushDataSqsService AwsPushDataSqsService,
+      IHttpClientFactory httpClientFactory)
     {
       _logger = logger;
       _appSetting = appSetting;
@@ -112,6 +114,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
       catch (Exception ex)
       {
         _logger.LogError(ex, $"Worker: {LISTNER_JOB_NAME} :: Message deleting error at: {DateTime.UtcNow}");
+        _logger.LogError(ex, $"Worker: {LISTNER_JOB_NAME} :: SQS url: {_appSetting.QueueUrlInfo.PushDataQueueUrl}");
       }
     }
   }

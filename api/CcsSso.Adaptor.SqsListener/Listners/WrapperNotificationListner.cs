@@ -105,6 +105,8 @@ namespace CcsSso.Adaptor.SqsListener.Listners
       catch (Exception ex)
       {
         _logger.LogError(ex, $"Worker: {LISTNER_JOB_NAME} :: Message deleting error at: {DateTime.UtcNow}");
+        _logger.LogError(ex, $"Worker: {LISTNER_JOB_NAME} :: SQS url: {_appSetting.QueueUrlInfo.AdaptorNotificationQueueUrl}");
+
       }
     }
   }

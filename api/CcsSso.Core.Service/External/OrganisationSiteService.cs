@@ -1,5 +1,6 @@
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
@@ -7,6 +8,7 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Domain.Constants;
+using CcsSso.Shared.Domain.Helpers;
 using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -55,7 +57,7 @@ namespace CcsSso.Core.Service.External
       {
         if (organisationSiteInfo.SiteName.Trim().ToString() == Prev_SiteInfo.SiteName.ToString())
         {
-          throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
+          throw new ResourceAlreadyExistsException();
         }
       }
 
@@ -270,7 +272,7 @@ namespace CcsSso.Core.Service.External
       {
         if (Prev_SiteInfo.SiteName.Trim().ToString() == organisationSiteInfo.SiteName.ToString())
         {
-          throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
+          throw new ResourceAlreadyExistsException();
         }
       }
 
@@ -365,6 +367,21 @@ namespace CcsSso.Core.Service.External
         || string.IsNullOrWhiteSpace(organisationSiteInfo.Address.CountryCode))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInsufficientDetails);
+      }
+
+      if (!UtilityHelper.IsSiteNameValid(organisationSiteInfo.SiteName.Trim()))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
+      }
+
+      if (!UtilityHelper.IsStreetAddressValid(organisationSiteInfo.Address.StreetAddress.Trim()))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidStreetAddress);
+      }
+
+      if (!UtilityHelper.IslocalityValid(organisationSiteInfo.Address.Locality.Trim()))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidlocality);
       }
 
       string CountryName = String.Empty;

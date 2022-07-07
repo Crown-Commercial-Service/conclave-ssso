@@ -93,7 +93,6 @@ namespace CcsSso.Security.Api.Controllers
     public async Task<IActionResult> Authorize(string scope, string response_type, string client_id, string redirect_uri, string code_challenge_method, string code_challenge,
       string prompt, string state, string nonce, string display, string login_hint, int? max_age, string acr_values)
     {
-
       Console.WriteLine($"Security API Authorize1 scope:- ${scope}, response_type:- ${response_type}, client_id:- ${client_id}, redirect_uri:- ${redirect_uri}");
       Console.WriteLine($"Security AP2 Authorize2 code_challenge_method:- ${code_challenge_method}, code_challenge:- ${code_challenge}, prompt:- ${prompt}, state:- ${state}");
       Console.WriteLine($"Security AP2 Authorize3 nonce:- ${nonce}, display:- ${display}, login_hint:- ${login_hint}, max_age:- ${max_age}, acr_values:- ${acr_values}");
@@ -105,10 +104,12 @@ namespace CcsSso.Security.Api.Controllers
         return Redirect(errorUrl);
       }
 
+
       var (sid, opbs) = await GenerateCookiesAsync(client_id);
 
       var url = await _securityService.GetAuthenticationEndPointAsync(sid, scope, response_type, client_id, redirect_uri,
         code_challenge_method, code_challenge, prompt, state, nonce, display, login_hint, max_age, acr_values);
+
       return Redirect(url);
     }
 
@@ -187,6 +188,7 @@ namespace CcsSso.Security.Api.Controllers
         host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
       }
       var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
+
       return idToken;
     }
 
@@ -301,7 +303,7 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(404)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
-    public async Task<IdamUserInfo> GetUser([FromHeader][Required] string authorization )
+    public async Task<IdamUserInfo> GetUser([FromHeader][Required] string authorization)
     {
       return await _userManagerService.GetUserAsync();
     }
@@ -589,6 +591,7 @@ namespace CcsSso.Security.Api.Controllers
         sid = Guid.NewGuid().ToString();
         var sidEncrypted = _cryptographyService.EncryptString(sid, _applicationConfigurationInfo.CryptoSettings.CookieEncryptionKey);
         sid = sidEncrypted; //hotfix - to fix the client application opened directly. Without visting the client app from Dashboard.
+
         foreach (var httpCookieOption in httpCookieOptions)
         {
           Response.Cookies.Append(sessionCookieName, sidEncrypted, httpCookieOption);
@@ -597,6 +600,7 @@ namespace CcsSso.Security.Api.Controllers
       else
       {
         // TODO HotFix - We are reversing the check between state or cookies.
+        // Working in local. Testing in DEV by deploying directly.
         if (!string.IsNullOrEmpty(state))
         {
           var sidCache = await _securityCacheService.GetValueAsync<string>(state);
@@ -634,7 +638,6 @@ namespace CcsSso.Security.Api.Controllers
           Response.Cookies.Append(visitedSiteCookieName, visitedSites, visitedSiteCookieOptions);
         }
       }
-
       return (sid, opbsValue);
     }
 

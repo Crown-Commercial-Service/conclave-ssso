@@ -46,14 +46,12 @@ namespace CcsSso.Adaptor.Domain.SqsListener
   public class QueueInfoVault
   {
     public string AccessKeyId { get; set; } //AWSAccessKeyId
-
     public string AccessSecretKey { get; set; } //AWSAccessSecretKey
 
     public string AdaptorNotificationAccessKeyId { get; set; }
     public string AdaptorNotificationAccessSecretKey { get; set; }
     public string PushDataAccessKeyId { get; set; }
     public string PushDataAccessSecretKey { get; set; }
-
 
     public string ServiceUrl { get; set; } //AWSServiceUrl
 

@@ -74,9 +74,17 @@ namespace CcsSso.Shared.Domain.Helpers
 
     public static bool IsUserNameValid(string Name)
     {
+      bool IsRestrictedChar = false;
       try
       {
+        string[] tokens = "+ * % # ! $".Split();
+        IsRestrictedChar = tokens.Any(t => Name.Contains(t));
+
         if (string.IsNullOrWhiteSpace(Name))
+        {
+          return false;
+        }
+        else if (IsRestrictedChar == true)
         {
           return false;
         }
@@ -98,6 +106,126 @@ namespace CcsSso.Shared.Domain.Helpers
       try
       {
         return Name.Length < 1 ? false : true;
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
+
+    public static bool IsGroupNameValid(string Name)
+    {
+      bool IsRestrictedChar = false;
+      try
+      {
+        string[] tokens = { "*", "%", "!","$"}; 
+        IsRestrictedChar = tokens.Any(t => Name.Contains(t));
+        if (IsRestrictedChar == true)
+        {
+          return false;
+        }
+        else
+        {
+          Regex regex = new Regex(RegexExpression.VALID_GROUP_NAME);
+          Match match = regex.Match(Name);
+          return match.Success;
+        }
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
+
+    public static bool IsContactPointNameValid(string Name)
+    {
+      bool IsRestrictedChar = false;
+      try
+      {
+        string[] tokens = { "+", "*", "%", "#", "!", "$"};
+        IsRestrictedChar = tokens.Any(t => Name.Contains(t));
+        if (IsRestrictedChar == true)
+        {
+          return false;
+        }
+        else
+        {
+          Regex regex = new Regex(RegexExpression.VALID_CONTACT_NAME);
+          Match match = regex.Match(Name);
+          return match.Success;
+        }
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
+
+    public static bool IsStreetAddressValid(string Name)
+    {
+      bool IsRestrictedChar = false;
+      try
+      {
+        string[] tokens = { "*", "%", "!", "$"};
+        IsRestrictedChar = tokens.Any(t => Name.Contains(t));
+        if (IsRestrictedChar == true)
+        {
+          return false;
+        }
+        else
+        {
+          Regex regex = new Regex(RegexExpression.VALID_STREET_ADDRESS);
+          Match match = regex.Match(Name);
+          return match.Success;
+        }
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
+
+    public static bool IslocalityValid(string Name)
+    {
+      bool IsRestrictedChar = false;
+      try
+      {
+        string[] tokens = { "*", "%", "!", "$"};
+        IsRestrictedChar = tokens.Any(t => Name.Contains(t));
+        if (IsRestrictedChar == true)
+        {
+          return false;
+        }
+        else
+        {
+          Regex regex = new Regex(RegexExpression.VALID_LOCALITY);
+          Match match = regex.Match(Name);
+          return match.Success;
+        }
+      }
+      catch (Exception ex)
+      {
+        return false;
+      }
+    }
+
+    public static bool IsSiteNameValid(string Name)
+    {
+      bool IsRestrictedChar = false;
+      try
+      {
+        string[] tokens = { "*", "%", "!", "$"};
+        IsRestrictedChar = tokens.Any(t => Name.Contains(t));
+        if (IsRestrictedChar == true)
+        {
+          return false;
+        }
+        else
+        {
+          Regex regex = new Regex(RegexExpression.VALID_SITENAME);
+          Match match = regex.Match(Name);
+          return match.Success;
+        }
       }
       catch (Exception ex)
       {

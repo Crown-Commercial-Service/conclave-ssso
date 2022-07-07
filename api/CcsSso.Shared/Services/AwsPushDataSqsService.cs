@@ -1,4 +1,4 @@
-﻿using Amazon.SQS;
+using Amazon.SQS;
 using Amazon.SQS.Model;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
