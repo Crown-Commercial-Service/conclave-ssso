@@ -30,10 +30,12 @@ namespace CcsSso.Security.Services
     private readonly TokenHelper _tokenHelper;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IJwtTokenHandler _jwtTokenHandler;
+    private readonly ISecurityCacheService _securityCacheService;
 
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
     public Auth0IdentityProviderService(ApplicationConfigurationInfo appConfigInfo, TokenHelper tokenHelper,
-      IHttpClientFactory httpClientFactory, ICcsSsoEmailService ccsSsoEmailService, IJwtTokenHandler jwtTokenHandler)
+      IHttpClientFactory httpClientFactory, ICcsSsoEmailService ccsSsoEmailService, IJwtTokenHandler jwtTokenHandler,
+      ISecurityCacheService securityCacheService)
     {
       _appConfigInfo = appConfigInfo;
       _authenticationApiClient = new AuthenticationApiClient(_appConfigInfo.Auth0ConfigurationInfo.Domain);
@@ -41,6 +43,7 @@ namespace CcsSso.Security.Services
       _httpClientFactory = httpClientFactory;
       _ccsSsoEmailService = ccsSsoEmailService;
       _jwtTokenHandler = jwtTokenHandler;
+      _securityCacheService = securityCacheService;
     }
 
     /// <summary>
@@ -452,6 +455,7 @@ namespace CcsSso.Security.Services
           };
           result = await _authenticationApiClient.GetTokenAsync(resourceOwnerTokenRequest);
         }
+
         var tokenInfo = await GetTokensAsync(tokenRequestInfo.ClientId, result, sid);
         return tokenInfo;
       }
@@ -882,6 +886,17 @@ namespace CcsSso.Security.Services
     private async Task<TokenResponseInfo> GetTokensAsync(string clientId, AccessTokenResponse accessTokenResponse, string sid = null)
     {
       var tokenDecoded = _jwtTokenHandler.DecodeToken(accessTokenResponse.IdToken);
+
+      var state = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://identify.crowncommercial.gov.uk/analytics-state")?.Value;
+      if (!string.IsNullOrEmpty(state))
+      {
+        var sidCache = await _securityCacheService.GetValueAsync<string>(state);
+        if (!string.IsNullOrEmpty(sidCache))
+        {
+          sid = sidCache;
+        }
+      }
+
       var email = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
       if (string.IsNullOrEmpty(email))
       {
