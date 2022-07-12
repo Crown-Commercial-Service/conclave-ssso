@@ -389,17 +389,21 @@ namespace CcsSso.Security.Services
           resourceOwnerTokenRequest.ClientSecret = clientSecret;
         }
 
+        // get the sid from refresh token sent from client.
+        sid = await GetSidFromRefreshToken(refreshToken, sid);
+
         var result = await _authenticationApiClient.GetTokenAsync(resourceOwnerTokenRequest);
         if (result != null)
         {
+          // store the sid against the refresh token returned from Auth0.
+          await AttachSidWithRefreshTokenAsync(result.RefreshToken, sid);
+
           var tokenDecoded = _jwtTokenHandler.DecodeToken(result.IdToken);
           var email = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
           if (string.IsNullOrEmpty(email))
           {
             throw new CcsSsoException("TOKEN_GENERATION_FAILED");
           }
-
-          sid = await GetSidFromRefreshToken(refreshToken, sid);
 
           var userDetails = await GetUserAsync(email);
           var customClaims = GetCustomClaimsForIdToken(tokenDecoded, clientId, email, sid, userDetails);
@@ -426,11 +430,9 @@ namespace CcsSso.Security.Services
 
     private async Task<string> GetSidFromRefreshToken(string refreshToken,string sid)
     {
-      Console.WriteLine($"Inside GetSidFromRefreshToken Method");
       var sidCache = await _securityCacheService.GetValueAsync<string>(refreshToken);
         if (!string.IsNullOrEmpty(sidCache))
         {
-        Console.WriteLine($"Sid from cache using refresh token :- ${sidCache}");
         sid = sidCache;
         }
 
@@ -901,16 +903,17 @@ namespace CcsSso.Security.Services
     private async Task<TokenResponseInfo> GetTokensAsync(string clientId, AccessTokenResponse accessTokenResponse, string sid = null)
     {
       var tokenDecoded = _jwtTokenHandler.DecodeToken(accessTokenResponse.IdToken);
-
+      
       var sidAndState = await GetSidFromState(tokenDecoded);
-      if(sidAndState != null && sidAndState.Item2 != null)
+
+      if (sidAndState != null && sidAndState.Item2 != null)
       {
-        Console.WriteLine($"Sid from cache using State :- ${sidAndState.Item2}");
 
         sid = sidAndState.Item2;
       }
 
       await AttachSidWithRefreshTokenAsync(accessTokenResponse.RefreshToken, sid);
+
 
       var email = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
       if (string.IsNullOrEmpty(email))
