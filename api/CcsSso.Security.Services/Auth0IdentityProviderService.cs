@@ -399,6 +399,8 @@ namespace CcsSso.Security.Services
             throw new CcsSsoException("TOKEN_GENERATION_FAILED");
           }
 
+          sid = await GetSidFromRefreshToken(refreshToken, sid);
+
           var userDetails = await GetUserAsync(email);
           var customClaims = GetCustomClaimsForIdToken(tokenDecoded, clientId, email, sid, userDetails);
           var idToken = _jwtTokenHandler.CreateToken(clientId, customClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
@@ -420,6 +422,19 @@ namespace CcsSso.Security.Services
           ErrorDescription = e.ApiError.Message
         });
       }
+    }
+
+    private async Task<string> GetSidFromRefreshToken(string refreshToken,string sid)
+    {
+      Console.WriteLine($"Inside GetSidFromRefreshToken Method");
+      var sidCache = await _securityCacheService.GetValueAsync<string>(refreshToken);
+        if (!string.IsNullOrEmpty(sidCache))
+        {
+        Console.WriteLine($"Sid from cache using refresh token :- ${sidCache}");
+        sid = sidCache;
+        }
+
+      return sid;
     }
 
     public async Task<TokenResponseInfo> GetTokensAsync(TokenRequestInfo tokenRequestInfo, string sid = null)
@@ -887,15 +902,15 @@ namespace CcsSso.Security.Services
     {
       var tokenDecoded = _jwtTokenHandler.DecodeToken(accessTokenResponse.IdToken);
 
-      var state = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://identify.crowncommercial.gov.uk/analytics-state")?.Value;
-      if (!string.IsNullOrEmpty(state))
+      var sidAndState = await GetSidFromState(tokenDecoded);
+      if(sidAndState != null && sidAndState.Item2 != null)
       {
-        var sidCache = await _securityCacheService.GetValueAsync<string>(state);
-        if (!string.IsNullOrEmpty(sidCache))
-        {
-          sid = sidCache;
-        }
+        Console.WriteLine($"Sid from cache using State :- ${sidAndState.Item2}");
+
+        sid = sidAndState.Item2;
       }
+
+      await AttachSidWithRefreshTokenAsync(accessTokenResponse.RefreshToken, sid);
 
       var email = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
       if (string.IsNullOrEmpty(email))
@@ -942,6 +957,27 @@ namespace CcsSso.Security.Services
         AccessToken = accessToken,
         ExpiresInSeconds = _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes * 60
       };
+    }
+
+    private async Task AttachSidWithRefreshTokenAsync(string refreshToken, string sid)
+    {
+      await _securityCacheService.SetValueAsync(refreshToken, sid, new TimeSpan(0, _appConfigInfo.SessionConfig.StateExpirationInMinutes, 0));
+    }
+
+    private async Task<Tuple<string, string>> GetSidFromState(JwtSecurityToken tokenDecoded)
+    {
+      var state = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://identify.crowncommercial.gov.uk/analytics-state")?.Value;
+      string sid=null;
+      if (!string.IsNullOrEmpty(state))
+      {
+        var sidCache = await _securityCacheService.GetValueAsync<string>(state);
+        if (!string.IsNullOrEmpty(sidCache))
+        {
+          sid = sidCache;
+        }
+      }
+
+      return new Tuple<string,string>(state,sid);
     }
 
     private List<ClaimInfo> GetCustomClaimsForIdToken(JwtSecurityToken tokenDecoded, string clientId, string email, string sid, UserProfileInfo userProfileInfo)
