@@ -157,7 +157,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             }
             else
             {
-                _logger.LogError($"No organisation retrived for userId-{eachModifiedUser.Item2}");
+                _logger.LogError($"No Users retrived for userId-{eachModifiedUser.Item2}");
                 return null;
             }
         }
