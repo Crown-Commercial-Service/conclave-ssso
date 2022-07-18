@@ -13,13 +13,30 @@ namespace CcsSso.Shared.Services
 
     public byte[] ConvertToCSV(dynamic inputModel, string filetype)
     {
-      const string fileType = "organisation";
+      //const string fileType = "organisation"; // Existing to new change (Accept Organization, Users)
 
       try
       {
-        if (filetype.ToLower() == fileType)
-        {
-          List<string> csvData = ConstructCSVData(inputModel);
+            //if (filetype.ToLower() == fileType)
+            //{
+
+            // Check for the filetype 
+            List<string> csvData = new List<string>();
+
+            if (filetype.ToLower() == "organisation")
+            {
+                csvData = ConstructCSVData(inputModel);
+            }
+            else if (filetype.ToLower() == "user")
+            {
+                csvData = ConstructCSVUserData(inputModel); 
+            }
+            else
+            {
+                return Array.Empty<Byte>();
+            }
+                        
+         
 
           byte[] data;
           using (MemoryStream ms = new MemoryStream())
@@ -29,9 +46,6 @@ namespace CcsSso.Shared.Services
 
             return data;
           }
-        }
-        return Array.Empty<Byte>();
-
       }
       catch (Exception)
       {
@@ -40,62 +54,122 @@ namespace CcsSso.Shared.Services
       }
     }
 
-    private List<string> ConstructCSVData(List<OrganisationProfileResponseInfo> orgProfileList)
-    {
+        private List<string> ConstructCSVUserData(List<UserProfileResponseInfo> userProfileList)
+        {
+            {
 
-      List<string> csvData = new List<string>();
+                List<string> csvUserData = new List<string>();
 
-      string[] csvHeader =  {
-        "Identifier_Id"
-        ,"Identifier_LegalName"
-        ,"Identifier_Uri"
-        ,"Identifier_Scheme"
-        ,"AdditionalIdentifiers"
-        ,"Address_streetAddress"
-        ,"Address_locality"
-        ,"Address_region"
-        ,"Address_postalCode"
-        ,"Address_countryCode"
-        ,"Address_countryName"
-        ,"detail_organisationId"
-        ,"detail_creationDate"
-        ,"detail_businessType"
-        ,"detail_supplierBuyerType"
-        ,"detail_isSme"
-        ,"detail_isVcse"
-        ,"detail_rightToBuy"
-        ,"detail_isActive"
-      };
+                string[] csvUserHeader =  {
+                    "ID"
+                    ,"userName"
+                    ,"organisationId"
+                    ,"firstName"
+                    ,"lastName"
+                    ,"title"
+                    ,"mfaEnabled"
+                    ,"accountVerified"
+                    ,"sendUserRegistrationEmail"
+                    ,"isAdminUser"
+                    ,"userGroups"
+                    ,"rolePermissionInfo"
+                    ,"identityProviders"                   
+                  };
 
-      csvData.Add(string.Join(",", csvHeader.ToArray()));
+                csvUserData.Add(string.Join(",", csvUserHeader.ToArray()));
 
-      foreach (var item in orgProfileList)
-      {
-        string addtionalIdentifiers = (item.AdditionalIdentifiers != null && item.AdditionalIdentifiers.Any()) ? JsonConvert.SerializeObject(item.AdditionalIdentifiers) : "";
+                string userGroups = string.Empty;
+                string rolePermissionInfo = string.Empty;
+                string identityProviders = string.Empty;
+                string userId = string.Empty;
 
-        string[] row = { item.Identifier.Id,
-                              EscapeCharacter(item.Identifier.LegalName),
-                              EscapeCharacter(item.Identifier.Uri),
-                              EscapeCharacter(item.Identifier.Scheme),
-                              addtionalIdentifiers,
-                              EscapeCharacter(item.Address.StreetAddress),
-                              EscapeCharacter(item.Address.Locality),
-                              EscapeCharacter(item.Address.Region),
-                              EscapeCharacter(item.Address.PostalCode),
-                              EscapeCharacter(item.Address.CountryCode),
-                              EscapeCharacter(item.Address.CountryName),
-                              EscapeCharacter(item.Detail.OrganisationId),
-                              EscapeCharacter(item.Detail.CreationDate),
-                              EscapeCharacter(item.Detail.BusinessType),
-                              EscapeCharacter(item.Detail.SupplierBuyerType!=null?item.Detail.SupplierBuyerType.ToString():""),
-                              EscapeCharacter(item.Detail.IsSme!=null ? item.Detail.IsSme.ToString():""),
-                              EscapeCharacter(item.Detail.IsVcse!=null? item.Detail.IsVcse.ToString():""),
-                              EscapeCharacter(item.Detail.RightToBuy!=null? item.Detail.RightToBuy.ToString():""),
-                              EscapeCharacter(item.Detail.IsActive!=null?item.Detail.IsActive.ToString():"")};
+                foreach (var item in userProfileList)
+                {
+                    if (item.detail != null)
+                    {
+                        userGroups = (item != null && item.detail.userGroups.Any()) ? JsonConvert.SerializeObject(item.detail.userGroups) : "";
+                        rolePermissionInfo = (item != null && item.detail.rolePermissionInfo.Any()) ? JsonConvert.SerializeObject(item.detail.rolePermissionInfo) : "";
+                        identityProviders = (item != null && item.detail.identityProviders.Any()) ? JsonConvert.SerializeObject(item.detail.identityProviders) : "";
+                        userId = item.detail.Id.ToString();
+                    }
 
-        csvData.Add(string.Join(",", row));
-    }
-      return csvData;
+                    string[] row = { userId,
+                                EscapeCharacter(item.UserName),
+                                EscapeCharacter(item.OrganisationId),
+                                EscapeCharacter(item.FirstName),
+                                EscapeCharacter(item.LastName),
+                                EscapeCharacter(item.Title),
+                                EscapeCharacter(item.mfaEnabled.ToString()),
+                                EscapeCharacter(item.Password),
+                                EscapeCharacter(item.AccountVerified.ToString()),
+                                EscapeCharacter(item.SendUserRegistrationEmail.ToString()),
+                                EscapeCharacter(item.IsAdminUser.ToString()),
+                                userGroups,
+                                rolePermissionInfo,
+                                identityProviders
+                                };
+                    csvUserData.Add(string.Join(",", row));
+                }
+                return csvUserData;
+            }
+        }
+
+        private List<string> ConstructCSVData(List<OrganisationProfileResponseInfo> orgProfileList)
+        {
+
+          List<string> csvData = new List<string>();
+
+          string[] csvHeader =  {
+            "Identifier_Id"
+            ,"Identifier_LegalName"
+            ,"Identifier_Uri"
+            ,"Identifier_Scheme"
+            ,"AdditionalIdentifiers"
+            ,"Address_streetAddress"
+            ,"Address_locality"
+            ,"Address_region"
+            ,"Address_postalCode"
+            ,"Address_countryCode"
+            ,"Address_countryName"
+            ,"detail_organisationId"
+            ,"detail_creationDate"
+            ,"detail_businessType"
+            ,"detail_supplierBuyerType"
+            ,"detail_isSme"
+            ,"detail_isVcse"
+            ,"detail_rightToBuy"
+            ,"detail_isActive"
+          };
+
+          csvData.Add(string.Join(",", csvHeader.ToArray()));
+
+          foreach (var item in orgProfileList)
+          {
+            string addtionalIdentifiers = (item.AdditionalIdentifiers != null && item.AdditionalIdentifiers.Any()) ? JsonConvert.SerializeObject(item.AdditionalIdentifiers) : "";
+
+            string[] row = { item.Identifier.Id,
+                                  EscapeCharacter(item.Identifier.LegalName),
+                                  EscapeCharacter(item.Identifier.Uri),
+                                  EscapeCharacter(item.Identifier.Scheme),
+                                  addtionalIdentifiers,
+                                  EscapeCharacter(item.Address.StreetAddress),
+                                  EscapeCharacter(item.Address.Locality),
+                                  EscapeCharacter(item.Address.Region),
+                                  EscapeCharacter(item.Address.PostalCode),
+                                  EscapeCharacter(item.Address.CountryCode),
+                                  EscapeCharacter(item.Address.CountryName),
+                                  EscapeCharacter(item.Detail.OrganisationId),
+                                  EscapeCharacter(item.Detail.CreationDate),
+                                  EscapeCharacter(item.Detail.BusinessType),
+                                  EscapeCharacter(item.Detail.SupplierBuyerType!=null?item.Detail.SupplierBuyerType.ToString():""),
+                                  EscapeCharacter(item.Detail.IsSme!=null ? item.Detail.IsSme.ToString():""),
+                                  EscapeCharacter(item.Detail.IsVcse!=null? item.Detail.IsVcse.ToString():""),
+                                  EscapeCharacter(item.Detail.RightToBuy!=null? item.Detail.RightToBuy.ToString():""),
+                                  EscapeCharacter(item.Detail.IsActive!=null?item.Detail.IsActive.ToString():"")};
+
+            csvData.Add(string.Join(",", row));
+        }
+          return csvData;
     }
 
 
