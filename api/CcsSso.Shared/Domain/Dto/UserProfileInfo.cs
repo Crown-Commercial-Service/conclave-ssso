@@ -26,7 +26,6 @@ namespace CcsSso.Shared.Domain.Dto
     public class UserDetails
     {
         public int Id { get; set; }
-        //public string userGroups { get; set; }
         public List<GroupAccessRole> userGroups { get; set; }
         public bool CanChangePassword { get; set; }
         

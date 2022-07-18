@@ -77,7 +77,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
                     try
                     {
-
                         try
                         {
                             _logger.LogInformation("Calling wrapper API to get User Details");
@@ -91,7 +90,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                         }
                         catch (Exception ex)
                         {
-
                             _logger.LogError($" XXXXXXXXXXXX Failed to retrieve user details from Wrapper Api. UserId ={eachModifiedUser.Item2} and Message - {ex.Message} XXXXXXXXXXXX");
                         }
 
@@ -101,8 +99,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                         }
 
                         _logger.LogInformation($"Total number of Users in this Batch => {userDetailList.Count()}");
-
-
 
                         var fileByteArray = _csvConverter.ConvertToCSV(userDetailList, "user");
 
@@ -156,9 +152,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                 var content = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation($"Retrived user details for userId-{eachModifiedUser.Item2}");
 
-                var result =  JsonConvert.DeserializeObject<UserProfileResponseInfo>(content);
-                //var result = JsonConvert.DeserializeObject<dynamic>(content);
-                return result;
+                return JsonConvert.DeserializeObject<UserProfileResponseInfo>(content);           
 
             }
             else
@@ -166,8 +160,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                 _logger.LogError($"No organisation retrived for userId-{eachModifiedUser.Item2}");
                 return null;
             }
-
-            //}
         }
         public async Task<List<Tuple<int, string>>> GetModifiedUserIds()
         {
