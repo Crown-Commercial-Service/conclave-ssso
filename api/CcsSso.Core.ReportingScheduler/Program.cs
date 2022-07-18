@@ -80,7 +80,7 @@ namespace CcsSso.Core.ReportingScheduler
             services.AddSingleton<IDateTimeService, DateTimeService>();
             services.AddSingleton<ICSVConverter, CSVConverter>();
             services.AddSingleton<IFileUploadToCloud, FileUploadToCloud>();
-            //services.AddHostedService<OrganisationReportingJob>();
+            services.AddHostedService<OrganisationReportingJob>();
             services.AddHostedService<UserReportingJob>();
 
           });
