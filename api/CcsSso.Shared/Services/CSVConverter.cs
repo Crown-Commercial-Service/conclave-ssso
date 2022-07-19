@@ -17,8 +17,6 @@ namespace CcsSso.Shared.Services
 
       try
       {
-            //if (filetype.ToLower() == fileType)
-            //{
 
             // Check for the filetype 
             List<string> csvData = new List<string>();
@@ -29,23 +27,20 @@ namespace CcsSso.Shared.Services
             }
             else if (filetype.ToLower() == "user")
             {
-                csvData = ConstructCSVUserData(inputModel); 
+                csvData = ConstructCSVData(inputModel); 
             }
             else
-            {
+            {                
                 return Array.Empty<Byte>();
             }
-                        
-         
 
-          byte[] data;
-          using (MemoryStream ms = new MemoryStream())
-          {
-            data = csvData.SelectMany(s => Encoding.UTF8.GetBytes(s + Environment.NewLine)).ToArray();
+            byte[] data;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                data = csvData.SelectMany(s => Encoding.UTF8.GetBytes(s + Environment.NewLine)).ToArray();
 
-
-            return data;
-          }
+                return data;
+            }
       }
       catch (Exception)
       {
@@ -54,64 +49,63 @@ namespace CcsSso.Shared.Services
       }
     }
 
-        private List<string> ConstructCSVUserData(List<UserProfileResponseInfo> userProfileList)
+        
+        private List<string> ConstructCSVData(List<UserProfileResponseInfo> userProfileList)
         {
+            List<string> csvUserData = new List<string>();
+
+            string[] csvUserHeader =  {
+                "ID"
+                ,"userName"
+                ,"organisationId"
+                ,"firstName"
+                ,"lastName"
+                ,"title"
+                ,"mfaEnabled"
+                ,"accountVerified"
+                ,"sendUserRegistrationEmail"
+                ,"isAdminUser"
+                ,"userGroups"
+                ,"rolePermissionInfo"
+                ,"identityProviders"                   
+                };
+
+            csvUserData.Add(string.Join(",", csvUserHeader.ToArray()));
+
+            string userGroups = string.Empty;
+            string rolePermissionInfo = string.Empty;
+            string identityProviders = string.Empty;
+            string userId = string.Empty;
+
+            foreach (var item in userProfileList)
             {
-
-                List<string> csvUserData = new List<string>();
-
-                string[] csvUserHeader =  {
-                    "ID"
-                    ,"userName"
-                    ,"organisationId"
-                    ,"firstName"
-                    ,"lastName"
-                    ,"title"
-                    ,"mfaEnabled"
-                    ,"accountVerified"
-                    ,"sendUserRegistrationEmail"
-                    ,"isAdminUser"
-                    ,"userGroups"
-                    ,"rolePermissionInfo"
-                    ,"identityProviders"                   
-                  };
-
-                csvUserData.Add(string.Join(",", csvUserHeader.ToArray()));
-
-                string userGroups = string.Empty;
-                string rolePermissionInfo = string.Empty;
-                string identityProviders = string.Empty;
-                string userId = string.Empty;
-
-                foreach (var item in userProfileList)
+                if (item.detail != null)
                 {
-                    if (item.detail != null)
-                    {
-                        userGroups = (item != null && item.detail.userGroups.Any()) ? JsonConvert.SerializeObject(item.detail.userGroups) : "";
-                        rolePermissionInfo = (item != null && item.detail.rolePermissionInfo.Any()) ? JsonConvert.SerializeObject(item.detail.rolePermissionInfo) : "";
-                        identityProviders = (item != null && item.detail.identityProviders.Any()) ? JsonConvert.SerializeObject(item.detail.identityProviders) : "";
-                        userId = item.detail.Id.ToString();
-                    }
-
-                    string[] row = { userId,
-                                EscapeCharacter(item.UserName),
-                                EscapeCharacter(item.OrganisationId),
-                                EscapeCharacter(item.FirstName),
-                                EscapeCharacter(item.LastName),
-                                EscapeCharacter(item.Title),
-                                EscapeCharacter(item.mfaEnabled.ToString()),
-                                EscapeCharacter(item.Password),
-                                EscapeCharacter(item.AccountVerified.ToString()),
-                                EscapeCharacter(item.SendUserRegistrationEmail.ToString()),
-                                EscapeCharacter(item.IsAdminUser.ToString()),
-                                userGroups,
-                                rolePermissionInfo,
-                                identityProviders
-                                };
-                    csvUserData.Add(string.Join(",", row));
+                    userGroups = (item != null && item.detail.userGroups.Any()) ? JsonConvert.SerializeObject(item.detail.userGroups) : "";
+                    rolePermissionInfo = (item != null && item.detail.rolePermissionInfo.Any()) ? JsonConvert.SerializeObject(item.detail.rolePermissionInfo) : "";
+                    identityProviders = (item != null && item.detail.identityProviders.Any()) ? JsonConvert.SerializeObject(item.detail.identityProviders) : "";
+                    userId = item.detail.Id.ToString();
                 }
-                return csvUserData;
+
+                string[] row = { userId,
+                            EscapeCharacter(item.UserName),
+                            EscapeCharacter(item.OrganisationId),
+                            EscapeCharacter(item.FirstName),
+                            EscapeCharacter(item.LastName),
+                            EscapeCharacter(item.Title),
+                            EscapeCharacter(item.mfaEnabled.ToString()),
+                            EscapeCharacter(item.Password),
+                            EscapeCharacter(item.AccountVerified.ToString()),
+                            EscapeCharacter(item.SendUserRegistrationEmail.ToString()),
+                            EscapeCharacter(item.IsAdminUser.ToString()),
+                            userGroups,
+                            rolePermissionInfo,
+                            identityProviders
+                            };
+                csvUserData.Add(string.Join(",", row));
             }
+            return csvUserData;
+        
         }
 
         private List<string> ConstructCSVData(List<OrganisationProfileResponseInfo> orgProfileList)
