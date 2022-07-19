@@ -29,6 +29,10 @@ namespace CcsSso.Shared.Services
             {
                 csvData = ConstructCSVData(inputModel); 
             }
+            else if (filetype.ToLower() == "audit")
+            {
+                csvData = ConstructCSVData(inputModel);
+            }
             else
             {                
                 return Array.Empty<Byte>();
@@ -49,7 +53,39 @@ namespace CcsSso.Shared.Services
       }
     }
 
-        
+        private List<string> ConstructCSVData(List<AuditLogResponseInfo> auditLogResponseInfo)
+        {
+            List<string> csvUserDataForAuditLog = new List<string>();
+
+            string[] csvUserHeader =  {
+                "ID"
+                ,"Event"
+                ,"UserId"
+                ,"Application"
+                ,"ReferenceData"
+                ,"IpAddress"
+                ,"Device"                
+                };
+
+            csvUserDataForAuditLog.Add(string.Join(",", csvUserHeader.ToArray()));
+
+            string AuditLogUsers = string.Empty;             
+
+            foreach (var item in auditLogResponseInfo)
+            {
+                string[] row = { item.Id.ToString(),
+                            EscapeCharacter(item.Event),
+                            EscapeCharacter(item.UserId),
+                            EscapeCharacter(item.Application),
+                            EscapeCharacter(item.ReferenceData),
+                            EscapeCharacter(item.IpAddress),
+                            EscapeCharacter(item.Device)                          
+                            };
+                csvUserDataForAuditLog.Add(string.Join(",", row));
+            }
+            return csvUserDataForAuditLog;
+
+        }
         private List<string> ConstructCSVData(List<UserProfileResponseInfo> userProfileList)
         {
             List<string> csvUserData = new List<string>();

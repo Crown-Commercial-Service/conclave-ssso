@@ -82,6 +82,7 @@ namespace CcsSso.Core.ReportingScheduler
             services.AddSingleton<IFileUploadToCloud, FileUploadToCloud>();
             services.AddHostedService<OrganisationReportingJob>();
             services.AddHostedService<UserReportingJob>();
+            services.AddHostedService<AuditReportingJob>();
 
           });
     }
