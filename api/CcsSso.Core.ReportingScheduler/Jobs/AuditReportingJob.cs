@@ -150,6 +150,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         var auditLogResult = await (from a in _dataContext.AuditLog
                                     join s in _dataContext.User
                                     on a.UserId equals s.Id
+                                    where a.EventTimeUtc > untilDateTime
                                     select new Tuple<int, string, string, string, string, string, string>(a.Id, a.Event, s.UserName, a.Application, a.ReferenceData, a.IpAddress, a.Device)
                                     ).ToListAsync();
 
