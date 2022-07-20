@@ -112,6 +112,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             totalNumberOfItemsDuringThisSchedule += orgDetailList.Count();
 
 
+          _logger.LogInformation("After calling the wrapper API to get Organisation Details");
 
             var fileByteArray = _csvConverter.ConvertToCSV(orgDetailList, "organisation");
 
