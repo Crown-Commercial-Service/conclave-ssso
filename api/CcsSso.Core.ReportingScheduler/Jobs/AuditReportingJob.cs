@@ -37,7 +37,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                int interval = _appSettings.ScheduleJobSettings.UserReportingJobScheduleInMinutes * 60000; //15000;
+                int interval = _appSettings.ScheduleJobSettings.AuditLogReportingJobScheduleInMinutes * 60000; //15000;
 
                 _logger.LogInformation("Audit Reporting Job  running at: {time}", DateTimeOffset.Now);
                 await PerformJob();
@@ -67,46 +67,42 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                 int size = _appSettings.MaxNumbeOfRecordInAReport;
                 _logger.LogInformation($"Max number of record in a report from configuartion settings => {_appSettings.MaxNumbeOfRecordInAReport}");
                 var index = 0;
-                // var splitedOrgBatch = listOfAllModifiedOrg.GroupBy(s => i++ / size).Select(s => s.ToArray()).ToArray();
-                List<AuditLogResponseInfo> userDetailListForAuditLog = new List<AuditLogResponseInfo>();
-                AuditLogResponseInfo userAuditLog = null;
+                // var splitedAuditBatch = listOfAllModifiedAudit.GroupBy(s => i++ / size).Select(s => s.ToArray()).ToArray();
+                List<AuditLogResponseInfo> auditLogList = new List<AuditLogResponseInfo>();
+                AuditLogResponseInfo auditLog = null;
 
                 foreach (var eachModifiedAuditLog in listOfAllModifiedAuditLog)
                 {
                     index++;
-                    _logger.LogInformation($"trying to get user details of {index} nd users");
+                    _logger.LogInformation($"trying to get audit details of {index} nd audit");
 
                     try
-                    {
-                        try
-                        {                            
-                            if (eachModifiedAuditLog != null)
-                            {
-                                userAuditLog = new AuditLogResponseInfo();
-                                userAuditLog.Id = eachModifiedAuditLog.Item1;
-                                userAuditLog.Event = eachModifiedAuditLog.Item2;
-                                userAuditLog.UserId = eachModifiedAuditLog.Item3;
-                                userAuditLog.Application = eachModifiedAuditLog.Item4;
-                                userAuditLog.ReferenceData = eachModifiedAuditLog.Item5;
-                                userAuditLog.IpAddress = eachModifiedAuditLog.Item6;
-                                userAuditLog.Device = eachModifiedAuditLog.Item7;                               
-                                userDetailListForAuditLog.Add(userAuditLog);
-                            }
-
-                        }
-                        catch (Exception ex)
+                    {                                                 
+                        if (eachModifiedAuditLog != null)
                         {
-                            _logger.LogError($" XXXXXXXXXXXX Failed to retrieve user details from Wrapper Api. UserId ={eachModifiedAuditLog.Item3} and Message - {ex.Message} XXXXXXXXXXXX");
+                            auditLog = new AuditLogResponseInfo();
+                            auditLog.Id = eachModifiedAuditLog.Item1;
+                            auditLog.Event = eachModifiedAuditLog.Item2;
+                            auditLog.UserId = eachModifiedAuditLog.Item3;
+                            auditLog.Application = eachModifiedAuditLog.Item4;
+                            auditLog.ReferenceData = eachModifiedAuditLog.Item5;
+                            auditLog.IpAddress = eachModifiedAuditLog.Item6;
+                            auditLog.Device = eachModifiedAuditLog.Item7;
+                            auditLogList.Add(auditLog);
                         }
 
-                        if (listOfAllModifiedAuditLog.Count != index && userDetailListForAuditLog.Count < size)
+                        if (listOfAllModifiedAuditLog.Count != index && auditLogList.Count < size)
                         {
                             continue;
                         }
 
-                        _logger.LogInformation($"Total number of Audit Logs in this Batch => {userDetailListForAuditLog.Count()}");
+                        _logger.LogInformation($"Total number of Audit Logs in this Batch => {auditLogList.Count()}");
 
-                        var fileByteArray = _csvConverter.ConvertToCSV(userDetailListForAuditLog, "audit");
+                        var fileByteArray = _csvConverter.ConvertToCSV(auditLogList, "audit");
+                        //using (MemoryStream memStream = new MemoryStream(fileByteArray))
+                        //{
+                        //    File.WriteAllBytes("auditlognew.csv", fileByteArray);
+                        //}
 
                         _logger.LogInformation("After converting the list of Audit Log object into CSV format and returned byte Array");
 
@@ -130,11 +126,11 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                     catch (Exception)
                     {
 
-                        _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of org in this set {userDetailListForAuditLog.Count()} XXXXXXXXXXXX");
+                        _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of org in this set {auditLogList.Count()} XXXXXXXXXXXX");
                         Console.WriteLine("");
 
                     }
-                    userDetailListForAuditLog.Clear();
+                    auditLogList.Clear();
                     await Task.Delay(5000);
 
                 }
@@ -148,21 +144,17 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         }
         public async Task<List<Tuple<int, string, string, string, string, string, string>>> GetModifiedAuditLog()
         {
-            var dataDuration = _appSettings.ReportDataDurations.UserReportingDurationInMinutes;
+            var dataDuration = _appSettings.ReportDataDurations.AuditLogReportingDurationInMinutes;
             var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
 
             try
-            {
-                string userEmailID = string.Empty;
+            {              
                 var auditLogResult = await (from a in _dataContext.AuditLog
                                             join s in _dataContext.User
                                             on a.UserId equals s.Id
                                             select new Tuple<int, string, string, string, string, string, string>(a.Id,a.Event,s.UserName, a.Application, a.ReferenceData, a.IpAddress, a.Device)
                                             ).ToListAsync();
-                /*
-                var auditLogResult = await  _dataContext.AuditLog.Where(m => m.EventTimeUtc > untilDateTime)
-                                  .Select(a => new Tuple<int, string,int,string,string,string,string>(a.Id, a.Event, a.UserId, a.Application, a.ReferenceData, a.IpAddress, a.Device)).ToListAsync();
-                */
+                
                 return auditLogResult;
             }
             catch (Exception ex)
@@ -170,8 +162,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                 _logger.LogError(ex, "Error");
                 throw;
             }
-
-
         }
     }
 }

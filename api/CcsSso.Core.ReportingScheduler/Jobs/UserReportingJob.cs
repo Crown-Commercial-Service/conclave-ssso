@@ -67,7 +67,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                 int size = _appSettings.MaxNumbeOfRecordInAReport;
                 _logger.LogInformation($"Max number of record in a report from configuartion settings => {_appSettings.MaxNumbeOfRecordInAReport}");
                 var index = 0;
-                // var splitedOrgBatch = listOfAllModifiedOrg.GroupBy(s => i++ / size).Select(s => s.ToArray()).ToArray();
+                // var splitedUserBatch = listOfAllModifiedUser.GroupBy(s => i++ / size).Select(s => s.ToArray()).ToArray();
                 List<UserProfileResponseInfo> userDetailList = new List<UserProfileResponseInfo>();
 
                 foreach (var eachModifiedUser in listOfAllModifiedUser)
@@ -101,10 +101,16 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                         _logger.LogInformation($"Total number of Users in this Batch => {userDetailList.Count()}");
 
                         var fileByteArray = _csvConverter.ConvertToCSV(userDetailList, "user");
+                        //using (MemoryStream memStream = new MemoryStream(fileByteArray))
+                        //{
+                        //    File.WriteAllBytes("LocalUserData.csv", fileByteArray);
+
+                        //}
 
                         _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
 
                         AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "user");
+                        
                         _logger.LogInformation("After Transfered the files to Azure Blob");
 
                         if (result.responseStatus)
@@ -124,7 +130,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                     catch (Exception)
                     {
 
-                        _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of org in this set {userDetailList.Count()} XXXXXXXXXXXX");
+                        _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of users in this set {userDetailList.Count()} XXXXXXXXXXXX");
                         Console.WriteLine("");
 
                     }

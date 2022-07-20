@@ -98,6 +98,7 @@ namespace CcsSso.Shared.Services
                 ,"lastName"
                 ,"title"
                 ,"mfaEnabled"
+                ,"password"
                 ,"accountVerified"
                 ,"sendUserRegistrationEmail"
                 ,"isAdminUser"

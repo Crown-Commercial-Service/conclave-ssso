@@ -25,6 +25,7 @@ namespace CcsSso.Core.ReportingScheduler.Models
     public int UserReportingJobScheduleInMinutes { get; set; }
     public int OrganisationReportingJobScheduleInMinutes { get; set; }
     public int ContactReportingJobScheduleInMinutes { get; set; }
+    public int AuditLogReportingJobScheduleInMinutes { get; set; }
 
   }
 
@@ -33,8 +34,9 @@ namespace CcsSso.Core.ReportingScheduler.Models
     public int UserReportingDurationInMinutes { get; set; }
     public int OrganisationReportingDurationInMinutes { get; set; }
     public int ContactReportingDurationInMinutes { get; set; }
+    public int AuditLogReportingDurationInMinutes { get; set; }
 
-  }
+   }
 
   public class S3Configuration
   {
