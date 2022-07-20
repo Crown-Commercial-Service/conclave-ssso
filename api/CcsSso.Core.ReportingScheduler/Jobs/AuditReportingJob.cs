@@ -41,17 +41,16 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
                 _logger.LogInformation("Audit Reporting Job  running at: {time}", DateTimeOffset.Now);
                 await PerformJob();
+                _logger.LogInformation("Audit Reporting Job  finished at: {time}", DateTimeOffset.Now);
+                _logger.LogInformation("");
                 await Task.Delay(interval, stoppingToken);
-
-                Console.WriteLine($"******************Audit batch processing job ended ***********");
-                Console.WriteLine("");
-
             }
         }
         private async Task PerformJob()
         {
             try
             {
+        var totalNumberOfItemsDuringThisSchedule = 0;
 
                 var listOfAllModifiedAuditLog = await GetModifiedAuditLog();
 
@@ -67,7 +66,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                 int size = _appSettings.MaxNumbeOfRecordInAReport;
                 _logger.LogInformation($"Max number of record in a report from configuartion settings => {_appSettings.MaxNumbeOfRecordInAReport}");
                 var index = 0;
-                // var splitedAuditBatch = listOfAllModifiedAudit.GroupBy(s => i++ / size).Select(s => s.ToArray()).ToArray();
+                
                 List<AuditLogResponseInfo> auditLogList = new List<AuditLogResponseInfo>();
                 AuditLogResponseInfo auditLog = null;
 
@@ -97,13 +96,11 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                         }
 
                         _logger.LogInformation($"Total number of Audit Logs in this Batch => {auditLogList.Count()}");
+                         totalNumberOfItemsDuringThisSchedule += auditLogList.Count();
 
+                            
                         var fileByteArray = _csvConverter.ConvertToCSV(auditLogList, "audit");
-                        //using (MemoryStream memStream = new MemoryStream(fileByteArray))
-                        //{
-                        //    File.WriteAllBytes("auditlognew.csv", fileByteArray);
-                        //}
-
+                        
                         _logger.LogInformation("After converting the list of Audit Log object into CSV format and returned byte Array");
 
                         AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "audit");
@@ -112,13 +109,13 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                         if (result.responseStatus)
                         {
                             _logger.LogInformation($"****************** Successfully transfered file. FileName - {result.responseFileName} ******************");
-                            Console.WriteLine("");
+                            _logger.LogInformation("");
                         }
                         else
                         {
                             _logger.LogError($" XXXXXXXXXXXX Failed to transfer. Message - {result.responseMessage} XXXXXXXXXXXX");
                             _logger.LogError($"Failed to transfer. File Name - {result.responseFileName}");
-                            Console.WriteLine("");
+                            _logger.LogInformation("");
 
                         }
 
@@ -127,7 +124,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                     {
 
                         _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of org in this set {auditLogList.Count()} XXXXXXXXXXXX");
-                        Console.WriteLine("");
+                        _logger.LogError("");
 
                     }
                     auditLogList.Clear();
@@ -139,7 +136,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             {
 
                 _logger.LogError($"XXXXXXXXXXXX Failed to transfer. Outer exception - {ex.Message} XXXXXXXXXXXX");
-                Console.WriteLine("");
+                _logger.LogError("");
             }
         }
         public async Task<List<Tuple<int, string, string, string, string, string, string>>> GetModifiedAuditLog()

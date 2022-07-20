@@ -130,7 +130,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
           catch (Exception)
           {
 
-            _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of org in this set {userDetailList.Count()} XXXXXXXXXXXX");
+            _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of users in this set {userDetailList.Count()} XXXXXXXXXXXX");
             _logger.LogError("");
 
           }
