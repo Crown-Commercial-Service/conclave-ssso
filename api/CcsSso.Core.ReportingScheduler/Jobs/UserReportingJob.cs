@@ -110,7 +110,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
             _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
 
-            AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "user");
+            AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "User");
             _logger.LogInformation("After Transfered the files to Azure Blob");
 
             if (result.responseStatus)
@@ -138,6 +138,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
           await Task.Delay(5000);
 
         }
+        _logger.LogInformation($"Total number of users exported during this schedule => {totalNumberOfItemsDuringThisSchedule}");
       }
       catch (Exception ex)
       {

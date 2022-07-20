@@ -118,7 +118,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
             _logger.LogInformation("After converting the list of organisation object into CSV format and returned byte Array");
 
-            AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "organisation");
+            AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Organisation");
             _logger.LogInformation("After Transfered the files to Azure Blob");
 
             if (result.responseStatus)
