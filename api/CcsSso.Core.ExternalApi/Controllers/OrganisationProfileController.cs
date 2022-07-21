@@ -91,7 +91,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     /// </remarks>
     [HttpGet("{organisationId}")]
-    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS", "ORG_ADMINISTRATOR")]
     [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(OrganisationProfileResponseInfo), 200)]
