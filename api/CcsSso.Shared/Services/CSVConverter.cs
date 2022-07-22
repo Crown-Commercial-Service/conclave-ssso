@@ -33,6 +33,10 @@ namespace CcsSso.Shared.Services
             {
                 csvData = ConstructCSVData(inputModel);
             }
+            else if (filetype.ToLower() == "contact")
+            {
+              csvData = ConstructCSVData(inputModel);
+            }
             else
             {                
                 return Array.Empty<Byte>();
@@ -201,6 +205,48 @@ namespace CcsSso.Shared.Services
             csvData.Add(string.Join(",", row));
         }
           return csvData;
+    }
+    private List<string> ConstructCSVData(List<ContactResponseInfo> contactList)
+    {
+
+      List<string> csvData = new List<string>();
+
+      string[] csvHeader =  {
+                "contact Type",
+                "contact ID",
+                "contactPointId"
+                ,"originalContactPointId"
+                ,"assignedContactType"
+                ,"contacts_contactId"
+                ,"contacts_contactType"
+                ,"contacts_contactValue"
+                ,"contactPointReason"
+                ,"contactPointName"
+          };
+
+      csvData.Add(string.Join(",", csvHeader.ToArray()));
+
+      foreach (var item in contactList)
+      {
+        foreach (var contactsItem in item.contacts)
+        {
+          string[] row = {
+                            EscapeCharacter(item.contactDeducted ),
+                            EscapeCharacter(item.detail.organisationId.ToString()),
+                            item.contactPointId.ToString(),
+                            EscapeCharacter(item.originalContactPointId.ToString()),
+                            EscapeCharacter(item.assignedContactType.ToString()),
+                            EscapeCharacter(contactsItem.contactId.ToString()),
+                            EscapeCharacter(contactsItem.contactType),
+                            EscapeCharacter(contactsItem.contactValue),
+                            EscapeCharacter(item.contactPointReason),
+                            EscapeCharacter(item.contactPointName)
+                            };
+
+          csvData.Add(string.Join(",", row));
+        }
+      }
+      return csvData;
     }
 
 
