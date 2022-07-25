@@ -33,6 +33,8 @@ namespace CcsSso.Shared.Domain.Dto
     public List<Contact> contacts { get; set; }
     public string contactPointReason { get; set; }
     public string contactPointName { get; set; }
+    public string contactType { get; set; }
+    public string contactId { get; set; }
 
   }
   public class ContactUserResponseInfo
@@ -44,6 +46,8 @@ namespace CcsSso.Shared.Domain.Dto
     public List<Contact> contacts { get; set; }
     public string contactPointReason { get; set; }
     public string contactPointName { get; set; }
+    public string contactType { get; set; }
+    public string contactId { get; set; }
 
   }
   public class ContactSiteResponseInfo
@@ -55,6 +59,8 @@ namespace CcsSso.Shared.Domain.Dto
     public List<Contact> contacts { get; set; }
     public string contactPointReason { get; set; }
     public string contactPointName { get; set; }
+    public string contactType { get; set; }
+    public string contactId { get; set; }
 
   }
   public class ContactResponseInfo
@@ -69,8 +75,8 @@ namespace CcsSso.Shared.Domain.Dto
     public string contactDeducted { get; set; }
     public string contactDedcutedId { get; set; }
 
-    //public ContactOrgResponseInfo contactOrgResponseInfo { get; set; }
-    //public ContactUserResponseInfo contactUserResponseInfo { get; set; }
-    //public ContactSiteResponseInfo contactSiteResponseInfo { get; set; }
+    public List<ContactOrgResponseInfo> contactOrgResponseInfo { get; set; }
+    public List<ContactUserResponseInfo> contactUserResponseInfo { get; set; }
+    public List<ContactSiteResponseInfo> contactSiteResponseInfo { get; set; }
   }
 }

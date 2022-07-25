@@ -33,7 +33,15 @@ namespace CcsSso.Shared.Services
         {
           csvData = ConstructCSVData(inputModel);
         }
-        else if (filetype.ToLower() == "contact")
+        else if (filetype.ToLower() == "contact-org")
+        {
+          csvData = ConstructCSVData(inputModel);
+        }
+        else if (filetype.ToLower() == "contact-user")
+        {
+          csvData = ConstructCSVData(inputModel);
+        }
+        else if (filetype.ToLower() == "contact-site")
         {
           csvData = ConstructCSVData(inputModel);
         }
@@ -265,7 +273,7 @@ namespace CcsSso.Shared.Services
       }
       return csvData;
     }
-    private List<string> ConstructCSVData(List<ContactResponseInfo> contactList)
+    private List<string> ConstructCSVData(List<ContactOrgResponseInfo> contactList)
     {
 
       List<string> csvData = new List<string>();
@@ -290,8 +298,94 @@ namespace CcsSso.Shared.Services
         foreach (var contactsItem in item.contacts)
         {
           string[] row = {
-                            EscapeCharacter(item.contactDeducted ),
+                            EscapeCharacter(item.contactType ),
                             EscapeCharacter(item.detail.organisationId.ToString()),
+                            item.contactPointId.ToString(),
+                            EscapeCharacter(item.originalContactPointId.ToString()),
+                            EscapeCharacter(item.assignedContactType.ToString()),
+                            EscapeCharacter(contactsItem.contactId.ToString()),
+                            EscapeCharacter(contactsItem.contactType),
+                            EscapeCharacter(contactsItem.contactValue),
+                            EscapeCharacter(item.contactPointReason),
+                            EscapeCharacter(item.contactPointName)
+                            };
+
+          csvData.Add(string.Join(",", row));
+        }
+      }
+      return csvData;
+    }
+
+    private List<string> ConstructCSVData(List<ContactUserResponseInfo> contactList)
+    {
+
+      List<string> csvData = new List<string>();
+
+      string[] csvHeader =  {
+                "contact Type",
+                "contact ID",
+                "contactPointId"
+                ,"originalContactPointId"
+                ,"assignedContactType"
+                ,"contacts_contactId"
+                ,"contacts_contactType"
+                ,"contacts_contactValue"
+                ,"contactPointReason"
+                ,"contactPointName"
+          };
+
+      csvData.Add(string.Join(",", csvHeader.ToArray()));
+
+      foreach (var item in contactList)
+      {
+        foreach (var contactsItem in item.contacts)
+        {
+          string[] row = {
+                            EscapeCharacter(item.contactType ),
+                            EscapeCharacter(item.detail.userId),
+                            item.contactPointId.ToString(),
+                            EscapeCharacter(item.originalContactPointId.ToString()),
+                            EscapeCharacter(item.assignedContactType.ToString()),
+                            EscapeCharacter(contactsItem.contactId.ToString()),
+                            EscapeCharacter(contactsItem.contactType),
+                            EscapeCharacter(contactsItem.contactValue),
+                            EscapeCharacter(item.contactPointReason),
+                            EscapeCharacter(item.contactPointName)
+                            };
+
+          csvData.Add(string.Join(",", row));
+        }
+      }
+      return csvData;
+    }
+
+    private List<string> ConstructCSVData(List<ContactSiteResponseInfo> contactList)
+    {
+
+      List<string> csvData = new List<string>();
+
+      string[] csvHeader =  {
+                "contact Type",
+                "contact ID",
+                "contactPointId"
+                ,"originalContactPointId"
+                ,"assignedContactType"
+                ,"contacts_contactId"
+                ,"contacts_contactType"
+                ,"contacts_contactValue"
+                ,"contactPointReason"
+                ,"contactPointName"
+          };
+
+      csvData.Add(string.Join(",", csvHeader.ToArray()));
+
+      foreach (var item in contactList)
+      {
+        foreach (var contactsItem in item.contacts)
+        {
+          string[] row = {
+                            EscapeCharacter(item.contactType ),
+                            EscapeCharacter(item.detail.siteId),
                             item.contactPointId.ToString(),
                             EscapeCharacter(item.originalContactPointId.ToString()),
                             EscapeCharacter(item.assignedContactType.ToString()),
