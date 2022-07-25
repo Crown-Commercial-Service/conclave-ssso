@@ -39,6 +39,8 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       {
         int interval = _appSettings.ScheduleJobSettings.ContactReportingJobScheduleInMinutes * 60000; //15000;
 
+        // Get the Organisation Contact Details, User Contact Details, Site Contact Details in a excel sheet differentiate based on the org,user,site
+
         _logger.LogInformation("Contact Reporting Job  running at: {time}", DateTimeOffset.Now);
         await PerformJob();
 
@@ -56,9 +58,43 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       {
         var totalNumberOfItemsDuringThisSchedule = 0;
 
+        //List<ContactResponseInfo> contactDetailList = new List<ContactResponseInfo>();
+
+
+
+        // Call the Organisation contact 
+
+
+        // Call the User contact
+
+
+        // Call the Site contact
+
+
+        // Get all the 3 dataset and then call the below method 
+        //var fileByteArray = _csvConverter.ConvertToCSV(contactDetailList, "contact");
+
+
         var listOfAllModifiedContactId = await GetModifiedContactIds(); // ORG
 
-        //var listOfAllModifiedUserContactId = await GetModifiedUserContactIds(); // USER
+        var listOfAllModifiedUserContactId = await GetModifiedUserContactIds(); // USER
+        List<ContactResponseInfo> contactUserDetailList = new List<ContactResponseInfo>();
+        foreach (var eachModifiedUserContact in listOfAllModifiedUserContactId)
+        {
+               // Call the User - Contact Information
+              var client = _httpClientFactory.CreateClient("WrapperApi");
+              var userContactInformation = await GetUserContactDetails(eachModifiedUserContact, client);
+              if (userContactInformation != null)
+              {
+                 userContactInformation.contactDeducted = "user";
+                contactUserDetailList.Add(userContactInformation);
+              }
+          var fileByteArray = _csvConverter.ConvertToCSV(contactUserDetailList, "contact");
+          using (MemoryStream memStream = new MemoryStream(fileByteArray))
+          {
+            File.WriteAllBytes("contactuser.csv", fileByteArray);
+          }
+        }
 
 
 
@@ -169,7 +205,8 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     {
       //string orgId = "627961658397339904"; int copoint = 8512;
        
-      string url = $"users/?user-id={eachModifiedContact.Item4}/contacts/{eachModifiedContact.Item1}";
+      //string url = $"users/?user-id={eachModifiedContact.Item4}/contacts/{eachModifiedContact.Item1}";
+      string url = $"users/contacts/{eachModifiedContact.Item1}?user-id={eachModifiedContact.Item4}";
       //string url = $"organisations/{orgId}/contacts/{copoint}";
 
       var response = await client.GetAsync(url);
@@ -187,6 +224,8 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         return null;
       }
     }
+
+    
 
     private async Task<ContactResponseInfo?> GetOrgContactDetails(Tuple<int, int, int, string> eachModifiedContact, HttpClient client)
     {
