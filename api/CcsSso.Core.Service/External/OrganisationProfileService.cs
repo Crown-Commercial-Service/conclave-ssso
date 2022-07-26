@@ -446,16 +446,6 @@ namespace CcsSso.Core.Service.External
     {
       var idpAddedList = idpList.Where(idp => idp.Enabled).ToList();
 
-      foreach (var idp in idpAddedList)
-      {
-        var addedOrganisationEligibleIdentityProvider = new OrganisationEligibleIdentityProvider
-        {
-          OrganisationId = organisation.Id,
-          IdentityProviderId = idp.Id
-        };
-        _dataContext.OrganisationEligibleIdentityProvider.Add(addedOrganisationEligibleIdentityProvider);
-      }
-
       // Add new idps
       var newIdpIds = idpAddedList.Select(x => x.Id).ToList();
       //List<User> users = await GetAffectedUsersByRemovedIdp(organisation.CiiOrganisationId, newIdpIds);
@@ -640,12 +630,12 @@ namespace CcsSso.Core.Service.External
     //            SendUserRegistrationEmail = true
     //          };
     //          asyncTaskList.Add(_idamService.RegisterUserInIdamAsync(securityApiUserInfo));
-    //            user.UserIdentityProviders.Add(new UserIdentityProvider()
-    //            {
-    //              UserId = user.Id,
-    //              OrganisationEligibleIdentityProviderId = userNamePasswordIdentityProvider.Id,
-    //              IsDeleted = false
-    //            });
+    //          user.UserIdentityProviders.Add(new UserIdentityProvider()
+    //          {
+    //            UserId = user.Id,
+    //            OrganisationEligibleIdentityProviderId = userNamePasswordIdentityProvider.Id,
+    //            IsDeleted = false
+    //          });
     //        }
     //        //Record for force signout as idp has been removed from the user. This is a current business requirement
     //        asyncTaskList.Add(_remoteCacheService.SetValueAsync(CacheKeyConstant.ForceSignoutKey + user.UserName, true));
