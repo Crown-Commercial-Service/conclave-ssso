@@ -13,8 +13,6 @@ namespace CcsSso.Shared.Services
 
     public byte[] ConvertToCSV(dynamic inputModel, string filetype)
     {
-      //const string fileType = "organisation"; // Existing to new change (Accept Organization, Users)
-
       try
       {
 
@@ -70,13 +68,13 @@ namespace CcsSso.Shared.Services
       List<string> csvUserDataForAuditLog = new List<string>();
 
       string[] csvUserHeader =  {
-                "ID"
-                ,"Event"
-                ,"UserId"
-                ,"Application"
-                ,"ReferenceData"
-                ,"IpAddress"
-                ,"Device"
+                AuditLogHeaderMap.ID
+                ,AuditLogHeaderMap.Event
+                ,AuditLogHeaderMap.UserId
+                ,AuditLogHeaderMap.Application
+                ,AuditLogHeaderMap.ReferenceData
+                ,AuditLogHeaderMap.IpAddress
+                ,AuditLogHeaderMap.Device
                 };
 
       csvUserDataForAuditLog.Add(string.Join(",", csvUserHeader.ToArray()));
@@ -132,10 +130,15 @@ namespace CcsSso.Shared.Services
           //userGroups = (item != null && item.detail.userGroups.Any()) ? JsonConvert.SerializeObject(item.detail.userGroups).Replace(',', '|').ToString() : "";
           if (item.detail.userGroups != null && item.detail.userGroups.Any())
           {
-            string completeGroup = String.Empty;
-            foreach (var roleitem in item.detail.userGroups)
+            string completeGroup = string.Empty;
+            string appendPipe = string.Empty;
+            if (item.detail.userGroups.Count > 1)
             {
-              completeGroup = completeGroup + roleitem.GroupId + " - " + roleitem.AccessRoleName + " |";
+              appendPipe = " |";
+            }
+            foreach (var roleitem in item.detail.userGroups)
+            {              
+              completeGroup = completeGroup + roleitem.GroupId + " - " + roleitem.AccessRoleName + appendPipe;
             }
             userGroups = completeGroup;
           }
@@ -144,9 +147,14 @@ namespace CcsSso.Shared.Services
           if (item.detail.rolePermissionInfo != null && item.detail.rolePermissionInfo.Any())
           {
             string completeRole = String.Empty;
+            string appendPipe = string.Empty;
+            if (item.detail.rolePermissionInfo.Count > 1)
+            {
+              appendPipe = " |";
+            }
             foreach (var roleitem in item.detail.rolePermissionInfo)
             {
-              completeRole = completeRole + roleitem.RoleId + " - " + roleitem.RoleName + " |";
+              completeRole = completeRole + roleitem.RoleId + " - " + roleitem.RoleName + appendPipe;
             }
             rolePermissionInfo = completeRole;
           }
@@ -155,9 +163,14 @@ namespace CcsSso.Shared.Services
           if (item.detail.identityProviders != null && item.detail.identityProviders.Any())
           {
             string completeIdentityProvider = String.Empty;
+            string appendPipe = string.Empty;
+            if (item.detail.identityProviders.Count > 1)
+            {
+              appendPipe = " |";
+            }
             foreach (var roleitem in item.detail.identityProviders)
             {
-              completeIdentityProvider = completeIdentityProvider + roleitem.IdentityProviderId + " - " + roleitem.IdentityProvider + " |";
+              completeIdentityProvider = completeIdentityProvider + roleitem.IdentityProviderId + " - " + roleitem.IdentityProvider + appendPipe;
             }
             identityProviders = completeIdentityProvider;
           }
@@ -239,12 +252,17 @@ namespace CcsSso.Shared.Services
         //string addtionalIdentifiers = (item.AdditionalIdentifiers != null && item.AdditionalIdentifiers.Any()) ? JsonConvert.SerializeObject(item.AdditionalIdentifiers) : "";
         if (item.AdditionalIdentifiers != null && item.AdditionalIdentifiers.Any())
         {
+          string appendPipe = string.Empty;
+          if (item.AdditionalIdentifiers.Count > 1)
+          {
+            appendPipe = " |";
+          }
           foreach (var addtionalIdentifierItem in item.AdditionalIdentifiers)
           {
             addtionalIdentifiers = addtionalIdentifiers + OrganisationHeaderMap.AdditionalIdentifiers_Id + ":" +addtionalIdentifierItem.Id + " - " 
                                                         + OrganisationHeaderMap.AdditionalIdentifiers_LegalName + ":" + addtionalIdentifierItem.LegalName + " - " 
                                                         + OrganisationHeaderMap.AdditionalIdentifiers_URI + ":" + addtionalIdentifierItem.Uri + " - "
-                                                        + OrganisationHeaderMap.AdditionalIdentifiers_Scheme + ":" + addtionalIdentifierItem.Scheme + " | ";
+                                                        + OrganisationHeaderMap.AdditionalIdentifiers_Scheme + ":" + addtionalIdentifierItem.Scheme + appendPipe;
           }
 
         }
@@ -279,16 +297,16 @@ namespace CcsSso.Shared.Services
       List<string> csvData = new List<string>();
 
       string[] csvHeader =  {
-                "contact Type",
-                "contact ID",
-                "contactPointId"
-                ,"originalContactPointId"
-                ,"assignedContactType"
-                ,"contacts_contactId"
-                ,"contacts_contactType"
-                ,"contacts_contactValue"
-                ,"contactPointReason"
-                ,"contactPointName"
+                ContactsHeaderMap.ContactType
+                ,ContactsHeaderMap.ContactID
+                ,ContactsHeaderMap.ContactPointID
+                ,ContactsHeaderMap.OriginalContactPointID
+                ,ContactsHeaderMap.AssignedContactType
+                ,ContactsHeaderMap.Contact_ContactID
+                ,ContactsHeaderMap.Contacts_ContactType
+                ,ContactsHeaderMap.Contacts_ContactValue
+                ,ContactsHeaderMap.ContactPoint_Reason
+                ,ContactsHeaderMap.ContactPoint_Name
           };
 
       csvData.Add(string.Join(",", csvHeader.ToArray()));
@@ -322,19 +340,19 @@ namespace CcsSso.Shared.Services
       List<string> csvData = new List<string>();
 
       string[] csvHeader =  {
-                "contact Type",
-                "contact ID",
-                "contactPointId"
-                ,"originalContactPointId"
-                ,"assignedContactType"
-                ,"contacts_contactId"
-                ,"contacts_contactType"
-                ,"contacts_contactValue"
-                ,"contactPointReason"
-                ,"contactPointName"
+                ContactsHeaderMap.ContactType
+                ,ContactsHeaderMap.ContactID
+                ,ContactsHeaderMap.ContactPointID
+                ,ContactsHeaderMap.OriginalContactPointID
+                ,ContactsHeaderMap.AssignedContactType
+                ,ContactsHeaderMap.Contact_ContactID
+                ,ContactsHeaderMap.Contacts_ContactType
+                ,ContactsHeaderMap.Contacts_ContactValue
+                ,ContactsHeaderMap.ContactPoint_Reason
+                ,ContactsHeaderMap.ContactPoint_Name
           };
 
-      csvData.Add(string.Join(",", csvHeader.ToArray()));
+      //csvData.Add(string.Join(",", csvHeader.ToArray()));
 
       foreach (var item in contactList)
       {
@@ -365,19 +383,19 @@ namespace CcsSso.Shared.Services
       List<string> csvData = new List<string>();
 
       string[] csvHeader =  {
-                "contact Type",
-                "contact ID",
-                "contactPointId"
-                ,"originalContactPointId"
-                ,"assignedContactType"
-                ,"contacts_contactId"
-                ,"contacts_contactType"
-                ,"contacts_contactValue"
-                ,"contactPointReason"
-                ,"contactPointName"
+                ContactsHeaderMap.ContactType
+                ,ContactsHeaderMap.ContactID
+                ,ContactsHeaderMap.ContactPointID
+                ,ContactsHeaderMap.OriginalContactPointID
+                ,ContactsHeaderMap.AssignedContactType
+                ,ContactsHeaderMap.Contact_ContactID
+                ,ContactsHeaderMap.Contacts_ContactType
+                ,ContactsHeaderMap.Contacts_ContactValue
+                ,ContactsHeaderMap.ContactPoint_Reason
+                ,ContactsHeaderMap.ContactPoint_Name
           };
 
-      csvData.Add(string.Join(",", csvHeader.ToArray()));
+      //csvData.Add(string.Join(",", csvHeader.ToArray()));
 
       foreach (var item in contactList)
       {
@@ -419,48 +437,73 @@ namespace CcsSso.Shared.Services
 
   public static class UserHeaderMap
   {
-    public static string ID = "id";
-    public static string UserName = "username";
-    public static string OrganisationID = "organisation_id";
-    public static string FirstName = "firstname";
-    public static string LastName = "lastname";
-    public static string Title = "title";
-    public static string mfaEnabled = "mfa_enabled";
-    public static string AccountVerified = "accountverified";
-    public static string SendUserRegistrationEmail = "send_user_registrationemail";
-    public static string IsAdminUser = "is_adminuser";
-    public static string UserGroups = "usergroups";
-    public static string RolePermissionInfo = "rolepermissioninfo";
-    public static string IdentityProviders = "identityproviders";
+    public const string ID = "id";
+    public const string UserName = "username";
+    public const string OrganisationID = "organisation_id";
+    public const string FirstName = "firstname";
+    public const string LastName = "lastname";
+    public const string Title = "title";
+    public const string mfaEnabled = "mfa_enabled";
+    public const string AccountVerified = "accountverified";
+    public const string SendUserRegistrationEmail = "send_user_registrationemail";
+    public const string IsAdminUser = "is_adminuser";
+    public const string UserGroups = "usergroups";
+    public const string RolePermissionInfo = "rolepermissioninfo";
+    public const string IdentityProviders = "identityproviders";
 
   }
 
   public static class OrganisationHeaderMap
   {
-    public static string Identifier_Id = "identifier_id";
-    public static string Identifier_LegalName = "identifier_legalname";
-    public static string Identifier_Uri = "identifier_uri";
-    public static string Identifier_Scheme = "identifier_scheme";
-    public static string AdditionalIdentifiers = "additionalIdentifiers";
-    public static string Address_StreetAddress = "address_streetaddress";
-    public static string Address_Locality = "address_locality";
-    public static string Address_Region = "address_region";
-    public static string Address_PostalCode = "address_postalcode";
-    public static string Address_CountryCode = "address_countrycode";
-    public static string Address_CountryName = "address_countryname";  
-    public static string Detail_Organisation_Id = "detail_organisation_id";
-    public static string Detail_CreationDate = "detail_creationdate";
-    public static string Detail_BusinessType = "detail_businesstype";
-    public static string Detail_SupplierBuyerType = "detail_supplierbuyertype";
-    public static string Detail_IsSme = "detail_is_sme";
-    public static string Detail_IsVcse = "detail_is_vcse";
-    public static string Detail_RightToBuy = "detail_rightTobuy";
-    public static string Detail_IsActive = "detail_isactive";
+    public const string Identifier_Id = "identifier_id";
+    public const string Identifier_LegalName = "identifier_legalname";
+    public const string Identifier_Uri = "identifier_uri";
+    public const string Identifier_Scheme = "identifier_scheme";
+    public const string AdditionalIdentifiers = "additionalIdentifiers";
+    public const string Address_StreetAddress = "address_streetaddress";
+    public const string Address_Locality = "address_locality";
+    public const string Address_Region = "address_region";
+    public const string Address_PostalCode = "address_postalcode";
+    public const string Address_CountryCode = "address_countrycode";
+    public const string Address_CountryName = "address_countryname";  
+    public const string Detail_Organisation_Id = "detail_organisation_id";
+    public const string Detail_CreationDate = "detail_creationdate";
+    public const string Detail_BusinessType = "detail_businesstype";
+    public const string Detail_SupplierBuyerType = "detail_supplierbuyertype";
+    public const string Detail_IsSme = "detail_is_sme";
+    public const string Detail_IsVcse = "detail_is_vcse";
+    public const string Detail_RightToBuy = "detail_rightTobuy";
+    public const string Detail_IsActive = "detail_isactive";
 
-    public static string AdditionalIdentifiers_Id = "Id";
-    public static string AdditionalIdentifiers_LegalName = "LegalName";
-    public static string AdditionalIdentifiers_URI = "Uri";
-    public static string AdditionalIdentifiers_Scheme = "Scheme";
+    public const string AdditionalIdentifiers_Id = "Id";
+    public const string AdditionalIdentifiers_LegalName = "LegalName";
+    public const string AdditionalIdentifiers_URI = "Uri";
+    public const string AdditionalIdentifiers_Scheme = "Scheme";
 
+  }
+
+  public static class ContactsHeaderMap
+  {
+    public const string ContactType = "contact_type";
+    public const string ContactID = "contact_id";
+    public const string ContactPointID = "contactpoint_id";
+    public const string OriginalContactPointID = "original_contactpoint_id";
+    public const string AssignedContactType = "assigned_contact_type";
+    public const string Contact_ContactID = "contacts_contactid";
+    public const string Contacts_ContactType = "contacts_contacttype";
+    public const string Contacts_ContactValue = "contacts_contactvalue";
+    public const string ContactPoint_Reason = "contactpoint_reason";
+    public const string ContactPoint_Name = "contactpoint_name";         
+  }
+
+  public static class AuditLogHeaderMap
+  {
+    public const string ID = "ID";
+    public const string Event = "Event";
+    public const string UserId = "UserId";
+    public const string Application = "Application";
+    public const string ReferenceData = "ReferenceData";
+    public const string IpAddress = "IpAddress";
+    public const string Device = "Device";
   }
 }
