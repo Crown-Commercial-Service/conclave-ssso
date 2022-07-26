@@ -22,5 +22,6 @@ namespace CcsSso.Domain.Contracts
     Task NotifyOrgAdminToJoinAsync(OrganisationJoinRequest organisationJoinRequest);
 
     int GetAffectedUsersByRemovedIdp(string organisationId, string idps);
+  
   }
 }
