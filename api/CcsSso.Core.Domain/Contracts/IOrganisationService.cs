@@ -20,5 +20,7 @@ namespace CcsSso.Domain.Contracts
     Task<OrganisationUserListResponse> GetUsersAsync(string name, ResultSetCriteria resultSetCriteria);
 
     Task NotifyOrgAdminToJoinAsync(OrganisationJoinRequest organisationJoinRequest);
+
+    int GetAffectedUsersByRemovedIdp(string organisationId, string idps);
   }
 }
