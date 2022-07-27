@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using CcsSso.Shared.Domain.Dto;
+using CcsSso.Shared.Domain.Constants;
 using Newtonsoft.Json;
 
 namespace CcsSso.Shared.Services
@@ -124,21 +125,25 @@ namespace CcsSso.Shared.Services
       string userId = string.Empty;
 
       foreach (var item in userProfileList)
-      {
+      {        
         if (item.detail != null)
         {
           //userGroups = (item != null && item.detail.userGroups.Any()) ? JsonConvert.SerializeObject(item.detail.userGroups).Replace(',', '|').ToString() : "";
           if (item.detail.userGroups != null && item.detail.userGroups.Any())
           {
+            int countset = 1;
             string completeGroup = string.Empty;
             string appendPipe = string.Empty;
-            if (item.detail.userGroups.Count > 1)
-            {
-              appendPipe = " |";
-            }
+           
             foreach (var roleitem in item.detail.userGroups)
-            {              
+            {
+              if (item.detail.userGroups.Count > 1 && item.detail.userGroups.Count > countset)
+              {
+                appendPipe = " |";
+              }
+              else { appendPipe = string.Empty; }
               completeGroup = completeGroup + roleitem.GroupId + " - " + roleitem.AccessRoleName + appendPipe;
+              countset = countset + 1;
             }
             userGroups = completeGroup;
           }
@@ -146,15 +151,19 @@ namespace CcsSso.Shared.Services
           //rolePermissionInfo = (item != null && item.detail.rolePermissionInfo.Any()) ? JsonConvert.SerializeObject(item.detail.rolePermissionInfo).Replace(',', '|').ToString() : "";
           if (item.detail.rolePermissionInfo != null && item.detail.rolePermissionInfo.Any())
           {
+            int countset = 1;
             string completeRole = String.Empty;
             string appendPipe = string.Empty;
-            if (item.detail.rolePermissionInfo.Count > 1)
-            {
-              appendPipe = " |";
-            }
+            
             foreach (var roleitem in item.detail.rolePermissionInfo)
             {
+              if (item.detail.rolePermissionInfo.Count > 1 && item.detail.rolePermissionInfo.Count > countset)
+              {
+                appendPipe = " |";
+              }
+              else { appendPipe = string.Empty; }
               completeRole = completeRole + roleitem.RoleId + " - " + roleitem.RoleName + appendPipe;
+              countset = countset + 1;
             }
             rolePermissionInfo = completeRole;
           }
@@ -162,15 +171,19 @@ namespace CcsSso.Shared.Services
           //identityProviders = (item != null && item.detail.identityProviders.Any()) ? JsonConvert.SerializeObject(item.detail.identityProviders).Replace(',', '|').ToString() : "";
           if (item.detail.identityProviders != null && item.detail.identityProviders.Any())
           {
+            int countset = 1;
             string completeIdentityProvider = String.Empty;
             string appendPipe = string.Empty;
-            if (item.detail.identityProviders.Count > 1)
-            {
-              appendPipe = " |";
-            }
+
             foreach (var roleitem in item.detail.identityProviders)
             {
+              if (item.detail.identityProviders.Count > 1 && item.detail.identityProviders.Count > countset)
+              {
+                appendPipe = " |";
+              }
+              else { appendPipe = string.Empty; }
               completeIdentityProvider = completeIdentityProvider + roleitem.IdentityProviderId + " - " + roleitem.IdentityProvider + appendPipe;
+              countset = countset + 1;
             }
             identityProviders = completeIdentityProvider;
           }
@@ -222,50 +235,32 @@ namespace CcsSso.Shared.Services
             OrganisationHeaderMap.Detail_IsVcse,
             OrganisationHeaderMap.Detail_RightToBuy,
             OrganisationHeaderMap.Detail_IsActive
-
-            ////"Identifier_Id"
-            ////,"Identifier_LegalName"
-            ////,"Identifier_Uri"
-            ////,"Identifier_Scheme"
-            ////,"AdditionalIdentifiers"
-            ////,"Address_streetAddress"
-            ////,"Address_locality"
-            ////,"Address_region"
-            ////,"Address_postalCode"
-            ////,"Address_countryCode"
-            ////,"Address_countryName"
-            ////,"detail_organisationId"
-            ////,"detail_creationDate"
-            ////,"detail_businessType"
-            ////,"detail_supplierBuyerType"
-            ////,"detail_isSme"
-            ////,"detail_isVcse"
-            ////,"detail_rightToBuy"
-            ////,"detail_isActive"
+          
           };
 
       csvData.Add(string.Join(",", csvHeader.ToArray()));
-      string addtionalIdentifiers = string.Empty;
+      string addtionalIdentifiers = string.Empty; 
 
       foreach (var item in orgProfileList)
       {
-        //string addtionalIdentifiers = (item.AdditionalIdentifiers != null && item.AdditionalIdentifiers.Any()) ? JsonConvert.SerializeObject(item.AdditionalIdentifiers) : "";
-        if (item.AdditionalIdentifiers != null && item.AdditionalIdentifiers.Any())
-        {
+          int countset = 1;
+          //string addtionalIdentifiers = (item.AdditionalIdentifiers != null && item.AdditionalIdentifiers.Any()) ? JsonConvert.SerializeObject(item.AdditionalIdentifiers) : "";
+
           string appendPipe = string.Empty;
-          if (item.AdditionalIdentifiers.Count > 1)
-          {
-            appendPipe = " |";
-          }
           foreach (var addtionalIdentifierItem in item.AdditionalIdentifiers)
           {
-            addtionalIdentifiers = addtionalIdentifiers + OrganisationHeaderMap.AdditionalIdentifiers_Id + ":" +addtionalIdentifierItem.Id + " - " 
-                                                        + OrganisationHeaderMap.AdditionalIdentifiers_LegalName + ":" + addtionalIdentifierItem.LegalName + " - " 
-                                                        + OrganisationHeaderMap.AdditionalIdentifiers_URI + ":" + addtionalIdentifierItem.Uri + " - "
-                                                        + OrganisationHeaderMap.AdditionalIdentifiers_Scheme + ":" + addtionalIdentifierItem.Scheme + appendPipe;
-          }
+            if (item.AdditionalIdentifiers.Count > 1 && item.AdditionalIdentifiers.Count > countset)
+            {
+              appendPipe = " |";
+            }
+            else { appendPipe = string.Empty; }
 
-        }
+            addtionalIdentifiers = addtionalIdentifiers + OrganisationHeaderMap.AdditionalIdentifiers_Id + ":" + EscapeCharacter(addtionalIdentifierItem.Id) + " - " 
+                                                        + OrganisationHeaderMap.AdditionalIdentifiers_LegalName + ":" + EscapeCharacter(addtionalIdentifierItem.LegalName.Replace(",","")) + " - " 
+                                                        + OrganisationHeaderMap.AdditionalIdentifiers_URI + ":" + EscapeCharacter(addtionalIdentifierItem.Uri) + " - "
+                                                        + OrganisationHeaderMap.AdditionalIdentifiers_Scheme + ":" + EscapeCharacter(addtionalIdentifierItem.Scheme) + appendPipe;
+            countset = countset + 1;
+          }
 
         string[] row = { item.Identifier.Id,
                                   EscapeCharacter(item.Identifier.LegalName),
@@ -288,6 +283,7 @@ namespace CcsSso.Shared.Services
                                   EscapeCharacter(item.Detail.IsActive!=null?item.Detail.IsActive.ToString():"")};
 
         csvData.Add(string.Join(",", row));
+        addtionalIdentifiers = string.Empty;
       }
       return csvData;
     }
@@ -433,77 +429,5 @@ namespace CcsSso.Shared.Services
 
       return data;
     }
-  }
-
-  public static class UserHeaderMap
-  {
-    public const string ID = "id";
-    public const string UserName = "username";
-    public const string OrganisationID = "organisation_id";
-    public const string FirstName = "firstname";
-    public const string LastName = "lastname";
-    public const string Title = "title";
-    public const string mfaEnabled = "mfa_enabled";
-    public const string AccountVerified = "accountverified";
-    public const string SendUserRegistrationEmail = "send_user_registrationemail";
-    public const string IsAdminUser = "is_adminuser";
-    public const string UserGroups = "usergroups";
-    public const string RolePermissionInfo = "rolepermissioninfo";
-    public const string IdentityProviders = "identityproviders";
-
-  }
-
-  public static class OrganisationHeaderMap
-  {
-    public const string Identifier_Id = "identifier_id";
-    public const string Identifier_LegalName = "identifier_legalname";
-    public const string Identifier_Uri = "identifier_uri";
-    public const string Identifier_Scheme = "identifier_scheme";
-    public const string AdditionalIdentifiers = "additionalIdentifiers";
-    public const string Address_StreetAddress = "address_streetaddress";
-    public const string Address_Locality = "address_locality";
-    public const string Address_Region = "address_region";
-    public const string Address_PostalCode = "address_postalcode";
-    public const string Address_CountryCode = "address_countrycode";
-    public const string Address_CountryName = "address_countryname";  
-    public const string Detail_Organisation_Id = "detail_organisation_id";
-    public const string Detail_CreationDate = "detail_creationdate";
-    public const string Detail_BusinessType = "detail_businesstype";
-    public const string Detail_SupplierBuyerType = "detail_supplierbuyertype";
-    public const string Detail_IsSme = "detail_is_sme";
-    public const string Detail_IsVcse = "detail_is_vcse";
-    public const string Detail_RightToBuy = "detail_rightTobuy";
-    public const string Detail_IsActive = "detail_isactive";
-
-    public const string AdditionalIdentifiers_Id = "Id";
-    public const string AdditionalIdentifiers_LegalName = "LegalName";
-    public const string AdditionalIdentifiers_URI = "Uri";
-    public const string AdditionalIdentifiers_Scheme = "Scheme";
-
-  }
-
-  public static class ContactsHeaderMap
-  {
-    public const string ContactType = "contact_type";
-    public const string ContactID = "contact_id";
-    public const string ContactPointID = "contactpoint_id";
-    public const string OriginalContactPointID = "original_contactpoint_id";
-    public const string AssignedContactType = "assigned_contact_type";
-    public const string Contact_ContactID = "contacts_contactid";
-    public const string Contacts_ContactType = "contacts_contacttype";
-    public const string Contacts_ContactValue = "contacts_contactvalue";
-    public const string ContactPoint_Reason = "contactpoint_reason";
-    public const string ContactPoint_Name = "contactpoint_name";         
-  }
-
-  public static class AuditLogHeaderMap
-  {
-    public const string ID = "ID";
-    public const string Event = "Event";
-    public const string UserId = "UserId";
-    public const string Application = "Application";
-    public const string ReferenceData = "ReferenceData";
-    public const string IpAddress = "IpAddress";
-    public const string Device = "Device";
   }
 }

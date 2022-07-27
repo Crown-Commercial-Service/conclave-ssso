@@ -81,7 +81,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         foreach (var eachModifiedOrgContact in listOfAllModifiedOrgContactId)
         {
           indexOrg++;
-          _logger.LogInformation($"trying to get contact details of {indexOrg} nd Organisation-Contacts");
+          _logger.LogInformation($"trying to get Org-Contact details of {indexOrg}");
 
 
           try
@@ -138,7 +138,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         foreach (var eachModifiedUserContact in listOfAllModifiedUserContactId)
         {
           indexUsr++;
-          _logger.LogInformation($"trying to get User-Contacts details of {indexUsr} nd contact");
+          _logger.LogInformation($"trying to get User-Contacts details of {indexUsr} ");
           try
           {
             _logger.LogInformation("Calling wrapper API to get User-Contacts Details");
@@ -194,7 +194,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         foreach (var eachModifiedSiteContact in listOfAllModifiedSiteContactId)
         {
           indexSite++;
-          _logger.LogInformation($"trying to get Site-Contacts details of {indexSite} nd contact");
+          _logger.LogInformation($"trying to get Site-Contacts details of {indexSite} ");
           try
           {
             _logger.LogInformation("Calling wrapper API to get Site-Contacts Details");
@@ -266,7 +266,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                                           join cpt in _dataContext.ContactPoint on cdt.Id equals cpt.ContactDetailId
                                           join st in _dataContext.SiteContact on cpt.Id equals st.ContactPointId
                                           join org in _dataContext.Organisation on cpt.PartyId equals org.PartyId
-                                          where cdt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted
+                                          where cdt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted                                          
 
                                           select new Tuple<string, int, int>(
                                             org.CiiOrganisationId, cpt.Id, st.Id)
@@ -354,7 +354,8 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         var contactDetailsResult = await (from cdt in _dataContext.ContactDetail
                                           join cpt in _dataContext.ContactPoint on cdt.Id equals cpt.ContactDetailId
                                           join org in _dataContext.Organisation on cpt.PartyId equals org.PartyId
-                                          where cdt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted
+                                          //where cdt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted
+                                          where cpt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted
 
                                           select new Tuple<int, int, int, string>(
                                             cpt.Id, cpt.PartyId, cpt.ContactDetailId, org.CiiOrganisationId)
@@ -381,11 +382,11 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
         var contactDetailsResult = await (from cdt in _dataContext.ContactDetail
                                           join cpt in _dataContext.ContactPoint on cdt.Id equals cpt.ContactDetailId
-                                          join org in _dataContext.User on cpt.PartyId equals org.PartyId
-                                          where cdt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted
+                                          join usr in _dataContext.User on cpt.PartyId equals usr.PartyId
+                                          where cpt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted
 
                                           select new Tuple<int, int, int, string>(
-                                            cpt.Id, cpt.PartyId, cpt.ContactDetailId, org.UserName)
+                                            cpt.Id, cpt.PartyId, cpt.ContactDetailId, usr.UserName)
                                       ).ToListAsync();
 
         return contactDetailsResult;

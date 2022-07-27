@@ -81,7 +81,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         foreach (var eachModifiedOrg in listOfAllModifiedOrg)
         {
           index++;
-          _logger.LogInformation($"trying to get organisation details of {index} nd organisation");
+          _logger.LogInformation($"trying to get organisation details of {index}");
 
           try
           {
