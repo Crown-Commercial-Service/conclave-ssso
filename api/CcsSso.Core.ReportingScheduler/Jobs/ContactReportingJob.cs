@@ -234,28 +234,23 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       byte[] fileByteArray = fileByteArrayOrg.Concat(fileByteArrayUser).Concat(fileByteArraySite).ToArray();
       /// My Byte Array - End
 
-      using (MemoryStream memStream = new MemoryStream(fileByteArray))
-      {
-        File.WriteAllBytes("contacts.csv", fileByteArray);
-      }
-
       _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
 
-      ////AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "contacts");
-      ////_logger.LogInformation("After Transfered the files to Azure Blob");
+      AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "contacts");
+      _logger.LogInformation("After Transfered the files to Azure Blob");
 
-      ////if (result.responseStatus)
-      ////{
-      ////  _logger.LogInformation($"****************** Successfully transfered file. FileName - {result.responseFileName} ******************");
-      ////  _logger.LogInformation("");
-      ////}
-      ////else
-      ////{
-      ////  _logger.LogError($" XXXXXXXXXXXX Failed to transfer. Message - {result.responseMessage} XXXXXXXXXXXX");
-      ////  _logger.LogError($"Failed to transfer. File Name - {result.responseFileName}");
-      ////  _logger.LogInformation("");
+      if (result.responseStatus)
+      {
+        _logger.LogInformation($"****************** Successfully transfered file. FileName - {result.responseFileName} ******************");
+        _logger.LogInformation("");
+      }
+      else
+      {
+        _logger.LogError($" XXXXXXXXXXXX Failed to transfer. Message - {result.responseMessage} XXXXXXXXXXXX");
+        _logger.LogError($"Failed to transfer. File Name - {result.responseFileName}");
+        _logger.LogInformation("");
 
-      ////}
+      }
     }
 
 
