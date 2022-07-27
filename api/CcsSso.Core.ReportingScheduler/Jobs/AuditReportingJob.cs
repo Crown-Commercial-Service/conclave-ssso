@@ -73,7 +73,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         foreach (var eachModifiedAuditLog in listOfAllModifiedAuditLog)
         {
           index++;
-          _logger.LogInformation($"trying to get audit details of {index} nd audit");
+          _logger.LogInformation($"trying to get audit details of {index}");
 
           try
           {

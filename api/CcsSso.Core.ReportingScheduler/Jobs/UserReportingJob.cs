@@ -76,7 +76,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         foreach (var eachModifiedUser in listOfAllModifiedUser)
         {
           index++;
-          _logger.LogInformation($"trying to get user details of {index} nd users");
+          _logger.LogInformation($"trying to get user details of {index}");
 
           try
           {
