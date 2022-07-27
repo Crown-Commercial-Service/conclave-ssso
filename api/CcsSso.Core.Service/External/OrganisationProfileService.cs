@@ -536,7 +536,7 @@ namespace CcsSso.Core.Service.External
           }
         }
         //Record for force signout as idp has been removed from the user. This is a current business requirement
-        asyncTaskList.Add(_remoteCacheService.SetValueAsync(CacheKeyConstant.ForceSignoutKey + user.UserName, true));
+        // asyncTaskList.Add(_remoteCacheService.SetValueAsync(CacheKeyConstant.ForceSignoutKey + user.UserName, true));
       });
       return asyncTaskList;
     }
