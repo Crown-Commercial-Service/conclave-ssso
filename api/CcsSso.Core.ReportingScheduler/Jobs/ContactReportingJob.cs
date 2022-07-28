@@ -156,7 +156,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             _logger.LogError($" XXXXXXXXXXXX Failed to retrieve User-Contacts details from Wrapper Api. UserId ={eachModifiedUserContact.Item2} and Message - {ex.Message} XXXXXXXXXXXX");
           }
 
-          if (listOfAllModifiedOrgContactId.Count != indexUsr && contactUserResponseInfo.Count < sizeUser)
+          if (listOfAllModifiedUserContactId.Count != indexUsr && contactUserResponseInfo.Count < sizeUser)
           {
             continue;
           }
@@ -176,14 +176,14 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       ////////////////// Site Contact Report - Start /////////////////////////////
 
       var listOfAllModifiedSiteContactId = await GetModifiedSiteContactIds(); // Site
-      if (listOfAllModifiedUserContactId == null || listOfAllModifiedUserContactId.Count() == 0)
+      if (listOfAllModifiedSiteContactId == null || listOfAllModifiedSiteContactId.Count() == 0)
       {
         _logger.LogInformation("No Site-Contacts  are found");
       }
       else
       {
 
-        _logger.LogInformation($"Total number of Site-Contacts => {listOfAllModifiedUserContactId.Count()}");
+        _logger.LogInformation($"Total number of Site-Contacts => {listOfAllModifiedSiteContactId.Count()}");
 
         // spliting the jobs
         int sizeSite = _appSettings.MaxNumbeOfRecordInAReport;
@@ -212,7 +212,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             _logger.LogError($" XXXXXXXXXXXX Failed to retrieve Site-Contacts details from Wrapper Api. UserId ={eachModifiedSiteContact.Item2} and Message - {ex.Message} XXXXXXXXXXXX");
           }
 
-          if (listOfAllModifiedOrgContactId.Count != indexSite && contactSiteResponseInfo.Count < sizeSite)
+          if (listOfAllModifiedSiteContactId.Count != indexSite && contactSiteResponseInfo.Count < sizeSite)
           {
             continue;
           }
