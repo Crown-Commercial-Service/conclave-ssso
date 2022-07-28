@@ -34,15 +34,15 @@ namespace CcsSso.Shared.Services
         }
         else if (filetype.ToLower() == "contact-org")
         {
-          csvData = ConstructCSVData(inputModel);
+          csvData = ConstructCSVDataToContactOrg(inputModel);          
         }
         else if (filetype.ToLower() == "contact-user")
         {
-          csvData = ConstructCSVData(inputModel);
+          csvData = ConstructCSVDataToContactUser(inputModel);
         }
         else if (filetype.ToLower() == "contact-site")
         {
-          csvData = ConstructCSVData(inputModel);
+          csvData = ConstructCSVDataToContactSite(inputModel);
         }
         else
         {
@@ -64,6 +64,141 @@ namespace CcsSso.Shared.Services
       }
     }
 
+    private List<string> ConstructCSVDataToContactSite(List<ContactSiteResponseInfo> contactSiteResponseInfo)
+    {
+      List<string> csvData = new List<string>();
+
+      string[] csvHeader =  {
+                ContactsHeaderMap.ContactType
+                ,ContactsHeaderMap.ContactID
+                ,ContactsHeaderMap.ContactPointID
+                ,ContactsHeaderMap.OriginalContactPointID
+                ,ContactsHeaderMap.AssignedContactType
+                ,ContactsHeaderMap.Contact_ContactID
+                ,ContactsHeaderMap.Contacts_ContactType
+                ,ContactsHeaderMap.Contacts_ContactValue
+                ,ContactsHeaderMap.ContactPoint_Reason
+                ,ContactsHeaderMap.ContactPoint_Name
+          };
+
+      //csvData.Add(string.Join(",", csvHeader.ToArray()));
+
+      if (contactSiteResponseInfo != null)
+      {
+        foreach (var item in contactSiteResponseInfo)
+        {
+          foreach (var contactsItem in item.contacts)
+          {
+            string[] row = {
+                            EscapeCharacter(item.contactType ),
+                            EscapeCharacter(item.detail.siteId),
+                            item.contactPointId.ToString(),
+                            EscapeCharacter(item.originalContactPointId.ToString()),
+                            EscapeCharacter(item.assignedContactType.ToString()),
+                            EscapeCharacter(contactsItem.contactId.ToString()),
+                            EscapeCharacter(contactsItem.contactType),
+                            EscapeCharacter(contactsItem.contactValue),
+                            EscapeCharacter(item.contactPointReason),
+                            EscapeCharacter(item.contactPointName)
+                            };
+
+            csvData.Add(string.Join(",", row));
+          }
+        }
+      }
+      return csvData;
+    }
+
+    private List<string> ConstructCSVDataToContactUser(List<ContactUserResponseInfo> contactUserResponseInfo)
+    {
+      List<string> csvData = new List<string>();
+
+      string[] csvHeader =  {
+                ContactsHeaderMap.ContactType
+                ,ContactsHeaderMap.ContactID
+                ,ContactsHeaderMap.ContactPointID
+                ,ContactsHeaderMap.OriginalContactPointID
+                ,ContactsHeaderMap.AssignedContactType
+                ,ContactsHeaderMap.Contact_ContactID
+                ,ContactsHeaderMap.Contacts_ContactType
+                ,ContactsHeaderMap.Contacts_ContactValue
+                ,ContactsHeaderMap.ContactPoint_Reason
+                ,ContactsHeaderMap.ContactPoint_Name
+          };
+
+      //csvData.Add(string.Join(",", csvHeader.ToArray()));
+
+      if (contactUserResponseInfo != null)
+      {
+        foreach (var item in contactUserResponseInfo)
+        {
+          foreach (var contactsItem in item.contacts)
+          {
+            string[] row = {
+                            EscapeCharacter(item.contactType ),
+                            EscapeCharacter(item.detail.userId),
+                            item.contactPointId.ToString(),
+                            EscapeCharacter(item.originalContactPointId.ToString()),
+                            EscapeCharacter(item.assignedContactType.ToString()),
+                            EscapeCharacter(contactsItem.contactId.ToString()),
+                            EscapeCharacter(contactsItem.contactType),
+                            EscapeCharacter(contactsItem.contactValue),
+                            EscapeCharacter(item.contactPointReason),
+                            EscapeCharacter(item.contactPointName)
+                            };
+
+            csvData.Add(string.Join(",", row));
+          }
+        }
+      }
+      return csvData;
+    }
+
+    private List<string> ConstructCSVDataToContactOrg(List<ContactOrgResponseInfo> contactOrgResponseInfo)
+    {
+      List<string> csvData = new List<string>();
+
+      string[] csvHeader =  {
+                ContactsHeaderMap.ContactType
+                ,ContactsHeaderMap.ContactID
+                ,ContactsHeaderMap.ContactPointID
+                ,ContactsHeaderMap.OriginalContactPointID
+                ,ContactsHeaderMap.AssignedContactType
+                ,ContactsHeaderMap.Contact_ContactID
+                ,ContactsHeaderMap.Contacts_ContactType
+                ,ContactsHeaderMap.Contacts_ContactValue
+                ,ContactsHeaderMap.ContactPoint_Reason
+                ,ContactsHeaderMap.ContactPoint_Name
+          };
+
+      csvData.Add(string.Join(",", csvHeader.ToArray()));
+
+      if (contactOrgResponseInfo != null)
+      {
+        foreach (var item in contactOrgResponseInfo)
+        {
+          foreach (var contactsItem in item.contacts)
+          {
+            string[] row = {
+                            EscapeCharacter(item.contactType ),
+                            EscapeCharacter(item.detail.organisationId.ToString()),
+                            item.contactPointId.ToString(),
+                            EscapeCharacter(item.originalContactPointId.ToString()),
+                            EscapeCharacter(item.assignedContactType.ToString()),
+                            EscapeCharacter(contactsItem.contactId.ToString()),
+                            EscapeCharacter(contactsItem.contactType),
+                            EscapeCharacter(contactsItem.contactValue),
+                            EscapeCharacter(item.contactPointReason),
+                            EscapeCharacter(item.contactPointName)
+                            };
+
+            csvData.Add(string.Join(",", row));
+          }
+        }
+      }
+      return csvData;
+    }
+
     private List<string> ConstructCSVData(List<AuditLogResponseInfo> auditLogResponseInfo)
     {
       List<string> csvUserDataForAuditLog = new List<string>();
@@ -82,9 +217,11 @@ namespace CcsSso.Shared.Services
 
       string AuditLogUsers = string.Empty;
 
-      foreach (var item in auditLogResponseInfo)
+      if (auditLogResponseInfo != null)
       {
-        string[] row = { item.Id.ToString(),
+        foreach (var item in auditLogResponseInfo)
+        {
+          string[] row = { item.Id.ToString(),
                             EscapeCharacter(item.Event),
                             EscapeCharacter(item.UserId),
                             EscapeCharacter(item.Application),
@@ -92,7 +229,8 @@ namespace CcsSso.Shared.Services
                             EscapeCharacter(item.IpAddress),
                             EscapeCharacter(item.Device)
                             };
-        csvUserDataForAuditLog.Add(string.Join(",", row));
+          csvUserDataForAuditLog.Add(string.Join(",", row));
+        }
       }
       return csvUserDataForAuditLog;
 
@@ -124,73 +262,75 @@ namespace CcsSso.Shared.Services
       string identityProviders = string.Empty;
       string userId = string.Empty;
 
-      foreach (var item in userProfileList)
-      {        
-        if (item.detail != null)
+      if (userProfileList != null)
+      {
+        foreach (var item in userProfileList)
         {
-          //userGroups = (item != null && item.detail.userGroups.Any()) ? JsonConvert.SerializeObject(item.detail.userGroups).Replace(',', '|').ToString() : "";
-          if (item.detail.userGroups != null && item.detail.userGroups.Any())
+          if (item.detail != null)
           {
-            int countset = 1;
-            string completeGroup = string.Empty;
-            string appendPipe = string.Empty;
-           
-            foreach (var roleitem in item.detail.userGroups)
+            //userGroups = (item != null && item.detail.userGroups.Any()) ? JsonConvert.SerializeObject(item.detail.userGroups).Replace(',', '|').ToString() : "";
+            if (item.detail.userGroups != null && item.detail.userGroups.Any())
             {
-              if (item.detail.userGroups.Count > 1 && item.detail.userGroups.Count > countset)
+              int countset = 1;
+              string completeGroup = string.Empty;
+              string appendPipe = string.Empty;
+
+              foreach (var roleitem in item.detail.userGroups)
               {
-                appendPipe = " |";
+                if (item.detail.userGroups.Count > 1 && item.detail.userGroups.Count > countset)
+                {
+                  appendPipe = " |";
+                }
+                else { appendPipe = string.Empty; }
+                completeGroup = completeGroup + roleitem.GroupId + " - " + roleitem.AccessRoleName + appendPipe;
+                countset = countset + 1;
               }
-              else { appendPipe = string.Empty; }
-              completeGroup = completeGroup + roleitem.GroupId + " - " + roleitem.AccessRoleName + appendPipe;
-              countset = countset + 1;
+              userGroups = completeGroup;
             }
-            userGroups = completeGroup;
+
+            //rolePermissionInfo = (item != null && item.detail.rolePermissionInfo.Any()) ? JsonConvert.SerializeObject(item.detail.rolePermissionInfo).Replace(',', '|').ToString() : "";
+            if (item.detail.rolePermissionInfo != null && item.detail.rolePermissionInfo.Any())
+            {
+              int countset = 1;
+              string completeRole = String.Empty;
+              string appendPipe = string.Empty;
+
+              foreach (var roleitem in item.detail.rolePermissionInfo)
+              {
+                if (item.detail.rolePermissionInfo.Count > 1 && item.detail.rolePermissionInfo.Count > countset)
+                {
+                  appendPipe = " |";
+                }
+                else { appendPipe = string.Empty; }
+                completeRole = completeRole + roleitem.RoleId + " - " + roleitem.RoleName + appendPipe;
+                countset = countset + 1;
+              }
+              rolePermissionInfo = completeRole;
+            }
+
+            //identityProviders = (item != null && item.detail.identityProviders.Any()) ? JsonConvert.SerializeObject(item.detail.identityProviders).Replace(',', '|').ToString() : "";
+            if (item.detail.identityProviders != null && item.detail.identityProviders.Any())
+            {
+              int countset = 1;
+              string completeIdentityProvider = String.Empty;
+              string appendPipe = string.Empty;
+
+              foreach (var roleitem in item.detail.identityProviders)
+              {
+                if (item.detail.identityProviders.Count > 1 && item.detail.identityProviders.Count > countset)
+                {
+                  appendPipe = " |";
+                }
+                else { appendPipe = string.Empty; }
+                completeIdentityProvider = completeIdentityProvider + roleitem.IdentityProviderId + " - " + roleitem.IdentityProvider + appendPipe;
+                countset = countset + 1;
+              }
+              identityProviders = completeIdentityProvider;
+            }
+            userId = item.detail.Id.ToString();
           }
 
-          //rolePermissionInfo = (item != null && item.detail.rolePermissionInfo.Any()) ? JsonConvert.SerializeObject(item.detail.rolePermissionInfo).Replace(',', '|').ToString() : "";
-          if (item.detail.rolePermissionInfo != null && item.detail.rolePermissionInfo.Any())
-          {
-            int countset = 1;
-            string completeRole = String.Empty;
-            string appendPipe = string.Empty;
-            
-            foreach (var roleitem in item.detail.rolePermissionInfo)
-            {
-              if (item.detail.rolePermissionInfo.Count > 1 && item.detail.rolePermissionInfo.Count > countset)
-              {
-                appendPipe = " |";
-              }
-              else { appendPipe = string.Empty; }
-              completeRole = completeRole + roleitem.RoleId + " - " + roleitem.RoleName + appendPipe;
-              countset = countset + 1;
-            }
-            rolePermissionInfo = completeRole;
-          }
-
-          //identityProviders = (item != null && item.detail.identityProviders.Any()) ? JsonConvert.SerializeObject(item.detail.identityProviders).Replace(',', '|').ToString() : "";
-          if (item.detail.identityProviders != null && item.detail.identityProviders.Any())
-          {
-            int countset = 1;
-            string completeIdentityProvider = String.Empty;
-            string appendPipe = string.Empty;
-
-            foreach (var roleitem in item.detail.identityProviders)
-            {
-              if (item.detail.identityProviders.Count > 1 && item.detail.identityProviders.Count > countset)
-              {
-                appendPipe = " |";
-              }
-              else { appendPipe = string.Empty; }
-              completeIdentityProvider = completeIdentityProvider + roleitem.IdentityProviderId + " - " + roleitem.IdentityProvider + appendPipe;
-              countset = countset + 1;
-            }
-            identityProviders = completeIdentityProvider;
-          }
-          userId = item.detail.Id.ToString();
-        }
-
-        string[] row = { userId,
+          string[] row = { userId,
                             EscapeCharacter(item.UserName),
                             EscapeCharacter(item.OrganisationId),
                             EscapeCharacter(item.FirstName),
@@ -204,10 +344,10 @@ namespace CcsSso.Shared.Services
                             rolePermissionInfo,
                             identityProviders
                             };
-        csvUserData.Add(string.Join(",", row));
+          csvUserData.Add(string.Join(",", row));
+        }
       }
       return csvUserData;
-
     }
 
     private List<string> ConstructCSVData(List<OrganisationProfileResponseInfo> orgProfileList)
@@ -239,10 +379,12 @@ namespace CcsSso.Shared.Services
           };
 
       csvData.Add(string.Join(",", csvHeader.ToArray()));
-      string addtionalIdentifiers = string.Empty; 
-
-      foreach (var item in orgProfileList)
+      string addtionalIdentifiers = string.Empty;
+      
+      if (orgProfileList != null)
       {
+        foreach (var item in orgProfileList)
+        {
           int countset = 1;
           //string addtionalIdentifiers = (item.AdditionalIdentifiers != null && item.AdditionalIdentifiers.Any()) ? JsonConvert.SerializeObject(item.AdditionalIdentifiers) : "";
 
@@ -255,14 +397,14 @@ namespace CcsSso.Shared.Services
             }
             else { appendPipe = string.Empty; }
 
-            addtionalIdentifiers = addtionalIdentifiers + OrganisationHeaderMap.AdditionalIdentifiers_Id + ":" + EscapeCharacter(addtionalIdentifierItem.Id) + " - " 
-                                                        + OrganisationHeaderMap.AdditionalIdentifiers_LegalName + ":" + EscapeCharacter(addtionalIdentifierItem.LegalName.Replace(",","")) + " - " 
+            addtionalIdentifiers = addtionalIdentifiers + OrganisationHeaderMap.AdditionalIdentifiers_Id + ":" + EscapeCharacter(addtionalIdentifierItem.Id) + " - "
+                                                        + OrganisationHeaderMap.AdditionalIdentifiers_LegalName + ":" + EscapeCharacter(addtionalIdentifierItem.LegalName.Replace(",", "")) + " - "
                                                         + OrganisationHeaderMap.AdditionalIdentifiers_URI + ":" + EscapeCharacter(addtionalIdentifierItem.Uri) + " - "
                                                         + OrganisationHeaderMap.AdditionalIdentifiers_Scheme + ":" + EscapeCharacter(addtionalIdentifierItem.Scheme) + appendPipe;
             countset = countset + 1;
           }
 
-        string[] row = { item.Identifier.Id,
+          string[] row = { item.Identifier.Id,
                                   EscapeCharacter(item.Identifier.LegalName),
                                   EscapeCharacter(item.Identifier.Uri),
                                   EscapeCharacter(item.Identifier.Scheme),
@@ -282,140 +424,14 @@ namespace CcsSso.Shared.Services
                                   EscapeCharacter(item.Detail.RightToBuy!=null? item.Detail.RightToBuy.ToString():""),
                                   EscapeCharacter(item.Detail.IsActive!=null?item.Detail.IsActive.ToString():"")};
 
-        csvData.Add(string.Join(",", row));
-        addtionalIdentifiers = string.Empty;
-      }
-      return csvData;
-    }
-    private List<string> ConstructCSVData(List<ContactOrgResponseInfo> contactList)
-    {
-
-      List<string> csvData = new List<string>();
-
-      string[] csvHeader =  {
-                ContactsHeaderMap.ContactType
-                ,ContactsHeaderMap.ContactID
-                ,ContactsHeaderMap.ContactPointID
-                ,ContactsHeaderMap.OriginalContactPointID
-                ,ContactsHeaderMap.AssignedContactType
-                ,ContactsHeaderMap.Contact_ContactID
-                ,ContactsHeaderMap.Contacts_ContactType
-                ,ContactsHeaderMap.Contacts_ContactValue
-                ,ContactsHeaderMap.ContactPoint_Reason
-                ,ContactsHeaderMap.ContactPoint_Name
-          };
-
-      csvData.Add(string.Join(",", csvHeader.ToArray()));
-
-      foreach (var item in contactList)
-      {
-        foreach (var contactsItem in item.contacts)
-        {
-          string[] row = {
-                            EscapeCharacter(item.contactType ),
-                            EscapeCharacter(item.detail.organisationId.ToString()),
-                            item.contactPointId.ToString(),
-                            EscapeCharacter(item.originalContactPointId.ToString()),
-                            EscapeCharacter(item.assignedContactType.ToString()),
-                            EscapeCharacter(contactsItem.contactId.ToString()),
-                            EscapeCharacter(contactsItem.contactType),
-                            EscapeCharacter(contactsItem.contactValue),
-                            EscapeCharacter(item.contactPointReason),
-                            EscapeCharacter(item.contactPointName)
-                            };
-
           csvData.Add(string.Join(",", row));
+          addtionalIdentifiers = string.Empty;
         }
       }
       return csvData;
     }
 
-    private List<string> ConstructCSVData(List<ContactUserResponseInfo> contactList)
-    {
-
-      List<string> csvData = new List<string>();
-
-      string[] csvHeader =  {
-                ContactsHeaderMap.ContactType
-                ,ContactsHeaderMap.ContactID
-                ,ContactsHeaderMap.ContactPointID
-                ,ContactsHeaderMap.OriginalContactPointID
-                ,ContactsHeaderMap.AssignedContactType
-                ,ContactsHeaderMap.Contact_ContactID
-                ,ContactsHeaderMap.Contacts_ContactType
-                ,ContactsHeaderMap.Contacts_ContactValue
-                ,ContactsHeaderMap.ContactPoint_Reason
-                ,ContactsHeaderMap.ContactPoint_Name
-          };
-
-      //csvData.Add(string.Join(",", csvHeader.ToArray()));
-
-      foreach (var item in contactList)
-      {
-        foreach (var contactsItem in item.contacts)
-        {
-          string[] row = {
-                            EscapeCharacter(item.contactType ),
-                            EscapeCharacter(item.detail.userId),
-                            item.contactPointId.ToString(),
-                            EscapeCharacter(item.originalContactPointId.ToString()),
-                            EscapeCharacter(item.assignedContactType.ToString()),
-                            EscapeCharacter(contactsItem.contactId.ToString()),
-                            EscapeCharacter(contactsItem.contactType),
-                            EscapeCharacter(contactsItem.contactValue),
-                            EscapeCharacter(item.contactPointReason),
-                            EscapeCharacter(item.contactPointName)
-                            };
-
-          csvData.Add(string.Join(",", row));
-        }
-      }
-      return csvData;
-    }
-
-    private List<string> ConstructCSVData(List<ContactSiteResponseInfo> contactList)
-    {
-
-      List<string> csvData = new List<string>();
-
-      string[] csvHeader =  {
-                ContactsHeaderMap.ContactType
-                ,ContactsHeaderMap.ContactID
-                ,ContactsHeaderMap.ContactPointID
-                ,ContactsHeaderMap.OriginalContactPointID
-                ,ContactsHeaderMap.AssignedContactType
-                ,ContactsHeaderMap.Contact_ContactID
-                ,ContactsHeaderMap.Contacts_ContactType
-                ,ContactsHeaderMap.Contacts_ContactValue
-                ,ContactsHeaderMap.ContactPoint_Reason
-                ,ContactsHeaderMap.ContactPoint_Name
-          };
-
-      //csvData.Add(string.Join(",", csvHeader.ToArray()));
-
-      foreach (var item in contactList)
-      {
-        foreach (var contactsItem in item.contacts)
-        {
-          string[] row = {
-                            EscapeCharacter(item.contactType ),
-                            EscapeCharacter(item.detail.siteId),
-                            item.contactPointId.ToString(),
-                            EscapeCharacter(item.originalContactPointId.ToString()),
-                            EscapeCharacter(item.assignedContactType.ToString()),
-                            EscapeCharacter(contactsItem.contactId.ToString()),
-                            EscapeCharacter(contactsItem.contactType),
-                            EscapeCharacter(contactsItem.contactValue),
-                            EscapeCharacter(item.contactPointReason),
-                            EscapeCharacter(item.contactPointName)
-                            };
-
-          csvData.Add(string.Join(",", row));
-        }
-      }
-      return csvData;
-    }
-
+        
 
     private string EscapeCharacter(string data)
     {
