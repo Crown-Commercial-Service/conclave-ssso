@@ -79,13 +79,13 @@ namespace CcsSso.Core.Service.External
         .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id)).ToListAsync();
 
       var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
-      var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
+      // var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
 
       // This is to enforce MFA over any other
-      if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
-      {
-        throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
-      }
+      //if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
+      //{
+      //  throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
+      //}
 
       //validate mfa and assign mfa if user is part of any admin role or group
       if (!userProfileRequestInfo.MfaEnabled && isConclaveConnectionIncluded)
@@ -598,16 +598,16 @@ namespace CcsSso.Core.Service.External
         var isPreviouslyUserNamePwdConnectionIncluded = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
         var isPreviouslyNonUserNamePwdConnectionIncluded = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName);
         var isUserNamePwdConnectionIncluded = true;
-        var isNonUserNamePwdConnectionIncluded = false;
+        // var isNonUserNamePwdConnectionIncluded = false;
         if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
         {
           isUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName));
-          isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
+          // isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
         }
-        if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
-        {
-          throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
-        }
+        //if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
+        //{
+        //  throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
+        //}
 
         //mfa flag has removed
         if (!userProfileRequestInfo.MfaEnabled && isUserNamePwdConnectionIncluded)
