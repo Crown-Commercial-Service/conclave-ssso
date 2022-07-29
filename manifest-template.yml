@@ -51,7 +51,7 @@ applications:
   services:
     - CF_SPACE-adaptor-pg-service
     - CF_SPACE-data-redis-service
-    - CF_SPACE-adaptor-sqs-service
+    - CF_SPACE-push-data-sqs-service
     - CF_SPACE-vault   
   env:
     CACHE_NUGET_PACKAGES: false
@@ -65,6 +65,7 @@ applications:
   services:
     - CF_SPACE-vault
     - CF_SPACE-adaptor-sqs-service
+    - CF_SPACE-push-data-sqs-service
   env:
     CACHE_NUGET_PACKAGES: false
 - name: CF_SPACE-org-dereg-job
