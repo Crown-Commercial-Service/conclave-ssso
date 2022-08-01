@@ -72,6 +72,8 @@ namespace CcsSso.Shared.Domain.Constants
     public const string AdditionalIdentifiers_URI = "Uri";
     public const string AdditionalIdentifiers_Scheme = "Scheme";
 
+    public const string AdditionalIdentifiers_NA = "NA";
+
   }
 
   public static class ContactsHeaderMap

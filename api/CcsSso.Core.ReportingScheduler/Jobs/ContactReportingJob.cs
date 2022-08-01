@@ -63,6 +63,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       ////////////////// Organisation Contact Report - Start /////////////////////////////
 
       var listOfAllModifiedOrgContactId = await GetModifiedContactIds(); // ORG
+      contactModuleList.contactOrgResponseInfo = new List<ContactOrgResponseInfo>();
       if (listOfAllModifiedOrgContactId == null || listOfAllModifiedOrgContactId.Count() == 0)
       {
         _logger.LogInformation("No Organisation-Contacts are found");
@@ -120,6 +121,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       ////////////////// User Contact Report - Start /////////////////////////////
 
       var listOfAllModifiedUserContactId = await GetModifiedUserContactIds(); // User
+      contactModuleList.contactUserResponseInfo = new List<ContactUserResponseInfo>();
       if (listOfAllModifiedUserContactId == null || listOfAllModifiedUserContactId.Count() == 0)
       {
         _logger.LogInformation("No User-Contacts are found");
@@ -176,6 +178,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       ////////////////// Site Contact Report - Start /////////////////////////////
 
       var listOfAllModifiedSiteContactId = await GetModifiedSiteContactIds(); // Site
+      contactModuleList.contactSiteResponseInfo = new List<ContactSiteResponseInfo>();
       if (listOfAllModifiedSiteContactId == null || listOfAllModifiedSiteContactId.Count() == 0)
       {
         _logger.LogInformation("No Site-Contacts  are found");
@@ -227,29 +230,38 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       ////////////////// Site Contact Report - End /////////////////////////////
 
-      /// My Byte Array - Start        
-      var fileByteArrayOrg = _csvConverter.ConvertToCSV(contactModuleList.contactOrgResponseInfo, "contact-org");
-      var fileByteArrayUser = _csvConverter.ConvertToCSV(contactModuleList.contactUserResponseInfo, "contact-user");
-      var fileByteArraySite = _csvConverter.ConvertToCSV(contactModuleList.contactSiteResponseInfo, "contact-site");
-      byte[] fileByteArray = fileByteArrayOrg.Concat(fileByteArrayUser).Concat(fileByteArraySite).ToArray();
-      /// My Byte Array - End
-
-      _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
-
-      AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Contact");
-      _logger.LogInformation("After Transfered the files to Azure Blob");
-
-      if (result.responseStatus)
+      if (contactModuleList.contactOrgResponseInfo.Count == 0 && contactModuleList.contactUserResponseInfo.Count == 0 && contactModuleList.contactSiteResponseInfo.Count == 0)
       {
-        _logger.LogInformation($"****************** Successfully transfered file. FileName - {result.responseFileName} ******************");
-        _logger.LogInformation("");
+        _logger.LogInformation("No Contact Logs are found");
+        return;
       }
       else
       {
-        _logger.LogError($" XXXXXXXXXXXX Failed to transfer. Message - {result.responseMessage} XXXXXXXXXXXX");
-        _logger.LogError($"Failed to transfer. File Name - {result.responseFileName}");
-        _logger.LogInformation("");
+        /// My Byte Array - Start        
+        var fileByteArrayOrg = _csvConverter.ConvertToCSV(contactModuleList.contactOrgResponseInfo, "contact-org");
+        var fileByteArrayUser = _csvConverter.ConvertToCSV(contactModuleList.contactUserResponseInfo, "contact-user");
+        var fileByteArraySite = _csvConverter.ConvertToCSV(contactModuleList.contactSiteResponseInfo, "contact-site");
+        byte[] fileByteArray = fileByteArrayOrg.Concat(fileByteArrayUser).Concat(fileByteArraySite).ToArray();
+        /// My Byte Array - End
 
+        _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
+
+      
+        AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Contact");
+        _logger.LogInformation("After Transfered the files to Azure Blob");
+
+        if (result.responseStatus)
+        {
+          _logger.LogInformation($"****************** Successfully transfered file. FileName - {result.responseFileName} ******************");
+          _logger.LogInformation("");
+        }
+        else
+        {
+          _logger.LogError($" XXXXXXXXXXXX Failed to transfer. Message - {result.responseMessage} XXXXXXXXXXXX");
+          _logger.LogError($"Failed to transfer. File Name - {result.responseFileName}");
+          _logger.LogInformation("");
+
+        }
       }
     }
 
@@ -262,13 +274,14 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       try
       {
 
-        var contactDetailsResult = await (from cdt in _dataContext.ContactDetail
-                                          join cpt in _dataContext.ContactPoint on cdt.Id equals cpt.ContactDetailId
-                                          join st in _dataContext.SiteContact on cpt.Id equals st.ContactPointId
-                                          join org in _dataContext.Organisation on cpt.PartyId equals org.PartyId
-                                          where cdt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted                                          
+        
 
-                                          select new Tuple<string, int, int>(
+       var contactDetailsResult = await (from cpt in _dataContext.ContactPoint  
+                                        join st in _dataContext.SiteContact on cpt.Id equals st.ContactPointId
+                                        join org in _dataContext.Organisation on cpt.PartyId equals org.PartyId
+                                        //where cdt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted
+                                        where cpt.LastUpdatedOnUtc > untilDateTime && !cpt.IsDeleted
+                                         select new Tuple<string, int, int>(
                                             org.CiiOrganisationId, cpt.Id, st.Id)
                                       ).ToListAsync();
 

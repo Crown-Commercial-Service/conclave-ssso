@@ -398,8 +398,8 @@ namespace CcsSso.Shared.Services
             else { appendPipe = string.Empty; }
 
             addtionalIdentifiers = addtionalIdentifiers + OrganisationHeaderMap.AdditionalIdentifiers_Id + ":" + EscapeCharacter(addtionalIdentifierItem.Id) + " - "
-                                                        + OrganisationHeaderMap.AdditionalIdentifiers_LegalName + ":" + EscapeCharacter(addtionalIdentifierItem.LegalName.Replace(","," ")) + " - "
-                                                        + OrganisationHeaderMap.AdditionalIdentifiers_URI + ":" + EscapeCharacter(addtionalIdentifierItem.Uri) + " - "
+                                                        + OrganisationHeaderMap.AdditionalIdentifiers_LegalName + ":" + EscapeCharacter(addtionalIdentifierItem.LegalName) + " - "
+                                                        + OrganisationHeaderMap.AdditionalIdentifiers_URI + ":" + EscapeCharacter(string.IsNullOrEmpty(addtionalIdentifierItem.Uri) ? OrganisationHeaderMap.AdditionalIdentifiers_NA : addtionalIdentifierItem.Uri).ToString() + " - "
                                                         + OrganisationHeaderMap.AdditionalIdentifiers_Scheme + ":" + EscapeCharacter(addtionalIdentifierItem.Scheme) + appendPipe;
             countset = countset + 1;
           }
@@ -443,7 +443,7 @@ namespace CcsSso.Shared.Services
       else if (data == null)
         data = "";
 
-      return data;
+      return data.Replace(","," ").ToString();
     }
   }
 }
