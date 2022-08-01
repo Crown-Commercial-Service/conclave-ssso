@@ -551,6 +551,13 @@ namespace CcsSso.Security.Api.Controllers
       await _userManagerService.SendUserActivationEmailAsync(email, isExpired);
     }
 
+    [HttpGet("security/users/activation-email-verification-link")]
+    [SwaggerOperation(Tags = new[] { "security" })]
+    public async Task<string> GetActivationEmailVerificationLink([FromQuery] string email) 
+    {
+      return await _userManagerService.GetActivationEmailVerificationLink(email);
+    }
+
     private async Task<(string, string)> GenerateCookiesAsync(string clientId, string state = null)
     {
       clientId = clientId ?? string.Empty;

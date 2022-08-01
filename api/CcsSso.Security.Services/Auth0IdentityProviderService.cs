@@ -191,6 +191,25 @@ namespace CcsSso.Security.Services
       }
     }
 
+    public async Task<string> GetActivationEmailVerificationLink(string email)
+    {
+      var user = await GetIdamUserByEmailAsync(email);
+
+      bool isActivationEmail = user.LoginCount == 0;
+
+      var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
+      
+      var ticket = await GetResetPasswordTicketAsync(email, managementApiToken,
+        isActivationEmail ? _appConfigInfo.CcsEmailConfigurationInfo.UserActivationLinkTTLInMinutes : _appConfigInfo.CcsEmailConfigurationInfo.ResetPasswordLinkTTLInMinutes);
+
+      if (!string.IsNullOrEmpty(ticket))
+      {
+        ticket += "&initial";
+        return ticket;
+
+      }
+      return null;
+    }
 
     public async Task UpdateUserAsync(Domain.Dtos.UserInfo userInfo)
     {
