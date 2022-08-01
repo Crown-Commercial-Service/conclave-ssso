@@ -74,6 +74,25 @@ namespace CcsSso.Core.Service
       }
     }
 
+    public async Task<string> GetActivationEmailVerificationLink(string email)
+    {
+      var client = _httpClientFactory.CreateClient();
+      client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
+      client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
+
+      var url = "security/users/activation-email-verification-link?email=" + email;
+      var response = await client.GetAsync(url);
+
+      if (!response.IsSuccessStatusCode)
+      {
+        throw new CcsSsoException("ERROR_IDAM_REGISTRATION_FAILED");
+      }
+
+      return await response.Content.ReadAsStringAsync();
+    }
+
+
+
     public async Task UpdateUserMfaInIdamAsync(SecurityApiUserInfo securityApiUserInfo)
     {
       var client = _httpClientFactory.CreateClient();
@@ -94,7 +113,7 @@ namespace CcsSso.Core.Service
       var client = _httpClientFactory.CreateClient();
       client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
       client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
-      
+
       var content = new { UserName = userName, ForceLogout = true };
       var byteContent = new ByteArrayContent(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(content)));
       byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");

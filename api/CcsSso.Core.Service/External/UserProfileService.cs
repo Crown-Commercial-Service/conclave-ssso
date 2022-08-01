@@ -51,172 +51,200 @@ namespace CcsSso.Core.Service.External
 
     public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo)
     {
-      var isRegisteredInIdam = false;
-      var userName = userProfileRequestInfo.UserName.ToLower();
-      _userHelper.ValidateUserName(userName);
-
-      var organisation = await _dataContext.Organisation
-        .Include(o => o.UserGroups).ThenInclude(ge => ge.GroupEligibleRoles)
-        .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
-        .Include(o => o.OrganisationEligibleIdentityProviders)
-        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == userProfileRequestInfo.OrganisationId);
-      if (organisation == null)
+      try
       {
-        throw new ResourceNotFoundException();
-      }
 
-      var user = await _dataContext.User
-        .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
 
-      if (user != null)
-      {
-        throw new ResourceAlreadyExistsException();
-      }
-      Validate(userProfileRequestInfo, false, organisation);
+        var isRegisteredInIdam = false;
+        var userName = userProfileRequestInfo.UserName.ToLower();
+        _userHelper.ValidateUserName(userName);
 
-      var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
-        .Include(x => x.IdentityProvider)
-        .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id)).ToListAsync();
-
-      var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
-      // var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
-
-      // This is to enforce MFA over any other
-      //if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
-      //{
-      //  throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
-      //}
-
-      //validate mfa and assign mfa if user is part of any admin role or group
-      if (!userProfileRequestInfo.MfaEnabled && isConclaveConnectionIncluded)
-      {
-        var partOfAdminRole = organisation.OrganisationEligibleRoles.Any(r => userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(role => role == r.Id) && r.MfaEnabled);
-        if (partOfAdminRole)
+        var organisation = await _dataContext.Organisation
+          .Include(o => o.UserGroups).ThenInclude(ge => ge.GroupEligibleRoles)
+          .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
+          .Include(o => o.OrganisationEligibleIdentityProviders)
+          .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == userProfileRequestInfo.OrganisationId);
+        if (organisation == null)
         {
-          throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+          throw new ResourceNotFoundException();
         }
-        else
+
+        var user = await _dataContext.User
+          .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
+
+        if (user != null)
         {
-          var partOfAdminGroup = organisation.UserGroups.Any(oug => userProfileRequestInfo.Detail.GroupIds != null && userProfileRequestInfo.Detail.GroupIds.Contains(oug.Id) && !oug.IsDeleted &&
-                              oug.GroupEligibleRoles.Any(er => !er.IsDeleted && er.OrganisationEligibleRole.MfaEnabled));
-          if (partOfAdminGroup)
+          throw new ResourceAlreadyExistsException();
+        }
+
+        Validate(userProfileRequestInfo, false, organisation);
+
+        var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
+          .Include(x => x.IdentityProvider)
+          .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id)).ToListAsync();
+
+        var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
+        var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
+
+        // This is to enforce MFA over any other
+        //if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
+        //{
+        //  throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
+        //}
+
+        //validate mfa and assign mfa if user is part of any admin role or group
+        if (!userProfileRequestInfo.MfaEnabled && isConclaveConnectionIncluded)
+        {
+          var partOfAdminRole = organisation.OrganisationEligibleRoles.Any(r => userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(role => role == r.Id) && r.MfaEnabled);
+          if (partOfAdminRole)
           {
             throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
           }
-        }
-      }
-
-
-      // Set user groups
-      var userGroupMemberships = new List<UserGroupMembership>();
-      userProfileRequestInfo.Detail.GroupIds?.ForEach((groupId) =>
-      {
-        userGroupMemberships.Add(new UserGroupMembership
-        {
-          OrganisationUserGroupId = groupId
-        });
-      });
-
-      // Set user roles
-      var userAccessRoles = new List<UserAccessRole>();
-      userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
-      {
-        userAccessRoles.Add(new UserAccessRole
-        {
-          OrganisationEligibleRoleId = roleId
-        });
-      });
-
-      var defaultUserRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.DefaultUserRoleNameKey).Id;
-
-      // Set default user role if no role available
-      if (userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() || !userAccessRoles.Exists(ur => ur.OrganisationEligibleRoleId == defaultUserRoleId))
-      {
-        userAccessRoles.Add(new UserAccessRole
-        {
-          OrganisationEligibleRoleId = defaultUserRoleId
-        });
-      }
-
-      var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(p => p.PartyTypeName == PartyTypeName.User)).Id;
-
-      var party = new Party
-      {
-        PartyTypeId = partyTypeId,
-        Person = new Person
-        {
-          FirstName = userProfileRequestInfo.FirstName.Trim(),
-          LastName = userProfileRequestInfo.LastName.Trim(),
-          OrganisationId = organisation.Id
-        },
-        User = new User
-        {
-          UserName = userName,
-          UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title),
-          UserGroupMemberships = userGroupMemberships,
-          UserAccessRoles = userAccessRoles,
-          UserIdentityProviders = userProfileRequestInfo.Detail.IdentityProviderIds.Select(idpId => new UserIdentityProvider
+          else
           {
-            OrganisationEligibleIdentityProviderId = idpId
-          }).ToList(),
-          MfaEnabled = userProfileRequestInfo.MfaEnabled,
-          CcsServiceId = _requestContext.ServiceId > 0 ? _requestContext.ServiceId : null
+            var partOfAdminGroup = organisation.UserGroups.Any(oug => userProfileRequestInfo.Detail.GroupIds != null && userProfileRequestInfo.Detail.GroupIds.Contains(oug.Id) && !oug.IsDeleted &&
+                                oug.GroupEligibleRoles.Any(er => !er.IsDeleted && er.OrganisationEligibleRole.MfaEnabled));
+            if (partOfAdminGroup)
+            {
+              throw new CcsSsoException(ErrorConstant.ErrorMfaFlagRequired);
+            }
+          }
         }
-      };
-
-      _dataContext.Party.Add(party);
-
-      await _dataContext.SaveChangesAsync();
 
 
-      if (isConclaveConnectionIncluded)
-      {
-        SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+        // Set user groups
+        var userGroupMemberships = new List<UserGroupMembership>();
+        userProfileRequestInfo.Detail.GroupIds?.ForEach((groupId) =>
         {
-          Email = userName,
-          Password = userProfileRequestInfo.Password,
-          SendUserRegistrationEmail = userProfileRequestInfo.SendUserRegistrationEmail,
-          UserName = userName,
-          FirstName = userProfileRequestInfo.FirstName,
-          LastName = userProfileRequestInfo.LastName,
-          MfaEnabled = userProfileRequestInfo.MfaEnabled
+          userGroupMemberships.Add(new UserGroupMembership
+          {
+            OrganisationUserGroupId = groupId
+          });
+        });
+
+        // Set user roles
+        var userAccessRoles = new List<UserAccessRole>();
+        userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
+        {
+          userAccessRoles.Add(new UserAccessRole
+          {
+            OrganisationEligibleRoleId = roleId
+          });
+        });
+
+        var defaultUserRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.DefaultUserRoleNameKey).Id;
+
+        // Set default user role if no role available
+        if (userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() || !userAccessRoles.Exists(ur => ur.OrganisationEligibleRoleId == defaultUserRoleId))
+        {
+          userAccessRoles.Add(new UserAccessRole
+          {
+            OrganisationEligibleRoleId = defaultUserRoleId
+          });
+        }
+
+        var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(p => p.PartyTypeName == PartyTypeName.User)).Id;
+
+        var party = new Party
+        {
+          PartyTypeId = partyTypeId,
+          Person = new Person
+          {
+            FirstName = userProfileRequestInfo.FirstName.Trim(),
+            LastName = userProfileRequestInfo.LastName.Trim(),
+            OrganisationId = organisation.Id
+          },
+          User = new User
+          {
+            UserName = userName,
+            UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title),
+            UserGroupMemberships = userGroupMemberships,
+            UserAccessRoles = userAccessRoles,
+            UserIdentityProviders = userProfileRequestInfo.Detail.IdentityProviderIds.Select(idpId => new UserIdentityProvider
+            {
+              OrganisationEligibleIdentityProviderId = idpId
+            }).ToList(),
+            MfaEnabled = userProfileRequestInfo.MfaEnabled,
+            CcsServiceId = _requestContext.ServiceId > 0 ? _requestContext.ServiceId : null
+          }
         };
 
-        try
+        _dataContext.Party.Add(party);
+
+        await _dataContext.SaveChangesAsync();
+
+
+        if (isConclaveConnectionIncluded)
         {
-          await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
-          isRegisteredInIdam = true;
+          SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+          {
+            Email = userName,
+            Password = userProfileRequestInfo.Password,
+            SendUserRegistrationEmail = false, // Emails are sent separately along with other IDP selections
+            UserName = userName,
+            FirstName = userProfileRequestInfo.FirstName,
+            LastName = userProfileRequestInfo.LastName,
+            MfaEnabled = userProfileRequestInfo.MfaEnabled
+          };
+
+          try
+          {
+            await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
+            isRegisteredInIdam = true;
+          }
+          catch (Exception)
+          {
+            // If Idam registration failed, remove the user record in DB
+            _dataContext.Party.Remove(party);
+            await _dataContext.SaveChangesAsync();
+            throw;
+          }
         }
-        catch (Exception)
+
+        if (userProfileRequestInfo.SendUserRegistrationEmail)
         {
-          // If Idam registration failed, remove the user record in DB
-          _dataContext.Party.Remove(party);
-          await _dataContext.SaveChangesAsync();
-          throw;
+          if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)
+          {
+            var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+            var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
+
+            await _ccsSsoEmailService.SendUserConfirmEmailBothIdpAsync(party.User.UserName, string.Join(",", listOfIdpName), activationlink);
+
+          }
+          else if (isNonUserNamePwdConnectionIncluded)
+          {
+            var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
+            await _ccsSsoEmailService.SendUserConfirmEmailOnlyFederatedIdpAsync(party.User.UserName, string.Join(",", listOfIdpName));
+
+          }
+          else if (isConclaveConnectionIncluded)
+          {
+            var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+            await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink));
+          }
         }
+
+        // Log
+        await _auditLoginService.CreateLogAsync(AuditLogEvent.UserCreate, AuditLogApplication.ManageUserAccount, $"UserId:{party.User.Id}, UserIdpId:{string.Join(",", party.User.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId))}," + " " +
+          $"UserGroupIds:{string.Join(",", party.User.UserGroupMemberships.Select(g => g.OrganisationUserGroupId))}," + " " +
+          $"UserRoleIds:{string.Join(",", party.User.UserAccessRoles.Select(r => r.OrganisationEligibleRoleId))}");
+
+        //Invalidate redis
+        await _wrapperCacheService.RemoveCacheAsync($"{CacheKeyConstant.OrganisationUsers}-{organisation.CiiOrganisationId}");
+
+        // Notify the adapter
+        await _adapterNotificationService.NotifyUserChangeAsync(OperationType.Create, userProfileRequestInfo.UserName, organisation.CiiOrganisationId);
+
+        return new UserEditResponseInfo
+        {
+          UserId = party.User.UserName,
+          IsRegisteredInIdam = isRegisteredInIdam
+        };
       }
-      else if (userProfileRequestInfo.SendUserRegistrationEmail)
+      catch (Exception)
       {
-        // Send the welcome email if not Idam user. (Idam users will recieve an email while registering)
-        await _ccsSsoEmailService.SendUserWelcomeEmailAsync(party.User.UserName, string.Join(",", eligibleIdentityProviders.Select(idp => idp.IdentityProvider.IdpName)));
+        throw;
       }
-
-      // Log
-      await _auditLoginService.CreateLogAsync(AuditLogEvent.UserCreate, AuditLogApplication.ManageUserAccount, $"UserId:{party.User.Id}, UserIdpId:{string.Join(",", party.User.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId))}," + " " +
-        $"UserGroupIds:{string.Join(",", party.User.UserGroupMemberships.Select(g => g.OrganisationUserGroupId))}," + " " +
-        $"UserRoleIds:{string.Join(",", party.User.UserAccessRoles.Select(r => r.OrganisationEligibleRoleId))}");
-
-      //Invalidate redis
-      await _wrapperCacheService.RemoveCacheAsync($"{CacheKeyConstant.OrganisationUsers}-{organisation.CiiOrganisationId}");
-
-      // Notify the adapter
-      await _adapterNotificationService.NotifyUserChangeAsync(OperationType.Create, userProfileRequestInfo.UserName, organisation.CiiOrganisationId);
-
-      return new UserEditResponseInfo
-      {
-        UserId = party.User.UserName,
-        IsRegisteredInIdam = isRegisteredInIdam
-      };
     }
 
     public async Task<UserProfileResponseInfo> GetUserAsync(string userName)
@@ -509,7 +537,7 @@ namespace CcsSso.Core.Service.External
       var isRegisteredInIdam = false;
       _userHelper.ValidateUserName(userName);
 
-      if (userName != userProfileRequestInfo.UserName)
+     if (userName != userProfileRequestInfo.UserName)
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidUserId);
       }
@@ -543,18 +571,18 @@ namespace CcsSso.Core.Service.External
       bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
 
       var UserAccessRole = (from u in _dataContext.User
-                           join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
-                           join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
-                           join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
-                           where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
-                           select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
+                            join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
+                            join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
+                            join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
+                            where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+                            select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
 
       bool isAdminUser = false;
       if (UserAccessRole != null && UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
       {
-         isAdminUser = true;
+        isAdminUser = true;
       }
-     
+
       bool hasProfileInfoChanged;
       if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
       {
