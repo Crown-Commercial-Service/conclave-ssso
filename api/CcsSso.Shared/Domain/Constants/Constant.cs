@@ -76,8 +76,10 @@ namespace CcsSso.Shared.Domain.Constants
 
   public static class ContactsHeaderMap
   {
-    public const string ContactType = "contact_type";
-    public const string ContactID = "contact_id";
+    //public const string ContactType = "contact_type";
+    //public const string ContactID = "contact_id";
+    public const string ContactType = "type";
+    public const string ContactID = "type_id";
     public const string ContactPointID = "contactpoint_id";
     public const string OriginalContactPointID = "original_contactpoint_id";
     public const string AssignedContactType = "assigned_contact_type";
