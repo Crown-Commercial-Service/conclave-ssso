@@ -9,19 +9,14 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos;
-using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
-using CcsSso.Dtos.Domain.Models;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
-using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
