@@ -245,7 +245,11 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         /// My Byte Array - End
 
         _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
-      
+        //using (MemoryStream memStream = new MemoryStream(fileByteArray))
+        //{
+        //  File.WriteAllBytes("contactlogicnew.csv", fileByteArray);
+        //}
+
 
         AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Contact");
         _logger.LogInformation("After Transfered the files to Azure Blob");
@@ -278,7 +282,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                                           join org in _dataContext.Organisation on cpt.PartyId equals org.PartyId                                          
                                           
                                           select new Tuple<string, int, int, DateTime>(
-                                            org.CiiOrganisationId, cpt.Id, st.Id, cpt.LastUpdatedOnUtc)
+                                            org.CiiOrganisationId, cpt.Id, st.Id, st.LastUpdatedOnUtc)
                                       ).ToListAsync();
 
         return contactDetailsResult.Where(m => m.Item4 > untilDateTime).ToList();
@@ -390,6 +394,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
         var contactDetailsResult = await (from cdt in _dataContext.ContactDetail
                                           join cpt in _dataContext.ContactPoint on cdt.Id equals cpt.ContactDetailId
+                                          //join pty in _dataContext.Party on cpt.PartyId equals pty.Id
                                           join usr in _dataContext.User on cpt.PartyId equals usr.PartyId
 
                                           select new Tuple<int, int, int, string, DateTime>(
