@@ -204,13 +204,14 @@ namespace CcsSso.Shared.Services
       List<string> csvUserDataForAuditLog = new List<string>();
 
       string[] csvUserHeader =  {
-                AuditLogHeaderMap.ID
+                  AuditLogHeaderMap.ID
                 ,AuditLogHeaderMap.Event
                 ,AuditLogHeaderMap.UserId
                 ,AuditLogHeaderMap.Application
                 ,AuditLogHeaderMap.ReferenceData
                 ,AuditLogHeaderMap.IpAddress
                 ,AuditLogHeaderMap.Device
+                ,AuditLogHeaderMap.EventTimeUtc
                 };
 
       csvUserDataForAuditLog.Add(string.Join(",", csvUserHeader.ToArray()));
@@ -227,7 +228,8 @@ namespace CcsSso.Shared.Services
                             EscapeCharacter(item.Application),
                             EscapeCharacter(item.ReferenceData),
                             EscapeCharacter(item.IpAddress),
-                            EscapeCharacter(item.Device)
+                            EscapeCharacter(item.Device),
+                            EscapeCharacter(item.EventTimeUtc.ToString())
                             };
           csvUserDataForAuditLog.Add(string.Join(",", row));
         }
@@ -398,8 +400,9 @@ namespace CcsSso.Shared.Services
             else { appendPipe = string.Empty; }
 
             addtionalIdentifiers = addtionalIdentifiers + OrganisationHeaderMap.AdditionalIdentifiers_Id + ":" + EscapeCharacter(addtionalIdentifierItem.Id) + " - "
-                                                        + OrganisationHeaderMap.AdditionalIdentifiers_LegalName + ":" + EscapeCharacter(addtionalIdentifierItem.LegalName) + " - "
-                                                        + OrganisationHeaderMap.AdditionalIdentifiers_URI + ":" + EscapeCharacter(string.IsNullOrEmpty(addtionalIdentifierItem.Uri) ? OrganisationHeaderMap.AdditionalIdentifiers_NA : addtionalIdentifierItem.Uri).ToString() + " - "
+                                                        + OrganisationHeaderMap.AdditionalIdentifiers_LegalName + ":" + EscapeCharacter(addtionalIdentifierItem.LegalName.Replace(",", " ")) + " - "
+                                                        + OrganisationHeaderMap.AdditionalIdentifiers_URI + ":" + EscapeCharacter(addtionalIdentifierItem.Uri) + " - "
+                                                        //+ OrganisationHeaderMap.AdditionalIdentifiers_URI + ":" + EscapeCharacter(string.IsNullOrEmpty(addtionalIdentifierItem.Uri) ? OrganisationHeaderMap.AdditionalIdentifiers_NA : addtionalIdentifierItem.Uri).ToString() + " - "
                                                         + OrganisationHeaderMap.AdditionalIdentifiers_Scheme + ":" + EscapeCharacter(addtionalIdentifierItem.Scheme) + appendPipe;
             countset = countset + 1;
           }
@@ -443,7 +446,8 @@ namespace CcsSso.Shared.Services
       else if (data == null)
         data = "";
 
-      return data.Replace(","," ").ToString();
+      //return data.Replace(","," ").ToString();
+      return data;
     }
   }
 }

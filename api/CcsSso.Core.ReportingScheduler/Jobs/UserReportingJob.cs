@@ -109,6 +109,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             var fileByteArray = _csvConverter.ConvertToCSV(userDetailList, "user");
 
             _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
+            
 
             AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "User");
             _logger.LogInformation("After Transfered the files to Azure Blob");
@@ -178,6 +179,15 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         var userIds = await _dataContext.User.Where(
                           usr => !usr.IsDeleted && usr.LastUpdatedOnUtc > untilDateTime)
                           .Select(u => new Tuple<int, string>(u.Id, u.UserName)).ToListAsync();
+
+
+        //var contactDetailsResult = await (from usr in _dataContext.User
+        //                                  join pt in _dataContext.Party on usr.Id equals pt.LastUpdatedUserId                                          
+        //                                  where cpt.LastUpdatedOnUtc > untilDateTime && !cpt.IsDeleted
+        //                                  select new Tuple<string, int, int>(
+        //                                     org.CiiOrganisationId, cpt.Id, st.Id)
+        //                            ).ToListAsync();
+
         return userIds;
       }
       catch (Exception ex)

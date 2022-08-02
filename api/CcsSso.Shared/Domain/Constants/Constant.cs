@@ -101,5 +101,6 @@ namespace CcsSso.Shared.Domain.Constants
     public const string ReferenceData = "ReferenceData";
     public const string IpAddress = "IpAddress";
     public const string Device = "Device";
+    public const string EventTimeUtc = "EventTimeUtc";
   }
 }
