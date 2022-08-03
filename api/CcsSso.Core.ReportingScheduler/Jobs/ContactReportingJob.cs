@@ -63,6 +63,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       ////////////////// Organisation Contact Report - Start /////////////////////////////
 
       var listOfAllModifiedOrgContactId = await GetModifiedContactIds(); // ORG
+      contactModuleList.contactOrgResponseInfo = new List<ContactOrgResponseInfo>();
       if (listOfAllModifiedOrgContactId == null || listOfAllModifiedOrgContactId.Count() == 0)
       {
         _logger.LogInformation("No Organisation-Contacts are found");
@@ -120,6 +121,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       ////////////////// User Contact Report - Start /////////////////////////////
 
       var listOfAllModifiedUserContactId = await GetModifiedUserContactIds(); // User
+      contactModuleList.contactUserResponseInfo = new List<ContactUserResponseInfo>();
       if (listOfAllModifiedUserContactId == null || listOfAllModifiedUserContactId.Count() == 0)
       {
         _logger.LogInformation("No User-Contacts are found");
@@ -176,6 +178,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       ////////////////// Site Contact Report - Start /////////////////////////////
 
       var listOfAllModifiedSiteContactId = await GetModifiedSiteContactIds(); // Site
+      contactModuleList.contactSiteResponseInfo = new List<ContactSiteResponseInfo>();
       if (listOfAllModifiedSiteContactId == null || listOfAllModifiedSiteContactId.Count() == 0)
       {
         _logger.LogInformation("No Site-Contacts  are found");
@@ -227,52 +230,57 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       ////////////////// Site Contact Report - End /////////////////////////////
 
-      /// My Byte Array - Start        
-      var fileByteArrayOrg = _csvConverter.ConvertToCSV(contactModuleList.contactOrgResponseInfo, "contact-org");
-      var fileByteArrayUser = _csvConverter.ConvertToCSV(contactModuleList.contactUserResponseInfo, "contact-user");
-      var fileByteArraySite = _csvConverter.ConvertToCSV(contactModuleList.contactSiteResponseInfo, "contact-site");
-      byte[] fileByteArray = fileByteArrayOrg.Concat(fileByteArrayUser).Concat(fileByteArraySite).ToArray();
-      /// My Byte Array - End
-
-      _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
-
-      AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Contact");
-      _logger.LogInformation("After Transfered the files to Azure Blob");
-
-      if (result.responseStatus)
+      if (contactModuleList.contactOrgResponseInfo.Count == 0 && contactModuleList.contactUserResponseInfo.Count == 0 && contactModuleList.contactSiteResponseInfo.Count == 0)
       {
-        _logger.LogInformation($"****************** Successfully transfered file. FileName - {result.responseFileName} ******************");
-        _logger.LogInformation("");
+        _logger.LogInformation("No Contact Logs are found");
+        return;
       }
       else
       {
-        _logger.LogError($" XXXXXXXXXXXX Failed to transfer. Message - {result.responseMessage} XXXXXXXXXXXX");
-        _logger.LogError($"Failed to transfer. File Name - {result.responseFileName}");
-        _logger.LogInformation("");
+        /// My Byte Array - Start        
+        var fileByteArrayOrg = _csvConverter.ConvertToCSV(contactModuleList.contactOrgResponseInfo, "contact-org");
+        var fileByteArrayUser = _csvConverter.ConvertToCSV(contactModuleList.contactUserResponseInfo, "contact-user");
+        var fileByteArraySite = _csvConverter.ConvertToCSV(contactModuleList.contactSiteResponseInfo, "contact-site");
+        byte[] fileByteArray = fileByteArrayOrg.Concat(fileByteArrayUser).Concat(fileByteArraySite).ToArray();
+        /// My Byte Array - End
 
+        _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
+        
+        AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Contact");
+        _logger.LogInformation("After Transfered the files to Azure Blob");
+
+        if (result.responseStatus)
+        {
+          _logger.LogInformation($"****************** Successfully transfered file. FileName - {result.responseFileName} ******************");
+          _logger.LogInformation("");
+        }
+        else
+        {
+          _logger.LogError($" XXXXXXXXXXXX Failed to transfer. Message - {result.responseMessage} XXXXXXXXXXXX");
+          _logger.LogError($"Failed to transfer. File Name - {result.responseFileName}");
+          _logger.LogInformation("");
+
+        }
       }
     }
 
 
-    private async Task<List<Tuple<string, int, int>>> GetModifiedSiteContactIds()
+    private async Task<List<Tuple<string, int, int, DateTime>>> GetModifiedSiteContactIds()
     {
       var dataDuration = _appSettings.ReportDataDurations.ContactReportingDurationInMinutes;
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
 
       try
       {
-
-        var contactDetailsResult = await (from cdt in _dataContext.ContactDetail
-                                          join cpt in _dataContext.ContactPoint on cdt.Id equals cpt.ContactDetailId
+       var contactDetailsResult = await (from cpt in _dataContext.ContactPoint  
                                           join st in _dataContext.SiteContact on cpt.Id equals st.ContactPointId
-                                          join org in _dataContext.Organisation on cpt.PartyId equals org.PartyId
-                                          where cdt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted                                          
-
-                                          select new Tuple<string, int, int>(
-                                            org.CiiOrganisationId, cpt.Id, st.Id)
+                                          join org in _dataContext.Organisation on cpt.PartyId equals org.PartyId                                          
+                                          
+                                          select new Tuple<string, int, int, DateTime>(
+                                            org.CiiOrganisationId, cpt.Id, st.Id, st.LastUpdatedOnUtc)
                                       ).ToListAsync();
 
-        return contactDetailsResult;
+        return contactDetailsResult.Where(m => m.Item4 > untilDateTime).ToList();
       }
       catch (Exception ex)
       {
@@ -281,7 +289,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       }
     }
 
-    private async Task<ContactSiteResponseInfo?> GetSiteContactDetails(Tuple<string, int, int> eachModifiedContact, HttpClient client)
+    private async Task<ContactSiteResponseInfo?> GetSiteContactDetails(Tuple<string, int, int, DateTime> eachModifiedContact, HttpClient client)
     {
 
       string url = $"organisations/{eachModifiedContact.Item1}/sites/{eachModifiedContact.Item2}/contacts/{eachModifiedContact.Item3}";
@@ -302,7 +310,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       }
     }
 
-    private async Task<ContactUserResponseInfo?> GetUserContactDetails(Tuple<int, int, int, string> eachModifiedContact, HttpClient client)
+    private async Task<ContactUserResponseInfo?> GetUserContactDetails(Tuple<int, int, int, string, DateTime> eachModifiedContact, HttpClient client)
     {
 
       string url = $"users/contacts/{eachModifiedContact.Item1}?user-id={eachModifiedContact.Item4}";
@@ -325,7 +333,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
 
 
-    private async Task<ContactOrgResponseInfo?> GetOrgContactDetails(Tuple<int, int, int, string> eachModifiedContact, HttpClient client)
+    private async Task<ContactOrgResponseInfo?> GetOrgContactDetails(Tuple<int, int, int, string, DateTime> eachModifiedContact, HttpClient client)
     {
       string url = $"organisations/{eachModifiedContact.Item4}/contacts/{eachModifiedContact.Item1}";
       var response = await client.GetAsync(url);
@@ -344,7 +352,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       }
     }
 
-    public async Task<List<Tuple<int, int, int, string>>> GetModifiedContactIds()
+    public async Task<List<Tuple<int, int, int, string, DateTime>>> GetModifiedContactIds()
     {
       var dataDuration = _appSettings.ReportDataDurations.ContactReportingDurationInMinutes;
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
@@ -352,16 +360,15 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       try
       {
         var contactDetailsResult = await (from cdt in _dataContext.ContactDetail
-                                          join cpt in _dataContext.ContactPoint on cdt.Id equals cpt.ContactDetailId
-                                          join org in _dataContext.Organisation on cpt.PartyId equals org.PartyId
-                                          //where cdt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted
-                                          where cpt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted
-
-                                          select new Tuple<int, int, int, string>(
-                                            cpt.Id, cpt.PartyId, cpt.ContactDetailId, org.CiiOrganisationId)
+                                          join cpt in _dataContext.ContactPoint on cdt.Id equals cpt.ContactDetailId                                          
+                                          join org in _dataContext.Organisation on cpt.PartyId equals org.PartyId                                          
+                                           
+                                          select new Tuple<int, int, int, string, DateTime>(
+                                            cpt.Id, cpt.PartyId, cpt.ContactDetailId, org.CiiOrganisationId, cpt.LastUpdatedOnUtc)
                                       ).ToListAsync();
 
-        return contactDetailsResult;
+        return contactDetailsResult.Where(m => m.Item5 > untilDateTime).ToList();        
+         
       }
       catch (Exception ex)
       {
@@ -372,7 +379,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
     }
 
-    public async Task<List<Tuple<int, int, int, string>>> GetModifiedUserContactIds()
+    public async Task<List<Tuple<int, int, int, string, DateTime>>> GetModifiedUserContactIds()
     {
       var dataDuration = _appSettings.ReportDataDurations.ContactReportingDurationInMinutes;
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
@@ -382,14 +389,16 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
         var contactDetailsResult = await (from cdt in _dataContext.ContactDetail
                                           join cpt in _dataContext.ContactPoint on cdt.Id equals cpt.ContactDetailId
+                                          //join pty in _dataContext.Party on cpt.PartyId equals pty.Id
                                           join usr in _dataContext.User on cpt.PartyId equals usr.PartyId
-                                          where cpt.LastUpdatedOnUtc > untilDateTime && !cdt.IsDeleted
 
-                                          select new Tuple<int, int, int, string>(
-                                            cpt.Id, cpt.PartyId, cpt.ContactDetailId, usr.UserName)
+                                          select new Tuple<int, int, int, string, DateTime>(
+                                            cpt.Id, cpt.PartyId, cpt.ContactDetailId, usr.UserName, cpt.LastUpdatedOnUtc)
                                       ).ToListAsync();
 
-        return contactDetailsResult;
+
+        return contactDetailsResult.Where(m => m.Item5 > untilDateTime).ToList();
+        
       }
       catch (Exception ex)
       {

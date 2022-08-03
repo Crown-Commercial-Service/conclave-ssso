@@ -72,6 +72,8 @@ namespace CcsSso.Shared.Domain.Constants
     public const string AdditionalIdentifiers_URI = "Uri";
     public const string AdditionalIdentifiers_Scheme = "Scheme";
 
+    public const string AdditionalIdentifiers_NA = "NA";
+
   }
 
   public static class ContactsHeaderMap
@@ -99,5 +101,6 @@ namespace CcsSso.Shared.Domain.Constants
     public const string ReferenceData = "ReferenceData";
     public const string IpAddress = "IpAddress";
     public const string Device = "Device";
+    public const string EventTimeUtc = "EventTimeUtc";
   }
 }

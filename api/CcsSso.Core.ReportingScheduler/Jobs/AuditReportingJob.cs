@@ -80,13 +80,14 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             if (eachModifiedAuditLog != null)
             {
               auditLog = new AuditLogResponseInfo();
-              auditLog.Id = eachModifiedAuditLog.Item1;
-              auditLog.Event = eachModifiedAuditLog.Item2;
-              auditLog.UserId = eachModifiedAuditLog.Item3;
-              auditLog.Application = eachModifiedAuditLog.Item4;
-              auditLog.ReferenceData = eachModifiedAuditLog.Item5;
-              auditLog.IpAddress = eachModifiedAuditLog.Item6;
-              auditLog.Device = eachModifiedAuditLog.Item7;
+              auditLog.Id = Convert.ToInt32(eachModifiedAuditLog.Item1.Split("|")[0].ToString());
+              auditLog.Event = eachModifiedAuditLog.Item1.Split("|")[1];
+              auditLog.UserId = eachModifiedAuditLog.Item2;
+              auditLog.Application = eachModifiedAuditLog.Item3;
+              auditLog.ReferenceData = eachModifiedAuditLog.Item4;
+              auditLog.IpAddress = eachModifiedAuditLog.Item5;
+              auditLog.Device = eachModifiedAuditLog.Item6;
+              auditLog.EventTimeUtc = eachModifiedAuditLog.Item7;
               auditLogList.Add(auditLog);
             }
 
@@ -102,6 +103,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             var fileByteArray = _csvConverter.ConvertToCSV(auditLogList, "audit");
 
             _logger.LogInformation("After converting the list of Audit Log object into CSV format and returned byte Array");
+          
 
             AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Audit");
             _logger.LogInformation("After Transfered the files to Azure Blob");
@@ -140,21 +142,32 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         _logger.LogError("");
       }
     }
-    public async Task<List<Tuple<int, string, string, string, string, string, string>>> GetModifiedAuditLog()
+    public async Task<List<Tuple< string, string, string, string, string, string, DateTime>>> GetModifiedAuditLog()
     {
       var dataDuration = _appSettings.ReportDataDurations.AuditLogReportingDurationInMinutes;
-      var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
+      DateTime untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(- dataDuration);
 
       try
       {
         var auditLogResult = await (from a in _dataContext.AuditLog
                                     join s in _dataContext.User
-                                    on a.UserId equals s.Id
-                                    where a.EventTimeUtc > untilDateTime
-                                    select new Tuple<int, string, string, string, string, string, string>(a.Id, a.Event, s.UserName, a.Application, a.ReferenceData, a.IpAddress, a.Device)
-                                    ).ToListAsync();
+                                    on a.UserId equals s.Id                                    
+                                    select new Tuple< string, string, string, string, string, string, DateTime>( a.Id + "|" + a.Event, s.UserName, a.Application, a.ReferenceData, a.IpAddress, a.Device, a.EventTimeUtc)
+                                   ).ToListAsync();
 
-        return auditLogResult;
+        
+        var result = auditLogResult.Where(m => m.Item7 > untilDateTime).ToList();
+      
+
+        //var auditLogResult = await (from a in _dataContext.AuditLog
+        //                            join s in _dataContext.User
+        //                            on a.UserId equals s.Id
+        //                            where a.EventTimeUtc > untilDateTime
+        //                            select new Tuple<int, string, string, string, string, string, string>(a.Id, a.Event, s.UserName, a.Application, a.ReferenceData, a.IpAddress, a.Device)
+        //                            ).ToListAsync();
+
+        //return auditLogResult;
+        return result;
       }
       catch (Exception ex)
       {
