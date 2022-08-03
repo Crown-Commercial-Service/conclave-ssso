@@ -245,12 +245,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         /// My Byte Array - End
 
         _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
-        //using (MemoryStream memStream = new MemoryStream(fileByteArray))
-        //{
-        //  File.WriteAllBytes("contactlogicnew.csv", fileByteArray);
-        //}
-
-
+        
         AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Contact");
         _logger.LogInformation("After Transfered the files to Azure Blob");
 

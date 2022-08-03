@@ -109,7 +109,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             var fileByteArray = _csvConverter.ConvertToCSV(userDetailList, "user");
 
             _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
-            
 
             AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "User");
             _logger.LogInformation("After Transfered the files to Azure Blob");
@@ -149,7 +148,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       }
     }
 
-    private async Task<UserProfileResponseInfo?> GetUserDetails(Tuple<int, string> eachModifiedUser, HttpClient client)
+    private async Task<UserProfileResponseInfo?> GetUserDetails(Tuple<int, string, DateTime> eachModifiedUser, HttpClient client)
     {
       string url = $"users/?user-id={eachModifiedUser.Item2}"; // Send as Query String as expected in the Wrapper API - GetUser method
 
@@ -169,26 +168,28 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         return null;
       }
     }
-    public async Task<List<Tuple<int, string>>> GetModifiedUserIds()
+    public async Task<List<Tuple<int, string, DateTime>>> GetModifiedUserIds()
     {
       var dataDuration = _appSettings.ReportDataDurations.UserReportingDurationInMinutes;
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
 
       try
       {
-        var userIds = await _dataContext.User.Where(
-                          usr => !usr.IsDeleted && usr.LastUpdatedOnUtc > untilDateTime)
-                          .Select(u => new Tuple<int, string>(u.Id, u.UserName)).ToListAsync();
+        //var userIds = await _dataContext.User.Where(
+        //                  usr => !usr.IsDeleted && usr.LastUpdatedOnUtc > untilDateTime)
+        //                  .Select(u => new Tuple<int, string>(u.Id, u.UserName)).ToListAsync();
 
+        // var userIds = await _dataContext.User.Select(u => new Tuple<int, string, DateTime>(u.Id, u.UserName,u.LastUpdatedOnUtc)).ToListAsync();
 
-        //var contactDetailsResult = await (from usr in _dataContext.User
-        //                                  join pt in _dataContext.Party on usr.Id equals pt.LastUpdatedUserId                                          
-        //                                  where cpt.LastUpdatedOnUtc > untilDateTime && !cpt.IsDeleted
-        //                                  select new Tuple<string, int, int>(
-        //                                     org.CiiOrganisationId, cpt.Id, st.Id)
-        //                            ).ToListAsync();
+        var userIds =  await (from per in _dataContext.Person
+               join usr in _dataContext.User on per.PartyId equals usr.PartyId
+                              select new Tuple<int, string, DateTime>(
+                                            usr.Id, usr.UserName ,  per.LastUpdatedOnUtc)
+                                      ).ToListAsync();
 
-        return userIds;
+        var resultUserIds = userIds.Where(m => m.Item3 > untilDateTime).ToList();
+
+        return resultUserIds;
       }
       catch (Exception ex)
       {
