@@ -179,17 +179,21 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         //                  usr => !usr.IsDeleted && usr.LastUpdatedOnUtc > untilDateTime)
         //                  .Select(u => new Tuple<int, string>(u.Id, u.UserName)).ToListAsync();
 
-        // var userIds = await _dataContext.User.Select(u => new Tuple<int, string, DateTime>(u.Id, u.UserName,u.LastUpdatedOnUtc)).ToListAsync();
+        var userIds = await _dataContext.User.Select(u => new Tuple<int, string, DateTime>(u.Id, u.UserName,u.LastUpdatedOnUtc)).ToListAsync();
+        var resultPersonIds = userIds.Where(m => m.Item3 > untilDateTime).ToList();
 
-        var userIds =  await (from per in _dataContext.Person
+
+        var userPersonIds =  await (from per in _dataContext.Person
                join usr in _dataContext.User on per.PartyId equals usr.PartyId
-                              select new Tuple<int, string, DateTime>(
+                              select new Tuple<int, string, DateTime >(
                                             usr.Id, usr.UserName ,  per.LastUpdatedOnUtc)
                                       ).ToListAsync();
+         
+        var resultUserIds = userPersonIds.Where(m => m.Item3 > untilDateTime).ToList();
 
-        var resultUserIds = userIds.Where(m => m.Item3 > untilDateTime).ToList();
+        resultPersonIds.AddRange(resultUserIds);
 
-        return resultUserIds;
+        return resultPersonIds;
       }
       catch (Exception ex)
       {
