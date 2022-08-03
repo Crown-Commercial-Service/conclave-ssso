@@ -245,7 +245,12 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         /// My Byte Array - End
 
         _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
-        
+
+        //using (MemoryStream memStream = new MemoryStream(fileByteArray))
+        //{
+        //  File.WriteAllBytes("contlognew.csv", fileByteArray);
+        //}
+
         AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Contact");
         _logger.LogInformation("After Transfered the files to Azure Blob");
 
@@ -395,10 +400,22 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                                           select new Tuple<int, int, int, string, DateTime>(
                                             cpt.Id, cpt.PartyId, cpt.ContactDetailId, usr.UserName, cpt.LastUpdatedOnUtc)
                                       ).ToListAsync();
+       
 
+        var result =  contactDetailsResult.Where(m => m.Item5 > untilDateTime).ToList();
 
-        return contactDetailsResult.Where(m => m.Item5 > untilDateTime).ToList();
-        
+        var userPersonIds = await (from per in _dataContext.Person
+                                   join cpt in _dataContext.ContactPoint on per.PartyId equals cpt.PartyId
+                                   join usr in _dataContext.User on per.PartyId equals usr.PartyId
+                                   select new Tuple<int, int, int, string, DateTime>(
+                                                 cpt.Id, cpt.PartyId, per.Id, usr.UserName, per.LastUpdatedOnUtc)
+                                   ).ToListAsync();
+        var resultPerson = userPersonIds.Where(m => m.Item5 > untilDateTime).ToList();
+
+        result.AddRange(resultPerson);
+
+        return result;
+
       }
       catch (Exception ex)
       {
