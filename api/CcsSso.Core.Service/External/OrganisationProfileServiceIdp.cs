@@ -168,34 +168,12 @@ namespace CcsSso.Core.Service.External
           uidp.IsDeleted = true;
         }
 
-        if (idpRemovedList.Contains(userNamePasswordIdentityProvider.IdentityProviderId))
+        var conclaveIdamConnection = identityProviders.FirstOrDefault(y => y.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
+        if (idpRemovedList.Contains(conclaveIdamConnection.Id))
         {
           asyncTaskList.Add(_idamService.DeleteUserInIdamAsync(user.UserName));
         }
-        //user.UserIdentityProviders.Where(uidp => !uidp.IsDeleted).Select(uip => uip.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName== Contstant.ConclaveIdamConnectionName);
-
-        //if (!availableIdps.Any())
-        //{
-        //  SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
-        //  {
-        //    Email = user.UserName,
-        //    FirstName = user.Party.Person.FirstName,
-        //    LastName = user.Party.Person.LastName,
-        //    UserName = user.UserName,
-        //    MfaEnabled = false, //As per the requirement
-        //    SendUserRegistrationEmail = true
-        //  };
-        //  await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
-        //  if (userNamePasswordIdentityProvider != null)
-        //  {
-        //    user.UserIdentityProviders.Add(new UserIdentityProvider()
-        //    {
-        //      UserId = user.Id,
-        //      OrganisationEligibleIdentityProviderId = userNamePasswordIdentityProvider.Id,
-        //      IsDeleted = false
-        //    });
-        //  }
-        //}
+       
         var availableIdps = user.UserIdentityProviders.Where(uidp => !uidp.IsDeleted).Select(uip => uip.OrganisationEligibleIdentityProvider.IdentityProviderId).Except(idpRemovedList.Select(i => i));
 
         var providerName = identityProviders.Where(x => !x.IsDeleted && availableIdps.Any(y => y == x.Id)).ToList();
@@ -206,16 +184,16 @@ namespace CcsSso.Core.Service.External
         if (isFederatedIdp != null && isInternalIdp != null)
         {
           var activationlink = await _idamService.GetActivationEmailVerificationLink(user.UserName);
-          await _ccsSsoEmailService.SendUserUpdateEmailBothIdpAsync(user.UserName, string.Join(",", providerName.Select(x => x.IdpName)), activationlink);
+          asyncTaskList.Add(_ccsSsoEmailService.SendUserUpdateEmailBothIdpAsync(user.UserName, string.Join(",", providerName.Select(x => x.IdpName)), activationlink));
         }
         else if (isInternalIdp != null)
         {
           var activationlink = await _idamService.GetActivationEmailVerificationLink(user.UserName);
-          await _ccsSsoEmailService.SendUserUpdateEmailOnlyUserIdPwdAsync(user.UserName, activationlink);
+          asyncTaskList.Add(_ccsSsoEmailService.SendUserUpdateEmailOnlyUserIdPwdAsync(user.UserName, activationlink));
         }
         else if (isFederatedIdp != null)
         {
-          await _ccsSsoEmailService.SendUserUpdateEmailOnlyFederatedIdpAsync(user.UserName, string.Join(",", providerName.Select(x => x.IdpName)));
+          asyncTaskList.Add(_ccsSsoEmailService.SendUserUpdateEmailOnlyFederatedIdpAsync(user.UserName, string.Join(",", providerName.Select(x => x.IdpName))));
         }
 
         //Record for force signout as idp has been removed from the user. This is a current business requirement
