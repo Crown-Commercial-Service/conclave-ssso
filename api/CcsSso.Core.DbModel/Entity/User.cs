@@ -1,4 +1,6 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -40,5 +42,11 @@ namespace CcsSso.DbModel.Entity
 
     [ForeignKey("CcsServiceId")]
     public int? CcsServiceId { get; set; }
+
+    public UserType UserType { get; set; }
+
+    public DateTime? DelegationStartDate { get; set; }
+
+    public DateTime? DelegationEndDate { get; set; }
   }
 }
