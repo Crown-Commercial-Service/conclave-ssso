@@ -84,6 +84,7 @@ namespace CcsSso.Domain.Dtos
     public string UserConfirmEmailBothIdpTemplateId { get; set; }
     public string UserConfirmEmailOnlyUserIdPwdTemplateId { get; set; }
 
+    public string UserRegistrationEmailUserIdPwdTemplateId { get; set; }
 
     public string OrganisationJoinRequestTemplateId { get; set; }
 

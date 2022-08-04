@@ -108,7 +108,7 @@ namespace CcsSso.Core.Service.External
       {
         List<UserIdentityProvider> newUserIdentityProviderList = new();
 
-        organisationIdps.ForEach((eachOrgIdps) =>
+        organisationIdps.ForEach(async(eachOrgIdps) =>
         {
           if (!user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProviderId == eachOrgIdps.Id))
           {
@@ -123,9 +123,11 @@ namespace CcsSso.Core.Service.External
                 LastName = user.Party.Person.LastName,
                 UserName = user.UserName,
                 MfaEnabled = user.MfaEnabled,
-                SendUserRegistrationEmail = true
+                SendUserRegistrationEmail = false
               };
-              _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
+              await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
+              var activationlink = await _idamService.GetActivationEmailVerificationLink(user.UserName);
+              await _ccsSsoEmailService.SendUserRegistrationEmailUserIdPwdAsync(user.UserName, activationlink);
             }
           }
         });
@@ -184,7 +186,7 @@ namespace CcsSso.Core.Service.External
         if (isFederatedIdp != null && isInternalIdp != null)
         {
           var activationlink = await _idamService.GetActivationEmailVerificationLink(user.UserName);
-          asyncTaskList.Add(_ccsSsoEmailService.SendUserUpdateEmailBothIdpAsync(user.UserName, string.Join(",", providerName.Select(x => x.IdpName)), activationlink));
+          asyncTaskList.Add(_ccsSsoEmailService.SendUserUpdateEmailBothIdpAsync(user.UserName, string.Join(", ", providerName.Select(x => x.IdpName)), activationlink));
         }
         else if (isInternalIdp != null)
         {
@@ -193,7 +195,7 @@ namespace CcsSso.Core.Service.External
         }
         else if (isFederatedIdp != null)
         {
-          asyncTaskList.Add(_ccsSsoEmailService.SendUserUpdateEmailOnlyFederatedIdpAsync(user.UserName, string.Join(",", providerName.Select(x => x.IdpName))));
+          asyncTaskList.Add(_ccsSsoEmailService.SendUserUpdateEmailOnlyFederatedIdpAsync(user.UserName, string.Join(", ", providerName.Select(x => x.IdpName))));
         }
 
         //Record for force signout as idp has been removed from the user. This is a current business requirement

@@ -15,6 +15,7 @@ namespace CcsSso.Core.Domain.Contracts
     Task SendUserConfirmEmailOnlyUserIdPwdAsync(string email, string activationlink);
     Task SendUserConfirmEmailOnlyFederatedIdpAsync(string email, string idpName);
     Task SendUserConfirmEmailBothIdpAsync(string email, string idpName, string activationlink);
+    Task SendUserRegistrationEmailUserIdPwdAsync(string email, string activationlink);
 
 
     Task SendOrgProfileUpdateEmailAsync(string email);
