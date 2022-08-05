@@ -109,5 +109,23 @@ namespace CcsSso.Core.Service
       };
       await SendEmailAsync(emailInfo);
     }
+
+    public async Task SendUserRegistrationEmailUserIdPwdAsync(string email,  string activationlink)
+    {
+      var data = new Dictionary<string, dynamic>
+      {
+        { "link", activationlink }
+      };
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.EmailInfo.UserRegistrationEmailUserIdPwdTemplateId,
+        BodyContent = data
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
+
+    
   }
 }
