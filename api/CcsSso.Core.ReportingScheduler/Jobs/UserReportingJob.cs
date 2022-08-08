@@ -148,7 +148,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       }
     }
 
-    private async Task<UserProfileResponseInfo?> GetUserDetails(Tuple<int, string, DateTime> eachModifiedUser, HttpClient client)
+    private async Task<UserProfileResponseInfo?> GetUserDetails(Tuple<int, string> eachModifiedUser, HttpClient client)
     {
       string url = $"users/?user-id={eachModifiedUser.Item2}"; // Send as Query String as expected in the Wrapper API - GetUser method
 
@@ -168,28 +168,62 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         return null;
       }
     }
-    public async Task<List<Tuple<int, string, DateTime>>> GetModifiedUserIds()
+    public async Task<List<Tuple<int, string>>> GetModifiedUserIds()
     {
       var dataDuration = _appSettings.ReportDataDurations.UserReportingDurationInMinutes;
+
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
 
       try
       {
-        //var userIds = await _dataContext.User.Where(
-        //                  usr => !usr.IsDeleted && usr.LastUpdatedOnUtc > untilDateTime)
-        //                  .Select(u => new Tuple<int, string>(u.Id, u.UserName)).ToListAsync();
+        var detectedUsers = new List<Tuple<int, string>>();
 
-        // var userIds = await _dataContext.User.Select(u => new Tuple<int, string, DateTime>(u.Id, u.UserName,u.LastUpdatedOnUtc)).ToListAsync();
+        var userIds = await _dataContext.User.Where(m => m.LastUpdatedOnUtc > untilDateTime && !m.IsDeleted)
+                                              .Select(u => new Tuple<int, string>(u.Id, u.UserName)).Distinct().ToListAsync();
 
-        var userIds =  await (from per in _dataContext.Person
-               join usr in _dataContext.User on per.PartyId equals usr.PartyId
-                              select new Tuple<int, string, DateTime>(
-                                            usr.Id, usr.UserName ,  per.LastUpdatedOnUtc)
-                                      ).ToListAsync();
 
-        var resultUserIds = userIds.Where(m => m.Item3 > untilDateTime).ToList();
+        var userPersonIds = await (from per in _dataContext.Person
+                                   join usr in _dataContext.User on per.PartyId equals usr.PartyId
+                                   where usr.IsDeleted == false && per.LastUpdatedOnUtc > untilDateTime
+                                   select new Tuple<int, string>(
+                                           usr.Id, usr.UserName)
+                                      ).Distinct().ToListAsync();
 
-        return resultUserIds;
+        var userIdentityIds = await (from uip in _dataContext.UserIdentityProvider
+                                     join usr in _dataContext.User on uip.UserId equals usr.Id
+                                     where usr.IsDeleted == false && uip.LastUpdatedOnUtc > untilDateTime
+                                     select new Tuple<int, string>(
+                                                 usr.Id, usr.UserName)
+                                      ).Distinct().ToListAsync();
+
+        var userAccessRoleIds = await (from uar in _dataContext.UserAccessRole
+                                       join usr in _dataContext.User on uar.UserId equals usr.Id
+                                       where usr.IsDeleted == false && uar.LastUpdatedOnUtc > untilDateTime
+                                       select new Tuple<int, string>(usr.Id, usr.UserName)
+                                     ).Distinct().ToListAsync();
+
+
+        var userGroupMemberIds = await (from ugm in _dataContext.UserGroupMembership
+                                        join usr in _dataContext.User on ugm.UserId equals usr.Id
+                                        where ugm.IsDeleted == false && ugm.LastUpdatedOnUtc > untilDateTime
+                                        select new Tuple<int, string>(usr.Id, usr.UserName)
+                                     ).Distinct().ToListAsync();
+
+        var userGroupMemberRoleIds = await (from ugm in _dataContext.UserGroupMembership
+                                            join orger in _dataContext.OrganisationGroupEligibleRole on ugm.OrganisationUserGroupId equals orger.OrganisationUserGroupId
+                                            join usr in _dataContext.User on ugm.UserId equals usr.Id
+                                            where orger.IsDeleted == false && orger.LastUpdatedOnUtc > untilDateTime
+                                            select new Tuple<int, string>(usr.Id, usr.UserName)
+                                     ).Distinct().ToListAsync();
+
+        detectedUsers.AddRange(userIds);
+        detectedUsers.AddRange(userPersonIds);
+        detectedUsers.AddRange(userIdentityIds);
+        detectedUsers.AddRange(userAccessRoleIds);
+        detectedUsers.AddRange(userGroupMemberIds);
+        detectedUsers.AddRange(userGroupMemberRoleIds);
+
+        return detectedUsers.Distinct().ToList();
       }
       catch (Exception ex)
       {

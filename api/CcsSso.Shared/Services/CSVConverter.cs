@@ -34,7 +34,7 @@ namespace CcsSso.Shared.Services
         }
         else if (filetype.ToLower() == "contact-org")
         {
-          csvData = ConstructCSVDataToContactOrg(inputModel);          
+          csvData = ConstructCSVDataToContactOrg(inputModel);
         }
         else if (filetype.ToLower() == "contact-user")
         {
@@ -273,61 +273,22 @@ namespace CcsSso.Shared.Services
             //userGroups = (item != null && item.detail.userGroups.Any()) ? JsonConvert.SerializeObject(item.detail.userGroups).Replace(',', '|').ToString() : "";
             if (item.detail.userGroups != null && item.detail.userGroups.Any())
             {
-              int countset = 1;
-              string completeGroup = string.Empty;
-              string appendPipe = string.Empty;
-
-              foreach (var roleitem in item.detail.userGroups)
-              {
-                if (item.detail.userGroups.Count > 1 && item.detail.userGroups.Count > countset)
-                {
-                  appendPipe = " |";
-                }
-                else { appendPipe = string.Empty; }
-                completeGroup = completeGroup + roleitem.GroupId + " - " + roleitem.AccessRoleName + appendPipe;
-                countset = countset + 1;
-              }
-              userGroups = completeGroup;
+              var groupIdName = item.detail.userGroups.Where(x=>!string.IsNullOrEmpty(x.AccessRoleName)).Select(x => new { completeGroup = $"{x.GroupId} - {x.AccessRoleName} " }).ToArray();
+              userGroups = String.Join(" | ", groupIdName.Select(x => x.completeGroup));
             }
 
             //rolePermissionInfo = (item != null && item.detail.rolePermissionInfo.Any()) ? JsonConvert.SerializeObject(item.detail.rolePermissionInfo).Replace(',', '|').ToString() : "";
             if (item.detail.rolePermissionInfo != null && item.detail.rolePermissionInfo.Any())
             {
-              int countset = 1;
-              string completeRole = String.Empty;
-              string appendPipe = string.Empty;
-
-              foreach (var roleitem in item.detail.rolePermissionInfo)
-              {
-                if (item.detail.rolePermissionInfo.Count > 1 && item.detail.rolePermissionInfo.Count > countset)
-                {
-                  appendPipe = " |";
-                }
-                else { appendPipe = string.Empty; }
-                completeRole = completeRole + roleitem.RoleId + " - " + roleitem.RoleName + appendPipe;
-                countset = countset + 1;
-              }
-              rolePermissionInfo = completeRole;
+              var roleIdAndName = item.detail.rolePermissionInfo.Select(x => new { completeRole = $"{x.RoleId} - {x.RoleName} " }).ToArray();
+              rolePermissionInfo = String.Join(" | ", roleIdAndName.Select(x=>x.completeRole));
             }
 
             //identityProviders = (item != null && item.detail.identityProviders.Any()) ? JsonConvert.SerializeObject(item.detail.identityProviders).Replace(',', '|').ToString() : "";
             if (item.detail.identityProviders != null && item.detail.identityProviders.Any())
             {
-              int countset = 1;
-              string completeIdentityProvider = String.Empty;
-              string appendPipe = string.Empty;
-
-              foreach (var roleitem in item.detail.identityProviders)
-              {
-                if (item.detail.identityProviders.Count > 1 && item.detail.identityProviders.Count > countset)
-                {
-                  appendPipe = " |";
-                }
-                else { appendPipe = string.Empty; }
-                completeIdentityProvider = completeIdentityProvider + roleitem.IdentityProviderId + " - " + roleitem.IdentityProvider + appendPipe;
-                countset = countset + 1;
-              }
-              identityProviders = completeIdentityProvider;
+              var providerIdName = item.detail.identityProviders.Select(x => new { completeProvider = $"{x.IdentityProviderId} - {x.IdentityProvider} " }).ToArray();
+              identityProviders = String.Join(" | ", providerIdName.Select(x => x.completeProvider));
             }
             userId = item.detail.Id.ToString();
           }
@@ -377,12 +338,12 @@ namespace CcsSso.Shared.Services
             OrganisationHeaderMap.Detail_IsVcse,
             OrganisationHeaderMap.Detail_RightToBuy,
             OrganisationHeaderMap.Detail_IsActive
-          
+
           };
 
       csvData.Add(string.Join(",", csvHeader.ToArray()));
       string addtionalIdentifiers = string.Empty;
-      
+
       if (orgProfileList != null)
       {
         foreach (var item in orgProfileList)
@@ -434,7 +395,7 @@ namespace CcsSso.Shared.Services
       return csvData;
     }
 
-        
+
 
     private string EscapeCharacter(string data)
     {
