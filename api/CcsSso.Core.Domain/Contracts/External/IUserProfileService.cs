@@ -11,7 +11,7 @@ namespace CcsSso.Core.Domain.Contracts.External
 
         Task<UserProfileResponseInfo> GetUserAsync(string userName);
 
-        Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null, bool includeSelf = false);
+        Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null, bool includeSelf = false, bool isDelegatedOnly = false, bool isDelegatedExpiredOnly = false);
 
         Task<AdminUserListResponse> GetAdminUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria);
 
@@ -25,9 +25,9 @@ namespace CcsSso.Core.Domain.Contracts.External
 
         Task AddAdminRoleAsync(string userName);
 
-        Task<bool> CreateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo);
+        Task CreateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo);
 
-        Task<bool> UpdateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo);
+        Task UpdateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo);
         
         Task RemoveDelegatedAccessForUserAsync(string userName, string organisationId);
     }

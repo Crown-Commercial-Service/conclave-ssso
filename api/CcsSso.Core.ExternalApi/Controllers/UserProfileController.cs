@@ -181,7 +181,7 @@ namespace CcsSso.ExternalApi.Controllers
         {
             await _userProfileService.DeleteUserAsync(userId);
         }
-        
+
         /// <summary>
         /// Reset user password
         /// </summary>
@@ -248,9 +248,9 @@ namespace CcsSso.ExternalApi.Controllers
         [OrganisationAuthorise("USER_POST")]
         [SwaggerOperation(Tags = new[] { "User" })]
         [ProducesResponseType(typeof(bool), 200)]
-        public async Task<bool> CreateDelegatedUser(DelegatedUserProfileRequestInfo userProfileRequestInfo)
+        public async Task CreateDelegatedUser(DelegatedUserProfileRequestInfo userProfileRequestInfo)
         {
-            return await _userProfileService.CreateDelegatedUserAsync(userProfileRequestInfo);
+            await _userProfileService.CreateDelegatedUserAsync(userProfileRequestInfo);
         }
 
         /// <summary>
@@ -285,9 +285,9 @@ namespace CcsSso.ExternalApi.Controllers
         [OrganisationAuthorise("USER")]
         [SwaggerOperation(Tags = new[] { "User" })]
         [ProducesResponseType(typeof(bool), 200)]
-        public async Task<bool> UpdateDelegatedUser(DelegatedUserProfileRequestInfo userProfileRequestInfo)
+        public async Task UpdateDelegatedUser(DelegatedUserProfileRequestInfo userProfileRequestInfo)
         {
-            return await _userProfileService.UpdateDelegatedUserAsync(userProfileRequestInfo);
+            await _userProfileService.UpdateDelegatedUserAsync(userProfileRequestInfo);
         }
 
         /// <summary>
@@ -312,7 +312,7 @@ namespace CcsSso.ExternalApi.Controllers
         [OrganisationAuthorise("USER")]
         [SwaggerOperation(Tags = new[] { "User" })]
         [ProducesResponseType(typeof(void), 200)]
-        public async Task DeleteUser([FromQuery(Name = "user-id")] string userId, [FromQuery] string organisationId)
+        public async Task DeleteDelegatedUser([FromQuery(Name = "user-id")] string userId, [FromQuery] string organisationId)
         {
             await _userProfileService.RemoveDelegatedAccessForUserAsync(userId, organisationId);
         }
