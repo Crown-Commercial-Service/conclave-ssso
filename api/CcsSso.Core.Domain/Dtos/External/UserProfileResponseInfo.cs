@@ -141,4 +141,18 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public bool IsRegisteredInIdam { get; set; }
   }
+
+    public class DelegatedUserProfileRequestInfo
+    {
+        public string UserName { get; set; }
+        public DelegatedUserRequestDetail Detail { get; set; }
+    }
+
+    public class DelegatedUserRequestDetail
+    {
+        public string DelegatedOrgId { get; set; }
+        public List<int> RoleIds { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+    }
 }
