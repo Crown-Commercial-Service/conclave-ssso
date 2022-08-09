@@ -48,5 +48,6 @@ namespace CcsSso.DbModel.Entity
     public DateTime? DelegationStartDate { get; set; }
 
     public DateTime? DelegationEndDate { get; set; }
+    public bool DelegationAccepted { get; set; }
   }
 }
