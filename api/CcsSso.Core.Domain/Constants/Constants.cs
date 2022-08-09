@@ -68,6 +68,10 @@ namespace CcsSso.Domain.Constants
         public const string ErrorMfaFlagRequired = "MFA_DISABLED_USER";
         public const string ErrorMfaFlagForInvalidConnection = "MFA_ENABLED_INVALID_CONNECTION";
 
+        public const string ErrorInvalidUserDelegationPrimaryDetails = "INVALID_USER_DELEGATION_PRIMARY_DETAILS";
+        public const string ErrorInvalidUserDelegation = "INVALID_USER_DELEGATION";
+        public const string ErrorInvalidUserDelegationSameOrg = "INVALID_USER_DELEGATION_SAME_ORG";
+
     }
 
     public static class VirtualContactTypeName

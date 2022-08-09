@@ -219,11 +219,14 @@ namespace CcsSso.Core.Service.External
             };
         }
 
-        public async Task<UserProfileResponseInfo> GetUserAsync(string userName)
+        public async Task<UserProfileResponseInfo> GetUserAsync(string userName, string delegatedOrgId = "")
         {
+            User user = null;
+            var isUserDelegationSearch = !string.IsNullOrWhiteSpace(delegatedOrgId);
+
             _userHelper.ValidateUserName(userName);
 
-            var user = await _dataContext.User
+            var users = await _dataContext.User
               .Include(u => u.UserGroupMemberships).ThenInclude(ugm => ugm.OrganisationUserGroup)
               .ThenInclude(oug => oug.GroupEligibleRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
               .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
@@ -234,7 +237,22 @@ namespace CcsSso.Core.Service.External
               .Include(u => u.Party).ThenInclude(p => p.Person)
               .ThenInclude(pr => pr.Organisation)
               .Include(u => u.UserIdentityProviders).ThenInclude(uidp => uidp.OrganisationEligibleIdentityProvider).ThenInclude(oi => oi.IdentityProvider)
-              .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
+              .Where(u => !u.IsDeleted && u.UserName == userName).ToListAsync();
+
+            // Search for user delegattion details for org
+            if (isUserDelegationSearch)
+            {
+                user = users.SingleOrDefault(u => u.UserType == DbModel.Constants.UserType.Delegation &&
+                       u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId);
+            }
+            // User primary org details
+            else
+            {
+                user = users.SingleOrDefault(u => u.UserType == DbModel.Constants.UserType.Primary);
+            }
+
+            var userDelegatedOrgs = users.Where(u => u.UserType == DbModel.Constants.UserType.Delegation)
+                                    .Select(u => u.Party.Person.Organisation.LegalName).ToArray();
 
             if (user != null)
             {
@@ -242,16 +260,19 @@ namespace CcsSso.Core.Service.External
                 {
                     UserName = user.UserName,
                     OrganisationId = user.Party.Person.Organisation.CiiOrganisationId,
+                    OriginOrganisation = isUserDelegationSearch ? user.Party.Person.Organisation.LegalName : default,
                     FirstName = user.Party.Person.FirstName,
-                    LastName = user.Party.Person.LastName,
+                    LastName = isUserDelegationSearch && !user.DelegationAccepted ?
+                               user.Party.Person.LastName.Substring(0, 1).PadRight(user.Party.Person.LastName.Length, '*') :
+                               user.Party.Person.LastName,
                     MfaEnabled = user.MfaEnabled,
                     Title = Enum.GetName(typeof(UserTitle), user.UserTitle),
-                    AccountVerified = user.AccountVerified,
+                    AccountVerified = isUserDelegationSearch ? default : user.AccountVerified,
                     Detail = new UserResponseDetail
                     {
                         Id = user.Id,
-                        CanChangePassword = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName),
-                        IdentityProviders = user.UserIdentityProviders.Where(uidp => !uidp.IsDeleted).Select(idp => new UserIdentityProviderInfo
+                        CanChangePassword = isUserDelegationSearch ? default : user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName),
+                        IdentityProviders = isUserDelegationSearch ? default : user.UserIdentityProviders.Where(uidp => !uidp.IsDeleted).Select(idp => new UserIdentityProviderInfo
                         {
                             IdentityProvider = idp.OrganisationEligibleIdentityProvider.IdentityProvider?.IdpConnectionName,
                             IdentityProviderId = idp.OrganisationEligibleIdentityProviderId,
@@ -265,7 +286,11 @@ namespace CcsSso.Core.Service.External
                             RoleName = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
                             ServiceClientId = uar.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceClientId,
                             ServiceClientName = uar.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName
-                        }).ToList()
+                        }).ToList(),
+                        // Return organization list of user's delegation
+                        DeliagtedOrgs = isUserDelegationSearch ? default : userDelegatedOrgs,
+                        StartDate = isUserDelegationSearch ? user.DelegationStartDate : default,
+                        EndDate = isUserDelegationSearch ? user.DelegationEndDate : default,
                     }
                 };
 
@@ -1112,17 +1137,19 @@ namespace CcsSso.Core.Service.External
 
             if (existingUserPrimaryDetails == null)
             {
-                throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDetail);
+                throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegationPrimaryDetails);
             }
 
             // User already delegated in org
             if (existingUserDelegatedDetails.Any(u => u.Party.Person.OrganisationId == organisation.Id))
             {
-                throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDetail);
+                throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegation);
             }
-            // TODO: don't allow to delegate user for same org.
-            if (existingUserPrimaryDetails.Party.Person.Organisation.CiiOrganisationId == userProfileRequestInfo.Detail.DelegatedOrgId) { 
-            
+
+            // Don't allow to delegate user for same org.
+            if (existingUserPrimaryDetails.Party.Person.Organisation.CiiOrganisationId == userProfileRequestInfo.Detail.DelegatedOrgId)
+            {
+                throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegationSameOrg);
             }
 
             // Set user roles
@@ -1210,7 +1237,7 @@ namespace CcsSso.Core.Service.External
 
             if (existingDelegatedUserDetails == default)
             {
-                throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDetail);
+                throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegation);
             }
 
             List<int> requestRoles = userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
@@ -1277,7 +1304,7 @@ namespace CcsSso.Core.Service.External
 
             if (user == null)
             {
-                throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDetail);
+                throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegation);
             }
 
             user.IsDeleted = true;

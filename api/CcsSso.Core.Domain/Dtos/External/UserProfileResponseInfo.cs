@@ -29,6 +29,8 @@ namespace CcsSso.Core.Domain.Dtos.External
 
         public bool SendUserRegistrationEmail { get; set; } = true;
 
+        public string? OriginOrganisation { get; set; }
+
     }
 
     public class UserRequestDetail
@@ -53,6 +55,12 @@ namespace CcsSso.Core.Domain.Dtos.External
         public List<RolePermissionInfo> RolePermissionInfo { get; set; }
 
         public List<UserIdentityProviderInfo> IdentityProviders { get; set; }
+
+        public string[]? DeliagtedOrgs { get; set; }
+
+        public DateTime? StartDate { get; set; }
+
+        public DateTime? EndDate { get; set; }
     }
 
     public class UserIdentityProviderInfo
@@ -99,7 +107,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 
         public DateTime? EndDate { get; set; }
 
-        public string OriginOrganisation { get; set; }
+        public string? OriginOrganisation { get; set; }
     }
 
     public class AdminUserListInfo
