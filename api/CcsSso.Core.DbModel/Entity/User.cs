@@ -40,15 +40,14 @@ namespace CcsSso.DbModel.Entity
 
         public CcsService CcsService { get; set; }
 
-        [ForeignKey("CcsServiceId")]
-        public int? CcsServiceId { get; set; }
+    [ForeignKey("CcsServiceId")]
+    public int? CcsServiceId { get; set; }
 
-        public UserType UserType { get; set; }
+    public UserType UserType { get; set; }
 
-        public DateTime? DelegationStartDate { get; set; }
+    public DateTime? DelegationStartDate { get; set; }
 
-        public DateTime? DelegationEndDate { get; set; }
-        
-        public bool DelegationAccepted { get; set; }
-    }
+    public DateTime? DelegationEndDate { get; set; }
+    public bool DelegationAccepted { get; set; }
+  }
 }
