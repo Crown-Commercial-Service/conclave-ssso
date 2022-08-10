@@ -30,10 +30,12 @@ namespace CcsSso.Security.Services
     private readonly TokenHelper _tokenHelper;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IJwtTokenHandler _jwtTokenHandler;
+    private readonly ISecurityCacheService _securityCacheService;
 
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
     public Auth0IdentityProviderService(ApplicationConfigurationInfo appConfigInfo, TokenHelper tokenHelper,
-      IHttpClientFactory httpClientFactory, ICcsSsoEmailService ccsSsoEmailService, IJwtTokenHandler jwtTokenHandler)
+      IHttpClientFactory httpClientFactory, ICcsSsoEmailService ccsSsoEmailService, IJwtTokenHandler jwtTokenHandler,
+      ISecurityCacheService securityCacheService)
     {
       _appConfigInfo = appConfigInfo;
       _authenticationApiClient = new AuthenticationApiClient(_appConfigInfo.Auth0ConfigurationInfo.Domain);
@@ -41,6 +43,7 @@ namespace CcsSso.Security.Services
       _httpClientFactory = httpClientFactory;
       _ccsSsoEmailService = ccsSsoEmailService;
       _jwtTokenHandler = jwtTokenHandler;
+      _securityCacheService = securityCacheService;
     }
 
     /// <summary>
@@ -386,9 +389,15 @@ namespace CcsSso.Security.Services
           resourceOwnerTokenRequest.ClientSecret = clientSecret;
         }
 
+        // get the sid from refresh token sent from client.
+        sid = await GetSidFromRefreshToken(refreshToken, sid);
+
         var result = await _authenticationApiClient.GetTokenAsync(resourceOwnerTokenRequest);
         if (result != null)
         {
+          // store the sid against the refresh token returned from Auth0.
+          await AttachSidWithRefreshTokenAsync(result.RefreshToken, sid);
+
           var tokenDecoded = _jwtTokenHandler.DecodeToken(result.IdToken);
           var email = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
           if (string.IsNullOrEmpty(email))
@@ -417,6 +426,17 @@ namespace CcsSso.Security.Services
           ErrorDescription = e.ApiError.Message
         });
       }
+    }
+
+    private async Task<string> GetSidFromRefreshToken(string refreshToken,string sid)
+    {
+      var sidCache = await _securityCacheService.GetValueAsync<string>(refreshToken);
+        if (!string.IsNullOrEmpty(sidCache))
+        {
+        sid = sidCache;
+        }
+
+      return sid;
     }
 
     public async Task<TokenResponseInfo> GetTokensAsync(TokenRequestInfo tokenRequestInfo, string sid = null)
@@ -452,6 +472,7 @@ namespace CcsSso.Security.Services
           };
           result = await _authenticationApiClient.GetTokenAsync(resourceOwnerTokenRequest);
         }
+
         var tokenInfo = await GetTokensAsync(tokenRequestInfo.ClientId, result, sid);
         return tokenInfo;
       }
@@ -882,6 +903,18 @@ namespace CcsSso.Security.Services
     private async Task<TokenResponseInfo> GetTokensAsync(string clientId, AccessTokenResponse accessTokenResponse, string sid = null)
     {
       var tokenDecoded = _jwtTokenHandler.DecodeToken(accessTokenResponse.IdToken);
+      
+      var sidAndState = await GetSidFromState(tokenDecoded);
+
+      if (sidAndState != null && sidAndState.Item2 != null)
+      {
+
+        sid = sidAndState.Item2;
+      }
+
+      await AttachSidWithRefreshTokenAsync(accessTokenResponse.RefreshToken, sid);
+
+
       var email = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
       if (string.IsNullOrEmpty(email))
       {
@@ -927,6 +960,27 @@ namespace CcsSso.Security.Services
         AccessToken = accessToken,
         ExpiresInSeconds = _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes * 60
       };
+    }
+
+    private async Task AttachSidWithRefreshTokenAsync(string refreshToken, string sid)
+    {
+      await _securityCacheService.SetValueAsync(refreshToken, sid, new TimeSpan(0, _appConfigInfo.SessionConfig.StateExpirationInMinutes, 0));
+    }
+
+    private async Task<Tuple<string, string>> GetSidFromState(JwtSecurityToken tokenDecoded)
+    {
+      var state = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://identify.crowncommercial.gov.uk/analytics-state")?.Value;
+      string sid=null;
+      if (!string.IsNullOrEmpty(state))
+      {
+        var sidCache = await _securityCacheService.GetValueAsync<string>(state);
+        if (!string.IsNullOrEmpty(sidCache))
+        {
+          sid = sidCache;
+        }
+      }
+
+      return new Tuple<string,string>(state,sid);
     }
 
     private List<ClaimInfo> GetCustomClaimsForIdToken(JwtSecurityToken tokenDecoded, string clientId, string email, string sid, UserProfileInfo userProfileInfo)
