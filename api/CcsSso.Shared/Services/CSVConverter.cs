@@ -268,6 +268,10 @@ namespace CcsSso.Shared.Services
       {
         foreach (var item in userProfileList)
         {
+          userGroups = string.Empty;
+          rolePermissionInfo = string.Empty;
+          identityProviders = string.Empty;
+          
           if (item.detail != null)
           {
             //userGroups = (item != null && item.detail.userGroups.Any()) ? JsonConvert.SerializeObject(item.detail.userGroups).Replace(',', '|').ToString() : "";
