@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service
 {
-  public class CcsSsoEmailService : ICcsSsoEmailService
+  public partial class CcsSsoEmailService : ICcsSsoEmailService
   {
 
     private readonly IEmailProviderService _emaillProviderService;
