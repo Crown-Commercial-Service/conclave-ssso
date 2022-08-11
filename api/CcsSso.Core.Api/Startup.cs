@@ -35,310 +35,311 @@ using System.Reflection;
 
 namespace CcsSso.Api
 {
-  public class Startup
-  {
-    public Startup(IConfiguration configuration)
+    public class Startup
     {
-      Configuration = configuration;
-    }
-
-    public IConfiguration Configuration { get; }
-
-    // This method gets called by the runtime. Use this method to add services to the container.
-    public void ConfigureServices(IServiceCollection services)
-    {
-      services.AddSingleton(s =>
-      {
-        bool.TryParse(Configuration["QueueInfo:EnableAdaptorNotifications"], out bool enableAdaptorNotifications);
-        bool.TryParse(Configuration["RedisCacheSettings:IsEnabled"], out bool isRedisEnabled);
-        int.TryParse(Configuration["RedisCacheSettings:CacheExpirationInMinutes"], out int cacheExpirationInMinutes);
-        bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
-        int.TryParse(Configuration["BulkUploadMaxUserCount"], out int bulkUploadMaxUserCount);
-        bool.TryParse(Configuration["Email:SendNotificationsEnabled"], out bool sendEmailNotification);
-
-        if (cacheExpirationInMinutes == 0)
+        public Startup(IConfiguration configuration)
         {
-          cacheExpirationInMinutes = 10;
+            Configuration = configuration;
         }
 
-        bulkUploadMaxUserCount = bulkUploadMaxUserCount == 0 ? 10 : bulkUploadMaxUserCount;
+        public IConfiguration Configuration { get; }
 
-        ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
         {
-          CustomDomain = Configuration["CustomDomain"],
-          DashboardServiceClientId = Configuration["DashboardServiceClientId"],
-          BulkUploadMaxUserCount = bulkUploadMaxUserCount,
-          JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
-          {
-            IdamClienId = Configuration["JwtTokenValidationInfo:IdamClienId"],
-            Issuer = Configuration["JwtTokenValidationInfo:Issuer"],
-            JwksUrl = isApiGatewayEnabled ? Configuration["JwtTokenValidationInfo:ApiGatewayEnabledJwksUrl"] : Configuration["JwtTokenValidationInfo:ApiGatewayDisabledJwksUrl"]
-          },
-          SecurityApiDetails = new SecurityApiDetails()
-          {
-            ApiKey = Configuration["SecurityApiSettings:ApiKey"],
-            Url = Configuration["SecurityApiSettings:Url"]
-          },
-          QueueUrlInfo = new QueueUrlInfo
-          {
-            AdaptorNotificationQueueUrl = Configuration["QueueInfo:AdaptorNotificationQueueUrl"]
-          },
-          RedisCacheSettings = new RedisCacheSetting()
-          {
-            ConnectionString = Configuration["RedisCacheSettings:ConnectionString"],
-            IsEnabled = isRedisEnabled,
-            CacheExpirationInMinutes = cacheExpirationInMinutes
-          },
-          EmailInfo = new CcsEmailInfo
-          {
-            NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
-            OrganisationJoinRequestTemplateId = Configuration["Email:OrganisationJoinRequestTemplateId"],
-            SendNotificationsEnabled = sendEmailNotification
-          },
-          ConclaveSettings = new ConclaveSettings()
-          {
-            BaseUrl = Configuration["ConclaveSettings:BaseUrl"],
-            OrgRegistrationRoute = Configuration["ConclaveSettings:OrgRegistrationRoute"]
-          }
-        };
-        return appConfigInfo;
-      });
-
-      services.AddSingleton(s =>
-      {
-        EmailConfigurationInfo emailConfigurationInfo = new()
-        {
-          ApiKey = Configuration["Email:ApiKey"],
-        };
-
-        return emailConfigurationInfo;
-      });
-
-      services.AddSingleton(s =>
-      {
-        Dtos.Domain.Models.CiiConfig ciiConfigInfo = new Dtos.Domain.Models.CiiConfig()
-        {
-          url = Configuration["Cii:Url"],
-          token = Configuration["Cii:Token"],
-          deleteToken = Configuration["Cii:Token_Delete"],
-          clientId = Configuration["JwtTokenValidationInfo:IdamClienId"]
-        };
-        return ciiConfigInfo;
-      });
-
-      services.AddSingleton(s =>
-      {
-        int.TryParse(Configuration["DocUpload:SizeValidationValue"], out int docUploadSizeValidationValue);
-
-        if (docUploadSizeValidationValue == 0)
-        {
-          docUploadSizeValidationValue = 100000000;
-        }
-
-        DocUploadConfig docUploadConfig = new DocUploadConfig
-        {
-          BaseUrl = Configuration["DocUpload:Url"],
-          Token = Configuration["DocUpload:Token"],
-          DefaultSizeValidationValue = docUploadSizeValidationValue,
-          DefaultTypeValidationValue = Configuration["DocUpload:TypeValidationValue"],
-        };
-        return docUploadConfig;
-      });
-
-      services.AddSingleton(s =>
-      {
-        int.TryParse(Configuration["QueueInfo:RecieveMessagesMaxCount"], out int recieveMessagesMaxCount);
-        recieveMessagesMaxCount = recieveMessagesMaxCount == 0 ? 10 : recieveMessagesMaxCount;
-
-        int.TryParse(Configuration["QueueInfo:RecieveWaitTimeInSeconds"], out int recieveWaitTimeInSeconds); // Default value 0
-
-        var sqsConfiguration = new SqsConfiguration
-        {
-          ServiceUrl = Configuration["QueueInfo:ServiceUrl"],
-          AccessKeyId = Configuration["QueueInfo:AccessKeyId"],
-          AccessSecretKey = Configuration["QueueInfo:AccessSecretKey"],
-          RecieveMessagesMaxCount = recieveMessagesMaxCount,
-          RecieveWaitTimeInSeconds = recieveWaitTimeInSeconds
-        };
-
-        return sqsConfiguration;
-      });
-
-      services.AddSingleton(s =>
-      {
-        int.TryParse(Configuration["S3ConfigurationInfo:FileAccessExpirationInHours"], out int fileAccessExpirationInHours);
-        fileAccessExpirationInHours = fileAccessExpirationInHours == 0 ? 36 : fileAccessExpirationInHours;
-
-        var s3Configuration = new S3ConfigurationInfo
-        {
-          ServiceUrl = Configuration["S3ConfigurationInfo:ServiceUrl"],
-          AccessKeyId = Configuration["S3ConfigurationInfo:AccessKeyId"],
-          AccessSecretKey = Configuration["S3ConfigurationInfo:AccessSecretKey"],
-          BulkUploadBucketName = Configuration["S3ConfigurationInfo:BulkUploadBucketName"],
-          BulkUploadFolderName = Configuration["S3ConfigurationInfo:BulkUploadFolderName"],
-          BulkUploadTemplateFolderName = Configuration["S3ConfigurationInfo:BulkUploadTemplateFolderName"],
-          FileAccessExpirationInHours = fileAccessExpirationInHours
-        };
-
-        return s3Configuration;
-      });
-
-      services.AddSingleton(s =>
-      {
-        EmailConfigurationInfo emailConfigurationInfo = new()
-        {
-          ApiKey = Configuration["Email:ApiKey"],
-        };
-
-        return emailConfigurationInfo;
-      });
-
-      services.AddControllers();
-      services.AddSingleton<IAwsSqsService, AwsSqsService>();
-      services.AddSingleton<IAwsS3Service, AwsS3Service>();
-      services.AddSingleton<IEmailProviderService, EmailProviderService>();
-      services.AddSingleton<ICcsSsoEmailService, CcsSsoEmailService>();
-      services.AddSingleton<ITokenService, TokenService>();
-      services.AddSingleton<IRemoteCacheService, RedisCacheService>();
-      services.AddSingleton<ICacheInvalidateService, CacheInvalidateService>();
-      services.AddSingleton<RedisConnectionPoolService>(_ =>
-        new RedisConnectionPoolService(Configuration["RedisCacheSettings:ConnectionString"])
-      );
-      services.AddSingleton<ILocalCacheService, InMemoryCacheService>();
-      services.AddSingleton<IAuthorizationPolicyProvider, ClaimAuthorisationPolicyProvider>();
-      services.AddMemoryCache();
-      services.AddSingleton<IWrapperCacheService, WrapperCacheService>();
-      services.AddDbContext<DataContext>(options => options.UseNpgsql(Configuration["DbConnection"]), ServiceLifetime.Transient);
-      services.AddScoped<IDataContext>(s => s.GetRequiredService<DataContext>());
-      services.AddHttpClient("default");
-      services.AddScoped<IAuthService, AuthService>();
-      services.AddScoped<RequestContext>();
-      services.AddScoped<IOrganisationService, OrganisationService>();
-      services.AddScoped<IUserService, UserService>();
-      services.AddScoped<ICiiService, CiiService>();
-      services.AddScoped<IAdaptorNotificationService, AdaptorNotificationService>();
-      services.AddScoped<IAuditLoginService, AuditLoginService>();
-      services.AddScoped<IDateTimeService, DateTimeService>();
-      services.AddScoped<IOrganisationProfileService, OrganisationProfileService>();
-      services.AddScoped<IUserProfileService, UserProfileService>();
-      services.AddScoped<IOrganisationContactService, OrganisationContactService>();
-      services.AddScoped<IContactsHelperService, ContactsHelperService>();
-      services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
-      services.AddScoped<IIdamService, IdamService>();
-      services.AddScoped<IConfigurationDetailService, ConfigurationDetailService>();
-      services.AddScoped<IDocUploadService, DocUploadService>();
-      services.AddScoped<IBulkUploadService, BulkUploadService>();
-      services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
-
-      services.AddHttpContextAccessor();
-
-      services.AddHttpClient("CiiApi", c =>
-      {
-        c.BaseAddress = new Uri(Configuration["Cii:Url"]);
-        c.DefaultRequestHeaders.Add("x-api-key", Configuration["Cii:Token"]);
-      });
-
-      services.AddHttpClient("DocUploadApi", c =>
-      {
-        c.BaseAddress = new Uri(Configuration["DocUpload:Url"]);
-        c.DefaultRequestHeaders.Add("x-api-key", $"Basic {Configuration["DocUpload:Token"]}");
-      });
-
-      services.AddSwaggerGen(c =>
-      {
-        c.SwaggerDoc("v1", new OpenApiInfo { Title = "CcsSso.Api", Version = "v1" });
-        var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-        c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
-        c.EnableAnnotations();
-      });
-      services.AddAntiforgery(op =>
-      {
-        // Instruct to refer http header called "x-xsrf-tokenN"
-        op.HeaderName = "x-xsrf-token";
-      });
-      services.AddMvc();
-    }
-
-    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IAntiforgery antiforgery)
-    {
-
-      app.UseHsts();
-      app.UseHttpsRedirection();
-
-      app.Use(async (context, next) =>
-      {
-        context.Request.EnableBuffering();
-        await next();
-      });
-
-      bool additionalLog = Configuration.GetSection("EnableAdditionalLogs").Get<bool>();
-      if (additionalLog)
-      {
-        app.UseMiddleware<RequestLogMiddleware>();
-      }
-      app.UseMiddleware<CommonExceptionHandlerMiddleware>();
-      app.UseSwagger();
-      app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.Api v1"));
-
-      app.Use(async (context, next) =>
-      {
-        var customDomain = Configuration.GetSection("CustomDomain").Get<string>();
-        context.Response.Headers.Add(
-            "Cache-Control",
-            "no-cache");
-        context.Response.Headers.Add(
-            "Pragma",
-            "no-cache");
-        context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
-        context.Response.Headers.Add("X-Xss-Protection", "1");
-        var tokens = antiforgery.GetAndStoreTokens(context);
-        // [ValidateAntiForgeryToken]
-        // Cookie will be read by angular client and attach to http header
-        context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken,
-            new CookieOptions()
+            services.AddSingleton(s =>
             {
-              SameSite = string.IsNullOrEmpty(customDomain) ? SameSiteMode.None : SameSiteMode.Lax,
-              Domain = customDomain,
-              Secure = true,
-              HttpOnly = false
+                bool.TryParse(Configuration["QueueInfo:EnableAdaptorNotifications"], out bool enableAdaptorNotifications);
+                bool.TryParse(Configuration["RedisCacheSettings:IsEnabled"], out bool isRedisEnabled);
+                int.TryParse(Configuration["RedisCacheSettings:CacheExpirationInMinutes"], out int cacheExpirationInMinutes);
+                bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
+                int.TryParse(Configuration["BulkUploadMaxUserCount"], out int bulkUploadMaxUserCount);
+                bool.TryParse(Configuration["Email:SendNotificationsEnabled"], out bool sendEmailNotification);
+
+                if (cacheExpirationInMinutes == 0)
+                {
+                    cacheExpirationInMinutes = 10;
+                }
+
+                bulkUploadMaxUserCount = bulkUploadMaxUserCount == 0 ? 10 : bulkUploadMaxUserCount;
+
+                ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
+                {
+                    CustomDomain = Configuration["CustomDomain"],
+                    DashboardServiceClientId = Configuration["DashboardServiceClientId"],
+                    BulkUploadMaxUserCount = bulkUploadMaxUserCount,
+                    JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
+                    {
+                        IdamClienId = Configuration["JwtTokenValidationInfo:IdamClienId"],
+                        Issuer = Configuration["JwtTokenValidationInfo:Issuer"],
+                        JwksUrl = isApiGatewayEnabled ? Configuration["JwtTokenValidationInfo:ApiGatewayEnabledJwksUrl"] : Configuration["JwtTokenValidationInfo:ApiGatewayDisabledJwksUrl"]
+                    },
+                    SecurityApiDetails = new SecurityApiDetails()
+                    {
+                        ApiKey = Configuration["SecurityApiSettings:ApiKey"],
+                        Url = Configuration["SecurityApiSettings:Url"]
+                    },
+                    QueueUrlInfo = new QueueUrlInfo
+                    {
+                        AdaptorNotificationQueueUrl = Configuration["QueueInfo:AdaptorNotificationQueueUrl"]
+                    },
+                    RedisCacheSettings = new RedisCacheSetting()
+                    {
+                        ConnectionString = Configuration["RedisCacheSettings:ConnectionString"],
+                        IsEnabled = isRedisEnabled,
+                        CacheExpirationInMinutes = cacheExpirationInMinutes
+                    },
+                    EmailInfo = new CcsEmailInfo
+                    {
+                        NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
+                        OrganisationJoinRequestTemplateId = Configuration["Email:OrganisationJoinRequestTemplateId"],
+                        SendNotificationsEnabled = sendEmailNotification
+                    },
+                    ConclaveSettings = new ConclaveSettings()
+                    {
+                        BaseUrl = Configuration["ConclaveSettings:BaseUrl"],
+                        OrgRegistrationRoute = Configuration["ConclaveSettings:OrgRegistrationRoute"]
+                    }
+                };
+                return appConfigInfo;
             });
 
-        // For server to compare
-        context.Response.Cookies.Append("XSRF-TOKEN-SVR", tokens.RequestToken,
-           new CookieOptions()
-           {
-             SameSite = string.IsNullOrEmpty(customDomain) ? SameSiteMode.None : SameSiteMode.Lax,
-             Secure = true,
-             Domain = customDomain,
-             HttpOnly = true
-           });
+            services.AddSingleton(s =>
+            {
+                EmailConfigurationInfo emailConfigurationInfo = new()
+                {
+                    ApiKey = Configuration["Email:ApiKey"],
+                };
 
-        await next();
-      });
-      app.UseRouting();
-      var _cors = Configuration.GetSection("CorsDomains").Get<string[]>();
-      app.UseCors(builder => builder.WithOrigins(_cors)
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials()
-      );
+                return emailConfigurationInfo;
+            });
 
-      app.UseForwardedHeaders(new ForwardedHeadersOptions
-      {
-        ForwardedHeaders = ForwardedHeaders.XForwardedFor
-      });
+            services.AddSingleton(s =>
+            {
+                Dtos.Domain.Models.CiiConfig ciiConfigInfo = new Dtos.Domain.Models.CiiConfig()
+                {
+                    url = Configuration["Cii:Url"],
+                    token = Configuration["Cii:Token"],
+                    deleteToken = Configuration["Cii:Token_Delete"],
+                    clientId = Configuration["JwtTokenValidationInfo:IdamClienId"]
+                };
+                return ciiConfigInfo;
+            });
 
-      app.UseMiddleware<InputValidationMiddleware>();
-      app.UseMiddleware<AuthenticationMiddleware>();
+            services.AddSingleton(s =>
+            {
+                int.TryParse(Configuration["DocUpload:SizeValidationValue"], out int docUploadSizeValidationValue);
 
-      app.UseAuthorization();
+                if (docUploadSizeValidationValue == 0)
+                {
+                    docUploadSizeValidationValue = 100000000;
+                }
 
-      app.UseEndpoints(endpoints =>
-      {
-        endpoints.MapControllers();
-      });
+                DocUploadConfig docUploadConfig = new DocUploadConfig
+                {
+                    BaseUrl = Configuration["DocUpload:Url"],
+                    Token = Configuration["DocUpload:Token"],
+                    DefaultSizeValidationValue = docUploadSizeValidationValue,
+                    DefaultTypeValidationValue = Configuration["DocUpload:TypeValidationValue"],
+                };
+                return docUploadConfig;
+            });
+
+            services.AddSingleton(s =>
+            {
+                int.TryParse(Configuration["QueueInfo:RecieveMessagesMaxCount"], out int recieveMessagesMaxCount);
+                recieveMessagesMaxCount = recieveMessagesMaxCount == 0 ? 10 : recieveMessagesMaxCount;
+
+                int.TryParse(Configuration["QueueInfo:RecieveWaitTimeInSeconds"], out int recieveWaitTimeInSeconds); // Default value 0
+
+                var sqsConfiguration = new SqsConfiguration
+                {
+                    ServiceUrl = Configuration["QueueInfo:ServiceUrl"],
+                    AccessKeyId = Configuration["QueueInfo:AccessKeyId"],
+                    AccessSecretKey = Configuration["QueueInfo:AccessSecretKey"],
+                    RecieveMessagesMaxCount = recieveMessagesMaxCount,
+                    RecieveWaitTimeInSeconds = recieveWaitTimeInSeconds
+                };
+
+                return sqsConfiguration;
+            });
+
+            services.AddSingleton(s =>
+            {
+                int.TryParse(Configuration["S3ConfigurationInfo:FileAccessExpirationInHours"], out int fileAccessExpirationInHours);
+                fileAccessExpirationInHours = fileAccessExpirationInHours == 0 ? 36 : fileAccessExpirationInHours;
+
+                var s3Configuration = new S3ConfigurationInfo
+                {
+                    ServiceUrl = Configuration["S3ConfigurationInfo:ServiceUrl"],
+                    AccessKeyId = Configuration["S3ConfigurationInfo:AccessKeyId"],
+                    AccessSecretKey = Configuration["S3ConfigurationInfo:AccessSecretKey"],
+                    BulkUploadBucketName = Configuration["S3ConfigurationInfo:BulkUploadBucketName"],
+                    BulkUploadFolderName = Configuration["S3ConfigurationInfo:BulkUploadFolderName"],
+                    BulkUploadTemplateFolderName = Configuration["S3ConfigurationInfo:BulkUploadTemplateFolderName"],
+                    FileAccessExpirationInHours = fileAccessExpirationInHours
+                };
+
+                return s3Configuration;
+            });
+
+            services.AddSingleton(s =>
+            {
+                EmailConfigurationInfo emailConfigurationInfo = new()
+                {
+                    ApiKey = Configuration["Email:ApiKey"],
+                };
+
+                return emailConfigurationInfo;
+            });
+
+            services.AddControllers();
+            services.AddSingleton<IAwsSqsService, AwsSqsService>();
+            services.AddSingleton<IAwsS3Service, AwsS3Service>();
+            services.AddSingleton<IEmailProviderService, EmailProviderService>();
+            services.AddSingleton<ICcsSsoEmailService, CcsSsoEmailService>();
+            services.AddSingleton<ITokenService, TokenService>();
+            services.AddSingleton<IRemoteCacheService, RedisCacheService>();
+            services.AddSingleton<ICacheInvalidateService, CacheInvalidateService>();
+            services.AddSingleton<ICryptographyService, CryptographyService>();
+            services.AddSingleton<RedisConnectionPoolService>(_ =>
+                new RedisConnectionPoolService(Configuration["RedisCacheSettings:ConnectionString"])
+              );
+            services.AddSingleton<ILocalCacheService, InMemoryCacheService>();
+            services.AddSingleton<IAuthorizationPolicyProvider, ClaimAuthorisationPolicyProvider>();
+            services.AddMemoryCache();
+            services.AddSingleton<IWrapperCacheService, WrapperCacheService>();
+            services.AddDbContext<DataContext>(options => options.UseNpgsql(Configuration["DbConnection"]), ServiceLifetime.Transient);
+            services.AddScoped<IDataContext>(s => s.GetRequiredService<DataContext>());
+            services.AddHttpClient("default");
+            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<RequestContext>();
+            services.AddScoped<IOrganisationService, OrganisationService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<ICiiService, CiiService>();
+            services.AddScoped<IAdaptorNotificationService, AdaptorNotificationService>();
+            services.AddScoped<IAuditLoginService, AuditLoginService>();
+            services.AddScoped<IDateTimeService, DateTimeService>();
+            services.AddScoped<IOrganisationProfileService, OrganisationProfileService>();
+            services.AddScoped<IUserProfileService, UserProfileService>();
+            services.AddScoped<IOrganisationContactService, OrganisationContactService>();
+            services.AddScoped<IContactsHelperService, ContactsHelperService>();
+            services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
+            services.AddScoped<IIdamService, IdamService>();
+            services.AddScoped<IConfigurationDetailService, ConfigurationDetailService>();
+            services.AddScoped<IDocUploadService, DocUploadService>();
+            services.AddScoped<IBulkUploadService, BulkUploadService>();
+            services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
+
+            services.AddHttpContextAccessor();
+
+            services.AddHttpClient("CiiApi", c =>
+            {
+                c.BaseAddress = new Uri(Configuration["Cii:Url"]);
+                c.DefaultRequestHeaders.Add("x-api-key", Configuration["Cii:Token"]);
+            });
+
+            services.AddHttpClient("DocUploadApi", c =>
+            {
+                c.BaseAddress = new Uri(Configuration["DocUpload:Url"]);
+                c.DefaultRequestHeaders.Add("x-api-key", $"Basic {Configuration["DocUpload:Token"]}");
+            });
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "CcsSso.Api", Version = "v1" });
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+                c.EnableAnnotations();
+            });
+            services.AddAntiforgery(op =>
+            {
+                // Instruct to refer http header called "x-xsrf-tokenN"
+                op.HeaderName = "x-xsrf-token";
+            });
+            services.AddMvc();
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IAntiforgery antiforgery)
+        {
+
+            app.UseHsts();
+            app.UseHttpsRedirection();
+
+            app.Use(async (context, next) =>
+            {
+                context.Request.EnableBuffering();
+                await next();
+            });
+
+            bool additionalLog = Configuration.GetSection("EnableAdditionalLogs").Get<bool>();
+            if (additionalLog)
+            {
+                app.UseMiddleware<RequestLogMiddleware>();
+            }
+            app.UseMiddleware<CommonExceptionHandlerMiddleware>();
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.Api v1"));
+
+            app.Use(async (context, next) =>
+            {
+                var customDomain = Configuration.GetSection("CustomDomain").Get<string>();
+                context.Response.Headers.Add(
+              "Cache-Control",
+              "no-cache");
+                context.Response.Headers.Add(
+              "Pragma",
+              "no-cache");
+                context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+                context.Response.Headers.Add("X-Xss-Protection", "1");
+                var tokens = antiforgery.GetAndStoreTokens(context);
+                // [ValidateAntiForgeryToken]
+                // Cookie will be read by angular client and attach to http header
+                context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken,
+              new CookieOptions()
+              {
+                  SameSite = string.IsNullOrEmpty(customDomain) ? SameSiteMode.None : SameSiteMode.Lax,
+                  Domain = customDomain,
+                  Secure = true,
+                  HttpOnly = false
+              });
+
+                // For server to compare
+                context.Response.Cookies.Append("XSRF-TOKEN-SVR", tokens.RequestToken,
+             new CookieOptions()
+             {
+                 SameSite = string.IsNullOrEmpty(customDomain) ? SameSiteMode.None : SameSiteMode.Lax,
+                 Secure = true,
+                 Domain = customDomain,
+                 HttpOnly = true
+             });
+
+                await next();
+            });
+            app.UseRouting();
+            var _cors = Configuration.GetSection("CorsDomains").Get<string[]>();
+            app.UseCors(builder => builder.WithOrigins(_cors)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials()
+            );
+
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor
+            });
+
+            app.UseMiddleware<InputValidationMiddleware>();
+            app.UseMiddleware<AuthenticationMiddleware>();
+
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+        }
     }
-  }
 }

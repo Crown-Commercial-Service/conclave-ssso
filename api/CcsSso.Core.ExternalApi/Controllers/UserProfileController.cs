@@ -85,9 +85,9 @@ namespace CcsSso.ExternalApi.Controllers
         [OrganisationAuthorise("USER")]
         [SwaggerOperation(Tags = new[] { "User" })]
         [ProducesResponseType(typeof(UserProfileResponseInfo), 200)]
-        public async Task<UserProfileResponseInfo> GetUser([FromQuery(Name = "user-id")] string userId, [FromQuery] string delegatedOrgId = "")
+        public async Task<UserProfileResponseInfo> GetUser([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "is-delegated")] bool isDelegated = false, [FromQuery(Name = "delegated-organisation-id")] string delegatedOrgId = "")
         {
-            return await _userProfileService.GetUserAsync(userId, delegatedOrgId);
+            return await _userProfileService.GetUserAsync(userId, isDelegated, delegatedOrgId);
         }
 
         /// <summary>
@@ -224,21 +224,21 @@ namespace CcsSso.ExternalApi.Controllers
         /// <response  code="403">Forbidden</response>
         /// <response  code="404">Not found</response>
         /// <response  code="400">Bad request.
-        /// Error Codes: INVALID_USER_ID, INVALID_ROLE, INVALID_USER_DETAIL
+        /// Error Codes: INVALID_USER_ID, ERROR_ORGANISATION_ID_REQUIRED, INVALID_ROLE, INVALID_USER_DETAIL
         /// </response>
         /// <remarks>
         /// Sample request:
         ///
         ///     POST /delegate-user
         ///     {
-        ///       "userName": "brijrajsinh999@yopmail.com",
+        ///       "userName": "user@mail.com",
         ///       "detail": {
-        ///         "delegatedOrgId": "994051658826844094",
+        ///         "delegatedOrgId": "organisation id",
         ///         "roleIds": [
-        ///           1
+        ///           role ids
         ///         ],
-        ///         "startDate": "2022-08-05T08:11:19.467Z",
-        ///         "endDate": "2023-08-05T08:11:19.467Z"
+        ///         "startDate": "date",
+        ///         "endDate": "date"
         ///       }
         ///     }
         ///     
@@ -261,21 +261,21 @@ namespace CcsSso.ExternalApi.Controllers
         /// <response  code="403">Forbidden</response>
         /// <response  code="404">Not found</response>
         /// <response  code="400">Bad request.
-        /// Error Codes: INVALID_USER_ID, INVALID_ROLE, INVALID_USER_DETAIL
+        /// Error Codes: INVALID_USER_ID, ERROR_ORGANISATION_ID_REQUIRED, INVALID_ROLE, INVALID_USER_DETAIL, INVALID_USER_DELEGATION
         /// </response>
         /// <remarks>
         /// Sample request:
         ///
         ///     PUT /delegate-user
         ///     {
-        ///       "userName": "brijrajsinh999@yopmail.com",
+        ///       "userName": "user@mail.com",
         ///       "detail": {
-        ///         "delegatedOrgId": "994051658826844094",
+        ///         "delegatedOrgId": "organisation id",
         ///         "roleIds": [
-        ///           1,2
+        ///           roles
         ///         ],
-        ///         "startDate": "2022-08-05T08:11:19.467Z",
-        ///         "endDate": "2023-06-05T08:11:19.467Z"
+        ///         "startDate": "date",
+        ///         "endDate": "date"
         ///       }
         ///     }
         ///
@@ -291,19 +291,19 @@ namespace CcsSso.ExternalApi.Controllers
         }
 
         /// <summary>
-        /// Allows admin to remove/revoke user delegation for organization
+        /// Allows admin to remove/revoke user delegation for organisation
         /// </summary>
         /// <response  code="200">Ok</response>
         /// <response  code="401">Unauthorised</response>
         /// <response  code="403">Forbidden</response>
         /// <response  code="404">Not found</response>
         /// <response  code="400">Bad request.
-        /// Error Codes: INVALID_USER_ID, ERROR_ORGANISATION_ID_REQUIRED
+        /// Error Codes: INVALID_USER_ID, ERROR_ORGANISATION_ID_REQUIRED, INVALID_USER_DELEGATION
         /// </response>
         /// <remarks>
         /// Sample request:
         ///
-        ///     DELETE /delegate-user?user-id=user@mail.com&organisationId=994051658826844094
+        ///     DELETE /delegate-user?user-id=user@mail.com&organisationId=organisation id
         ///     
         ///
         /// </remarks>
@@ -312,9 +312,66 @@ namespace CcsSso.ExternalApi.Controllers
         [OrganisationAuthorise("USER")]
         [SwaggerOperation(Tags = new[] { "User" })]
         [ProducesResponseType(typeof(void), 200)]
-        public async Task DeleteDelegatedUser([FromQuery(Name = "user-id")] string userId, [FromQuery] string organisationId)
+        public async Task DeleteDelegatedUser([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "organisation-id")] string organisationId)
         {
             await _userProfileService.RemoveDelegatedAccessForUserAsync(userId, organisationId);
+        }
+
+        /// <summary>
+        /// User has accepted the delegation invetation
+        /// </summary>
+        /// <response  code="200">Ok</response>
+        /// <response  code="404">Not found</response>
+        /// <response  code="400">Bad request.
+        /// Error Codes: INVALID_USER_DELEGATION
+        /// </response>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     PUT /delegate-user-acceptance
+        ///     {
+        ///       "acceptanceToken": "token"
+        ///     }
+        ///
+        /// </remarks>
+        [HttpPut("delegate-user-validation")]
+        //[ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+        //[OrganisationAuthorise("USER")]
+        [SwaggerOperation(Tags = new[] { "User" })]
+        [ProducesResponseType(typeof(bool), 200)]
+        public async Task DelegationUserAcceptance([FromQuery(Name = "acceptance-code")] string acceptanceCode)
+        {
+            await _userProfileService.AcceptDelegationAsync(acceptanceCode);
+        }
+
+        /// <summary>
+        /// Resend delegation activation link
+        /// </summary>
+        /// <response  code="200">Ok</response>
+        /// <response  code="401">Unauthorised</response>
+        /// <response  code="403">Forbidden</response>
+        /// <response  code="404">Not found</response>
+        /// <response  code="400">Bad request.
+        /// Error Codes: INVALID_USER_ID, INVALID_LEGAL_NAME
+        /// </response>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     PUT /delegate-user-resend-activation
+        ///     {
+        ///       "userName": "user@mail.com",
+        ///       "organisationId" : "organisation id"
+        ///     }
+        ///
+        /// </remarks>
+        [HttpPut("delegate-user-resend-activation")]
+        [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+        [OrganisationAuthorise("USER")]
+        [SwaggerOperation(Tags = new[] { "User" })]
+        [ProducesResponseType(typeof(bool), 200)]
+        public async Task ResenedActivationLink([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "organisation-name")] string organisationName)
+        {
+            await _userProfileService.SendUserDelegatedAccessEmailAsync(userId, organisationName);
         }
         #endregion
 

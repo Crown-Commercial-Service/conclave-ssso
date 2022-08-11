@@ -71,6 +71,7 @@ namespace CcsSso.Domain.Constants
         public const string ErrorInvalidUserDelegationPrimaryDetails = "INVALID_USER_DELEGATION_PRIMARY_DETAILS";
         public const string ErrorInvalidUserDelegation = "INVALID_USER_DELEGATION";
         public const string ErrorInvalidUserDelegationSameOrg = "INVALID_USER_DELEGATION_SAME_ORG";
+        public const string ErrorActivationLinkExpired = "ERROR_ACTIVATION_LINK_EXPIRED";
 
     }
 
