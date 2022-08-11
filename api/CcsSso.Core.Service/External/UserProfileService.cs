@@ -386,7 +386,9 @@ namespace CcsSso.Core.Service.External
             var userPagedInfo = await _dataContext.GetPagedResultAsync(_dataContext.User
               .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
               // Include deleted for delegated expired
-              .Where(u => (isDelegatedExpiredOnly || !u.IsDeleted) && (isDelegatedExpiredOnly ||  u.DelegationEndDate < DateTime.UtcNow) && (includeSelf || u.Id != _requestContext.UserId) &&
+              .Where(u => 
+              (isDelegatedExpiredOnly || !u.IsDeleted) && (!isDelegatedExpiredOnly ||  u.DelegationEndDate < DateTime.UtcNow) && 
+              (includeSelf || u.Id != _requestContext.UserId) &&
               u.UserType == userTypeSearch &&
               // Delegated and delegated expired conditions
               (!isDelegatedOnly || (isDelegatedExpiredOnly ? u.DelegationEndDate < DateTime.UtcNow : u.DelegationEndDate >= DateTime.UtcNow)) &&
