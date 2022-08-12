@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using static CcsSso.Security.Domain.Constants.Constants;
 
 namespace CcsSso.Security.Api.Controllers
 {
@@ -188,19 +189,6 @@ namespace CcsSso.Security.Api.Controllers
       {
         var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
         host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
-      }
-
-      if (!string.IsNullOrEmpty(tokenRequestInfo.DelegatedOrgId))
-      {
-        await _securityCacheService.SetValueAsync(sid, tokenRequestInfo.DelegatedOrgId, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.StateExpirationInMinutes, 0));
-      }
-      else
-      {
-        var delegatedOrgId = await _securityCacheService.GetValueAsync<string>(sid);
-        if (!string.IsNullOrEmpty(delegatedOrgId))
-        {
-          tokenRequestInfo.DelegatedOrgId = delegatedOrgId;
-        }
       }
 
       var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
@@ -479,6 +467,7 @@ namespace CcsSso.Security.Api.Controllers
         if (!string.IsNullOrWhiteSpace(sid))
         {
           await _securityService.InvalidateSessionAsync(sid);
+          await _securityCacheService.RemoveAsync(CacheKey.DELEGATION + sid);
         }
 
         string visitedSiteCookie = "ccs-sso-visitedsites";
