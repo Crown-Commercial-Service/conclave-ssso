@@ -85,9 +85,9 @@ namespace CcsSso.ExternalApi.Controllers
         [OrganisationAuthorise("USER")]
         [SwaggerOperation(Tags = new[] { "User" })]
         [ProducesResponseType(typeof(UserProfileResponseInfo), 200)]
-        public async Task<UserProfileResponseInfo> GetUser([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "is-delegated")] bool isDelegated = false, [FromQuery(Name = "delegated-organisation-id")] string delegatedOrgId = "")
+        public async Task<UserProfileResponseInfo> GetUser([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "is-delegated")] bool isDelegated = false, [FromQuery(Name = "is-delegated-search")] bool isSearchUser = false, [FromQuery(Name = "delegated-organisation-id")] string delegatedOrgId = "")
         {
-            return await _userProfileService.GetUserAsync(userId, isDelegated, delegatedOrgId);
+            return await _userProfileService.GetUserAsync(userId, isDelegated, isSearchUser, delegatedOrgId);
         }
 
         /// <summary>

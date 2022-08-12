@@ -56,7 +56,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 
         public List<UserIdentityProviderInfo> IdentityProviders { get; set; }
 
-        public UserDelegationDetails[]? DeliagtedOrgs { get; set; }
+        public UserDelegationDetails[]? DelegatedOrgs { get; set; }
     }
 
     public class UserDelegationDetails

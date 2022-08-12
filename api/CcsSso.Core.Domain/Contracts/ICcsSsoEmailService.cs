@@ -30,6 +30,6 @@ namespace CcsSso.Core.Domain.Contracts
 
         Task SendOrgJoinRequestEmailAsync(OrgJoinNotificationInfo orgJoinNotificationInfo);
 
-        Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string encryptedInfo);
+        Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string[] roles, string encryptedInfo);
     }
 }

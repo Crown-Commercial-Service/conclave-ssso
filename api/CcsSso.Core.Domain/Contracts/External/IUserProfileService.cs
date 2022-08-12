@@ -9,7 +9,7 @@ namespace CcsSso.Core.Domain.Contracts.External
 
         Task DeleteUserAsync(string userName, bool checkForLastAdmin = true);
 
-        Task<UserProfileResponseInfo> GetUserAsync(string userName, bool isDelegated = false, string delegatedOrgId = "");
+        Task<UserProfileResponseInfo> GetUserAsync(string userName, bool isDelegated = false, bool isSearchUser = false, string delegatedOrgId = "");
 
         Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null, bool includeSelf = false, bool isDelegatedOnly = false, bool isDelegatedExpiredOnly = false);
 
@@ -33,6 +33,6 @@ namespace CcsSso.Core.Domain.Contracts.External
 
         Task AcceptDelegationAsync(string acceptanceToken);
 
-        Task SendUserDelegatedAccessEmailAsync(string userEmailAddress, string orgName);
+        Task SendUserDelegatedAccessEmailAsync(string userName, string orgId = "", string orgName = "", string[] roles = default);
     }
 }

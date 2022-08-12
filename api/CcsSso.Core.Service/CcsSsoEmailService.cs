@@ -11,8 +11,8 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service
 {
-  public partial class CcsSsoEmailService : ICcsSsoEmailService
-  {
+    public partial class CcsSsoEmailService : ICcsSsoEmailService
+    {
 
         private readonly IEmailProviderService _emaillProviderService;
         private readonly ApplicationConfigurationInfo _appConfigInfo;
@@ -129,11 +129,12 @@ namespace CcsSso.Core.Service
             await SendEmailAsync(emailInfo);
         }
 
-        public async Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string encryptedCode)
+        public async Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string[] roles, string encryptedCode)
         {
             var data = new Dictionary<string, dynamic>
                       {
                         { "orgName", orgName},
+                        { "roles" , "<ul><li>" + string.Join("</li><li>",  roles) + "</li></ul>" },
                         { "link", _appConfigInfo.ConclaveLoginUrl + "/delegation-access/" + $"?activationcode={encryptedCode}" }
                       };
             var emailInfo = new EmailInfo()

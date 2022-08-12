@@ -76,19 +76,19 @@ namespace CcsSso.Core.Service.External
             var user = await _dataContext.User
               .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
 
-      if (user != null)
-      {
-        throw new ResourceAlreadyExistsException();
-      }
+            if (user != null)
+            {
+                throw new ResourceAlreadyExistsException();
+            }
 
-      Validate(userProfileRequestInfo, false, organisation);
+            Validate(userProfileRequestInfo, false, organisation);
 
             var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
               .Include(x => x.IdentityProvider)
               .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id)).ToListAsync();
 
-      var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
-      var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
+            var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
+            var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
 
             // This is to enforce MFA over any other
             //if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
@@ -178,55 +178,55 @@ namespace CcsSso.Core.Service.External
             await _dataContext.SaveChangesAsync();
 
 
-      if (isConclaveConnectionIncluded)
-      {
-        SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
-        {
-          Email = userName,
-          Password = userProfileRequestInfo.Password,
-          SendUserRegistrationEmail = false, // Emails are sent separately along with other IDP selections
-          UserName = userName,
-          FirstName = userProfileRequestInfo.FirstName,
-          LastName = userProfileRequestInfo.LastName,
-          MfaEnabled = userProfileRequestInfo.MfaEnabled
-        };
+            if (isConclaveConnectionIncluded)
+            {
+                SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+                {
+                    Email = userName,
+                    Password = userProfileRequestInfo.Password,
+                    SendUserRegistrationEmail = false, // Emails are sent separately along with other IDP selections
+                    UserName = userName,
+                    FirstName = userProfileRequestInfo.FirstName,
+                    LastName = userProfileRequestInfo.LastName,
+                    MfaEnabled = userProfileRequestInfo.MfaEnabled
+                };
 
-        try
-        {
-          await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
-          isRegisteredInIdam = true;
-        }
-        catch (Exception)
-        {
-          // If Idam registration failed, remove the user record in DB
-          _dataContext.Party.Remove(party);
-          await _dataContext.SaveChangesAsync();
-          throw;
-        }
-      }
+                try
+                {
+                    await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
+                    isRegisteredInIdam = true;
+                }
+                catch (Exception)
+                {
+                    // If Idam registration failed, remove the user record in DB
+                    _dataContext.Party.Remove(party);
+                    await _dataContext.SaveChangesAsync();
+                    throw;
+                }
+            }
 
-      if (userProfileRequestInfo.SendUserRegistrationEmail)
-      {
-        if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)
-        {
-          var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
-          var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
+            if (userProfileRequestInfo.SendUserRegistrationEmail)
+            {
+                if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)
+                {
+                    var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+                    var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
 
-          await _ccsSsoEmailService.SendUserConfirmEmailBothIdpAsync(party.User.UserName, string.Join(",", listOfIdpName), activationlink);
+                    await _ccsSsoEmailService.SendUserConfirmEmailBothIdpAsync(party.User.UserName, string.Join(",", listOfIdpName), activationlink);
 
-        }
-        else if (isNonUserNamePwdConnectionIncluded)
-        {
-          var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
-          await _ccsSsoEmailService.SendUserConfirmEmailOnlyFederatedIdpAsync(party.User.UserName, string.Join(",", listOfIdpName));
+                }
+                else if (isNonUserNamePwdConnectionIncluded)
+                {
+                    var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
+                    await _ccsSsoEmailService.SendUserConfirmEmailOnlyFederatedIdpAsync(party.User.UserName, string.Join(",", listOfIdpName));
 
-        }
-        else if (isConclaveConnectionIncluded)
-        {
-          var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
-          await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink));
-        }
-      }
+                }
+                else if (isConclaveConnectionIncluded)
+                {
+                    var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+                    await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink));
+                }
+            }
 
             // Log
             await _auditLoginService.CreateLogAsync(AuditLogEvent.UserCreate, AuditLogApplication.ManageUserAccount, $"UserId:{party.User.Id}, UserIdpId:{string.Join(",", party.User.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId))}," + " " +
@@ -246,7 +246,7 @@ namespace CcsSso.Core.Service.External
             };
         }
 
-        public async Task<UserProfileResponseInfo> GetUserAsync(string userName, bool isDelegated = false, string delegatedOrgId = "")
+        public async Task<UserProfileResponseInfo> GetUserAsync(string userName, bool isDelegated = false, bool isSearchUser = false, string delegatedOrgId = "")
         {
             User user = null;
 
@@ -265,12 +265,18 @@ namespace CcsSso.Core.Service.External
               .Include(u => u.UserIdentityProviders).ThenInclude(uidp => uidp.OrganisationEligibleIdentityProvider).ThenInclude(oi => oi.IdentityProvider)
               .Where(u => !u.IsDeleted && u.UserName == userName).ToListAsync();
 
-            // Search for user delegattion details for org
+            // Search for user delegation details for org
             if (isDelegated && !string.IsNullOrWhiteSpace(delegatedOrgId))
             {
                 user = users.SingleOrDefault(u => u.UserType == DbModel.Constants.UserType.Delegation &&
                        u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId
                        && !u.IsDeleted && u.DelegationEndDate >= DateTime.UtcNow);
+
+                // If searching for user to delegate in orgnisation and already exist
+                if (isSearchUser && user != default)
+                {
+                    throw new ResourceAlreadyExistsException();
+                }
             }
             // User primary org details
             else
@@ -298,7 +304,7 @@ namespace CcsSso.Core.Service.External
                     OrganisationId = user.Party.Person.Organisation.CiiOrganisationId,
                     OriginOrganisationName = isDelegated ? user.Party.Person.Organisation.LegalName : default,
                     FirstName = user.Party.Person.FirstName,
-                    LastName = isDelegated && !user.DelegationAccepted ?
+                    LastName = (isDelegated || !string.IsNullOrWhiteSpace(delegatedOrgId)) && !user.DelegationAccepted ?
                                user.Party.Person.LastName.Substring(0, 1).PadRight(user.Party.Person.LastName.Length, '*') :
                                user.Party.Person.LastName,
                     MfaEnabled = user.MfaEnabled,
@@ -324,7 +330,7 @@ namespace CcsSso.Core.Service.External
                             ServiceClientName = uar.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName
                         }).ToList(),
                         // Return organisation list of user's delegation
-                        DeliagtedOrgs = isDelegated ? userDelegatedOrgs : default
+                        DelegatedOrgs = isDelegated ? userDelegatedOrgs : default
                     }
                 };
 
@@ -405,8 +411,8 @@ namespace CcsSso.Core.Service.External
             var userPagedInfo = await _dataContext.GetPagedResultAsync(_dataContext.User
               .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
               // Include deleted for delegated expired
-              .Where(u => 
-              (isDelegatedExpiredOnly || !u.IsDeleted) && (!isDelegatedExpiredOnly ||  u.DelegationEndDate < DateTime.UtcNow) && 
+              .Where(u =>
+              (isDelegatedExpiredOnly || !u.IsDeleted) && (!isDelegatedExpiredOnly ||  u.DelegationEndDate < DateTime.UtcNow) &&
               (includeSelf || u.Id != _requestContext.UserId) &&
               u.UserType == userTypeSearch &&
               // Delegated and delegated expired conditions
@@ -625,54 +631,54 @@ namespace CcsSso.Core.Service.External
             Validate(userProfileRequestInfo, isMyProfile, organisation);
             bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
 
-      var UserAccessRole = (from u in _dataContext.User
-                            join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
-                            join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
-                            join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
-                            where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
-                            select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
+            var UserAccessRole = (from u in _dataContext.User
+                                  join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
+                                  join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
+                                  join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
+                                  where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+                                  select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
 
-      bool isAdminUser = false;
-      if (UserAccessRole != null && UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
-      {
-        isAdminUser = true;
-      }
+            bool isAdminUser = false;
+            if (UserAccessRole != null && UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+            {
+                isAdminUser = true;
+            }
 
-      bool hasProfileInfoChanged;
-      if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
-      {
-        hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
-                                user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
-                                user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title) ||
-                                user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id) != userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id));
-      }
-      else
-      {
-        hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
-                                user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
-                                user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title));
-      }
-      user.Party.Person.FirstName = userProfileRequestInfo.FirstName.Trim();
-      user.Party.Person.LastName = userProfileRequestInfo.LastName.Trim();
-      bool hasGroupMembershipsNotChanged = true;
-      bool hasRolesNotChanged = true;
-      bool hasIdpChange = false;
-      List<int> previousGroups = new();
-      List<int> previousRoles = new();
-      List<int> requestGroups = new();
-      List<int> requestRoles = new();
-      List<int> previousIdentityProviderIds = new();
-      if (!isMyProfile || isAdminUser == true)
-      {
-        user.UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title);
-        requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
-        requestRoles = userProfileRequestInfo.Detail.RoleIds == null ? new List<int>() : userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
-        hasGroupMembershipsNotChanged = Enumerable.SequenceEqual(requestGroups, user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).OrderBy(e => e));
-        hasRolesNotChanged = Enumerable.SequenceEqual(requestRoles, user.UserAccessRoles.Select(ur => ur.OrganisationEligibleRoleId).OrderBy(e => e));
-        previousGroups = user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).ToList();
-        previousRoles = user.UserAccessRoles.Select(ur => ur.OrganisationEligibleRoleId).ToList();
-        user.UserGroupMemberships.RemoveAll(g => true);
-        user.UserAccessRoles.RemoveAll(r => true);
+            bool hasProfileInfoChanged;
+            if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
+            {
+                hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
+                                        user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
+                                        user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title) ||
+                                        user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id) != userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id));
+            }
+            else
+            {
+                hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
+                                        user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
+                                        user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title));
+            }
+            user.Party.Person.FirstName = userProfileRequestInfo.FirstName.Trim();
+            user.Party.Person.LastName = userProfileRequestInfo.LastName.Trim();
+            bool hasGroupMembershipsNotChanged = true;
+            bool hasRolesNotChanged = true;
+            bool hasIdpChange = false;
+            List<int> previousGroups = new();
+            List<int> previousRoles = new();
+            List<int> requestGroups = new();
+            List<int> requestRoles = new();
+            List<int> previousIdentityProviderIds = new();
+            if (!isMyProfile || isAdminUser == true)
+            {
+                user.UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title);
+                requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
+                requestRoles = userProfileRequestInfo.Detail.RoleIds == null ? new List<int>() : userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
+                hasGroupMembershipsNotChanged = Enumerable.SequenceEqual(requestGroups, user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).OrderBy(e => e));
+                hasRolesNotChanged = Enumerable.SequenceEqual(requestRoles, user.UserAccessRoles.Select(ur => ur.OrganisationEligibleRoleId).OrderBy(e => e));
+                previousGroups = user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).ToList();
+                previousRoles = user.UserAccessRoles.Select(ur => ur.OrganisationEligibleRoleId).ToList();
+                user.UserGroupMemberships.RemoveAll(g => true);
+                user.UserAccessRoles.RemoveAll(r => true);
 
                 var elegibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
                                                 .Include(x => x.IdentityProvider)
@@ -1246,7 +1252,7 @@ namespace CcsSso.Core.Service.External
                 await _dataContext.SaveChangesAsync();
 
                 // Send delegation activation email
-                await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.LegalName);
+                await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName, userAccessRoles.Select(r => r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey).ToArray());
 
                 // Log
                 await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelegated, AuditLogApplication.ManageUserAccount, $"UserId:{existingUserPrimaryDetails.Id}," + " " +
@@ -1441,20 +1447,31 @@ namespace CcsSso.Core.Service.External
             }
         }
 
-        public async Task SendUserDelegatedAccessEmailAsync(string userEmailAddress, string orgName)
+        public async Task SendUserDelegatedAccessEmailAsync(string userName, string orgId, string orgName = "", string[] roles = default)
         {
-            _userHelper.ValidateUserName(userEmailAddress);
+            _userHelper.ValidateUserName(userName);
 
-            if (string.IsNullOrWhiteSpace(orgName))
+            if (string.IsNullOrWhiteSpace(orgId))
             {
-                throw new CcsSsoException(ErrorConstant.ErrorInvalidOrganisationName);
+                throw new CcsSsoException(ErrorConstant.ErrorInvalidCiiOrganisationId);
             }
 
-            string activationInfo = "usr=" + userEmailAddress + "&org=" + orgName + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegatedEmailExpirationHours);
+            if (string.IsNullOrWhiteSpace(orgName) || roles.Length < 1)
+            {
+                var user = await _dataContext.User
+                .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
+                .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(pr => pr.Organisation)
+                .Where(u => !u.IsDeleted && u.UserName == userName && u.UserType == DbModel.Constants.UserType.Delegation).SingleOrDefaultAsync();
+
+                orgName = user.Party.Person.Organisation.LegalName;
+                roles = user.UserAccessRoles.Select(r => r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName).ToArray();
+            }
+
+            string activationInfo = "usr=" + userName + "&org=" + orgName + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegatedEmailExpirationHours);
             var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
 
             // Send the delegation email
-            await _ccsSsoEmailService.SendUserDelegatedAccessEmailAsync(userEmailAddress, orgName, encryptedInfo);
+            await _ccsSsoEmailService.SendUserDelegatedAccessEmailAsync(userName, orgName, roles, encryptedInfo);
         }
 
         private void ValidateDelegateUserDetails(Organisation organisation, DelegatedUserProfileRequestInfo userProfileRequestInfo)
@@ -1466,8 +1483,10 @@ namespace CcsSso.Core.Service.External
                 throw new CcsSsoException(ErrorConstant.ErrorInvalidUserRole);
             }
 
-            // validate dates enddate > start date
+            // date validations
             if (userProfileRequestInfo.Detail.StartDate == default || userProfileRequestInfo.Detail.EndDate == default ||
+                userProfileRequestInfo.Detail.StartDate < DateTime.UtcNow ||
+                userProfileRequestInfo.Detail.EndDate > userProfileRequestInfo.Detail.StartDate.AddDays(365) ||
                 userProfileRequestInfo.Detail.StartDate > userProfileRequestInfo.Detail.EndDate)
             {
                 throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
