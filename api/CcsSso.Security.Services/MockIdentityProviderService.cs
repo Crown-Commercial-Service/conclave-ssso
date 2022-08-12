@@ -85,7 +85,7 @@ namespace CcsSso.Security.Services
       return new TokenResponseInfo();
     }
 
-    public async Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string clientSecret, string refreshToken, string sid)
+    public async Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string clientSecret, string refreshToken, string sid, string delegatedOrgId = null)
     {
       var userDetails = await GetUserAsync(refreshToken);
       var customClaims = GetCustomClaimsForIdToken(clientId, refreshToken, userDetails);

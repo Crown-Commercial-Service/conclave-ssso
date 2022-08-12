@@ -73,7 +73,7 @@ namespace CcsSso.Security.Services
       }
       else if (tokenRequestInfo.GrantType == "refresh_token")
       {
-        tokenResponseInfo = await _identityProviderService.GetRenewedTokensAsync(tokenRequestInfo.ClientId, tokenRequestInfo.ClientSecret, tokenRequestInfo.RefreshToken, sid);
+        tokenResponseInfo = await _identityProviderService.GetRenewedTokensAsync(tokenRequestInfo.ClientId, tokenRequestInfo.ClientSecret, tokenRequestInfo.RefreshToken, sid, tokenRequestInfo.DelegatedOrgId);
       }
       else if (tokenRequestInfo.GrantType == "client_credentials")
       {

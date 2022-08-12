@@ -95,6 +95,12 @@ namespace CcsSso.Security.Domain.Dtos
     public List<RolePermissionInfo> RolePermissionInfo { get; set; }
 
     public List<UserIdentityProviderInfo> IdentityProviders { get; set; }
+
+    public DateTime? DelegationStartDate { get; set; }
+
+    public DateTime? DelegationEndDate { get; set; }
+
+    public bool DelegationAccepted { get; set; }
   }
 
   public class UserIdentityProviderInfo

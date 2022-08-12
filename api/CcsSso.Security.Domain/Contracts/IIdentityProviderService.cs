@@ -18,7 +18,7 @@ namespace CcsSso.Security.Domain.Contracts
 
     Task ResetMfaAsync(string userName);
 
-    Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string clientSecret, string refreshToken, string sid);
+    Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string clientSecret, string refreshToken, string sid, string delegatedOrgId = null);
 
     Task<TokenResponseInfo> GetMachineTokenAsync(string clientId, string clientSecret, string audience);
 

@@ -158,6 +158,7 @@ namespace CcsSso.Security.Api.Controllers
       Console.WriteLine($"Security API Token6 CodeVerifier:- ${tokenRequest.CodeVerifier}");
       Console.WriteLine($"Security API Token7 RedirectUrl:- ${tokenRequest.RedirectUrl}");
       Console.WriteLine($"Security API Token8 Audience:- ${tokenRequest.Audience}");
+      Console.WriteLine($"Security API Token8 DelegatedOrgId:- ${tokenRequest.DelegatedOrgId}");
 
       var tokenRequestInfo = new TokenRequestInfo()
       {
@@ -169,7 +170,8 @@ namespace CcsSso.Security.Api.Controllers
         RedirectUrl = tokenRequest.RedirectUrl,
         RefreshToken = tokenRequest.RefreshToken,
         State = tokenRequest.State,
-        Audience = tokenRequest.Audience
+        Audience = tokenRequest.Audience,
+        DelegatedOrgId = tokenRequest.DelegatedOrgId,
       };
       // Sessions are handled in two places for a user and they are as Auth0 & Security api (aka CCS-SSO session cookie).
       // Auth0 session is given the highest priority as it used to generate tokens. Hence, CCS-SSO session will be
@@ -187,6 +189,20 @@ namespace CcsSso.Security.Api.Controllers
         var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
         host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
       }
+
+      if (!string.IsNullOrEmpty(tokenRequestInfo.DelegatedOrgId))
+      {
+        await _securityCacheService.SetValueAsync(sid, tokenRequestInfo.DelegatedOrgId, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.StateExpirationInMinutes, 0));
+      }
+      else
+      {
+        var delegatedOrgId = await _securityCacheService.GetValueAsync<string>(sid);
+        if (!string.IsNullOrEmpty(delegatedOrgId))
+        {
+          tokenRequestInfo.DelegatedOrgId = delegatedOrgId;
+        }
+      }
+
       var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
 
       return idToken;

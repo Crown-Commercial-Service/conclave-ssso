@@ -30,10 +30,12 @@ namespace CcsSso.Security.Services
     private readonly TokenHelper _tokenHelper;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IJwtTokenHandler _jwtTokenHandler;
+    private readonly ISecurityCacheService _securityCacheService;
 
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
     public Auth0IdentityProviderService(ApplicationConfigurationInfo appConfigInfo, TokenHelper tokenHelper,
-      IHttpClientFactory httpClientFactory, ICcsSsoEmailService ccsSsoEmailService, IJwtTokenHandler jwtTokenHandler)
+      IHttpClientFactory httpClientFactory, ICcsSsoEmailService ccsSsoEmailService, IJwtTokenHandler jwtTokenHandler,
+      ISecurityCacheService securityCacheService)
     {
       _appConfigInfo = appConfigInfo;
       _authenticationApiClient = new AuthenticationApiClient(_appConfigInfo.Auth0ConfigurationInfo.Domain);
@@ -41,6 +43,7 @@ namespace CcsSso.Security.Services
       _httpClientFactory = httpClientFactory;
       _ccsSsoEmailService = ccsSsoEmailService;
       _jwtTokenHandler = jwtTokenHandler;
+      _securityCacheService = securityCacheService;
     }
 
     /// <summary>
@@ -370,7 +373,7 @@ namespace CcsSso.Security.Services
       }
     }
 
-    public async Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string clientSecret, string refreshToken, string sid)
+    public async Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string clientSecret, string refreshToken, string sid, string delegatedOrgId = null)
     {
       try
       {
@@ -396,10 +399,42 @@ namespace CcsSso.Security.Services
             throw new CcsSsoException("TOKEN_GENERATION_FAILED");
           }
 
-          var userDetails = await GetUserAsync(email);
+          //string _delegatedOrgId = null;
+          //if (!string.IsNullOrEmpty(delegatedOrgId))
+          //{
+          //  _delegatedOrgId = delegatedOrgId;
+          //  await _securityCacheService.SetValueAsync(sid, _organisationId, new TimeSpan(0, _appConfigInfo.SessionConfig.StateExpirationInMinutes, 0));
+          //}
+          //else
+          //{
+          //  _delegatedOrgId = await _securityCacheService.GetValueAsync<string>(sid);
+          //}
+
+          //string _delegatedOrgId = null;
+          //if (string.IsNullOrEmpty(delegatedOrgId))
+          //{
+          //  _delegatedOrgId = await _securityCacheService.GetValueAsync<string>(refreshToken);
+          //}
+          //else
+          //{
+          //  _delegatedOrgId = delegatedOrgId;
+          //}
+
+          //if (!string.IsNullOrEmpty(delegatedOrgId))
+          //{
+          //  email = "aero.brijeshp@yopmail.com";
+          //}
+
+          var userDetails = await GetUserAsync(email, delegatedOrgId);
           var customClaims = GetCustomClaimsForIdToken(tokenDecoded, clientId, email, sid, userDetails);
           var idToken = _jwtTokenHandler.CreateToken(clientId, customClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
           var accessToken = GetAccessToken(clientId, email, userDetails, sid);
+
+          //if (!string.IsNullOrEmpty(_delegatedOrgId))
+          //{
+          //  await _securityCacheService.SetValueAsync(result.RefreshToken, _delegatedOrgId, new TimeSpan(0, _appConfigInfo.SessionConfig.StateExpirationInMinutes, 0));
+          //}
+
           return new TokenResponseInfo
           {
             IdToken = idToken,
@@ -452,7 +487,7 @@ namespace CcsSso.Security.Services
           };
           result = await _authenticationApiClient.GetTokenAsync(resourceOwnerTokenRequest);
         }
-        var tokenInfo = await GetTokensAsync(tokenRequestInfo.ClientId, result, sid);
+        var tokenInfo = await GetTokensAsync(tokenRequestInfo.ClientId, result, sid, tokenRequestInfo.DelegatedOrgId);
         return tokenInfo;
       }
       catch (ErrorApiException e)
@@ -797,12 +832,17 @@ namespace CcsSso.Security.Services
       }
     }
 
-    private async Task<UserProfileInfo> GetUserAsync(string email)
+    private async Task<UserProfileInfo> GetUserAsync(string email, string delegatedOrgId = null)
     {
       var httpClient = _httpClientFactory.CreateClient();
       httpClient.BaseAddress = new Uri(_appConfigInfo.UserExternalApiDetails.UserServiceUrl);
       httpClient.DefaultRequestHeaders.Add("X-API-Key", _appConfigInfo.UserExternalApiDetails.ApiKey);
-      var result = await httpClient.GetAsync($"?user-id={HttpUtility.UrlEncode(email)}");
+      var requestUri = $"?user-id={HttpUtility.UrlEncode(email)}";
+      if (!string.IsNullOrEmpty(delegatedOrgId))
+      {
+        requestUri += $"&delegatedOrgId={HttpUtility.UrlEncode(delegatedOrgId)}";
+      }
+      var result = await httpClient.GetAsync(requestUri);
       var userJsonString = await result.Content.ReadAsStringAsync();
       if (!string.IsNullOrEmpty(userJsonString))
       {
@@ -879,7 +919,7 @@ namespace CcsSso.Security.Services
       return accessToken;
     }
 
-    private async Task<TokenResponseInfo> GetTokensAsync(string clientId, AccessTokenResponse accessTokenResponse, string sid = null)
+    private async Task<TokenResponseInfo> GetTokensAsync(string clientId, AccessTokenResponse accessTokenResponse, string sid = null, string delegatedOrgId = null)
     {
       var tokenDecoded = _jwtTokenHandler.DecodeToken(accessTokenResponse.IdToken);
       var email = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
@@ -888,30 +928,47 @@ namespace CcsSso.Security.Services
         throw new CcsSsoException("TOKEN_GENERATION_FAILED");
       }
 
-      var useMfa = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/use_mfa")?.Value;
-      if (useMfa != null)
+      var userDetails = await GetUserAsync(email, delegatedOrgId);
+
+      if (string.IsNullOrEmpty(delegatedOrgId))
       {
-        var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
-        using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
+        var useMfa = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/use_mfa")?.Value;
+        if (useMfa != null)
         {
-          var user = (await _managementApiClient.Users.GetUsersByEmailAsync(email)).FirstOrDefault();
-          if (user != null && user.UserMetadata != null && user.UserMetadata.mfa_reset_verified == false)
+          var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
+          using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
           {
-            throw new CcsSsoException("MFA_NOT_VERIFIED");
+            var user = (await _managementApiClient.Users.GetUsersByEmailAsync(email)).FirstOrDefault();
+            if (user != null && user.UserMetadata != null && user.UserMetadata.mfa_reset_verified == false)
+            {
+              throw new CcsSsoException("MFA_NOT_VERIFIED");
+            }
           }
         }
-      }
 
-      var connection = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/connection")?.Value;
-      var userDetails = await GetUserAsync(email);
-      if (!userDetails.Detail.IdentityProviders.Any(idp => idp.IdentityProvider == connection))
-      {
-        throw new CcsSsoException("INVALID_CONNECTION");
-      }
+        var connection = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/connection")?.Value;
 
-      if (!userDetails.AccountVerified)
+        if (!userDetails.Detail.IdentityProviders.Any(idp => idp.IdentityProvider == connection))
+        {
+          throw new CcsSsoException("INVALID_CONNECTION");
+        }
+
+        if (!userDetails.AccountVerified)
+        {
+          await VerifyUserAccountAsync(email);
+        }
+      }
+      else
       {
-        await VerifyUserAccountAsync(email);
+        if (userDetails.Detail.DelegationAccepted)
+        {
+          throw new CcsSsoException("DELEGATION_NOT_ACCEPTED");
+        }
+
+        if (userDetails.Detail.DelegationEndDate.HasValue && userDetails.Detail.DelegationEndDate.Value <= DateTime.Now)
+        {
+          throw new CcsSsoException("DELEGATION_EXPIRED");
+        }
       }
 
       var customClaims = GetCustomClaimsForIdToken(tokenDecoded, clientId, email, sid, userDetails);
