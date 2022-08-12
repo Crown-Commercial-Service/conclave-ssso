@@ -9,6 +9,7 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Domain.Helpers;
@@ -32,10 +33,15 @@ namespace CcsSso.Core.Service.External
     private readonly IAuditLoginService _auditLoginService;
     private readonly IRemoteCacheService _remoteCacheService;
     private readonly ICacheInvalidateService _cacheInvalidateService;
+    private readonly ICryptographyService _cryptographyService;
+    private readonly ApplicationConfigurationInfo _appConfigInfo;
+
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
       IAdaptorNotificationService adapterNotificationService, IWrapperCacheService wrapperCacheService,
-      IAuditLoginService auditLoginService, IRemoteCacheService remoteCacheService, ICacheInvalidateService cacheInvalidateService)
+      IAuditLoginService auditLoginService, IRemoteCacheService remoteCacheService,
+      ICacheInvalidateService cacheInvalidateService, ICryptographyService cryptographyService,
+      ApplicationConfigurationInfo appConfigInfo)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -47,6 +53,8 @@ namespace CcsSso.Core.Service.External
       _auditLoginService = auditLoginService;
       _remoteCacheService = remoteCacheService;
       _cacheInvalidateService = cacheInvalidateService;
+      _cryptographyService = cryptographyService;
+      _appConfigInfo = appConfigInfo;
     }
 
     public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo)
@@ -238,11 +246,13 @@ namespace CcsSso.Core.Service.External
       };
     }
 
-    public async Task<UserProfileResponseInfo> GetUserAsync(string userName)
+    public async Task<UserProfileResponseInfo> GetUserAsync(string userName, bool isDelegated = false, bool isSearchUser = false, string delegatedOrgId = "")
     {
+      User user = null;
+
       _userHelper.ValidateUserName(userName);
 
-      var user = await _dataContext.User
+      var users = await _dataContext.User
         .Include(u => u.UserGroupMemberships).ThenInclude(ugm => ugm.OrganisationUserGroup)
         .ThenInclude(oug => oug.GroupEligibleRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
         .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
@@ -253,7 +263,39 @@ namespace CcsSso.Core.Service.External
         .Include(u => u.Party).ThenInclude(p => p.Person)
         .ThenInclude(pr => pr.Organisation)
         .Include(u => u.UserIdentityProviders).ThenInclude(uidp => uidp.OrganisationEligibleIdentityProvider).ThenInclude(oi => oi.IdentityProvider)
-        .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
+        .Where(u => !u.IsDeleted && u.UserName == userName).ToListAsync();
+
+      // Search for user delegation details for org
+      if (isDelegated && !string.IsNullOrWhiteSpace(delegatedOrgId))
+      {
+        user = users.SingleOrDefault(u => u.UserType == DbModel.Constants.UserType.Delegation &&
+               u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId
+               && !u.IsDeleted && u.DelegationEndDate >= DateTime.UtcNow);
+
+        // If searching for user to delegate in organisation and already exist
+        if (isSearchUser && user != default)
+        {
+          throw new ResourceAlreadyExistsException();
+        }
+      }
+      // User primary org details
+      else
+      {
+        user = users.SingleOrDefault(u => u.UserType == DbModel.Constants.UserType.Primary);
+      }
+
+      var userDelegatedOrgs = users.Where(u => u.UserType == DbModel.Constants.UserType.Delegation &&
+                              u.DelegationEndDate >= DateTime.UtcNow && !u.IsDeleted && (!string.IsNullOrWhiteSpace(delegatedOrgId) || u.DelegationAccepted)
+                              && ((isDelegated && string.IsNullOrWhiteSpace(delegatedOrgId)) || u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId)
+                              )
+                              .Select(u => new UserDelegationDetails
+                              {
+                                DelegatedOrgId = u.Party.Person.Organisation.CiiOrganisationId,
+                                DelegatedOrgName = u.Party.Person.Organisation.LegalName,
+                                StartDate = u.DelegationStartDate,
+                                EndDate = u.DelegationEndDate,
+                                DelegationAccepted = u.DelegationAccepted
+                              }).ToArray();
 
       if (user != null)
       {
@@ -261,16 +303,19 @@ namespace CcsSso.Core.Service.External
         {
           UserName = user.UserName,
           OrganisationId = user.Party.Person.Organisation.CiiOrganisationId,
+          OriginOrganisationName = isDelegated ? user.Party.Person.Organisation.LegalName : default,
           FirstName = user.Party.Person.FirstName,
-          LastName = user.Party.Person.LastName,
+          LastName = (isDelegated || !string.IsNullOrWhiteSpace(delegatedOrgId)) && !user.DelegationAccepted ?
+                       user.Party.Person.LastName.Substring(0, 1).PadRight(user.Party.Person.LastName.Length, '*') :
+                       user.Party.Person.LastName,
           MfaEnabled = user.MfaEnabled,
           Title = Enum.GetName(typeof(UserTitle), user.UserTitle),
-          AccountVerified = user.AccountVerified,
+          AccountVerified = isDelegated ? default : user.AccountVerified,
           Detail = new UserResponseDetail
           {
             Id = user.Id,
-            CanChangePassword = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName),
-            IdentityProviders = user.UserIdentityProviders.Where(uidp => !uidp.IsDeleted).Select(idp => new UserIdentityProviderInfo
+            CanChangePassword = isDelegated ? default : user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName),
+            IdentityProviders = isDelegated ? default : user.UserIdentityProviders.Where(uidp => !uidp.IsDeleted).Select(idp => new UserIdentityProviderInfo
             {
               IdentityProvider = idp.OrganisationEligibleIdentityProvider.IdentityProvider?.IdpConnectionName,
               IdentityProviderId = idp.OrganisationEligibleIdentityProviderId,
@@ -284,7 +329,9 @@ namespace CcsSso.Core.Service.External
               RoleName = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
               ServiceClientId = uar.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceClientId,
               ServiceClientName = uar.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName
-            }).ToList()
+            }).ToList(),
+            // Return organisation list of user's delegation
+            DelegatedOrgs = isDelegated ? userDelegatedOrgs : default
           }
         };
 
@@ -335,7 +382,7 @@ namespace CcsSso.Core.Service.External
       throw new ResourceNotFoundException();
     }
 
-    public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null, bool includeSelf = false)
+    public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null, bool includeSelf = false, bool isDelegatedOnly = false, bool isDelegatedExpiredOnly = false)
     {
 
       if (!await _dataContext.Organisation.AnyAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId))
@@ -360,9 +407,17 @@ namespace CcsSso.Core.Service.External
         }
       }
 
+      var userTypeSearch = isDelegatedOnly ? DbModel.Constants.UserType.Delegation : DbModel.Constants.UserType.Primary;
+
       var userPagedInfo = await _dataContext.GetPagedResultAsync(_dataContext.User
-        .Include(u => u.Party).ThenInclude(p => p.Person)
-        .Where(u => !u.IsDeleted && (includeSelf || u.Id != _requestContext.UserId) &&
+        .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
+        // Include deleted for delegated expired
+        .Where(u =>
+        (isDelegatedExpiredOnly || !u.IsDeleted) && (!isDelegatedExpiredOnly ||  u.DelegationEndDate < DateTime.UtcNow) &&
+        (includeSelf || u.Id != _requestContext.UserId) &&
+        u.UserType == userTypeSearch &&
+        // Delegated and delegated expired conditions
+        (!isDelegatedOnly || (isDelegatedExpiredOnly ? u.DelegationEndDate < DateTime.UtcNow : u.DelegationEndDate >= DateTime.UtcNow)) &&
         u.Party.Person.Organisation.CiiOrganisationId == organisationId &&
         (string.IsNullOrWhiteSpace(searchString) || u.UserName.ToLower().Contains(searchString)
         || (havingMultipleWords && u.Party.Person.FirstName.ToLower().Contains(searchFirstNameLowerCase) && u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase))
@@ -378,8 +433,14 @@ namespace CcsSso.Core.Service.External
         RowCount = userPagedInfo.RowCount,
         UserList = userPagedInfo.Results != null ? userPagedInfo.Results.Select(up => new UserListInfo
         {
-          Name = $"{up.Party.Person.FirstName} {up.Party.Person.LastName}",
-          UserName = up.UserName
+          Name = isDelegatedOnly && !up.DelegationAccepted ? $"{up.Party.Person.FirstName} " +
+                   $"{up.Party.Person.LastName.Substring(0, 1).PadRight(up.Party.Person.LastName.Length, '*')}" :
+                   $"{up.Party.Person.FirstName} {up.Party.Person.LastName}",
+          UserName = up.UserName,
+          StartDate = isDelegatedOnly ? up.DelegationStartDate : default,
+          EndDate = isDelegatedOnly ? up.DelegationEndDate : default,
+          RemainingDays = !isDelegatedOnly || up.DelegationStartDate is null ? 0 : Convert.ToInt32((up.DelegationEndDate.Value - up.DelegationStartDate.Value).Days),
+          OriginOrganisation = isDelegatedOnly ? up.Party.Person.Organisation.LegalName : default
         }).ToList() : new List<UserListInfo>()
       };
 
@@ -428,14 +489,17 @@ namespace CcsSso.Core.Service.External
 
       _userHelper.ValidateUserName(userName);
 
-      var user = await _dataContext.User
+      var users = await _dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation)
         .Include(u => u.UserGroupMemberships)
         .Include(u => u.UserAccessRoles)
         .Include(u => u.UserIdentityProviders)
         .Include(u => u.Party).ThenInclude(p => p.ContactPoints).ThenInclude(cp => cp.ContactDetail).ThenInclude(cd => cd.VirtualAddresses) // Get virtual addresses
         .Include(u => u.Party).ThenInclude(p => p.ContactPoints).ThenInclude(cp => cp.ContactDetail).ThenInclude(cd => cd.ContactPoints) // Assigned contact points
-        .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
+        .Where(u => !u.IsDeleted && u.UserName == userName).ToListAsync();
+
+      var user = users.FirstOrDefault(u => u.UserType == DbModel.Constants.UserType.Primary);
+      var userDelegatedAccessList = users.Where(u => u.UserType == DbModel.Constants.UserType.Primary).ToList();
 
       if (user == null)
       {
@@ -488,6 +552,13 @@ namespace CcsSso.Core.Service.External
         });
       }
 
+      // set delegation expired on user deletion
+      Parallel.ForEach(userDelegatedAccessList, d =>
+      {
+        d.DelegationEndDate = DateTime.UtcNow;
+        d.IsDeleted = true;
+      });
+
       await _dataContext.SaveChangesAsync();
 
       // Log
@@ -536,7 +607,7 @@ namespace CcsSso.Core.Service.External
       var organisation = await _dataContext.Organisation
         .Include(o => o.UserGroups).ThenInclude(ug => ug.GroupEligibleRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
         .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
-         .Include(o => o.OrganisationEligibleIdentityProviders)
+        .Include(o => o.OrganisationEligibleIdentityProviders)
         .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == userProfileRequestInfo.OrganisationId);
 
       if (organisation == null)
@@ -1086,6 +1157,343 @@ namespace CcsSso.Core.Service.External
       }
     }
 
+
+    #region Delegated user
+
+    /// Insert delegated user (Other org user) to represent org 
+    public async Task CreateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo)
+    {
+      var userName = userProfileRequestInfo.UserName.ToLower();
+      _userHelper.ValidateUserName(userName);
+
+      if (string.IsNullOrWhiteSpace(userProfileRequestInfo.Detail.DelegatedOrgId))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorOrganisationIdRequired);
+      }
+
+      var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles)
+                          .FirstOrDefaultAsync(o => !o.IsDeleted &&
+                          o.CiiOrganisationId == userProfileRequestInfo.Detail.DelegatedOrgId));
+
+      if (organisation == default)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidCiiOrganisationId);
+      }
+
+      ValidateDelegateUserDetails(organisation, userProfileRequestInfo);
+
+      // this includes primary and all delegated accounts
+      var existingUserDetails = _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
+                              .Where(u => u.UserName == userProfileRequestInfo.UserName.Trim() && !u.IsDeleted).ToList();
+
+      var existingUserPrimaryDetails = existingUserDetails.FirstOrDefault(u => u.UserType == DbModel.Constants.UserType.Primary);
+      var existingUserDelegatedDetails = existingUserDetails.Where(u => u.UserType == DbModel.Constants.UserType.Delegation && !u.IsDeleted && u.DelegationEndDate >= DateTime.UtcNow).ToList();
+
+      if (existingUserPrimaryDetails == null)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegationPrimaryDetails);
+      }
+
+      // User already delegated in org
+      if (existingUserDelegatedDetails.Any(u => u.Party.Person.OrganisationId == organisation.Id))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegation);
+      }
+
+      // Don't allow to delegate user for same org.
+      if (existingUserPrimaryDetails.Party.Person.Organisation.CiiOrganisationId == userProfileRequestInfo.Detail.DelegatedOrgId)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegationSameOrg);
+      }
+
+      // Set user roles
+      var userAccessRoles = new List<UserAccessRole>();
+      userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
+      {
+        userAccessRoles.Add(new UserAccessRole
+        {
+          OrganisationEligibleRoleId = roleId
+        });
+      });
+
+      var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(p => p.PartyTypeName == PartyTypeName.User)).Id;
+
+      var party = new Party
+      {
+        PartyTypeId = partyTypeId,
+        Person = new Person
+        {
+          FirstName = existingUserPrimaryDetails.Party.Person.FirstName,
+          LastName = existingUserPrimaryDetails.Party.Person.LastName,
+          OrganisationId = organisation.Id
+        },
+        User = new User
+        {
+          UserName = existingUserPrimaryDetails.UserName,
+          UserTitle = existingUserPrimaryDetails.UserTitle,
+          //UserGroupMemberships = userGroupMemberships,
+          UserAccessRoles = userAccessRoles,
+          //UserIdentityProviders = userProfileRequestInfo.Detail.IdentityProviderIds.Select(idpId => new UserIdentityProvider
+          //{
+          //    OrganisationEligibleIdentityProviderId = idpId
+          //}).ToList(),
+          MfaEnabled = existingUserPrimaryDetails.MfaEnabled,
+          CcsServiceId = existingUserPrimaryDetails.CcsServiceId,
+          DelegationStartDate = userProfileRequestInfo.Detail.StartDate,
+          DelegationEndDate = userProfileRequestInfo.Detail.EndDate,
+          UserType = DbModel.Constants.UserType.Delegation
+        }
+      };
+
+
+      try
+      {
+        _dataContext.Party.Add(party);
+
+        await _dataContext.SaveChangesAsync();
+
+        // Send delegation activation email
+        await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName, userAccessRoles.Select(r => r.OrganisationEligibleRole?.CcsAccessRole?.CcsAccessRoleNameKey).ToArray());
+
+        // Log
+        await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelegated, AuditLogApplication.ManageUserAccount, $"UserId:{existingUserPrimaryDetails.Id}," + " " +
+                  $"UserRoleIds:{string.Join(",", userAccessRoles.Select(r => r.OrganisationEligibleRoleId))}");
+      }
+      catch (Exception ex)
+      {
+        Console.Write(ex);
+      }
+      //Invalidate redis
+      //await _wrapperCacheService.RemoveCacheAsync($"{CacheKeyConstant.OrganisationUsers}-{organisation.CiiOrganisationId}");
+
+      // Notify the adapter
+      //await _adapterNotificationService.NotifyUserChangeAsync(OperationType.Create, userProfileRequestInfo.UserName, organisation.CiiOrganisationId);
+
+
+    }
+
+    /// Update delegated user details
+    public async Task UpdateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo)
+    {
+      _userHelper.ValidateUserName(userProfileRequestInfo.UserName);
+
+      if (string.IsNullOrWhiteSpace(userProfileRequestInfo.Detail.DelegatedOrgId))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorOrganisationIdRequired);
+      }
+
+      // get organisation actual id from cii organisation id
+      var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles)
+                          .FirstOrDefaultAsync(o => !o.IsDeleted &&
+                          o.CiiOrganisationId == userProfileRequestInfo.Detail.DelegatedOrgId));
+
+      ValidateDelegateUserDetails(organisation, userProfileRequestInfo);
+
+      var existingDelegatedUserDetails = await _dataContext.User.Include(u => u.UserAccessRoles)
+                                          .Include(u => u.Party).ThenInclude(p => p.Person)
+                                          .FirstOrDefaultAsync(u => u.UserName == userProfileRequestInfo.UserName.Trim() &&
+                                          !u.IsDeleted &&
+                                          u.UserType == DbModel.Constants.UserType.Delegation && u.DelegationEndDate >= DateTime.UtcNow &&
+                                          u.Party.Person.OrganisationId == organisation.Id);
+
+      if (existingDelegatedUserDetails == default)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegation);
+      }
+
+      List<int> requestRoles = userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
+      var hasRolesNotChanged = Enumerable.SequenceEqual(requestRoles, existingDelegatedUserDetails.UserAccessRoles.
+                               Select(ur => ur.OrganisationEligibleRoleId).OrderBy(e => e));
+
+      if (!hasRolesNotChanged)
+      {
+        // Set user roles
+        var userAccessRoles = new List<UserAccessRole>();
+        userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
+        {
+          userAccessRoles.Add(new UserAccessRole
+          {
+            OrganisationEligibleRoleId = roleId
+          });
+        });
+        existingDelegatedUserDetails.UserAccessRoles = userAccessRoles;
+      }
+
+      if (!existingDelegatedUserDetails.DelegationEndDate.Equals(userProfileRequestInfo.Detail.EndDate))
+      {
+        existingDelegatedUserDetails.DelegationEndDate = userProfileRequestInfo.Detail.EndDate;
+      }
+
+      try
+      {
+        await _dataContext.SaveChangesAsync();
+
+        // Send the delegation email
+        //await _ccsSsoEmailService.SendUserWelcomeEmailAsync(party.User.UserName, string.Join(",", eligibleIdentityProviders.Select(idp => idp.IdentityProvider.IdpName)));
+
+        // Log
+        //await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelegated, AuditLogApplication.ManageUserAccount, $"UserId:{existingUserPrimaryDetails.Id}," + " " +
+        //$"UserRoleIds:{string.Join(",", userAccessRoles.Select(r => r.OrganisationEligibleRoleId))}");                
+      }
+      catch (Exception ex)
+      {
+        Console.Write(ex);
+      }
+      //Invalidate redis
+      //await _wrapperCacheService.RemoveCacheAsync($"{CacheKeyConstant.OrganisationUsers}-{organisation.CiiOrganisationId}");
+
+      // Notify the adapter
+      //await _adapterNotificationService.NotifyUserChangeAsync(OperationType.Create, userProfileRequestInfo.UserName, organisation.CiiOrganisationId);
+    }
+
+    // Delete user delegation from org
+    public async Task RemoveDelegatedAccessForUserAsync(string userName, string organisationId)
+    {
+      _userHelper.ValidateUserName(userName);
+
+      if (string.IsNullOrWhiteSpace(organisationId))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorOrganisationIdRequired);
+      }
+
+      var user = await _dataContext.User
+        .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation)
+        .Include(u => u.UserAccessRoles)
+        .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName &&
+        u.UserType == DbModel.Constants.UserType.Delegation && u.DelegationEndDate >= DateTime.UtcNow &&
+        u.Party.Person.Organisation.CiiOrganisationId == organisationId);
+
+      if (user == null)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegation);
+      }
+
+      user.IsDeleted = true;
+      user.Party.IsDeleted = true;
+      user.Party.Person.IsDeleted = true;
+      user.DelegationEndDate = DateTime.UtcNow;
+
+      if (user.UserAccessRoles != null)
+      {
+        user.UserAccessRoles.ForEach((userAccessRole) =>
+        {
+          userAccessRole.IsDeleted = true;
+        });
+      }
+
+      try
+      {
+        await _dataContext.SaveChangesAsync();
+      }
+      catch (Exception ex)
+      {
+        Console.Write(ex);
+      }
+      // Log
+      //await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelete, AuditLogApplication.ManageUserAccount, $"UserId:{user.Id}");
+
+      // Invalidate redis
+      //await _cacheInvalidateService.RemoveUserCacheValuesOnDeleteAsync(userName, user.Party.Person.Organisation.CiiOrganisationId, deletingContactPointIds);
+      //await _remoteCacheService.SetValueAsync(CacheKeyConstant.ForceSignoutKey + userName, true);
+
+      // Notify the adapter
+      //await _adapterNotificationService.NotifyUserChangeAsync(OperationType.Delete, userName, user.Party.Person.Organisation.CiiOrganisationId);
+    }
+
+    /// Update delegated user acceptance
+    public async Task AcceptDelegationAsync(string acceptanceToken)
+    {
+      // Decrept token
+      string delegationActivationDetails = _cryptographyService.DecryptString(acceptanceToken, _appConfigInfo.DelegationEmailTokenEncryptionKey);
+
+
+      //validate token expiration
+      Dictionary<string, string> delegationDetails = delegationActivationDetails.Split('&').Select(value => value.Split('='))
+                                                  .ToDictionary(pair => pair[0], pair => pair[1]);
+      string userName = delegationDetails["usr"];
+      string orgId = delegationDetails["org"];
+      DateTime expirationTime = Convert.ToDateTime(delegationDetails["exp"]);
+
+      if (expirationTime < DateTime.UtcNow)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorActivationLinkExpired);
+      }
+
+      // get organisation actual id from ciiorganisation id
+      var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles)
+                          .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == orgId));
+
+
+      var existingDelegatedUserDetails = await _dataContext.User.Include(u => u.UserAccessRoles)
+                                          .Include(u => u.Party).ThenInclude(p => p.Person)
+                                          .FirstOrDefaultAsync(u => u.UserName == userName &&
+                                          !u.IsDeleted &&
+                                          u.UserType == DbModel.Constants.UserType.Delegation && u.DelegationEndDate >= DateTime.UtcNow &&
+                                          u.Party.Person.OrganisationId == organisation.Id);
+
+      if (existingDelegatedUserDetails == default)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegation);
+      }
+
+      existingDelegatedUserDetails.DelegationAccepted = true;
+
+      try
+      {
+        await _dataContext.SaveChangesAsync();
+      }
+      catch (Exception ex)
+      {
+        Console.Write(ex);
+      }
+    }
+
+    public async Task SendUserDelegatedAccessEmailAsync(string userName, string orgId, string orgName = "", string[] roles = default)
+    {
+      _userHelper.ValidateUserName(userName);
+
+      if (string.IsNullOrWhiteSpace(orgId))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidCiiOrganisationId);
+      }
+
+      if (string.IsNullOrWhiteSpace(orgName) || roles.Length < 1)
+      {
+        var user = await _dataContext.User
+        .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
+        .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(pr => pr.Organisation)
+        .Where(u => !u.IsDeleted && u.UserName == userName && u.UserType == DbModel.Constants.UserType.Delegation).SingleOrDefaultAsync();
+
+        orgName = user.Party.Person.Organisation.LegalName;
+        roles = user.UserAccessRoles.Select(r => r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName).ToArray();
+      }
+
+      string activationInfo = "usr=" + userName + "&org=" + orgName + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegatedEmailExpirationHours);
+      var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
+
+      // Send the delegation email
+      await _ccsSsoEmailService.SendUserDelegatedAccessEmailAsync(userName, orgName, roles, encryptedInfo);
+    }
+
+    private void ValidateDelegateUserDetails(Organisation organisation, DelegatedUserProfileRequestInfo userProfileRequestInfo)
+    {
+      //validate roles
+      var orgRoleIds = organisation.OrganisationEligibleRoles.Select(r => r.Id);
+      if (userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(gId => !orgRoleIds.Contains(gId)))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserRole);
+      }
+
+      // date validations
+      if (userProfileRequestInfo.Detail.StartDate == default || userProfileRequestInfo.Detail.EndDate == default ||
+          userProfileRequestInfo.Detail.StartDate < DateTime.UtcNow ||
+          userProfileRequestInfo.Detail.EndDate > userProfileRequestInfo.Detail.StartDate.AddDays(365) ||
+          userProfileRequestInfo.Detail.StartDate > userProfileRequestInfo.Detail.EndDate)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
+      }
+    }
+    #endregion
 
   }
 }

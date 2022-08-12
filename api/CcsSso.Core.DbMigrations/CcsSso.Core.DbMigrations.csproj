@@ -15,6 +15,8 @@
     <None Remove="Scripts\20210401142220_DropTable.sql" />
     <None Remove="Scripts\20210401142223_InsertInitialRolesServicePermissions.sql" />
     <None Remove="Scripts\20210401142224_InsertIdentityProviderData.sql" />
+    <None Remove="Scripts\Phase2_Sprint12\20220801092551_UserDelegation.sql" />
+    <None Remove="Scripts\Phase2_Sprint12\20220808132444_AddDelegationAcceptedFieldToUser.sql" />
     <None Remove="Scripts\SingleMigrationScript\20211224054428_InitialMigration.sql" />
     <None Remove="Scripts\Sprint26\20220112054931_BulkUploadMugrationDetails.sql" />
     <None Remove="Scripts\Sprint27\20220119113124_CountryDetails.sql" />

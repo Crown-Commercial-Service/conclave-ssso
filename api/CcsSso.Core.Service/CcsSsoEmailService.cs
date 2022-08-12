@@ -26,11 +26,11 @@ namespace CcsSso.Core.Service
     public async Task SendUserWelcomeEmailAsync(string email, string idpName)
     {
       var data = new Dictionary<string, dynamic>
-      {
-        { "emailaddress", email },
-        { "idp", idpName },
-        { "ConclaveLoginlink", _appConfigInfo.ConclaveLoginUrl }
-      };
+              {
+                { "emailaddress", email },
+                { "idp", idpName },
+                { "ConclaveLoginlink", _appConfigInfo.ConclaveLoginUrl }
+              };
       var emailInfo = new EmailInfo()
       {
         To = email,
@@ -124,6 +124,23 @@ namespace CcsSso.Core.Service
       {
         To = email,
         TemplateId = _appConfigInfo.EmailInfo.UserPermissionUpdateNotificationTemplateId,
+        BodyContent = data
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
+    public async Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string[] roles, string encryptedCode)
+    {
+      var data = new Dictionary<string, dynamic>
+                      {
+                        { "orgName", orgName},
+                        { "roles" , string.Join(",",  roles) },
+                        { "link", _appConfigInfo.ConclaveLoginUrl + "/delegation-access/" + $"?activationcode={encryptedCode}" }
+                      };
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.EmailInfo.UserDelegatedAccessEmailTemplateId,
         BodyContent = data
       };
       await SendEmailAsync(emailInfo);

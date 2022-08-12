@@ -112,7 +112,7 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("Email:UserConfirmEmailBothIdpTemplateId", emailsettings.UserConfirmEmailBothIdpTemplateId);
         Data.Add("Email:UserConfirmEmailOnlyUserIdPwdTemplateId", emailsettings.UserConfirmEmailOnlyUserIdPwdTemplateId);
         Data.Add("Email:UserRegistrationEmailUserIdPwdTemplateId", emailsettings.UserRegistrationEmailUserIdPwdTemplateId);
-
+        Data.Add("Email:UserDelegatedAccessEmailTemplateId", emailsettings.UserDelegatedAccessEmailTemplateId);
 
         Data.Add("Email:SendNotificationsEnabled", emailsettings.SendNotificationsEnabled);
       }
@@ -220,7 +220,8 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
 
     public string UserRegistrationEmailUserIdPwdTemplateId { get; set; }
 
-  public string SendNotificationsEnabled { get; set; }
+    public string UserDelegatedAccessEmailTemplateId { get; set; }
+    public string SendNotificationsEnabled { get; set; }
   }
 
   public class Cii

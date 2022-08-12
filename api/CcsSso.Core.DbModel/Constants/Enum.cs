@@ -36,4 +36,10 @@ namespace CcsSso.Core.DbModel.Constants
     Migrating,
     MigrationCompleted
   }
+
+  public enum UserType
+  {
+    Primary,
+    Delegation
+  }
 }
