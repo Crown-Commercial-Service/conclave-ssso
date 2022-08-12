@@ -79,10 +79,21 @@ namespace CcsSso.Domain.Dtos
 
         public string UserPermissionUpdateNotificationTemplateId { get; set; }
 
+        public string UserUpdateEmailOnlyFederatedIdpTemplateId { get; set; }
+
+        public string UserUpdateEmailBothIdpTemplateId { get; set; }
+        public string UserUpdateEmailOnlyUserIdPwdTemplateId { get; set; }
+
+        public string UserConfirmEmailOnlyFederatedIdpTemplateId { get; set; }
+        public string UserConfirmEmailBothIdpTemplateId { get; set; }
+        public string UserConfirmEmailOnlyUserIdPwdTemplateId { get; set; }
+
+        public string UserRegistrationEmailUserIdPwdTemplateId { get; set; }
+
         public string OrganisationJoinRequestTemplateId { get; set; }
 
         public string NominateEmailTemplateId { get; set; }
-        
+
         public string UserDelegatedAccessEmailTemplateId { get; set; }
 
         public bool SendNotificationsEnabled { get; set; }

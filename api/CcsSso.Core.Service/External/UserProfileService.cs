@@ -76,18 +76,19 @@ namespace CcsSso.Core.Service.External
             var user = await _dataContext.User
               .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
 
-            if (user != null)
-            {
-                throw new ResourceAlreadyExistsException();
-            }
-            Validate(userProfileRequestInfo, false, organisation);
+      if (user != null)
+      {
+        throw new ResourceAlreadyExistsException();
+      }
+
+      Validate(userProfileRequestInfo, false, organisation);
 
             var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
               .Include(x => x.IdentityProvider)
               .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id)).ToListAsync();
 
-            var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
-            // var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
+      var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
+      var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
 
             // This is to enforce MFA over any other
             //if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
@@ -177,37 +178,55 @@ namespace CcsSso.Core.Service.External
             await _dataContext.SaveChangesAsync();
 
 
-            if (isConclaveConnectionIncluded)
-            {
-                SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
-                {
-                    Email = userName,
-                    Password = userProfileRequestInfo.Password,
-                    SendUserRegistrationEmail = userProfileRequestInfo.SendUserRegistrationEmail,
-                    UserName = userName,
-                    FirstName = userProfileRequestInfo.FirstName,
-                    LastName = userProfileRequestInfo.LastName,
-                    MfaEnabled = userProfileRequestInfo.MfaEnabled
-                };
+      if (isConclaveConnectionIncluded)
+      {
+        SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+        {
+          Email = userName,
+          Password = userProfileRequestInfo.Password,
+          SendUserRegistrationEmail = false, // Emails are sent separately along with other IDP selections
+          UserName = userName,
+          FirstName = userProfileRequestInfo.FirstName,
+          LastName = userProfileRequestInfo.LastName,
+          MfaEnabled = userProfileRequestInfo.MfaEnabled
+        };
 
-                try
-                {
-                    await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
-                    isRegisteredInIdam = true;
-                }
-                catch (Exception)
-                {
-                    // If Idam registration failed, remove the user record in DB
-                    _dataContext.Party.Remove(party);
-                    await _dataContext.SaveChangesAsync();
-                    throw;
-                }
-            }
-            else if (userProfileRequestInfo.SendUserRegistrationEmail)
-            {
-                // Send the welcome email if not Idam user. (Idam users will recieve an email while registering)
-                await _ccsSsoEmailService.SendUserWelcomeEmailAsync(party.User.UserName, string.Join(",", eligibleIdentityProviders.Select(idp => idp.IdentityProvider.IdpName)));
-            }
+        try
+        {
+          await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
+          isRegisteredInIdam = true;
+        }
+        catch (Exception)
+        {
+          // If Idam registration failed, remove the user record in DB
+          _dataContext.Party.Remove(party);
+          await _dataContext.SaveChangesAsync();
+          throw;
+        }
+      }
+
+      if (userProfileRequestInfo.SendUserRegistrationEmail)
+      {
+        if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)
+        {
+          var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+          var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
+
+          await _ccsSsoEmailService.SendUserConfirmEmailBothIdpAsync(party.User.UserName, string.Join(",", listOfIdpName), activationlink);
+
+        }
+        else if (isNonUserNamePwdConnectionIncluded)
+        {
+          var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
+          await _ccsSsoEmailService.SendUserConfirmEmailOnlyFederatedIdpAsync(party.User.UserName, string.Join(",", listOfIdpName));
+
+        }
+        else if (isConclaveConnectionIncluded)
+        {
+          var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+          await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink));
+        }
+      }
 
             // Log
             await _auditLoginService.CreateLogAsync(AuditLogEvent.UserCreate, AuditLogApplication.ManageUserAccount, $"UserId:{party.User.Id}, UserIdpId:{string.Join(",", party.User.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId))}," + " " +
@@ -606,54 +625,54 @@ namespace CcsSso.Core.Service.External
             Validate(userProfileRequestInfo, isMyProfile, organisation);
             bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
 
-            var UserAccessRole = (from u in _dataContext.User
-                                  join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
-                                  join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
-                                  join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
-                                  where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
-                                  select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
+      var UserAccessRole = (from u in _dataContext.User
+                            join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
+                            join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
+                            join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
+                            where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+                            select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
 
-            bool isAdminUser = false;
-            if (UserAccessRole != null && UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
-            {
-                isAdminUser = true;
-            }
+      bool isAdminUser = false;
+      if (UserAccessRole != null && UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+      {
+        isAdminUser = true;
+      }
 
-            bool hasProfileInfoChanged;
-            if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
-            {
-                hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
-                                        user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
-                                        user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title) ||
-                                        user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id) != userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id));
-            }
-            else
-            {
-                hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
-                                        user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
-                                        user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title));
-            }
-            user.Party.Person.FirstName = userProfileRequestInfo.FirstName.Trim();
-            user.Party.Person.LastName = userProfileRequestInfo.LastName.Trim();
-            bool hasGroupMembershipsNotChanged = true;
-            bool hasRolesNotChanged = true;
-            bool hasIdpChange = false;
-            List<int> previousGroups = new();
-            List<int> previousRoles = new();
-            List<int> requestGroups = new();
-            List<int> requestRoles = new();
-            List<int> previousIdentityProviderIds = new();
-            if (!isMyProfile || isAdminUser == true)
-            {
-                user.UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title);
-                requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
-                requestRoles = userProfileRequestInfo.Detail.RoleIds == null ? new List<int>() : userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
-                hasGroupMembershipsNotChanged = Enumerable.SequenceEqual(requestGroups, user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).OrderBy(e => e));
-                hasRolesNotChanged = Enumerable.SequenceEqual(requestRoles, user.UserAccessRoles.Select(ur => ur.OrganisationEligibleRoleId).OrderBy(e => e));
-                previousGroups = user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).ToList();
-                previousRoles = user.UserAccessRoles.Select(ur => ur.OrganisationEligibleRoleId).ToList();
-                user.UserGroupMemberships.RemoveAll(g => true);
-                user.UserAccessRoles.RemoveAll(r => true);
+      bool hasProfileInfoChanged;
+      if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
+      {
+        hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
+                                user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
+                                user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title) ||
+                                user.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId).OrderBy(id => id) != userProfileRequestInfo.Detail.IdentityProviderIds.OrderBy(id => id));
+      }
+      else
+      {
+        hasProfileInfoChanged = (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() ||
+                                user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
+                                user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title));
+      }
+      user.Party.Person.FirstName = userProfileRequestInfo.FirstName.Trim();
+      user.Party.Person.LastName = userProfileRequestInfo.LastName.Trim();
+      bool hasGroupMembershipsNotChanged = true;
+      bool hasRolesNotChanged = true;
+      bool hasIdpChange = false;
+      List<int> previousGroups = new();
+      List<int> previousRoles = new();
+      List<int> requestGroups = new();
+      List<int> requestRoles = new();
+      List<int> previousIdentityProviderIds = new();
+      if (!isMyProfile || isAdminUser == true)
+      {
+        user.UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title);
+        requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
+        requestRoles = userProfileRequestInfo.Detail.RoleIds == null ? new List<int>() : userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
+        hasGroupMembershipsNotChanged = Enumerable.SequenceEqual(requestGroups, user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).OrderBy(e => e));
+        hasRolesNotChanged = Enumerable.SequenceEqual(requestRoles, user.UserAccessRoles.Select(ur => ur.OrganisationEligibleRoleId).OrderBy(e => e));
+        previousGroups = user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).ToList();
+        previousRoles = user.UserAccessRoles.Select(ur => ur.OrganisationEligibleRoleId).ToList();
+        user.UserGroupMemberships.RemoveAll(g => true);
+        user.UserAccessRoles.RemoveAll(r => true);
 
                 var elegibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
                                                 .Include(x => x.IdentityProvider)

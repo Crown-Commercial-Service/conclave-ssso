@@ -103,7 +103,17 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
                 Data.Add("Email:UserContactUpdateNotificationTemplateId", emailsettings.UserContactUpdateNotificationTemplateId);
                 Data.Add("Email:UserProfileUpdateNotificationTemplateId", emailsettings.UserProfileUpdateNotificationTemplateId);
                 Data.Add("Email:UserPermissionUpdateNotificationTemplateId", emailsettings.UserPermissionUpdateNotificationTemplateId);
+
+                Data.Add("Email:UserUpdateEmailOnlyFederatedIdpTemplateId", emailsettings.UserUpdateEmailOnlyFederatedIdpTemplateId);
+                Data.Add("Email:UserUpdateEmailBothIdpTemplateId", emailsettings.UserUpdateEmailBothIdpTemplateId);
+                Data.Add("Email:UserUpdateEmailOnlyUserIdPwdTemplateId", emailsettings.UserUpdateEmailOnlyUserIdPwdTemplateId);
+
+                Data.Add("Email:UserConfirmEmailOnlyFederatedIdpTemplateId", emailsettings.UserConfirmEmailOnlyFederatedIdpTemplateId);
+                Data.Add("Email:UserConfirmEmailBothIdpTemplateId", emailsettings.UserConfirmEmailBothIdpTemplateId);
+                Data.Add("Email:UserConfirmEmailOnlyUserIdPwdTemplateId", emailsettings.UserConfirmEmailOnlyUserIdPwdTemplateId);
+                Data.Add("Email:UserRegistrationEmailUserIdPwdTemplateId", emailsettings.UserRegistrationEmailUserIdPwdTemplateId);
                 Data.Add("Email:UserDelegatedAccessEmailTemplateId", emailsettings.UserDelegatedAccessEmailTemplateId);
+
                 Data.Add("Email:SendNotificationsEnabled", emailsettings.SendNotificationsEnabled);
             }
 
@@ -200,8 +210,17 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
 
         public string UserPermissionUpdateNotificationTemplateId { get; set; }
 
-        public string UserDelegatedAccessEmailTemplateId { get; set; }
+        public string UserUpdateEmailOnlyFederatedIdpTemplateId { get; set; }
+        public string UserUpdateEmailBothIdpTemplateId { get; set; }
+        public string UserUpdateEmailOnlyUserIdPwdTemplateId { get; set; }
 
+        public string UserConfirmEmailOnlyFederatedIdpTemplateId { get; set; }
+        public string UserConfirmEmailBothIdpTemplateId { get; set; }
+        public string UserConfirmEmailOnlyUserIdPwdTemplateId { get; set; }
+
+        public string UserRegistrationEmailUserIdPwdTemplateId { get; set; }
+
+        public string UserDelegatedAccessEmailTemplateId { get; set; }
         public string SendNotificationsEnabled { get; set; }
     }
 

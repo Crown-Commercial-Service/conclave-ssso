@@ -63,46 +63,49 @@ namespace CcsSso.Api
 
                 bulkUploadMaxUserCount = bulkUploadMaxUserCount == 0 ? 10 : bulkUploadMaxUserCount;
 
-                ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
-                {
-                    CustomDomain = Configuration["CustomDomain"],
-                    DashboardServiceClientId = Configuration["DashboardServiceClientId"],
-                    BulkUploadMaxUserCount = bulkUploadMaxUserCount,
-                    JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
-                    {
-                        IdamClienId = Configuration["JwtTokenValidationInfo:IdamClienId"],
-                        Issuer = Configuration["JwtTokenValidationInfo:Issuer"],
-                        JwksUrl = isApiGatewayEnabled ? Configuration["JwtTokenValidationInfo:ApiGatewayEnabledJwksUrl"] : Configuration["JwtTokenValidationInfo:ApiGatewayDisabledJwksUrl"]
-                    },
-                    SecurityApiDetails = new SecurityApiDetails()
-                    {
-                        ApiKey = Configuration["SecurityApiSettings:ApiKey"],
-                        Url = Configuration["SecurityApiSettings:Url"]
-                    },
-                    QueueUrlInfo = new QueueUrlInfo
-                    {
-                        AdaptorNotificationQueueUrl = Configuration["QueueInfo:AdaptorNotificationQueueUrl"]
-                    },
-                    RedisCacheSettings = new RedisCacheSetting()
-                    {
-                        ConnectionString = Configuration["RedisCacheSettings:ConnectionString"],
-                        IsEnabled = isRedisEnabled,
-                        CacheExpirationInMinutes = cacheExpirationInMinutes
-                    },
-                    EmailInfo = new CcsEmailInfo
-                    {
-                        NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
-                        OrganisationJoinRequestTemplateId = Configuration["Email:OrganisationJoinRequestTemplateId"],
-                        SendNotificationsEnabled = sendEmailNotification
-                    },
-                    ConclaveSettings = new ConclaveSettings()
-                    {
-                        BaseUrl = Configuration["ConclaveSettings:BaseUrl"],
-                        OrgRegistrationRoute = Configuration["ConclaveSettings:OrgRegistrationRoute"]
-                    }
-                };
-                return appConfigInfo;
-            });
+        ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
+        {
+          CustomDomain = Configuration["CustomDomain"],
+          DashboardServiceClientId = Configuration["DashboardServiceClientId"],
+          BulkUploadMaxUserCount = bulkUploadMaxUserCount,
+          JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
+          {
+            IdamClienId = Configuration["JwtTokenValidationInfo:IdamClienId"],
+            Issuer = Configuration["JwtTokenValidationInfo:Issuer"],
+            JwksUrl = isApiGatewayEnabled ? Configuration["JwtTokenValidationInfo:ApiGatewayEnabledJwksUrl"] : Configuration["JwtTokenValidationInfo:ApiGatewayDisabledJwksUrl"]
+          },
+          SecurityApiDetails = new SecurityApiDetails()
+          {
+            ApiKey = Configuration["SecurityApiSettings:ApiKey"],
+            Url = Configuration["SecurityApiSettings:Url"]
+          },
+          QueueUrlInfo = new QueueUrlInfo
+          {
+            AdaptorNotificationQueueUrl = Configuration["QueueInfo:AdaptorNotificationQueueUrl"]
+          },
+          RedisCacheSettings = new RedisCacheSetting()
+          {
+            ConnectionString = Configuration["RedisCacheSettings:ConnectionString"],
+            IsEnabled = isRedisEnabled,
+            CacheExpirationInMinutes = cacheExpirationInMinutes
+          },
+          EmailInfo = new CcsEmailInfo
+          {
+            NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
+            OrganisationJoinRequestTemplateId = Configuration["Email:OrganisationJoinRequestTemplateId"],
+            UserConfirmEmailOnlyFederatedIdpTemplateId = Configuration["Email:UserConfirmEmailOnlyFederatedIdpTemplateId"],
+            UserConfirmEmailOnlyUserIdPwdTemplateId = Configuration["Email:UserConfirmEmailOnlyUserIdPwdTemplateId"],
+            UserConfirmEmailBothIdpTemplateId = Configuration["Email:UserConfirmEmailBothIdpTemplateId"],
+            SendNotificationsEnabled = sendEmailNotification
+          },
+          ConclaveSettings = new ConclaveSettings()
+          {
+            BaseUrl = Configuration["ConclaveSettings:BaseUrl"],
+            OrgRegistrationRoute = Configuration["ConclaveSettings:OrgRegistrationRoute"]
+          }
+        };
+        return appConfigInfo;
+      });
 
             services.AddSingleton(s =>
             {

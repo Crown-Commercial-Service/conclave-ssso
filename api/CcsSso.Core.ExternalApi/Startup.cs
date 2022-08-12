@@ -100,6 +100,13 @@ namespace CcsSso.ExternalApi
                         UserContactUpdateNotificationTemplateId = Configuration["Email:UserContactUpdateNotificationTemplateId"],
                         UserPermissionUpdateNotificationTemplateId = Configuration["Email:UserPermissionUpdateNotificationTemplateId"],
                         UserDelegatedAccessEmailTemplateId = Configuration["Email:UserDelegatedAccessEmailTemplateId"],
+                        UserUpdateEmailOnlyFederatedIdpTemplateId= Configuration["Email:UserUpdateEmailOnlyFederatedIdpTemplateId"],
+                        UserUpdateEmailOnlyUserIdPwdTemplateId = Configuration["Email:UserUpdateEmailOnlyUserIdPwdTemplateId"],
+                        UserUpdateEmailBothIdpTemplateId = Configuration["Email:UserUpdateEmailBothIdpTemplateId"],
+                        UserConfirmEmailOnlyFederatedIdpTemplateId = Configuration["Email:UserConfirmEmailOnlyFederatedIdpTemplateId"],
+                        UserConfirmEmailOnlyUserIdPwdTemplateId = Configuration["Email:UserConfirmEmailOnlyUserIdPwdTemplateId"],
+                        UserConfirmEmailBothIdpTemplateId = Configuration["Email:UserConfirmEmailBothIdpTemplateId"],
+                        UserRegistrationEmailUserIdPwdTemplateId= Configuration["Email:UserRegistrationEmailUserIdPwdTemplateId"],
                         SendNotificationsEnabled = sendNotificationsEnabled,
                     },
                     QueueUrlInfo = new QueueUrlInfo
