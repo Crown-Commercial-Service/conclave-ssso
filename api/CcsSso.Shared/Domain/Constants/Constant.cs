@@ -72,12 +72,16 @@ namespace CcsSso.Shared.Domain.Constants
     public const string AdditionalIdentifiers_URI = "Uri";
     public const string AdditionalIdentifiers_Scheme = "Scheme";
 
+    public const string AdditionalIdentifiers_NA = "NA";
+
   }
 
   public static class ContactsHeaderMap
   {
-    public const string ContactType = "contact_type";
-    public const string ContactID = "contact_id";
+    //public const string ContactType = "contact_type";
+    //public const string ContactID = "contact_id";
+    public const string ContactType = "type";
+    public const string ContactID = "type_id";
     public const string ContactPointID = "contactpoint_id";
     public const string OriginalContactPointID = "original_contactpoint_id";
     public const string AssignedContactType = "assigned_contact_type";
@@ -97,5 +101,6 @@ namespace CcsSso.Shared.Domain.Constants
     public const string ReferenceData = "ReferenceData";
     public const string IpAddress = "IpAddress";
     public const string Device = "Device";
+    public const string EventTimeUtc = "EventTimeUtc";
   }
 }

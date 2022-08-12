@@ -260,5 +260,11 @@ namespace CcsSso.Security.Services
       }
       throw new RecordNotFoundException();
     }
+
+    public async Task<string> GetActivationEmailVerificationLink(string email)
+    {
+      await Task.CompletedTask;
+      return null;
+    }
   }
 }

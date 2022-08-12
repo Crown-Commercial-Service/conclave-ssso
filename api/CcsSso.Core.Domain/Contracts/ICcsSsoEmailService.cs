@@ -8,6 +8,16 @@ namespace CcsSso.Core.Domain.Contracts
   {
     Task SendUserWelcomeEmailAsync(string email, string idpName);
 
+    Task SendUserUpdateEmailOnlyUserIdPwdAsync(string email, string activationlink);
+    Task SendUserUpdateEmailOnlyFederatedIdpAsync(string email, string idpName);
+    Task SendUserUpdateEmailBothIdpAsync(string email, string idpName, string activationlink);
+
+    Task SendUserConfirmEmailOnlyUserIdPwdAsync(string email, string activationlink);
+    Task SendUserConfirmEmailOnlyFederatedIdpAsync(string email, string idpName);
+    Task SendUserConfirmEmailBothIdpAsync(string email, string idpName, string activationlink);
+    Task SendUserRegistrationEmailUserIdPwdAsync(string email, string activationlink);
+
+
     Task SendOrgProfileUpdateEmailAsync(string email);
 
     Task SendNominateEmailAsync(string email, string link);

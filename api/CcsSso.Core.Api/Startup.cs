@@ -93,6 +93,9 @@ namespace CcsSso.Api
           {
             NominateEmailTemplateId = Configuration["Email:NominateEmailTemplateId"],
             OrganisationJoinRequestTemplateId = Configuration["Email:OrganisationJoinRequestTemplateId"],
+            UserConfirmEmailOnlyFederatedIdpTemplateId = Configuration["Email:UserConfirmEmailOnlyFederatedIdpTemplateId"],
+            UserConfirmEmailOnlyUserIdPwdTemplateId = Configuration["Email:UserConfirmEmailOnlyUserIdPwdTemplateId"],
+            UserConfirmEmailBothIdpTemplateId = Configuration["Email:UserConfirmEmailBothIdpTemplateId"],
             SendNotificationsEnabled = sendEmailNotification
           },
           ConclaveSettings = new ConclaveSettings()
