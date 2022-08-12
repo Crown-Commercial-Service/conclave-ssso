@@ -76,7 +76,7 @@ namespace CcsSso.ExternalApi.Controllers
         /// <remarks>
         /// Sample request:
         ///
-        ///     GET /users?user-id=user@mail.com
+        ///     GET /users?user-id=user@mail.com&is-delegated=true&is-delegated-search=true&delegated-organisation-id=123
         ///     
         ///
         /// </remarks>
@@ -303,7 +303,7 @@ namespace CcsSso.ExternalApi.Controllers
         /// <remarks>
         /// Sample request:
         ///
-        ///     DELETE /delegate-user?user-id=user@mail.com&organisationId=organisation id
+        ///     DELETE /delegate-user?user-id=user@mail.com&organisation-id='organisation id'
         ///     
         ///
         /// </remarks>
@@ -318,7 +318,7 @@ namespace CcsSso.ExternalApi.Controllers
         }
 
         /// <summary>
-        /// User has accepted the delegation invetation
+        /// User has accepted the delegation invitation
         /// </summary>
         /// <response  code="200">Ok</response>
         /// <response  code="404">Not found</response>
@@ -328,11 +328,8 @@ namespace CcsSso.ExternalApi.Controllers
         /// <remarks>
         /// Sample request:
         ///
-        ///     PUT /delegate-user-acceptance
-        ///     {
-        ///       "acceptanceToken": "token"
-        ///     }
-        ///
+        /// PUT /delegate-user-acceptance?acceptance-code='token'
+        /// 
         /// </remarks>
         [HttpPut("delegate-user-validation")]
         //[ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
@@ -357,21 +354,16 @@ namespace CcsSso.ExternalApi.Controllers
         /// <remarks>
         /// Sample request:
         ///
-        ///     PUT /delegate-user-resend-activation
-        ///     {
-        ///       "userName": "user@mail.com",
-        ///       "organisationId" : "organisation id"
-        ///     }
-        ///
+        /// PUT /delegate-user-resend-activation?user-id=user@mail.com&organisation-id='organisation id'
         /// </remarks>
         [HttpPut("delegate-user-resend-activation")]
         [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
         [OrganisationAuthorise("USER")]
         [SwaggerOperation(Tags = new[] { "User" })]
         [ProducesResponseType(typeof(bool), 200)]
-        public async Task ResenedActivationLink([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "organisation-name")] string organisationName)
+        public async Task ResenedActivationLink([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "organisation-id")] string organisationId)
         {
-            await _userProfileService.SendUserDelegatedAccessEmailAsync(userId, organisationName);
+            await _userProfileService.SendUserDelegatedAccessEmailAsync(userId, organisationId);
         }
         #endregion
 

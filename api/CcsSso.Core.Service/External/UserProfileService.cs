@@ -272,7 +272,7 @@ namespace CcsSso.Core.Service.External
                        u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId
                        && !u.IsDeleted && u.DelegationEndDate >= DateTime.UtcNow);
 
-                // If searching for user to delegate in orgnisation and already exist
+                // If searching for user to delegate in organisation and already exist
                 if (isSearchUser && user != default)
                 {
                     throw new ResourceAlreadyExistsException();
@@ -285,7 +285,7 @@ namespace CcsSso.Core.Service.External
             }
 
             var userDelegatedOrgs = users.Where(u => u.UserType == DbModel.Constants.UserType.Delegation &&
-                                    u.DelegationEndDate >= DateTime.UtcNow && !u.IsDeleted && u.DelegationAccepted
+                                    u.DelegationEndDate >= DateTime.UtcNow && !u.IsDeleted && (!string.IsNullOrWhiteSpace(delegatedOrgId) || u.DelegationAccepted)
                                     && ((isDelegated && string.IsNullOrWhiteSpace(delegatedOrgId)) || u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId)
                                     )
                                     .Select(u => new UserDelegationDetails
@@ -293,7 +293,8 @@ namespace CcsSso.Core.Service.External
                                         DelegatedOrgId = u.Party.Person.Organisation.CiiOrganisationId,
                                         DelegatedOrgName = u.Party.Person.Organisation.LegalName,
                                         StartDate = u.DelegationStartDate,
-                                        EndDate = u.DelegationEndDate
+                                        EndDate = u.DelegationEndDate,
+                                        DelegationAccepted = u.DelegationAccepted
                                     }).ToArray();
 
             if (user != null)

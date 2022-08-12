@@ -68,6 +68,8 @@ namespace CcsSso.Core.Domain.Dtos.External
         public DateTime? StartDate { get; set; }
 
         public DateTime? EndDate { get; set; }
+        
+        public bool? DelegationAccepted { get; set; }
     }
 
     public class UserIdentityProviderInfo
