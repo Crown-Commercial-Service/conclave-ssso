@@ -72,6 +72,7 @@ namespace CcsSso.Core.Service.External
       {
         throw new ResourceAlreadyExistsException();
       }
+
       Validate(userProfileRequestInfo, false, organisation);
 
       var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
@@ -79,7 +80,7 @@ namespace CcsSso.Core.Service.External
         .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id)).ToListAsync();
 
       var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
-      // var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
+      var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
 
       // This is to enforce MFA over any other
       //if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
@@ -175,7 +176,7 @@ namespace CcsSso.Core.Service.External
         {
           Email = userName,
           Password = userProfileRequestInfo.Password,
-          SendUserRegistrationEmail = userProfileRequestInfo.SendUserRegistrationEmail,
+          SendUserRegistrationEmail = false, // Emails are sent separately along with other IDP selections
           UserName = userName,
           FirstName = userProfileRequestInfo.FirstName,
           LastName = userProfileRequestInfo.LastName,
@@ -195,10 +196,28 @@ namespace CcsSso.Core.Service.External
           throw;
         }
       }
-      else if (userProfileRequestInfo.SendUserRegistrationEmail)
+
+      if (userProfileRequestInfo.SendUserRegistrationEmail)
       {
-        // Send the welcome email if not Idam user. (Idam users will recieve an email while registering)
-        await _ccsSsoEmailService.SendUserWelcomeEmailAsync(party.User.UserName, string.Join(",", eligibleIdentityProviders.Select(idp => idp.IdentityProvider.IdpName)));
+        if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)
+        {
+          var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+          var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
+
+          await _ccsSsoEmailService.SendUserConfirmEmailBothIdpAsync(party.User.UserName, string.Join(",", listOfIdpName), activationlink);
+
+        }
+        else if (isNonUserNamePwdConnectionIncluded)
+        {
+          var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
+          await _ccsSsoEmailService.SendUserConfirmEmailOnlyFederatedIdpAsync(party.User.UserName, string.Join(",", listOfIdpName));
+
+        }
+        else if (isConclaveConnectionIncluded)
+        {
+          var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+          await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink));
+        }
       }
 
       // Log
@@ -543,18 +562,18 @@ namespace CcsSso.Core.Service.External
       bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
 
       var UserAccessRole = (from u in _dataContext.User
-                           join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
-                           join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
-                           join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
-                           where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
-                           select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
+                            join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
+                            join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
+                            join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
+                            where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+                            select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
 
       bool isAdminUser = false;
       if (UserAccessRole != null && UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
       {
-         isAdminUser = true;
+        isAdminUser = true;
       }
-     
+
       bool hasProfileInfoChanged;
       if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
       {

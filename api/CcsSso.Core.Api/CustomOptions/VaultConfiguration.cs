@@ -85,6 +85,9 @@ namespace CcsSso.Api.CustomOptions
         Data.Add("Email:NominateEmailTemplateId", emailInfo.NominateEmailTemplateId);
         Data.Add("Email:OrganisationJoinRequestTemplateId", emailInfo.OrganisationJoinRequestTemplateId);        
         Data.Add("Email:ApiKey", emailInfo.ApiKey);
+        Data.Add("Email:UserConfirmEmailOnlyFederatedIdpTemplateId", emailInfo.UserConfirmEmailOnlyFederatedIdpTemplateId);
+        Data.Add("Email:UserConfirmEmailBothIdpTemplateId", emailInfo.UserConfirmEmailBothIdpTemplateId);
+        Data.Add("Email:UserConfirmEmailOnlyUserIdPwdTemplateId", emailInfo.UserConfirmEmailOnlyUserIdPwdTemplateId);
         Data.Add("Email:SendNotificationsEnabled", emailInfo.SendNotificationsEnabled);
       }
 
@@ -206,6 +209,12 @@ namespace CcsSso.Api.CustomOptions
     public string OrganisationJoinRequestTemplateId { get; set; }
 
     public string SendNotificationsEnabled { get; set; }
+
+    public string UserConfirmEmailOnlyFederatedIdpTemplateId { get; set; }
+    public string UserConfirmEmailBothIdpTemplateId { get; set; }
+    public string UserConfirmEmailOnlyUserIdPwdTemplateId { get; set; }
+
+
   }
 
   public class ConclaveSettingsVault
