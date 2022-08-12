@@ -1253,7 +1253,7 @@ namespace CcsSso.Core.Service.External
                 await _dataContext.SaveChangesAsync();
 
                 // Send delegation activation email
-                await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName, userAccessRoles.Select(r => r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey).ToArray());
+                await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName, userAccessRoles.Select(r => r.OrganisationEligibleRole?.CcsAccessRole?.CcsAccessRoleNameKey).ToArray());
 
                 // Log
                 await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelegated, AuditLogApplication.ManageUserAccount, $"UserId:{existingUserPrimaryDetails.Id}," + " " +

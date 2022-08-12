@@ -134,7 +134,7 @@ namespace CcsSso.Core.Service
             var data = new Dictionary<string, dynamic>
                       {
                         { "orgName", orgName},
-                        { "roles" , "<ul><li>" + string.Join("</li><li>",  roles) + "</li></ul>" },
+                        { "roles" , string.Join(",",  roles) },
                         { "link", _appConfigInfo.ConclaveLoginUrl + "/delegation-access/" + $"?activationcode={encryptedCode}" }
                       };
             var emailInfo = new EmailInfo()
