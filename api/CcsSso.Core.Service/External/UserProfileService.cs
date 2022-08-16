@@ -1185,7 +1185,7 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorOrganisationIdRequired);
       }
 
-      var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles)
+      var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles).ThenInclude(c => c.CcsAccessRole)
                           .FirstOrDefaultAsync(o => !o.IsDeleted &&
                           o.CiiOrganisationId == userProfileRequestInfo.Detail.DelegatedOrgId));
 
@@ -1266,8 +1266,15 @@ namespace CcsSso.Core.Service.External
 
         await _dataContext.SaveChangesAsync();
 
+        string[] roleNames = new string[] { };
+        foreach (var roleId in userAccessRoles)
+        {
+          var roleName = organisation.OrganisationEligibleRoles.FirstOrDefault(r => r.Id == roleId.OrganisationEligibleRoleId).CcsAccessRole.CcsAccessRoleName;
+          roleNames.Append(roleName);
+        }
+
         // Send delegation activation email
-        await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName, userAccessRoles.Select(r => r.OrganisationEligibleRole?.CcsAccessRole?.CcsAccessRoleNameKey).ToArray());
+        await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName, roleNames);
 
         // Log
         await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelegated, AuditLogApplication.ManageUserAccount, $"UserId:{existingUserPrimaryDetails.Id}," + " " +
