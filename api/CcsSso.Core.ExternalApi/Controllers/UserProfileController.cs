@@ -331,7 +331,7 @@ namespace CcsSso.ExternalApi.Controllers
         /// PUT /delegate-user-acceptance?acceptance-code='token'
         /// 
         /// </remarks>
-        [HttpPut("delegate-user-validation")]
+        [HttpGet("delegate-user-validation")]
         //[ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
         //[OrganisationAuthorise("USER")]
         [SwaggerOperation(Tags = new[] { "User" })]
