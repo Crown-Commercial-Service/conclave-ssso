@@ -1427,12 +1427,16 @@ namespace CcsSso.Core.Service.External
       // Decrept token
       string delegationActivationDetails = _cryptographyService.DecryptString(acceptanceToken, _appConfigInfo.DelegationEmailTokenEncryptionKey);
 
+      if (string.IsNullOrWhiteSpace(delegationActivationDetails))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegation);
+      }
 
       //validate token expiration
       Dictionary<string, string> delegationDetails = delegationActivationDetails.Split('&').Select(value => value.Split('='))
                                                   .ToDictionary(pair => pair[0], pair => pair[1]);
       string userName = delegationDetails["usr"];
-      string orgId = delegationDetails["org"];
+      string orgName = delegationDetails["org"];
       DateTime expirationTime = Convert.ToDateTime(delegationDetails["exp"]);
 
       if (expirationTime < DateTime.UtcNow)
@@ -1442,14 +1446,14 @@ namespace CcsSso.Core.Service.External
 
       // get organisation actual id from ciiorganisation id
       var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles)
-                          .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == orgId));
+                          .FirstOrDefaultAsync(o => !o.IsDeleted && o.LegalName == orgName));
 
 
       var existingDelegatedUserDetails = await _dataContext.User.Include(u => u.UserAccessRoles)
                                           .Include(u => u.Party).ThenInclude(p => p.Person)
                                           .FirstOrDefaultAsync(u => u.UserName == userName &&
                                           !u.IsDeleted &&
-                                          u.UserType == DbModel.Constants.UserType.Delegation && u.DelegationEndDate >= DateTime.UtcNow &&
+                                          u.UserType == DbModel.Constants.UserType.Delegation && u.DelegationEndDate >= DateTime.UtcNow.Date &&
                                           u.Party.Person.OrganisationId == organisation.Id);
 
       if (existingDelegatedUserDetails == default)

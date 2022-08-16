@@ -135,7 +135,7 @@ namespace CcsSso.Core.Service
                       {
                         { "orgName", orgName},
                         { "roles" , string.Join(",",  roles) },
-                        { "link", _appConfigInfo.ConclaveLoginUrl + "/delegated-user-activation/" + $"?activationcode={encryptedCode}" }
+                        { "link", _appConfigInfo.ConclaveLoginUrl + "/delegated-user-activation" + $"?activationcode={encryptedCode}" }
                       };
       var emailInfo = new EmailInfo()
       {
