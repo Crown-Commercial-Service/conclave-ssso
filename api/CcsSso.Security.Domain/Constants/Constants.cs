@@ -21,6 +21,7 @@ namespace CcsSso.Security.Domain.Constants
     {
       public const string MFA_RESET = "MFA_RESET";
       public const string MFA_RESET_PERSISTENT = "MFA_RESET_PERSISTENT";
+      public const string DELEGATION = "DELEGATION";
     }
   }
 }

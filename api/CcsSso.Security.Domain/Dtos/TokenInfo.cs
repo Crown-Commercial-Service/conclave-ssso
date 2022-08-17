@@ -22,6 +22,7 @@ namespace CcsSso.Security.Domain.Dtos
     public string ClientSecret { get; set; }
 
     public string State { get; set; }
+    public string DelegatedOrgId { get; set; }
   }
 
   public class TokenResponseInfo
