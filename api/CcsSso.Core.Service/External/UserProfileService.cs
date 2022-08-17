@@ -268,14 +268,20 @@ namespace CcsSso.Core.Service.External
       // Search for user delegation details for org
       if (isDelegated && !string.IsNullOrWhiteSpace(delegatedOrgId))
       {
-        user = users.SingleOrDefault(u => u.UserType == DbModel.Constants.UserType.Delegation &&
-               u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId
-               && !u.IsDeleted && u.DelegationEndDate >= DateTime.UtcNow);
+        user = users.SingleOrDefault(u => u.UserType == DbModel.Constants.UserType.Delegation
+               && u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId
+               && !u.IsDeleted
+               && u.DelegationEndDate >= DateTime.UtcNow);
 
         // If searching for user to delegate in organisation and already exist
         if (isSearchUser && user != default)
         {
           throw new ResourceAlreadyExistsException();
+        }
+        // user delegation not exist
+        else if (user == default)
+        {
+          user = users.SingleOrDefault(u => u.UserType == DbModel.Constants.UserType.Primary);
         }
       }
       // User primary org details
@@ -411,6 +417,8 @@ namespace CcsSso.Core.Service.External
 
       var userPagedInfo = await _dataContext.GetPagedResultAsync(_dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
+        .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
+
         // Include deleted for delegated expired
         .Where(u =>
         (isDelegatedExpiredOnly || !u.IsDeleted) && (!isDelegatedExpiredOnly ||  u.DelegationEndDate < DateTime.UtcNow) &&
@@ -440,7 +448,13 @@ namespace CcsSso.Core.Service.External
           StartDate = isDelegatedOnly ? up.DelegationStartDate : default,
           EndDate = isDelegatedOnly ? up.DelegationEndDate : default,
           RemainingDays = !isDelegatedOnly || up.DelegationStartDate is null ? 0 : Convert.ToInt32((up.DelegationEndDate.Value - up.DelegationStartDate.Value).Days),
-          OriginOrganisation = isDelegatedOnly ? up.Party.Person.Organisation.LegalName : default
+          OriginOrganisation = isDelegatedOnly ? up.Party.Person.Organisation.LegalName : default,
+          RolePermissionInfo = !isDelegatedOnly ? default : up.UserAccessRoles.Select(uar => new RolePermissionInfo
+          {
+            RoleId = uar.OrganisationEligibleRole.Id,
+            RoleKey = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
+            RoleName = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
+          }).ToList(),
         }).ToList() : new List<UserListInfo>()
       };
 
@@ -1171,7 +1185,7 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorOrganisationIdRequired);
       }
 
-      var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles)
+      var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles).ThenInclude(c => c.CcsAccessRole)
                           .FirstOrDefaultAsync(o => !o.IsDeleted &&
                           o.CiiOrganisationId == userProfileRequestInfo.Detail.DelegatedOrgId));
 
@@ -1252,8 +1266,15 @@ namespace CcsSso.Core.Service.External
 
         await _dataContext.SaveChangesAsync();
 
+        string[] roleNames = new string[] { };
+        foreach (var roleId in userAccessRoles)
+        {
+          var roleName = organisation.OrganisationEligibleRoles.FirstOrDefault(r => r.Id == roleId.OrganisationEligibleRoleId).CcsAccessRole.CcsAccessRoleName;
+          roleNames.Append(roleName);
+        }
+
         // Send delegation activation email
-        await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName, userAccessRoles.Select(r => r.OrganisationEligibleRole?.CcsAccessRole?.CcsAccessRoleNameKey).ToArray());
+        await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName, roleNames);
 
         // Log
         await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelegated, AuditLogApplication.ManageUserAccount, $"UserId:{existingUserPrimaryDetails.Id}," + " " +
@@ -1406,12 +1427,16 @@ namespace CcsSso.Core.Service.External
       // Decrept token
       string delegationActivationDetails = _cryptographyService.DecryptString(acceptanceToken, _appConfigInfo.DelegationEmailTokenEncryptionKey);
 
+      if (string.IsNullOrWhiteSpace(delegationActivationDetails))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegation);
+      }
 
       //validate token expiration
       Dictionary<string, string> delegationDetails = delegationActivationDetails.Split('&').Select(value => value.Split('='))
                                                   .ToDictionary(pair => pair[0], pair => pair[1]);
       string userName = delegationDetails["usr"];
-      string orgId = delegationDetails["org"];
+      string orgName = delegationDetails["org"];
       DateTime expirationTime = Convert.ToDateTime(delegationDetails["exp"]);
 
       if (expirationTime < DateTime.UtcNow)
@@ -1421,14 +1446,14 @@ namespace CcsSso.Core.Service.External
 
       // get organisation actual id from ciiorganisation id
       var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles)
-                          .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == orgId));
+                          .FirstOrDefaultAsync(o => !o.IsDeleted && o.LegalName == orgName));
 
 
       var existingDelegatedUserDetails = await _dataContext.User.Include(u => u.UserAccessRoles)
                                           .Include(u => u.Party).ThenInclude(p => p.Person)
                                           .FirstOrDefaultAsync(u => u.UserName == userName &&
                                           !u.IsDeleted &&
-                                          u.UserType == DbModel.Constants.UserType.Delegation && u.DelegationEndDate >= DateTime.UtcNow &&
+                                          u.UserType == DbModel.Constants.UserType.Delegation && u.DelegationEndDate >= DateTime.UtcNow.Date &&
                                           u.Party.Person.OrganisationId == organisation.Id);
 
       if (existingDelegatedUserDetails == default)
@@ -1486,9 +1511,10 @@ namespace CcsSso.Core.Service.External
 
       // date validations
       if (userProfileRequestInfo.Detail.StartDate == default || userProfileRequestInfo.Detail.EndDate == default ||
-          userProfileRequestInfo.Detail.StartDate < DateTime.UtcNow ||
-          userProfileRequestInfo.Detail.EndDate > userProfileRequestInfo.Detail.StartDate.AddDays(365) ||
-          userProfileRequestInfo.Detail.StartDate > userProfileRequestInfo.Detail.EndDate)
+          userProfileRequestInfo.Detail.StartDate.Date < DateTime.UtcNow.Date ||
+          userProfileRequestInfo.Detail.EndDate.Date < userProfileRequestInfo.Detail.StartDate.Date.AddDays(28) ||
+          userProfileRequestInfo.Detail.EndDate.Date > userProfileRequestInfo.Detail.StartDate.Date.AddDays(365) ||
+          userProfileRequestInfo.Detail.StartDate.Date > userProfileRequestInfo.Detail.EndDate.Date)
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
       }
