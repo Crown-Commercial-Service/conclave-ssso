@@ -477,7 +477,7 @@ namespace CcsSso.Security.Services
       return delegatedOrgId;
     }
 
-    private async Task<string> GetSidFromRefreshToken(string refreshToken, string sid)
+    public async Task<string> GetSidFromRefreshToken(string refreshToken, string sid)
     {
       var sidCache = await _securityCacheService.GetValueAsync<string>(refreshToken);
       if (!string.IsNullOrEmpty(sidCache))

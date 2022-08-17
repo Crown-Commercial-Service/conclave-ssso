@@ -105,7 +105,6 @@ namespace CcsSso.Security.Api.Controllers
         return Redirect(errorUrl);
       }
 
-
       var (sid, opbs) = await GenerateCookiesAsync(client_id);
 
       var url = await _securityService.GetAuthenticationEndPointAsync(sid, scope, response_type, client_id, redirect_uri,
@@ -153,7 +152,7 @@ namespace CcsSso.Security.Api.Controllers
 
       Console.WriteLine($"Security API Token1 data:- ${JsonConvert.SerializeObject(tokenRequest)}");
       Console.WriteLine($"Security API Token2 ClientId:- ${tokenRequest.ClientId}");
-      Console.WriteLine($"Security API Token3 ClientSecret:- ${tokenRequest.ClientSecret}");
+      // Console.WriteLine($"Security API Token3 ClientSecret:- ${tokenRequest.ClientSecret}");
       Console.WriteLine($"Security API Token4 GrantType:- ${tokenRequest.GrantType}");
       Console.WriteLine($"Security API Token5 Code:- ${tokenRequest.Code}");
       Console.WriteLine($"Security API Token6 CodeVerifier:- ${tokenRequest.CodeVerifier}");
@@ -190,8 +189,16 @@ namespace CcsSso.Security.Api.Controllers
         var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
         host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
       }
+      
+      List<string> visitedSiteList = new List<string>();
+      string visitedSiteCookie = "ccs-sso-visitedsites";
+      if (Request.Cookies.ContainsKey(visitedSiteCookie))
+      {
+        Request.Cookies.TryGetValue(visitedSiteCookie, out string visitedSites);
+        visitedSiteList = visitedSites.Split(',').ToList();
+      }
 
-      var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
+      var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid, visitedSiteList);
 
       return idToken;
     }

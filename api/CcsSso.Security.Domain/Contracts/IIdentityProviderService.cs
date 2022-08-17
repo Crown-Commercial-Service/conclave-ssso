@@ -53,5 +53,6 @@ namespace CcsSso.Security.Domain.Contracts
 
     
     Task<ServiceAccessibilityResultDto> CheckServiceAccessForUserAsync(string clientId, string email);
+    Task<string> GetSidFromRefreshToken(string refreshToken, string sid);
   }
 }

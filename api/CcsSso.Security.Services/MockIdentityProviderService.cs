@@ -266,5 +266,11 @@ namespace CcsSso.Security.Services
       await Task.CompletedTask;
       return null;
     }
+
+    public async Task<string> GetSidFromRefreshToken(string refreshToken, string sid)
+    {
+      await Task.CompletedTask;
+      return null;
+    }
   }
 }
