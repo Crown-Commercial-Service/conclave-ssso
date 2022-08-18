@@ -54,7 +54,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       }
     }
 
-
     private async Task PerformJob()
     {
 
@@ -246,10 +245,10 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         byte[] fileByteArray = fileByteArrayOrg.Concat(fileByteArrayUser).Concat(fileByteArraySite).ToArray();
         /// My Byte Array - End
 
-        using (MemoryStream memStream = new MemoryStream(fileByteArrayOrg))
-        {
-          File.WriteAllBytes("userlognew.csv", fileByteArrayOrg);
-        }
+        //using (MemoryStream memStream = new MemoryStream(fileByteArray))
+        //{
+        //  File.WriteAllBytes("userlognew.csv", fileByteArray);
+        //}
 
         _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
 
@@ -272,31 +271,9 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     }
 
 
-    private async Task<List<Tuple<string, int, int, DateTime>>> GetModifiedSiteContactIds()
-    {
-      var dataDuration = _appSettings.ReportDataDurations.ContactReportingDurationInMinutes;
-      var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
 
-      try
-      {
-        var contactDetailsResult = await (from cpt in _dataContext.ContactPoint
-                                          join st in _dataContext.SiteContact on cpt.Id equals st.ContactPointId
-                                          join org in _dataContext.Organisation on cpt.PartyId equals org.PartyId
 
-                                          select new Tuple<string, int, int, DateTime>(
-                                            org.CiiOrganisationId, cpt.Id, st.Id, st.LastUpdatedOnUtc)
-                                       ).ToListAsync();
-
-        return contactDetailsResult.Where(m => m.Item4 > untilDateTime).ToList();
-      }
-      catch (Exception ex)
-      {
-        _logger.LogError(ex, "Error");
-        throw;
-      }
-    }
-
-    private async Task<ContactSiteResponseInfo?> GetSiteContactDetails(Tuple<string, int, int, DateTime> eachModifiedContact, HttpClient client)
+    private async Task<ContactSiteResponseInfo?> GetSiteContactDetails(Tuple<string, int, int> eachModifiedContact, HttpClient client)
     {
 
       string url = $"organisations/{eachModifiedContact.Item1}/sites/{eachModifiedContact.Item2}/contacts/{eachModifiedContact.Item3}";
@@ -374,10 +351,10 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                                           join org in _dataContext.Organisation on p.OrganisationId equals org.Id
                                           join vrad in _dataContext.VirtualAddress on subgcp.ContactDetailId equals vrad.ContactDetailId into gvrad
                                           from subgvrad in gvrad.DefaultIfEmpty()
-                                          where (p.LastUpdatedOnUtc > untilDateTime || subgcp.LastUpdatedOnUtc > untilDateTime || subgvrad.LastUpdatedOnUtc > untilDateTime)
+                                          where ((p.LastUpdatedOnUtc > untilDateTime || cpuser.LastUpdatedOnUtc > untilDateTime || subgvrad.LastUpdatedOnUtc > untilDateTime) && cpuser.IsDeleted == false)
                                           select new Tuple<int, int, int, string>(
                                        cpuser.Id, cpuser.PartyId, cpuser.ContactDetailId, org.CiiOrganisationId)
-                                     ).Distinct().ToListAsync();
+                             ).Distinct().ToListAsync();
         return contactDetailsResult;
 
       }
@@ -407,7 +384,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                                           join u in _dataContext.User on subgcpuser.PartyId equals u.PartyId
                                           join vrad in _dataContext.VirtualAddress on subgcp.ContactDetailId equals vrad.ContactDetailId into gvrad
                                           from subgvrad in gvrad.DefaultIfEmpty()
-                                          where (p.LastUpdatedOnUtc > untilDateTime || subgcp.LastUpdatedOnUtc > untilDateTime || subgvrad.LastUpdatedOnUtc > untilDateTime)
+                                          where ((p.LastUpdatedOnUtc > untilDateTime || subgcp.LastUpdatedOnUtc > untilDateTime || subgvrad.LastUpdatedOnUtc > untilDateTime) && subgcp.IsDeleted == false)
                                           select new Tuple<int, int, int, string>(
                                        subgcpuser.Id, subgcpuser.PartyId, subgcpuser.ContactDetailId, u.UserName)
                                       ).Distinct().ToListAsync();
@@ -422,6 +399,60 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       }
 
     }
+
+    private async Task<List<Tuple<string, int, int>>> GetModifiedSiteContactIds()
+    {
+      var dataDuration = _appSettings.ReportDataDurations.ContactReportingDurationInMinutes;
+      var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
+
+      try
+      {
+        var detectedContacts = new List<Tuple<string, int, int>>();
+
+        var directContact = await (from p in _dataContext.Person
+                                   join prt in _dataContext.Party on p.PartyId equals prt.Id
+                                   join cp in _dataContext.ContactPoint
+                                         on new { PartyType = 4, PartyId = prt.Id } equals new { PartyType = cp.PartyTypeId, PartyId = cp.PartyId }
+                                   join sc in _dataContext.SiteContact
+                                         on cp.Id equals sc.ContactId into gsc
+                                   from subgsc in gsc.DefaultIfEmpty()
+                                   join cpsite in _dataContext.ContactPoint
+                                         on new { ContactPointId = subgsc.ContactPointId, isSite = true } equals new { ContactPointId = cpsite.Id, isSite = cpsite.IsSite }
+                                   join vrad in _dataContext.VirtualAddress
+                                         on cp.ContactDetailId equals vrad.ContactDetailId into gvrad
+                                   from subgvrad in gvrad.DefaultIfEmpty()
+
+                                   join org in _dataContext.Organisation
+                                        on p.OrganisationId equals org.Id into gorg
+                                   from subgorg in gorg.DefaultIfEmpty()
+
+                                   where ((p.LastUpdatedOnUtc > untilDateTime || cp.LastUpdatedOnUtc > untilDateTime || subgvrad.LastUpdatedOnUtc > untilDateTime) && cp.IsDeleted == false)
+
+                                   select new Tuple<string, int, int>(subgorg.CiiOrganisationId, cpsite.Id, subgsc.Id)).Distinct().ToListAsync();
+
+
+        var assignedContact = await (from sc in _dataContext.SiteContact
+                                     join cp in _dataContext.ContactPoint
+                                           on sc.ContactId equals cp.Id
+                                     join pty in _dataContext.Party on cp.PartyId equals pty.Id
+                                     join p in _dataContext.Person on pty.Id equals p.PartyId
+                                     join org in _dataContext.Organisation on p.OrganisationId equals org.Id
+                                     where sc.LastUpdatedOnUtc > untilDateTime && sc.IsDeleted == false && sc.AssignedContactType != 0
+                                     select new Tuple<string, int, int>(org.CiiOrganisationId, sc.ContactPointId, sc.Id)).Distinct().ToListAsync();
+
+        detectedContacts.AddRange(directContact);
+        detectedContacts.AddRange(assignedContact);
+
+        return detectedContacts.Distinct().ToList();
+
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error");
+        throw;
+      }
+    }
+
 
   }
 }
