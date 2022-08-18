@@ -35,6 +35,8 @@ namespace CcsSso.Domain.Dtos
     public int DelegatedEmailExpirationHours { get; set; }
 
     public string DelegationEmailTokenEncryptionKey { get; set; }
+
+    public string[] DelegationExcludeRoles { get; set; }
   }
 
   public class ServiceDefaultRoleInfo

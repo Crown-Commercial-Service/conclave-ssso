@@ -81,6 +81,7 @@ namespace CcsSso.ExternalApi
           DashboardServiceClientId = Configuration["DashboardServiceClientId"],
           DelegatedEmailExpirationHours = delegatedEmailExpirationHours,
           DelegationEmailTokenEncryptionKey = Configuration["UserDelegation:DelegationEmailTokenEncryptionKey"],
+          DelegationExcludeRoles = Configuration.GetSection("UserDelegation:DelegationExcludeRoles").Get<string[]>(),
           JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
           {
             IdamClienId = Configuration["JwtTokenValidationInfo:IdamClienId"],
