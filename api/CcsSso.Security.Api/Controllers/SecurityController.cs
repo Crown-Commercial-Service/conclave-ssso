@@ -124,6 +124,7 @@ namespace CcsSso.Security.Api.Controllers
     /// redirect_uri  - REQUIRED (Redirection URI to which the response will be sent)
     /// state         - RECOMMENDED. Opaque value used to maintain state between the request and the callback
     /// code_verifier - Code verifier when use Authorization code flow with PKCE. 
+    /// delegated_org_id - REQUIRED when want to switch login from primary to delegate and vice versa (Org Id to login as delegated, 0 to switch back to primary account)
     /// <response code="200">When grant type is "authorization_code" returns id token,refresh token and access token.When grant type is "refresh_token" returns id token and access token</response>
     /// <response  code="404">User not found</response>
     /// <response  code="401">User does not have permissions for the client</response>
@@ -139,6 +140,7 @@ namespace CcsSso.Security.Api.Controllers
     /// Sample requests:
     /// POST client_id=abdgt refreshtoken=abcs123 granttype=authorization_code redirect_uri=http://redirect_url state=123"
     /// POST client_id=abdgt refreshtoken=abcs123 granttype=refresh_token"
+    /// POST client_id=abdgt refreshtoken=abcs123 granttype=refresh_token delegated_org_id=123456789"
     /// POST client_id=abdgt granttype=client_credentials client_secret=xxx "
     /// </remarks>
     [HttpPost("security/token")]
@@ -152,12 +154,13 @@ namespace CcsSso.Security.Api.Controllers
 
       Console.WriteLine($"Security API Token1 data:- ${JsonConvert.SerializeObject(tokenRequest)}");
       Console.WriteLine($"Security API Token2 ClientId:- ${tokenRequest.ClientId}");
-      Console.WriteLine($"Security API Token3 ClientSecret:- ${tokenRequest.ClientSecret}");
+      // Console.WriteLine($"Security API Token3 ClientSecret:- ${tokenRequest.ClientSecret}");
       Console.WriteLine($"Security API Token4 GrantType:- ${tokenRequest.GrantType}");
       Console.WriteLine($"Security API Token5 Code:- ${tokenRequest.Code}");
       Console.WriteLine($"Security API Token6 CodeVerifier:- ${tokenRequest.CodeVerifier}");
       Console.WriteLine($"Security API Token7 RedirectUrl:- ${tokenRequest.RedirectUrl}");
       Console.WriteLine($"Security API Token8 Audience:- ${tokenRequest.Audience}");
+      Console.WriteLine($"Security API Token8 DelegatedOrgId:- ${tokenRequest.DelegatedOrgId}");
 
       var tokenRequestInfo = new TokenRequestInfo()
       {
@@ -169,7 +172,8 @@ namespace CcsSso.Security.Api.Controllers
         RedirectUrl = tokenRequest.RedirectUrl,
         RefreshToken = tokenRequest.RefreshToken,
         State = tokenRequest.State,
-        Audience = tokenRequest.Audience
+        Audience = tokenRequest.Audience,
+        DelegatedOrgId = tokenRequest.DelegatedOrgId,
       };
       // Sessions are handled in two places for a user and they are as Auth0 & Security api (aka CCS-SSO session cookie).
       // Auth0 session is given the highest priority as it used to generate tokens. Hence, CCS-SSO session will be
@@ -187,7 +191,9 @@ namespace CcsSso.Security.Api.Controllers
         var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
         host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
       }
-      var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid);
+      List<string> visitedSiteList = GetVisitedSiteList();
+
+      var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid, visitedSiteList);
 
       return idToken;
     }
@@ -703,6 +709,18 @@ namespace CcsSso.Security.Api.Controllers
       }
 
       return cookieOptionsList;
+    }
+
+    private List<string> GetVisitedSiteList()
+    {
+      List<string> visitedSiteList = new List<string>();
+      string visitedSiteCookie = "ccs-sso-visitedsites";
+      if (Request.Cookies.ContainsKey(visitedSiteCookie))
+      {
+        Request.Cookies.TryGetValue(visitedSiteCookie, out string visitedSites);
+        visitedSiteList = visitedSites.Split(',').ToList();
+      }
+      return visitedSiteList;
     }
 
     [HttpGet]
