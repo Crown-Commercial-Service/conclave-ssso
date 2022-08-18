@@ -848,7 +848,7 @@ namespace CcsSso.Security.Services
             var requestUri = $"?user-id={HttpUtility.UrlEncode(email)}";
             if (!string.IsNullOrEmpty(delegatedOrgId))
             {
-              requestUri += $"&delegatedOrgId={HttpUtility.UrlEncode(delegatedOrgId)}";
+              requestUri += $"&is-delegated=true&delegated-organisation-id={HttpUtility.UrlEncode(delegatedOrgId)}";
             }
             var result = await httpClient.GetAsync(requestUri);
             var userJsonString = await result.Content.ReadAsStringAsync();
