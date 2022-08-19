@@ -1327,7 +1327,7 @@ namespace CcsSso.Core.Service.External
       }
 
       // get organisation actual id from cii organisation id
-      var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles)
+      var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles).ThenInclude(c => c.CcsAccessRole)
                           .FirstOrDefaultAsync(o => !o.IsDeleted &&
                           o.CiiOrganisationId == userProfileRequestInfo.Detail.DelegatedOrgId));
 
@@ -1531,17 +1531,18 @@ namespace CcsSso.Core.Service.External
     private void ValidateDelegateUserDetails(Organisation organisation, DelegatedUserProfileRequestInfo userProfileRequestInfo)
     {
       //validate roles
+      var excludeRoleIds = new List<Int32>();
       foreach (var role in _appConfigInfo?.DelegationExcludeRoles)
       {
         var roleToExclude = organisation.OrganisationEligibleRoles.FirstOrDefault(r => r.CcsAccessRole.CcsAccessRoleNameKey == role);
         if (roleToExclude != null)
         {
-          organisation.OrganisationEligibleRoles.Remove(roleToExclude);
+          excludeRoleIds.Add(roleToExclude.Id);
         }
       }
 
       var orgRoleIds = organisation.OrganisationEligibleRoles.Select(r => r.Id);
-      if (userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(gId => !orgRoleIds.Contains(gId)))
+      if (userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(gId => excludeRoleIds.Contains(gId)))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidUserRole);
       }
