@@ -6,6 +6,8 @@ using CcsSso.Shared.Domain.Dto;
 using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Npgsql.Internal;
+using System.Linq.Expressions;
 using System.Threading.Tasks.Dataflow;
 using ContactResponseInfo = CcsSso.Shared.Domain.Dto.ContactResponseInfo;
 
@@ -56,217 +58,145 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
     private async Task PerformJob()
     {
-
-      var totalNumberOfItemsDuringThisSchedule = 0;
-
-      ContactResponseInfo contactModuleList = new ContactResponseInfo();
-
-      ////////////////// Organisation Contact Report - Start /////////////////////////////
-
-      var listOfAllModifiedOrgContactId = await GetModifiedContactIds(); // ORG
-      contactModuleList.contactOrgResponseInfo = new List<ContactOrgResponseInfo>();
-      if (listOfAllModifiedOrgContactId == null || listOfAllModifiedOrgContactId.Count() == 0)
+      try
       {
-        _logger.LogInformation("No Organisation-Contacts are found");
+        var totalNumberOfItemsDuringThisSchedule = 0;
 
-      }
-      else
-      {
-        _logger.LogInformation($"Total number of Organisation-Contacts => {listOfAllModifiedOrgContactId.Count()}");
+        var listOfAllModifiedContact = new List<ContactModel>();
+
+        var orgContacts = await GetModifiedContactIds();
+        orgContacts.ForEach(x =>  listOfAllModifiedContact.Add(new ContactModel { ContactType = "ORG", DetectedContact = x }));
+
+        var userContacts = await GetModifiedUserContactIds();
+        userContacts.ForEach(x => listOfAllModifiedContact.Add(new ContactModel { ContactType = "USER", DetectedContact = x }));
+
+        var siteContacts = await GetModifiedSiteContactIds();
+        siteContacts.ForEach(x => listOfAllModifiedContact.Add(new ContactModel { ContactType = "SITE", DetectedContact = x }));
+
+
+
+        if (listOfAllModifiedContact == null || listOfAllModifiedContact.Count() == 0)
+        {
+          _logger.LogInformation("No contact found");
+          return;
+        }
+
+        _logger.LogInformation($"Total number of Orgs => {listOfAllModifiedContact.Count()}");
 
         // spliting the jobs
-        int sizeOrg = _appSettings.MaxNumbeOfRecordInAReport;
+        int size = _appSettings.MaxNumbeOfRecordInAReport;
         _logger.LogInformation($"Max number of record in a report from configuartion settings => {_appSettings.MaxNumbeOfRecordInAReport}");
-        var indexOrg = 0;
+        var index = 0;
 
-        List<ContactOrgResponseInfo> contactOrgResponseInfo = new List<ContactOrgResponseInfo>();
-        foreach (var eachModifiedOrgContact in listOfAllModifiedOrgContactId)
+        var contactDetailList = new List<ContactDetailModel>();
+
+        foreach (var eachModifiedOrg in listOfAllModifiedContact)
         {
-          indexOrg++;
-          _logger.LogInformation($"trying to get Org-Contact details of {indexOrg}");
-
+          index++;
+          _logger.LogInformation($"trying to get contact details of {index}");
 
           try
           {
-            _logger.LogInformation("Calling wrapper API to get Organisation-Contacts Details");
-            // Call the Org Contact Information
-            var client = _httpClientFactory.CreateClient("WrapperApi");
-            var contactOrgResult = await GetOrgContactDetails(eachModifiedOrgContact, client);
-            if (contactOrgResult != null)
+
+            try
             {
-              contactOrgResult.contactType = "organisation";
-              contactOrgResponseInfo.Add(contactOrgResult);
+              _logger.LogInformation("Calling wrapper API to get contact Details");
+              var client = _httpClientFactory.CreateClient("WrapperApi");
+
+              switch (eachModifiedOrg.ContactType)
+              {
+                case "ORG":
+                  var contactDetails = await GetOrgContactDetails((Tuple<int, int, int, string>)eachModifiedOrg.DetectedContact, client);
+                  if (contactDetails != null)
+                  {
+                    contactDetails.contactType = "organisation";
+                    contactDetailList.Add(new ContactDetailModel { ContactType = eachModifiedOrg.ContactType, ContactDetail = contactDetails });
+                  }
+                  break;
+                case "USER":
+                  var contactUserDetails = await GetUserContactDetails((Tuple<int, int, int, string>)eachModifiedOrg.DetectedContact, client);
+                  if (contactUserDetails != null)
+                  {
+                    contactUserDetails.contactType = "user";
+                    contactDetailList.Add(new ContactDetailModel { ContactType = eachModifiedOrg.ContactType, ContactDetail = contactUserDetails });
+                  }
+                  break;
+                case "SITE":
+                  var contactSiteDetails = await GetSiteContactDetails((Tuple<string, int, int>)eachModifiedOrg.DetectedContact, client);
+                  if (contactSiteDetails != null)
+                  {
+                    contactSiteDetails.contactType = "site";
+                    contactDetailList.Add(new ContactDetailModel { ContactType = eachModifiedOrg.ContactType, ContactDetail = contactSiteDetails });
+                  }
+                  break;
+
+                default:
+                  break;
+              }
+
             }
-          }
-          catch (Exception ex)
-          {
-            _logger.LogError($" XXXXXXXXXXXX Failed to retrieve Organisation-Contacts details from Wrapper Api. UserId ={eachModifiedOrgContact.Item2} and Message - {ex.Message} XXXXXXXXXXXX");
-          }
-
-          if (listOfAllModifiedOrgContactId.Count != indexOrg && contactOrgResponseInfo.Count < sizeOrg)
-          {
-            continue;
-          }
-
-          _logger.LogInformation($"Total number of Organisation-Contacts in this Batch => {contactOrgResponseInfo.Count()}");
-          totalNumberOfItemsDuringThisSchedule += contactOrgResponseInfo.Count();
-
-          _logger.LogInformation("After calling the wrapper API to get Organisation-Contacts Details");
-        }
-        contactModuleList.contactOrgResponseInfo = new List<ContactOrgResponseInfo>(contactOrgResponseInfo);
-      }
-
-      ////////////////// Organisation Contact Report - End /////////////////////////////
-
-
-      ////////////////// User Contact Report - Start /////////////////////////////
-
-      var listOfAllModifiedUserContactId = await GetModifiedUserContactIds(); // User
-      contactModuleList.contactUserResponseInfo = new List<ContactUserResponseInfo>();
-      if (listOfAllModifiedUserContactId == null || listOfAllModifiedUserContactId.Count() == 0)
-      {
-        _logger.LogInformation("No User-Contacts are found");
-      }
-      else
-      {
-
-        _logger.LogInformation($"Total number of User-Contacts => {listOfAllModifiedUserContactId.Count()}");
-
-        // spliting the jobs
-        int sizeUser = _appSettings.MaxNumbeOfRecordInAReport;
-        _logger.LogInformation($"Max number of record in a report from configuartion settings => {_appSettings.MaxNumbeOfRecordInAReport}");
-        var indexUsr = 0;
-        List<ContactUserResponseInfo> contactUserResponseInfo = new List<ContactUserResponseInfo>();
-        ContactUserResponseInfo contactUser = new ContactUserResponseInfo();
-        foreach (var eachModifiedUserContact in listOfAllModifiedUserContactId)
-        {
-          indexUsr++;
-          _logger.LogInformation($"trying to get User-Contacts details of {indexUsr} ");
-          try
-          {
-            _logger.LogInformation("Calling wrapper API to get User-Contacts Details");
-            // Call the Org Contact Information
-            var client = _httpClientFactory.CreateClient("WrapperApi");
-            var contactUserResult = await GetUserContactDetails(eachModifiedUserContact, client);
-            if (contactUserResult != null)
+            catch (Exception ex)
             {
-              contactUserResult.contactType = "user";
-              contactUserResponseInfo.Add(contactUserResult);
+
+              _logger.LogError($" XXXXXXXXXXXX Failed to retrieve contact details from Wrapper Api. Contact Type ={eachModifiedOrg.ContactType}; Contact Detail= {eachModifiedOrg.DetectedContact} and Message - {ex.Message} XXXXXXXXXXXX");
             }
-          }
-          catch (Exception ex)
-          {
-            _logger.LogError($" XXXXXXXXXXXX Failed to retrieve User-Contacts details from Wrapper Api. UserId ={eachModifiedUserContact.Item2} and Message - {ex.Message} XXXXXXXXXXXX");
-          }
 
-          if (listOfAllModifiedUserContactId.Count != indexUsr && contactUserResponseInfo.Count < sizeUser)
-          {
-            continue;
-          }
-
-          _logger.LogInformation($"Total number of User-Contacts in this Batch => {contactUserResponseInfo.Count()}");
-          totalNumberOfItemsDuringThisSchedule += contactUserResponseInfo.Count();
-
-          _logger.LogInformation("After calling the wrapper API to get User-Contacts Details");
-        }
-        contactModuleList.contactUserResponseInfo = new List<ContactUserResponseInfo>(contactUserResponseInfo);
-      }
-
-
-      ////////////////// User Contact Report - End /////////////////////////////
-
-
-      ////////////////// Site Contact Report - Start /////////////////////////////
-
-      var listOfAllModifiedSiteContactId = await GetModifiedSiteContactIds(); // Site
-      contactModuleList.contactSiteResponseInfo = new List<ContactSiteResponseInfo>();
-      if (listOfAllModifiedSiteContactId == null || listOfAllModifiedSiteContactId.Count() == 0)
-      {
-        _logger.LogInformation("No Site-Contacts  are found");
-      }
-      else
-      {
-
-        _logger.LogInformation($"Total number of Site-Contacts => {listOfAllModifiedSiteContactId.Count()}");
-
-        // spliting the jobs
-        int sizeSite = _appSettings.MaxNumbeOfRecordInAReport;
-        _logger.LogInformation($"Max number of record in a report from configuartion settings => {_appSettings.MaxNumbeOfRecordInAReport}");
-        var indexSite = 0;
-        List<ContactSiteResponseInfo> contactSiteResponseInfo = new List<ContactSiteResponseInfo>();
-        ContactSiteResponseInfo contactSite = new ContactSiteResponseInfo();
-        foreach (var eachModifiedSiteContact in listOfAllModifiedSiteContactId)
-        {
-          indexSite++;
-          _logger.LogInformation($"trying to get Site-Contacts details of {indexSite} ");
-          try
-          {
-            _logger.LogInformation("Calling wrapper API to get Site-Contacts Details");
-            // Call the Org Contact Information
-            var client = _httpClientFactory.CreateClient("WrapperApi");
-            var contactSiteResult = await GetSiteContactDetails(eachModifiedSiteContact, client);
-            if (contactSiteResult != null)
+            if (listOfAllModifiedContact.Count != index && contactDetailList.Count < size)
             {
-              contactSiteResult.contactType = "site";
-              contactSiteResponseInfo.Add(contactSiteResult);
+              continue;
             }
+
+            _logger.LogInformation($"Total number of Contact in this Batch => {contactDetailList.Count()}");
+            totalNumberOfItemsDuringThisSchedule += contactDetailList.Count();
+
+
+            _logger.LogInformation("After calling the wrapper API to get Contact Details");
+
+           
+            var fileByteArrayOrg = _csvConverter.ConvertToCSV(contactDetailList.Where(x=>x.ContactType=="ORG").Select(x=>(ContactOrgResponseInfo)x.ContactDetail).ToList(), "contact-org");
+            var fileByteArrayUser = _csvConverter.ConvertToCSV(contactDetailList.Where(x => x.ContactType == "USER").Select(x =>(ContactUserResponseInfo) x.ContactDetail).ToList(), "contact-user");
+            var fileByteArraySite = _csvConverter.ConvertToCSV(contactDetailList.Where(x => x.ContactType == "SITE").Select(x => (ContactSiteResponseInfo)x.ContactDetail).ToList(), "contact-site");
+            byte[] fileByteArray = fileByteArrayOrg.Concat(fileByteArrayUser).Concat(fileByteArraySite).ToArray();
+
+           
+            _logger.LogInformation("After converting the list of contact object into CSV format and returned byte Array");
+
+            AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Contact");
+            _logger.LogInformation("After Transfered the files to Azure Blob");
+
+            if (result.responseStatus)
+            {
+              _logger.LogInformation($"****************** Successfully transfered file. FileName - {result.responseFileName} ******************");
+              _logger.LogInformation("");
+            }
+            else
+            {
+              _logger.LogError($" XXXXXXXXXXXX Failed to transfer. Message - {result.responseMessage} XXXXXXXXXXXX");
+              _logger.LogError($"Failed to transfer. File Name - {result.responseFileName}");
+              _logger.LogInformation("");
+
+            }
+
           }
-          catch (Exception ex)
+          catch (Exception)
           {
-            _logger.LogError($" XXXXXXXXXXXX Failed to retrieve Site-Contacts details from Wrapper Api. UserId ={eachModifiedSiteContact.Item2} and Message - {ex.Message} XXXXXXXXXXXX");
+
+            _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of org in this set {contactDetailList.Count()} XXXXXXXXXXXX");
+            _logger.LogError("");
+
           }
+          contactDetailList.Clear();
+          await Task.Delay(5000);
 
-          if (listOfAllModifiedSiteContactId.Count != indexSite && contactSiteResponseInfo.Count < sizeSite)
-          {
-            continue;
-          }
-
-          _logger.LogInformation($"Total number of Site-Contacts in this Batch => {contactSiteResponseInfo.Count()}");
-          totalNumberOfItemsDuringThisSchedule += contactSiteResponseInfo.Count();
-
-          _logger.LogInformation("After calling the wrapper API to get Site-Contacts");
         }
-        contactModuleList.contactSiteResponseInfo = new List<ContactSiteResponseInfo>(contactSiteResponseInfo);
+
+        _logger.LogInformation($"Total number of organisation exported during this schedule => {totalNumberOfItemsDuringThisSchedule}");
       }
-
-      ////////////////// Site Contact Report - End /////////////////////////////
-
-      if (contactModuleList.contactOrgResponseInfo.Count == 0 && contactModuleList.contactUserResponseInfo.Count == 0 && contactModuleList.contactSiteResponseInfo.Count == 0)
+      catch (Exception ex)
       {
-        _logger.LogInformation("No Contact Logs are found");
-        return;
-      }
-      else
-      {
-        /// My Byte Array - Start        
-        var fileByteArrayOrg = _csvConverter.ConvertToCSV(contactModuleList.contactOrgResponseInfo, "contact-org");
-        var fileByteArrayUser = _csvConverter.ConvertToCSV(contactModuleList.contactUserResponseInfo, "contact-user");
-        var fileByteArraySite = _csvConverter.ConvertToCSV(contactModuleList.contactSiteResponseInfo, "contact-site");
-        byte[] fileByteArray = fileByteArrayOrg.Concat(fileByteArrayUser).Concat(fileByteArraySite).ToArray();
-        /// My Byte Array - End
 
-        //using (MemoryStream memStream = new MemoryStream(fileByteArray))
-        //{
-        //  File.WriteAllBytes("userlognew.csv", fileByteArray);
-        //}
-
-        _logger.LogInformation("After converting the list of user object into CSV format and returned byte Array");
-
-        AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Contact");
-        _logger.LogInformation("After Transfered the files to Azure Blob");
-
-        if (result.responseStatus)
-        {
-          _logger.LogInformation($"****************** Successfully transfered file. FileName - {result.responseFileName} ******************");
-          _logger.LogInformation("");
-        }
-        else
-        {
-          _logger.LogError($" XXXXXXXXXXXX Failed to transfer. Message - {result.responseMessage} XXXXXXXXXXXX");
-          _logger.LogError($"Failed to transfer. File Name - {result.responseFileName}");
-          _logger.LogInformation("");
-
-        }
+        _logger.LogError($"XXXXXXXXXXXX Failed to transfer. Outer exception - {ex.Message} XXXXXXXXXXXX");
+        _logger.LogError("");
       }
     }
 
@@ -355,7 +285,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                                           select new Tuple<int, int, int, string>(
                                        cpuser.Id, cpuser.PartyId, cpuser.ContactDetailId, org.CiiOrganisationId)
                              ).Distinct().ToListAsync();
-        return contactDetailsResult;
+         return contactDetailsResult;
 
       }
       catch (Exception ex)
