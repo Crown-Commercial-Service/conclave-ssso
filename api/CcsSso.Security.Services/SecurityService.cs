@@ -75,7 +75,7 @@ namespace CcsSso.Security.Services
       {
         tokenResponseInfo = await _identityProviderService.GetRenewedTokensAsync(tokenRequestInfo, sid);
 
-        // To perform back channel logout while switching delegated org
+        // #Delegated To perform back channel logout while switching delegated org
         if (visitedSiteList != null && visitedSiteList.Count > 0 && !string.IsNullOrEmpty(tokenRequestInfo.DelegatedOrgId))
         {
           string sidFromToken = string.Empty;
@@ -312,6 +312,7 @@ namespace CcsSso.Security.Services
     public async Task InvalidateSessionAsync(string sessionId)
     {
       await _securityCacheService.SetValueAsync(sessionId, true, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes, 0));
+      // #Delegated
       await _securityCacheService.RemoveAsync(CacheKey.DELEGATION + sessionId);
     }
 

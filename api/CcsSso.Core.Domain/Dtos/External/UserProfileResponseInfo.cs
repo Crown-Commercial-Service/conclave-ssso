@@ -55,10 +55,10 @@ namespace CcsSso.Core.Domain.Dtos.External
     public List<RolePermissionInfo> RolePermissionInfo { get; set; }
 
     public List<UserIdentityProviderInfo> IdentityProviders { get; set; }
-
+    // #Delegated
     public UserDelegationDetails[]? DelegatedOrgs { get; set; }
   }
-
+  // #Delegated
   public class UserDelegationDetails
   {
     public string? DelegatedOrgId { get; set; }
@@ -167,13 +167,13 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public bool IsRegisteredInIdam { get; set; }
   }
-
+  // #Delegated
   public class DelegatedUserProfileRequestInfo
   {
     public string UserName { get; set; }
     public DelegatedUserRequestDetail Detail { get; set; }
   }
-
+  // #Delegated
   public class DelegatedUserRequestDetail
   {
     public string DelegatedOrgId { get; set; }

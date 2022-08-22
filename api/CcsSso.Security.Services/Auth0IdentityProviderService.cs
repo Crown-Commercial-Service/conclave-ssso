@@ -412,6 +412,7 @@ namespace CcsSso.Security.Services
                 // get the sid from refresh token sent from client.
                 sid = await GetSidFromRefreshToken(tokenRequestInfo.RefreshToken, sid);
 
+                // #Delegated
                 string delegatedOrgId = await MapDelegatedOrgIdWithSid(sid, tokenRequestInfo.DelegatedOrgId);
 
                 var result = await _authenticationApiClient.GetTokenAsync(resourceOwnerTokenRequest);
@@ -426,7 +427,7 @@ namespace CcsSso.Security.Services
                     {
                         throw new CcsSsoException("TOKEN_GENERATION_FAILED");
                     }
-
+                    // #Delegated
                     var userDetails = await GetUserAsync(email, delegatedOrgId);
                     var customClaims = GetCustomClaimsForIdToken(tokenDecoded, tokenRequestInfo.ClientId, email, sid, userDetails);
                     var idToken = _jwtTokenHandler.CreateToken(tokenRequestInfo.ClientId, customClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
@@ -494,7 +495,7 @@ namespace CcsSso.Security.Services
                     };
                     result = await _authenticationApiClient.GetTokenAsync(resourceOwnerTokenRequest);
                 }
-
+                // #Delegated
                 var tokenInfo = await GetTokensAsync(tokenRequestInfo.ClientId, result, sid, tokenRequestInfo.DelegatedOrgId);
                 return tokenInfo;
             }
@@ -839,7 +840,7 @@ namespace CcsSso.Security.Services
                 }
             }
         }
-
+        // #Delegated
         private async Task<UserProfileInfo> GetUserAsync(string email, string delegatedOrgId = null)
         {
             var httpClient = _httpClientFactory.CreateClient();
@@ -926,7 +927,7 @@ namespace CcsSso.Security.Services
             var accessToken = _jwtTokenHandler.CreateToken(serviceProfile.Audience, accesstokenClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
             return accessToken;
         }
-
+        // #Delegated
         private async Task<TokenResponseInfo> GetTokensAsync(string clientId, AccessTokenResponse accessTokenResponse, string sid = null, string delegatedOrgId = null)
         {
             var tokenDecoded = _jwtTokenHandler.DecodeToken(accessTokenResponse.IdToken);
@@ -940,7 +941,7 @@ namespace CcsSso.Security.Services
             }
 
             await AttachSidWithRefreshTokenAsync(accessTokenResponse.RefreshToken, sid);
-
+            // #Delegated
             delegatedOrgId = await MapDelegatedOrgIdWithSid(sid, delegatedOrgId);
 
             var email = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
@@ -1015,6 +1016,7 @@ namespace CcsSso.Security.Services
 
             return new Tuple<string, string>(state, sid);
         }
+        // #Delegated
         private async Task<string> MapDelegatedOrgIdWithSid(string sid, string delegatedOrgId)
         {
           if (!string.IsNullOrEmpty(delegatedOrgId))

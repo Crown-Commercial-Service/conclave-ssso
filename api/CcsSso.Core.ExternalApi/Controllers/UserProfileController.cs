@@ -65,6 +65,7 @@ namespace CcsSso.ExternalApi.Controllers
 
     /// <summary>
     /// Allows a user to retrieve details for a given user
+    /// #Delegated
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
@@ -214,7 +215,7 @@ namespace CcsSso.ExternalApi.Controllers
     {
       await _userProfileService.AddAdminRoleAsync(userId);
     }
-
+    // #Delegated
     #region Delegated access
     /// <summary>
     /// Allows admin to delegate other org user to represent org

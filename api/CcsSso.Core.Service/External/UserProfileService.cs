@@ -245,7 +245,7 @@ namespace CcsSso.Core.Service.External
         IsRegisteredInIdam = isRegisteredInIdam
       };
     }
-
+    // #Delegated
     public async Task<UserProfileResponseInfo> GetUserAsync(string userName, bool isDelegated = false, bool isSearchUser = false, string delegatedOrgId = "")
     {
       User user = null;
@@ -387,7 +387,7 @@ namespace CcsSso.Core.Service.External
 
       throw new ResourceNotFoundException();
     }
-
+    // #Delegated
     public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null, bool includeSelf = false, bool isDelegatedOnly = false, bool isDelegatedExpiredOnly = false)
     {
 
@@ -683,7 +683,7 @@ namespace CcsSso.Core.Service.External
                                 user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim() ||
                                 user.UserTitle != (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title));
       }
-      // If first name or last name updated for primary account update in delegated as well.
+      // #Delegated If first name or last name updated for primary account update in delegated as well.
       if (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() || user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim())
       {
         var delegatedOrgDetails = await _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).Where(u => u.UserName == userName && u.UserType == DbModel.Constants.UserType.Delegation).ToListAsync();
