@@ -43,12 +43,15 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       {
         int interval = _appSettings.ScheduleJobSettings.OrganisationReportingJobScheduleInMinutes * 60000; //15000;
 
-        _logger.LogInformation("Organisation Reporting Job  running at: {time}", DateTimeOffset.Now);
+        _logger.LogInformation("Organisation Reporting Job  started at: {time}", DateTimeOffset.Now);
         await PerformJob();
+
+        _logger.LogInformation("Organisation Reporting Job  finished at: {time}", DateTimeOffset.Now);
+        _logger.LogInformation("");
+
         await Task.Delay(interval, stoppingToken);
 
-        Console.WriteLine($"******************Organization batch processing job ended ***********");
-        Console.WriteLine("");
+        
 
       }
     }
@@ -57,7 +60,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     {
       try
       {
-
+        var totalNumberOfItemsDuringThisSchedule = 0;
         var listOfAllModifiedOrg = await GetModifiedOrganisationIds();
 
         if (listOfAllModifiedOrg == null || listOfAllModifiedOrg.Count() == 0)
@@ -70,41 +73,64 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
         // spliting the jobs
         int size = _appSettings.MaxNumbeOfRecordInAReport;
-        Console.WriteLine(_appSettings.MaxNumbeOfRecordInAReport);
+        _logger.LogInformation($"Max number of record in a report from configuartion settings => {_appSettings.MaxNumbeOfRecordInAReport}");
+        var index = 0;
+        
+        List<OrganisationProfileResponseInfo> orgDetailList = new List<OrganisationProfileResponseInfo>();
 
-        int i = 0;
-        var splitedOrgBatch = listOfAllModifiedOrg.GroupBy(s => i++ / size).Select(s => s.ToArray()).ToArray();
-
-        foreach (var listOfModifiedOrg in splitedOrgBatch)
+        foreach (var eachModifiedOrg in listOfAllModifiedOrg)
         {
-          _logger.LogInformation($"Total number of Orgs in this Batch => {listOfModifiedOrg.Count()}");
+          index++;
+          _logger.LogInformation($"trying to get organisation details of {index}");
 
           try
           {
 
-          var client = _httpClientFactory.CreateClient("WrapperApi");
-          List<OrganisationProfileResponseInfo> orgDetailList = new List<OrganisationProfileResponseInfo>();
-          await GetOrganisationDetails(listOfModifiedOrg, client, orgDetailList);
+            try
+            {
+              _logger.LogInformation("Calling wrapper API to get Organisation Details");
+              var client = _httpClientFactory.CreateClient("WrapperApi");
+              var orgDetails = await GetOrganisationDetails(eachModifiedOrg, client);
+              if (orgDetails != null)
+              {
+                orgDetailList.Add(orgDetails);
+              }
+
+            }
+            catch (Exception ex)
+            {
+
+              _logger.LogError($" XXXXXXXXXXXX Failed to retrieve organisation details from Wrapper Api. OrganisationId ={eachModifiedOrg.Item2} and Message - {ex.Message} XXXXXXXXXXXX");
+            }
+
+            if(listOfAllModifiedOrg.Count != index &&  orgDetailList.Count < size)
+            {
+              continue;
+            }
+
+            _logger.LogInformation($"Total number of Orgs in this Batch => {orgDetailList.Count()}");
+            totalNumberOfItemsDuringThisSchedule += orgDetailList.Count();
+
 
           _logger.LogInformation("After calling the wrapper API to get Organisation Details");
 
-          var fileByteArray = _csvConverter.ConvertToCSV(orgDetailList, "organisation");
+            var fileByteArray = _csvConverter.ConvertToCSV(orgDetailList, "organisation");
 
-          _logger.LogInformation("After converting the list of organisation object into CSV format and returned byte Array");
+            _logger.LogInformation("After converting the list of organisation object into CSV format and returned byte Array");
 
-          AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "organisation");
-          _logger.LogInformation("After Transfered the files to Azure Blob");
+            AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Organisation");
+            _logger.LogInformation("After Transfered the files to Azure Blob");
 
-          if (result.responseStatus)
-          {
-            _logger.LogInformation($"****************** Successfully transfered file. FileName - {result.responseFileName} ******************");
-              Console.WriteLine("");
+            if (result.responseStatus)
+            {
+              _logger.LogInformation($"****************** Successfully transfered file. FileName - {result.responseFileName} ******************");
+              _logger.LogInformation("");
             }
-          else
-          {
-            _logger.LogInformation($" XXXXXXXXXXXX Failed to transfer. Message - {result.responseMessage} XXXXXXXXXXXX");
-            _logger.LogInformation($"Failed to transfer. File Name - {result.responseFileName}");
-              Console.WriteLine("");
+            else
+            {
+              _logger.LogError($" XXXXXXXXXXXX Failed to transfer. Message - {result.responseMessage} XXXXXXXXXXXX");
+              _logger.LogError($"Failed to transfer. File Name - {result.responseFileName}");
+              _logger.LogInformation("");
 
             }
 
@@ -112,44 +138,45 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
           catch (Exception)
           {
 
-            _logger.LogInformation($"XXXXXXXXXXXX Failed to transfer the report. Number of org in this set {listOfModifiedOrg.Count()} XXXXXXXXXXXX");
-            Console.WriteLine("");
+            _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of org in this set {orgDetailList.Count()} XXXXXXXXXXXX");
+            _logger.LogError("");
 
           }
-
+          orgDetailList.Clear();
           await Task.Delay(5000);
 
         }
+        
+          _logger.LogInformation($"Total number of organisation exported during this schedule => {totalNumberOfItemsDuringThisSchedule}");
       }
       catch (Exception ex)
       {
 
-        _logger.LogInformation($"XXXXXXXXXXXX Failed to transfer. Outer exception - {ex.Message} XXXXXXXXXXXX");
-        Console.WriteLine("");
+        _logger.LogError($"XXXXXXXXXXXX Failed to transfer. Outer exception - {ex.Message} XXXXXXXXXXXX");
+        _logger.LogError("");
       }
     }
 
-    private async Task GetOrganisationDetails(Tuple<int, string>[] listOfModifiedOrg, HttpClient client, List<OrganisationProfileResponseInfo> orgDetailList)
+    private async Task<OrganisationProfileResponseInfo?> GetOrganisationDetails(Tuple<int, string> eachModifiedOrg, HttpClient client)
     {
-      foreach (var orgId in listOfModifiedOrg)
+      string url = $"organisations/{eachModifiedOrg.Item2}";
+      var response = await client.GetAsync(url);
+
+      if (response.IsSuccessStatusCode)
       {
-        string url = $"organisations/{orgId.Item2}";
-        var response = await client.GetAsync(url);
+        var content = await response.Content.ReadAsStringAsync();
+        _logger.LogInformation($"Retrived org details for orgId-{eachModifiedOrg.Item2}");
 
-        if (response.IsSuccessStatusCode)
-        {
-          var content = await response.Content.ReadAsStringAsync();
-          var orgInfo = JsonConvert.DeserializeObject<OrganisationProfileResponseInfo>(content);
-          orgDetailList.Add(orgInfo);
+        return JsonConvert.DeserializeObject<OrganisationProfileResponseInfo>(content);
 
-          _logger.LogInformation($"Retrived org details for orgId-{orgId}");
-        }
-        else
-        {
-          _logger.LogInformation($"No organisation retrived for orgId-{orgId}");
-        }
 
       }
+      else
+      {
+        _logger.LogError($"No organisation retrived for orgId-{eachModifiedOrg.Item2}");
+        return null;
+      }
+
     }
 
     public async Task<List<Tuple<int, string>>> GetModifiedOrganisationIds()
