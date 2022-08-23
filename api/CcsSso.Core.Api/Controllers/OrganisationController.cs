@@ -131,5 +131,15 @@ namespace CcsSso.Api.Controllers
       var result = await _bulkUploadService.CheckBulkUploadStatusAsync(organisationId, id);
       return result;
     }
+
+    [HttpGet("{organisationId}/users")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [SwaggerOperation(Tags = new[] { "Organisation User" })]
+    [ProducesResponseType(typeof(UserListResponse), 200)]
+    public int GetUserAffectedByRemovedIdps(string organisationId, [FromQuery(Name = "idps")] string idps)
+    {
+      var result = _organisationService.GetAffectedUsersByRemovedIdp(organisationId, idps);
+      return result;
+    }
   }
 }
