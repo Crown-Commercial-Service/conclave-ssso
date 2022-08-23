@@ -85,6 +85,7 @@ namespace CcsSso.Core.Service.External
       organisation.BusinessType = organisationProfileInfo.Detail.BusinessType;
       organisation.CcsServiceId = _requestContext.ServiceId == 0 ? null : _requestContext.ServiceId;
 
+      //TODO: 2809
       var eligibleRoles = await GetOrganisationEligibleRolesAsync(organisation, organisationProfileInfo.Detail.SupplierBuyerType);
       _dataContext.OrganisationEligibleRole.AddRange(eligibleRoles);
 
@@ -832,6 +833,7 @@ namespace CcsSso.Core.Service.External
         });
       }
 
+      //TODO: 2809
       return eligibleRoles;
     }
 
