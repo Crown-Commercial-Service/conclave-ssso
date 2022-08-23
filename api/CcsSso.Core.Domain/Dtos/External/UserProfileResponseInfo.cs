@@ -29,6 +29,8 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public bool SendUserRegistrationEmail { get; set; } = true;
 
+    public string? OriginOrganisationName { get; set; }
+
   }
 
   public class UserRequestDetail
@@ -53,6 +55,21 @@ namespace CcsSso.Core.Domain.Dtos.External
     public List<RolePermissionInfo> RolePermissionInfo { get; set; }
 
     public List<UserIdentityProviderInfo> IdentityProviders { get; set; }
+
+    public UserDelegationDetails[]? DelegatedOrgs { get; set; }
+  }
+
+  public class UserDelegationDetails
+  {
+    public string? DelegatedOrgId { get; set; }
+
+    public string? DelegatedOrgName { get; set; }
+
+    public DateTime? StartDate { get; set; }
+
+    public DateTime? EndDate { get; set; }
+
+    public bool? DelegationAccepted { get; set; }
   }
 
   public class UserIdentityProviderInfo
@@ -93,6 +110,15 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string UserName { get; set; }
 
+    public int? RemainingDays { get; set; }
+
+    public DateTime? StartDate { get; set; }
+
+    public DateTime? EndDate { get; set; }
+
+    public string? OriginOrganisation { get; set; }
+    
+    public List<RolePermissionInfo> RolePermissionInfo { get; set; }
   }
 
   public class AdminUserListInfo
@@ -140,5 +166,22 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string UserId { get; set; }
 
     public bool IsRegisteredInIdam { get; set; }
+  }
+
+  public class DelegatedUserProfileRequestInfo
+  {
+    public string UserName { get; set; }
+    public DelegatedUserRequestDetail Detail { get; set; }
+  }
+
+  public class DelegatedUserRequestDetail
+  {
+    public string DelegatedOrgId { get; set; }
+
+    public List<int> RoleIds { get; set; }
+
+    public DateTime StartDate { get; set; }
+
+    public DateTime EndDate { get; set; }
   }
 }

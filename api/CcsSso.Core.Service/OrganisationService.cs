@@ -271,6 +271,7 @@ namespace CcsSso.Service
         .ThenInclude(x => x.Person)
         .ThenInclude(o => o.Organisation)
         .Where(u => u.IsDeleted == false && (_requestContext.UserId != 0 && u.Party.Person.Organisation.CiiOrganisationId != _requestContext.CiiOrganisationId) &&
+        u.UserType == Core.DbModel.Constants.UserType.Primary &&
         (string.IsNullOrEmpty(name) || u.UserName.Contains(name) || (u.Party.Person.FirstName + " " + u.Party.Person.LastName).ToLower().Contains(name) || u.Party.Person.Organisation.LegalName.ToLower().Contains(name)) &&
         u.Party.Person.Organisation.IsDeleted == false).Select(user => new OrganisationUserDto
         {
@@ -429,7 +430,7 @@ namespace CcsSso.Service
     public int GetAffectedUsersByRemovedIdp(string ciiOrganisationId, string idpRemoved)
     {
       var idpRemovedList = idpRemoved.Split(',').Select(x => int.Parse(x));
-      
+
 
       var userList = _dataContext.User.Include(u => u.UserIdentityProviders).ThenInclude(o => o.OrganisationEligibleIdentityProvider)
                           .Include(u => u.Party).ThenInclude(p => p.Person)

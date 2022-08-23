@@ -31,6 +31,12 @@ namespace CcsSso.Domain.Dtos
     public ServiceDefaultRoleInfo ServiceDefaultRoleInfo { get; set; }
 
     public int BulkUploadMaxUserCount { get; set; }
+
+    public int DelegatedEmailExpirationHours { get; set; }
+
+    public string DelegationEmailTokenEncryptionKey { get; set; }
+
+    public string[] DelegationExcludeRoles { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -89,6 +95,8 @@ namespace CcsSso.Domain.Dtos
     public string OrganisationJoinRequestTemplateId { get; set; }
 
     public string NominateEmailTemplateId { get; set; }
+
+    public string UserDelegatedAccessEmailTemplateId { get; set; }
 
     public bool SendNotificationsEnabled { get; set; }
 
