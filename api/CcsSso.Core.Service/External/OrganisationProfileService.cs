@@ -9,24 +9,19 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos;
-using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
-using CcsSso.Dtos.Domain.Models;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
-using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
 {
-  public class OrganisationProfileService : IOrganisationProfileService
+  public partial class OrganisationProfileService : IOrganisationProfileService
   {
     private readonly IDataContext _dataContext;
     private readonly IContactsHelperService _contactsHelper;
@@ -94,7 +89,7 @@ namespace CcsSso.Core.Service.External
       _dataContext.OrganisationEligibleRole.AddRange(eligibleRoles);
 
       var eligibleIdentityProviders = new List<OrganisationEligibleIdentityProvider>();
-      var identityProviders = await _dataContext.IdentityProvider.Where(idp => !idp.IsDeleted).ToListAsync();
+      var identityProviders = await _dataContext.IdentityProvider.Where(idp => !idp.IsDeleted && idp.ExternalIdpFlag == false).ToListAsync();
       identityProviders.ForEach((idp) =>
       {
         var eligibleIdentityProvider = new OrganisationEligibleIdentityProvider
@@ -375,116 +370,136 @@ namespace CcsSso.Core.Service.External
       return roles;
     }
 
-    public async Task UpdateIdentityProviderAsync(OrgIdentityProviderSummary orgIdentityProviderSummary)
+   
+
+   
+
+    private async Task<List<User>> GetAffectedUsersByRemovedIdp(string ciiOrganisationId, List<int> idpRemovedList)
     {
-      if (orgIdentityProviderSummary.ChangedOrgIdentityProviders != null && orgIdentityProviderSummary.ChangedOrgIdentityProviders.Any()
-        && !string.IsNullOrEmpty(orgIdentityProviderSummary.CiiOrganisationId))
-      {
-        var organisation = await _dataContext.Organisation
-                                .Where(o => !o.IsDeleted && o.CiiOrganisationId == orgIdentityProviderSummary.CiiOrganisationId)
-                                .FirstOrDefaultAsync();
-
-        if (organisation != null)
-        {
-          // This will include all idps including "none"
-          var identityProviderList = await _dataContext.IdentityProvider.Where(idp => !idp.IsDeleted).ToListAsync();
-
-          var organisationIdps = await _dataContext.OrganisationEligibleIdentityProvider
-            .Include(o => o.IdentityProvider)
-            .Where(oeidp => !oeidp.IsDeleted && oeidp.Organisation.CiiOrganisationId == orgIdentityProviderSummary.CiiOrganisationId)
-            .ToListAsync();
-
-          var userNamePasswordIdentityProvider = organisationIdps.FirstOrDefault(ip => ip.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
-
-          var idpList = orgIdentityProviderSummary.ChangedOrgIdentityProviders.Where(ip => identityProviderList.Select(tl => tl.Id).Contains(ip.Id));
-
-          //delete the idp provider from the list
-          var idpRemovedList = idpList.Where(idp => !idp.Enabled).Select(r => r.Id).ToList();
-
-          if (idpRemovedList.Contains(userNamePasswordIdentityProvider.Id))
-          {
-            throw new CcsSsoException("ERROR_USERNAME_PASSWORD_IDP_REQUIRED");
-          }
-
-          var orgIdpsToDelete = organisationIdps.Where(oidp => idpRemovedList.Contains(oidp.IdentityProvider.Id)).ToList();
-
-          orgIdpsToDelete.ForEach((d) =>
-          {
-            d.IsDeleted = true;
-          });
-
-          var users = await _dataContext.User.Include(u => u.UserIdentityProviders).ThenInclude(o => o.OrganisationEligibleIdentityProvider)
-                              .Include(u => u.Party).ThenInclude(p => p.Person)
-                              .Where(u => !u.IsDeleted &&
-                              u.Party.Person.Organisation.CiiOrganisationId == orgIdentityProviderSummary.CiiOrganisationId
-                              && u.UserIdentityProviders.Any(uip => !uip.IsDeleted &&
-                              idpRemovedList.Contains(uip.OrganisationEligibleIdentityProvider.IdentityProviderId))).ToListAsync();
-
-          var asyncTaskList = new List<Task>();
-          var securityApiCallTaskList = new List<Task>();
-          users.ForEach((user) =>
-          {
-            asyncTaskList.Add(_adapterNotificationService.NotifyUserChangeAsync(OperationType.Update, user.UserName, organisation.CiiOrganisationId));
-
-
-            // Delete before add the record
-            var recordsToDelete = user.UserIdentityProviders.Where(uip => !uip.IsDeleted && idpRemovedList.Select(i => i).Contains(uip.OrganisationEligibleIdentityProvider.IdentityProviderId)).ToList();
-            foreach (var uidp in recordsToDelete)
-            {
-              uidp.IsDeleted = true;
-            }
-
-            var availableIdps = user.UserIdentityProviders.Where(uidp => !uidp.IsDeleted).Select(uip => uip.OrganisationEligibleIdentityProvider.IdentityProviderId).Except(idpRemovedList.Select(i => i));
-
-            if (!availableIdps.Any())
-            {
-              SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
-              {
-                Email = user.UserName,
-                FirstName = user.Party.Person.FirstName,
-                LastName = user.Party.Person.LastName,
-                UserName = user.UserName,
-                MfaEnabled = false, //As per the requirement
-                SendUserRegistrationEmail = true
-              };
-              asyncTaskList.Add(_idamService.RegisterUserInIdamAsync(securityApiUserInfo));
-              user.UserIdentityProviders.Add(new UserIdentityProvider()
-              {
-                UserId = user.Id,
-                OrganisationEligibleIdentityProviderId = userNamePasswordIdentityProvider.Id,
-                IsDeleted = false
-              });
-            }
-            //Record for force signout as idp has been removed from the user. This is a current business requirement
-            asyncTaskList.Add(_remoteCacheService.SetValueAsync(CacheKeyConstant.ForceSignoutKey + user.UserName, true));
-          });
-
-          foreach (var idp in idpList.Where(idp => idp.Enabled))
-          {
-            var addedOrganisationEligibleIdentityProvider = new OrganisationEligibleIdentityProvider
-            {
-              OrganisationId = organisation.Id,
-              IdentityProviderId = idp.Id
-            };
-            _dataContext.OrganisationEligibleIdentityProvider.Add(addedOrganisationEligibleIdentityProvider);
-          }
-
-          await _dataContext.SaveChangesAsync();
-
-          await Task.WhenAll(asyncTaskList);
-          //Invalidate redis
-          var invalidatingCacheKeyList = users.Select(u => $"{CacheKeyConstant.User}-{u.UserName}").ToArray();
-          await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeyList);
-
-          // Notify the adapter
-          await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Update, organisation.CiiOrganisationId);
-        }
-        else
-        {
-          throw new ResourceNotFoundException();
-        }
-      }
+      return await _dataContext.User.Include(u => u.UserIdentityProviders).ThenInclude(o => o.OrganisationEligibleIdentityProvider)
+                          .Include(u => u.Party).ThenInclude(p => p.Person)
+                          .Where(u => !u.IsDeleted &&
+                          u.Party.Person.Organisation.CiiOrganisationId == ciiOrganisationId
+                          && u.UserIdentityProviders.Any(uip => !uip.IsDeleted &&
+                          idpRemovedList.Contains(uip.OrganisationEligibleIdentityProvider.IdentityProviderId))).ToListAsync();
     }
+    private async Task<List<User>> GetOrganisationUser(string ciiOrganisationId)
+    {
+      return await _dataContext.User.Include(u => u.UserIdentityProviders).ThenInclude(o => o.OrganisationEligibleIdentityProvider)
+                          .Include(u => u.Party).ThenInclude(p => p.Person)
+                          .Where(u => !u.IsDeleted &&
+                          u.Party.Person.Organisation.CiiOrganisationId == ciiOrganisationId).ToListAsync();
+    }
+    //public async Task UpdateIdentityProviderAsync_1(OrgIdentityProviderSummary orgIdentityProviderSummary)
+    //{
+    //  if (orgIdentityProviderSummary.ChangedOrgIdentityProviders != null && orgIdentityProviderSummary.ChangedOrgIdentityProviders.Any()
+    //    && !string.IsNullOrEmpty(orgIdentityProviderSummary.CiiOrganisationId))
+    //  {
+    //    var organisation = await _dataContext.Organisation
+    //                            .Where(o => !o.IsDeleted && o.CiiOrganisationId == orgIdentityProviderSummary.CiiOrganisationId)
+    //                            .FirstOrDefaultAsync();
+
+    //    if (organisation != null)
+    //    {
+    //      // This will include all idps including "none"
+    //      var identityProviderList = await _dataContext.IdentityProvider.Where(idp => !idp.IsDeleted).ToListAsync();
+
+    //      var organisationIdps = await _dataContext.OrganisationEligibleIdentityProvider
+    //        .Include(o => o.IdentityProvider)
+    //        .Where(oeidp => !oeidp.IsDeleted && oeidp.Organisation.CiiOrganisationId == orgIdentityProviderSummary.CiiOrganisationId)
+    //        .ToListAsync();
+
+    //      var userNamePasswordIdentityProvider = organisationIdps.FirstOrDefault(ip => ip.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
+
+    //      var idpList = orgIdentityProviderSummary.ChangedOrgIdentityProviders.Where(ip => identityProviderList.Select(tl => tl.Id).Contains(ip.Id));
+
+    //      //delete the idp provider from the list
+    //      var idpRemovedList = idpList.Where(idp => !idp.Enabled).Select(r => r.Id).ToList();
+
+    //      if (idpRemovedList.Contains(userNamePasswordIdentityProvider.Id))
+    //      {
+    //        throw new CcsSsoException("ERROR_USERNAME_PASSWORD_IDP_REQUIRED");
+    //      }
+
+    //      var orgIdpsToDelete = organisationIdps.Where(oidp => idpRemovedList.Contains(oidp.IdentityProvider.Id)).ToList();
+
+    //      orgIdpsToDelete.ForEach((d) =>
+    //      {
+    //        d.IsDeleted = true;
+    //      });
+
+    //      var users = await _dataContext.User.Include(u => u.UserIdentityProviders).ThenInclude(o => o.OrganisationEligibleIdentityProvider)
+    //                          .Include(u => u.Party).ThenInclude(p => p.Person)
+    //                          .Where(u => !u.IsDeleted &&
+    //                          u.Party.Person.Organisation.CiiOrganisationId == orgIdentityProviderSummary.CiiOrganisationId
+    //                          && u.UserIdentityProviders.Any(uip => !uip.IsDeleted &&
+    //                          idpRemovedList.Contains(uip.OrganisationEligibleIdentityProvider.IdentityProviderId))).ToListAsync();
+
+    //      var asyncTaskList = new List<Task>();
+    //      var securityApiCallTaskList = new List<Task>();
+    //      users.ForEach((user) =>
+    //      {
+    //        asyncTaskList.Add(_adapterNotificationService.NotifyUserChangeAsync(OperationType.Update, user.UserName, organisation.CiiOrganisationId));
+
+
+    //        // Delete before add the record
+    //        var recordsToDelete = user.UserIdentityProviders.Where(uip => !uip.IsDeleted && idpRemovedList.Select(i => i).Contains(uip.OrganisationEligibleIdentityProvider.IdentityProviderId)).ToList();
+    //        foreach (var uidp in recordsToDelete)
+    //        {
+    //          uidp.IsDeleted = true;
+    //        }
+
+    //        var availableIdps = user.UserIdentityProviders.Where(uidp => !uidp.IsDeleted).Select(uip => uip.OrganisationEligibleIdentityProvider.IdentityProviderId).Except(idpRemovedList.Select(i => i));
+
+    //        if (!availableIdps.Any())
+    //        {
+    //          SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+    //          {
+    //            Email = user.UserName,
+    //            FirstName = user.Party.Person.FirstName,
+    //            LastName = user.Party.Person.LastName,
+    //            UserName = user.UserName,
+    //            MfaEnabled = false, //As per the requirement
+    //            SendUserRegistrationEmail = true
+    //          };
+    //          asyncTaskList.Add(_idamService.RegisterUserInIdamAsync(securityApiUserInfo));
+    //          user.UserIdentityProviders.Add(new UserIdentityProvider()
+    //          {
+    //            UserId = user.Id,
+    //            OrganisationEligibleIdentityProviderId = userNamePasswordIdentityProvider.Id,
+    //            IsDeleted = false
+    //          });
+    //        }
+    //        //Record for force signout as idp has been removed from the user. This is a current business requirement
+    //        asyncTaskList.Add(_remoteCacheService.SetValueAsync(CacheKeyConstant.ForceSignoutKey + user.UserName, true));
+    //      });
+
+    //      foreach (var idp in idpList.Where(idp => idp.Enabled))
+    //      {
+    //        var addedOrganisationEligibleIdentityProvider = new OrganisationEligibleIdentityProvider
+    //        {
+    //          OrganisationId = organisation.Id,
+    //          IdentityProviderId = idp.Id
+    //        };
+    //        _dataContext.OrganisationEligibleIdentityProvider.Add(addedOrganisationEligibleIdentityProvider);
+    //      }
+
+    //      await _dataContext.SaveChangesAsync();
+
+    //      await Task.WhenAll(asyncTaskList);
+    //      //Invalidate redis
+    //      var invalidatingCacheKeyList = users.Select(u => $"{CacheKeyConstant.User}-{u.UserName}").ToArray();
+    //      await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeyList);
+
+    //      // Notify the adapter
+    //      await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Update, organisation.CiiOrganisationId);
+    //    }
+    //    else
+    //    {
+    //      throw new ResourceNotFoundException();
+    //    }
+    //  }
+    //}
 
     /// <summary>
     /// Update the organisation and its physical address

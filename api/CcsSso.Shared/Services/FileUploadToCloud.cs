@@ -32,11 +32,10 @@ namespace CcsSso.Shared.Services
 
     public async Task<AzureResponse> FileUploadToAzureBlobAsync(byte[] stream, string inputFileType)
     {
-      var csvDate = DateTime.UtcNow.ToString("s").Replace(":", "");
-      string fileheader = azureBlobConfiguration.Fileheader;
+      var csvDate = DateTime.UtcNow.ToString("yyyy-MM-ddTHHmmss");
       string fileExtension = azureBlobConfiguration.FileExtension;
       string filePathPrefix = azureBlobConfiguration.FilePathPrefix;
-      string blobFileName = $"{filePathPrefix}{csvDate}_{fileheader}_{inputFileType}{fileExtension}"; 
+      string blobFileName = $"{filePathPrefix}{csvDate}_{inputFileType}{fileExtension}"; 
 
       Console.WriteLine($"FileUploadToAzureBlobAsync > fileName= {blobFileName }");
 

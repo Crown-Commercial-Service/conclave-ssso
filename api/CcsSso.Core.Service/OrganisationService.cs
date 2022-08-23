@@ -425,5 +425,19 @@ namespace CcsSso.Service
         _logger.LogError(ex, ex.Message);
       }
     }
+
+    public int GetAffectedUsersByRemovedIdp(string ciiOrganisationId, string idpRemoved)
+    {
+      var idpRemovedList = idpRemoved.Split(',').Select(x => int.Parse(x));
+      
+
+      var userList = _dataContext.User.Include(u => u.UserIdentityProviders).ThenInclude(o => o.OrganisationEligibleIdentityProvider)
+                          .Include(u => u.Party).ThenInclude(p => p.Person)
+                          .Where(u => !u.IsDeleted &&
+                          u.Party.Person.Organisation.CiiOrganisationId == ciiOrganisationId
+                          && u.UserIdentityProviders.Any(uip => !uip.IsDeleted &&
+                          idpRemovedList.Contains(uip.OrganisationEligibleIdentityProvider.IdentityProviderId))).ToList();
+      return userList.Count();
+    }
   }
 }
