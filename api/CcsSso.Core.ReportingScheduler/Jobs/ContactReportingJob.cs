@@ -158,7 +158,11 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             var fileByteArraySite = _csvConverter.ConvertToCSV(contactDetailList.Where(x => x.ContactType == "SITE").Select(x => (ContactSiteResponseInfo)x.ContactDetail).ToList(), "contact-site");
             byte[] fileByteArray = fileByteArrayOrg.Concat(fileByteArrayUser).Concat(fileByteArraySite).ToArray();
 
-           
+            //using (MemoryStream memStream = new MemoryStream(fileByteArray))
+            //{
+            //  File.WriteAllBytes($"contact_{new Random().Next()}.csv", fileByteArray);
+            //}
+
             _logger.LogInformation("After converting the list of contact object into CSV format and returned byte Array");
 
             AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Contact");
@@ -281,9 +285,9 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                                           join org in _dataContext.Organisation on p.OrganisationId equals org.Id
                                           join vrad in _dataContext.VirtualAddress on subgcp.ContactDetailId equals vrad.ContactDetailId into gvrad
                                           from subgvrad in gvrad.DefaultIfEmpty()
-                                          where ((p.LastUpdatedOnUtc > untilDateTime || cpuser.LastUpdatedOnUtc > untilDateTime || subgvrad.LastUpdatedOnUtc > untilDateTime) && cpuser.IsDeleted == false)
+                                          where ((p.LastUpdatedOnUtc > untilDateTime || subgcp.LastUpdatedOnUtc > untilDateTime || cpuser.LastUpdatedOnUtc > untilDateTime || subgvrad.LastUpdatedOnUtc > untilDateTime) && cpuser.IsDeleted == false)
                                           select new Tuple<int, int, int, string>(
-                                       cpuser.Id, cpuser.PartyId, cpuser.ContactDetailId, org.CiiOrganisationId)
+                                       cpuser.Id, cpuser.PartyId, subgcp.ContactDetailId, org.CiiOrganisationId)
                              ).Distinct().ToListAsync();
          return contactDetailsResult;
 
@@ -343,11 +347,17 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                                    join prt in _dataContext.Party on p.PartyId equals prt.Id
                                    join cp in _dataContext.ContactPoint
                                          on new { PartyType = 4, PartyId = prt.Id } equals new { PartyType = cp.PartyTypeId, PartyId = cp.PartyId }
-                                   join sc in _dataContext.SiteContact
-                                         on cp.Id equals sc.ContactId into gsc
-                                   from subgsc in gsc.DefaultIfEmpty()
+
+                                   join cplink in _dataContext.ContactPoint
+                                     on cp.ContactDetailId equals cplink.ContactDetailId into gcplink
+                                   from subcplink in gcplink.DefaultIfEmpty()
+
+
+                                   join sc in _dataContext.SiteContact on new { Id = subcplink.Id, IsDeleted = false } equals new { Id = sc.ContactId, IsDeleted = sc.IsDeleted }
+
                                    join cpsite in _dataContext.ContactPoint
-                                         on new { ContactPointId = subgsc.ContactPointId, isSite = true } equals new { ContactPointId = cpsite.Id, isSite = cpsite.IsSite }
+                                         on new { ContactPointId = sc.ContactPointId, isSite = true } equals new { ContactPointId = cpsite.Id, isSite = cpsite.IsSite }
+
                                    join vrad in _dataContext.VirtualAddress
                                          on cp.ContactDetailId equals vrad.ContactDetailId into gvrad
                                    from subgvrad in gvrad.DefaultIfEmpty()
@@ -356,9 +366,9 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                                         on p.OrganisationId equals org.Id into gorg
                                    from subgorg in gorg.DefaultIfEmpty()
 
-                                   where ((p.LastUpdatedOnUtc > untilDateTime || cp.LastUpdatedOnUtc > untilDateTime || subgvrad.LastUpdatedOnUtc > untilDateTime) && cp.IsDeleted == false)
+                                   where (p.LastUpdatedOnUtc > untilDateTime || cp.LastUpdatedOnUtc > untilDateTime || subgvrad.LastUpdatedOnUtc > untilDateTime || sc.LastUpdatedOnUtc > untilDateTime)
 
-                                   select new Tuple<string, int, int>(subgorg.CiiOrganisationId, cpsite.Id, subgsc.Id)).Distinct().ToListAsync();
+                                   select new Tuple<string, int, int>(subgorg.CiiOrganisationId, sc.ContactPointId, sc.Id)).Distinct().ToListAsync();
 
 
         var assignedContact = await (from sc in _dataContext.SiteContact
