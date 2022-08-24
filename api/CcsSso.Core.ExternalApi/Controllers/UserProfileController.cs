@@ -82,7 +82,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet]
-    [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR", "ORG_DEFAULT_USER", "DELEGATED_USER")]
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(UserProfileResponseInfo), 200)]
