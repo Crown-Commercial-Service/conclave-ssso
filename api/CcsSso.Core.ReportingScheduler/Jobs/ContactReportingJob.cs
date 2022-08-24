@@ -81,7 +81,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
           return;
         }
 
-        _logger.LogInformation($"Total number of Orgs => {listOfAllModifiedContact.Count()}");
+        _logger.LogInformation($"Total number of Contacts => {listOfAllModifiedContact.Count()}");
 
         // spliting the jobs
         int size = _appSettings.MaxNumbeOfRecordInAReport;
