@@ -126,6 +126,13 @@ namespace CcsSso.Core.Service
 
     public async Task<bool> AuthorizeForOrganisationAsync(RequestType requestType)
     {
+      // #Delegated: Change to handle request for delegate user
+      var isDelegateUserRequest = _requestContext.Roles.Contains("DELEGATED_USER");
+      if (isDelegateUserRequest)
+      {
+        return true;
+      }
+
       var isCcsAdminRequest = _requestContext.Roles.Contains("ORG_USER_SUPPORT") || _requestContext.Roles.Contains("MANAGE_SUBSCRIPTIONS");
       var isAuthorizedForOrganisation = false;
 
@@ -145,7 +152,7 @@ namespace CcsSso.Core.Service
           await _remoteCacheService.SetValueAsync<string>($"{CacheKeyConstant.UserOrganisation}-{_requestContext.RequestIntendedUserName}", intendedOrganisationId,
             new TimeSpan(0, _applicationConfigurationInfo.RedisCacheSettings.CacheExpirationInMinutes, 0));
         }
-
+        
         isAuthorizedForOrganisation = _requestContext.CiiOrganisationId == intendedOrganisationId;
       }
 
