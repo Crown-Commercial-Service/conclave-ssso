@@ -42,17 +42,5 @@ namespace CcsSso.Core.DbModel.Constants
     Primary,
     Delegation
   }
-
-  public enum RoleEligibleDefault
-  {
-    None,
-    Supplier,
-    Buyer,
-    Both,
-    SupplierBuyer,
-    SupplierBoth,
-    BuyerBoth,
-    BuyerSupplier,
-    SupplierBuyerBoth
-  }
+  
 }

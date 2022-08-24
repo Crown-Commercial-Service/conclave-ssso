@@ -33,6 +33,6 @@ namespace CcsSso.DbModel.Entity
 
     public List<IdamUserLoginRole> IdamUserLoginRoles { get; set; }
 
-    // public RoleEligibleDefault DefaultEligibility { get; set; }
+    public string DefaultEligibility { get; set; }
   }
 }
