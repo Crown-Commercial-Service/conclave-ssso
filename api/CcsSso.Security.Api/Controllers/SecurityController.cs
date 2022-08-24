@@ -191,6 +191,7 @@ namespace CcsSso.Security.Api.Controllers
         var redirectUri = new Uri(tokenRequestInfo.RedirectUrl);
         host = redirectUri.AbsoluteUri.Split(redirectUri.AbsolutePath)[0];
       }
+
       List<string> visitedSiteList = GetVisitedSiteList();
 
       var idToken = await _securityService.GetRenewedTokenAsync(tokenRequestInfo, opbsValue, host, sid, visitedSiteList);
