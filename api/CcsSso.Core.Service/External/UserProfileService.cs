@@ -1561,9 +1561,8 @@ namespace CcsSso.Core.Service.External
       }
 
       var orgElegibleRoleIds = organisation.OrganisationEligibleRoles.Select(r => r.Id);
-      if (userProfileRequestInfo.Detail.RoleIds != null && userProfileRequestInfo.Detail.RoleIds.Any(gId => excludeRoleIds.Contains(gId)
-        && userProfileRequestInfo.Detail.RoleIds.Any(gId => !orgElegibleRoleIds.Contains(gId))
-      ))
+      if (userProfileRequestInfo.Detail.RoleIds.Any(gId => excludeRoleIds.Contains(gId))
+          || userProfileRequestInfo.Detail.RoleIds.Any(gId => !orgElegibleRoleIds.Contains(gId)))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidUserRole);
       }
