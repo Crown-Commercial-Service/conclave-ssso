@@ -312,8 +312,6 @@ namespace CcsSso.Security.Services
     public async Task InvalidateSessionAsync(string sessionId)
     {
       await _securityCacheService.SetValueAsync(sessionId, true, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes, 0));
-
-      // #Delegated: To remvoe delegated org detail from cache
       await _securityCacheService.RemoveAsync(CacheKey.DELEGATION + sessionId);
     }
 

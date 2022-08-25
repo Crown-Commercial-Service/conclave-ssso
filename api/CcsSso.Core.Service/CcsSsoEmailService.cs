@@ -128,7 +128,7 @@ namespace CcsSso.Core.Service
       };
       await SendEmailAsync(emailInfo);
     }
-
+    // #Delegated
     public async Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string[] roles, string encryptedCode)
     {
       var data = new Dictionary<string, dynamic>

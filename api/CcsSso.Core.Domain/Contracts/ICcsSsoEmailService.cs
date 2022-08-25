@@ -29,7 +29,7 @@ namespace CcsSso.Core.Domain.Contracts
     Task SendUserPermissionUpdateEmailAsync(string email);
 
     Task SendOrgJoinRequestEmailAsync(OrgJoinNotificationInfo orgJoinNotificationInfo);
-
+    // #Delegated
     Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string[] roles, string encryptedInfo);
   }
 }
