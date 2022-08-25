@@ -163,6 +163,23 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             //  File.WriteAllBytes($"contact_{new Random().Next()}.csv", fileByteArray);
             //}
 
+            if (_appSettings.WriteCSVDataInLog)
+            {
+              try
+              {
+                MemoryStream ms = new MemoryStream(fileByteArray);
+                StreamReader reader = new StreamReader(ms);
+                string csvData = reader.ReadToEnd();
+                _logger.LogInformation("CSV Data as follows");
+                _logger.LogInformation(csvData);
+                _logger.LogInformation("");
+              }
+              catch (Exception ex)
+              {
+                _logger.LogWarning($"It is temporary logging to check the csv data which through exception -{ex.Message}");
+              }
+            }
+
             _logger.LogInformation("After converting the list of contact object into CSV format and returned byte Array");
 
             AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Contact");
