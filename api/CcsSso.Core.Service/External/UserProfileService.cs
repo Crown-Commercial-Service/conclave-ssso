@@ -1301,15 +1301,8 @@ namespace CcsSso.Core.Service.External
 
         await _dataContext.SaveChangesAsync();
 
-        string[] roleNames = new string[] { };
-        foreach (var roleId in userAccessRoles)
-        {
-          var roleName = organisation.OrganisationEligibleRoles.FirstOrDefault(r => r.Id == roleId.OrganisationEligibleRoleId).CcsAccessRole.CcsAccessRoleName;
-          roleNames.Append(roleName);
-        }
-
         // Send delegation activation email
-        await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName, roleNames);
+        await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName);
 
         // Log
         //await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelegated, AuditLogApplication.ManageUserAccount, $"UserId:{existingUserPrimaryDetails.Id}," + " " +
@@ -1459,6 +1452,7 @@ namespace CcsSso.Core.Service.External
     /// Update delegated user acceptance
     public async Task AcceptDelegationAsync(string acceptanceToken)
     {
+      acceptanceToken = acceptanceToken?.Replace(" ", "+");
       // Decrept token
       string delegationActivationDetails = _cryptographyService.DecryptString(acceptanceToken, _appConfigInfo.DelegationEmailTokenEncryptionKey);
 
@@ -1479,13 +1473,22 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorActivationLinkExpired);
       }
 
-      // check redis cache for latest token, if not exist then expired, not same then also expired
-
-
       // get organisation actual id from ciiorganisation id
       var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles)
                           .FirstOrDefaultAsync(o => !o.IsDeleted && o.LegalName == orgName));
 
+      if (organisation == default)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidOrganisationName);
+      }
+
+      // check redis cache for latest token, if not exist then expired, not same then also expired
+      var latestToken = await _remoteCacheService.GetValueAsync<string>(userName + "-" + organisation.CiiOrganisationId);
+
+      if (latestToken?.Trim() != acceptanceToken?.Trim())
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorActivationLinkExpired);
+      }
 
       var existingDelegatedUserDetails = await _dataContext.User.Include(u => u.UserAccessRoles)
                                           .Include(u => u.Party).ThenInclude(p => p.Person)
@@ -1504,6 +1507,7 @@ namespace CcsSso.Core.Service.External
       try
       {
         //remove redis cache token
+        await _remoteCacheService.RemoveAsync(userName + "-" + organisation.CiiOrganisationId);
 
         await _dataContext.SaveChangesAsync();
       }
@@ -1513,7 +1517,7 @@ namespace CcsSso.Core.Service.External
       }
     }
 
-    public async Task SendUserDelegatedAccessEmailAsync(string userName, string orgId, string orgName = "", string[] roles = default)
+    public async Task SendUserDelegatedAccessEmailAsync(string userName, string orgId, string orgName = "")
     {
       _userHelper.ValidateUserName(userName);
 
@@ -1522,15 +1526,18 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidCiiOrganisationId);
       }
 
-      if (string.IsNullOrWhiteSpace(orgName) || roles.Length < 1)
+      if (string.IsNullOrWhiteSpace(orgName))
       {
         var user = await _dataContext.User
-        .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(pr => pr.Organisation)
-        .Where(u => !u.IsDeleted && u.UserName == userName && u.UserType == DbModel.Constants.UserType.Delegation).SingleOrDefaultAsync();
+        .Where(u => !u.IsDeleted && u.UserName == userName && u.UserType == DbModel.Constants.UserType.Delegation
+               && u.Party.Person.Organisation.CiiOrganisationId == orgId).SingleOrDefaultAsync();
 
+        if (user == null)
+        {
+          throw new ResourceNotFoundException();
+        }
         orgName = user.Party.Person.Organisation.LegalName;
-        roles = user.UserAccessRoles.Select(r => r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName).ToArray();
       }
 
       string activationInfo = "usr=" + userName + "&org=" + orgName + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegatedEmailExpirationHours);
@@ -1541,9 +1548,11 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorSendingActivationLink);
       }
       // add username and token in redish cache with 36 hours expiry, if exist then replace
+      await _remoteCacheService.SetValueAsync<string>(userName + "-" + orgId, encryptedInfo,
+            new TimeSpan(_appConfigInfo.DelegatedEmailExpirationHours, 0, 0));
 
       // Send the delegation email
-      await _ccsSsoEmailService.SendUserDelegatedAccessEmailAsync(userName, orgName, roles, encryptedInfo);
+      await _ccsSsoEmailService.SendUserDelegatedAccessEmailAsync(userName, orgName, encryptedInfo);
     }
 
 
@@ -1569,7 +1578,7 @@ namespace CcsSso.Core.Service.External
 
       // date validations, in update case don't validate start date less then today
       if (userProfileRequestInfo.Detail.StartDate == default || userProfileRequestInfo.Detail.EndDate == default ||
-          (isUpdated ? true : userProfileRequestInfo.Detail.StartDate.Date < DateTime.UtcNow.Date) ||
+          (isUpdated ? false : userProfileRequestInfo.Detail.StartDate.Date < DateTime.UtcNow.Date) ||
           userProfileRequestInfo.Detail.EndDate.Date < userProfileRequestInfo.Detail.StartDate.Date.AddDays(28) ||
           userProfileRequestInfo.Detail.EndDate.Date > userProfileRequestInfo.Detail.StartDate.Date.AddDays(365) ||
           userProfileRequestInfo.Detail.StartDate.Date > userProfileRequestInfo.Detail.EndDate.Date)
