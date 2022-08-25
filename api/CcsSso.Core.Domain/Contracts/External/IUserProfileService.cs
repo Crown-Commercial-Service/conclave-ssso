@@ -33,6 +33,6 @@ namespace CcsSso.Core.Domain.Contracts.External
 
         Task AcceptDelegationAsync(string acceptanceToken);
 
-        Task SendUserDelegatedAccessEmailAsync(string userName, string orgId = "", string orgName = "", string[] roles = default);
+        Task SendUserDelegatedAccessEmailAsync(string userName, string orgId = "", string orgName = "");
     }
 }
