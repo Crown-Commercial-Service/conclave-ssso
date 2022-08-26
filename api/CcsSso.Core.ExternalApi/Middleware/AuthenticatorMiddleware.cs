@@ -38,6 +38,10 @@ namespace CcsSso.Core.ExternalApi.Middleware
       requestContext.IpAddress = context.GetRemoteIPAddress();
       requestContext.Device = context.Request.Headers["User-Agent"];
 
+      // #Deleated: To identify delegate user search
+      var isDelegated = context.Request.Query["is-delegated"].FirstOrDefault();
+      requestContext.IsDelegated = isDelegated != null ? Convert.ToBoolean(isDelegated) : false;
+
       if (string.IsNullOrWhiteSpace(bearerToken) && (string.IsNullOrEmpty(apiKey) || apiKey != _appConfig.ApiKey))
       {
         context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;

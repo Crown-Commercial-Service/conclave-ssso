@@ -126,9 +126,15 @@ namespace CcsSso.Core.Service
 
     public async Task<bool> AuthorizeForOrganisationAsync(RequestType requestType)
     {
+      var isOrgAdmin = _requestContext.Roles.Contains("ORG_ADMINISTRATOR");
+
       // #Delegated: Change to handle request for delegate user
       var isDelegateUserRequest = _requestContext.Roles.Contains("DELEGATED_USER");
-      if (isDelegateUserRequest)
+
+      // #Delegated: Change to allow org admin to serach for user of other org
+      var isDelegatedSearchRequest = isOrgAdmin && _requestContext.IsDelegated;
+
+      if (isDelegateUserRequest || isDelegatedSearchRequest)
       {
         return true;
       }
