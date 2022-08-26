@@ -22,6 +22,10 @@ namespace CcsSso.Core.ExternalApi.Middleware
     private readonly ApplicationConfigurationInfo _appConfig;
     private readonly ITokenService _tokenService;
     private readonly IRemoteCacheService _remoteCacheService;
+    private List<string> allowedPaths = new List<string>()
+    {
+      "users/delegate-user-validation"
+    };
 
     public AuthenticatorMiddleware(RequestDelegate next, ApplicationConfigurationInfo appConfig, ITokenService tokenService, IRemoteCacheService remoteCacheService)
     {
@@ -35,8 +39,15 @@ namespace CcsSso.Core.ExternalApi.Middleware
     {
       var apiKey = context.Request.Headers["X-API-Key"];
       var bearerToken = context.Request.Headers["Authorization"].FirstOrDefault();
+      var path = context.Request.Path.Value.TrimStart('/').TrimEnd('/');
       requestContext.IpAddress = context.GetRemoteIPAddress();
       requestContext.Device = context.Request.Headers["User-Agent"];
+
+      if (allowedPaths.Contains(path))
+      {
+        await _next(context);
+        return;
+      }
 
       // #Deleated: To identify delegate user search
       var isDelegated = context.Request.Query["is-delegated"].FirstOrDefault();
