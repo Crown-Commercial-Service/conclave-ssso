@@ -52,5 +52,10 @@ namespace CcsSso.DbModel.Entity
         public DateTime? DelegationEndDate { get; set; }
 
         public bool DelegationAccepted { get; set; }
-    }
+
+        public Organisation OriginOrganization   { get; set; }
+
+        [ForeignKey("OriginOrganizationId")]
+        public int? OriginOrganizationId { get; set; }
+  }
 }

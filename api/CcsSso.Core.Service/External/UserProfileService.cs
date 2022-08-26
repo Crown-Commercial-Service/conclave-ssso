@@ -263,6 +263,7 @@ namespace CcsSso.Core.Service.External
         .Include(u => u.Party).ThenInclude(p => p.Person)
         .ThenInclude(pr => pr.Organisation)
         .Include(u => u.UserIdentityProviders).ThenInclude(uidp => uidp.OrganisationEligibleIdentityProvider).ThenInclude(oi => oi.IdentityProvider)
+        .Include(o => o.OriginOrganization)
         .Where(u => !u.IsDeleted && u.UserName.ToLower() == userName.ToLower()).ToListAsync();
 
       // Search for user delegation details for org
@@ -309,7 +310,7 @@ namespace CcsSso.Core.Service.External
         {
           UserName = user.UserName,
           OrganisationId = user.Party.Person.Organisation.CiiOrganisationId,
-          OriginOrganisationName = isDelegated ? user.Party.Person.Organisation.LegalName : default,
+          OriginOrganisationName = isDelegated ? isSearchUser ? user.Party.Person.Organisation.LegalName : user.OriginOrganization?.LegalName : default,
           FirstName = user.Party.Person.FirstName,
           LastName = (isDelegated || !string.IsNullOrWhiteSpace(delegatedOrgId)) && !user.DelegationAccepted ?
                        user.Party.Person.LastName.Substring(0, 1).PadRight(user.Party.Person.LastName.Length, '*') :
@@ -418,7 +419,7 @@ namespace CcsSso.Core.Service.External
       var userPagedInfo = await _dataContext.GetPagedResultAsync(_dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
         .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
-
+        .Include(o => o.OriginOrganization)
         // Include deleted for delegated expired
         .Where(u => (isDelegatedExpiredOnly || !u.IsDeleted) && (includeSelf || u.Id != _requestContext.UserId) &&
         u.UserType == userTypeSearch &&
@@ -428,29 +429,22 @@ namespace CcsSso.Core.Service.External
         u.Party.Person.Organisation.CiiOrganisationId == organisationId &&
         (string.IsNullOrWhiteSpace(searchString) || u.UserName.ToLower().Contains(searchString)
         ||
-          // Delegation search and delegation not accepted then don't search in last name
-          (havingMultipleWords && u.Party.Person.FirstName.ToLower().Contains(searchFirstNameLowerCase) &&
+            // Delegation search and delegation not accepted then don't search in last name
+            (havingMultipleWords && u.Party.Person.FirstName.ToLower().Contains(searchFirstNameLowerCase) &&
               (!isDelegatedOnly ? u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase) :
                 u.DelegationAccepted && u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase)
               )
             )
-        || (!havingMultipleWords && (u.Party.Person.FirstName.ToLower().Contains(searchString) ||
-        (!isDelegatedOnly ? u.Party.Person.LastName.ToLower().Contains(searchString) :
-        u.DelegationAccepted && u.Party.Person.LastName.ToLower().Contains(searchString))
-        ))))
+        || (!havingMultipleWords &&
+            (u.Party.Person.FirstName.ToLower().Contains(searchString) ||
+              (!isDelegatedOnly ? u.Party.Person.LastName.ToLower().Contains(searchString) :
+                                  u.DelegationAccepted && u.Party.Person.LastName.ToLower().Contains(searchString)) ||
+            // Allow searching for orign org in delegation
+            (isDelegatedOnly && u.OriginOrganization.LegalName.ToLower().Contains(searchString))
+            )
+           )
+        ))
         .OrderBy(u => u.Party.Person.FirstName).ThenBy(u => u.Party.Person.LastName), resultSetCriteria);
-
-      Dictionary<string, string> userListWithOriginOrg = new Dictionary<string, string>();
-      if (isDelegatedOnly)
-      {
-        string[] userNames = userPagedInfo.Results.Select(u => u.UserName).ToArray();
-
-        userListWithOriginOrg = _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
-          .Where(u => u.UserType == DbModel.Constants.UserType.Primary && (isDelegatedExpiredOnly || !u.IsDeleted) && userNames.Contains(u.UserName))
-          .Select(t => new { t.UserName, t.Party.Person.Organisation.LegalName })
-          .Distinct()
-          .ToDictionary(ur => ur.UserName, or => or.LegalName);
-      }
 
       var userListResponse = new UserListResponse
       {
@@ -468,7 +462,7 @@ namespace CcsSso.Core.Service.External
           StartDate = isDelegatedOnly ? up.DelegationStartDate : default,
           EndDate = isDelegatedOnly ? up.DelegationEndDate : default,
           RemainingDays = !isDelegatedOnly || isDelegatedExpiredOnly || up.DelegationStartDate is null ? 0 : Convert.ToInt32((up.DelegationEndDate.Value - up.DelegationStartDate.Value).Days),
-          OriginOrganisation = !isDelegatedOnly ? default : userListWithOriginOrg.FirstOrDefault(x => x.Key == Convert.ToString(up.UserName)).Value,
+          OriginOrganisation = !isDelegatedOnly ? default : up.OriginOrganization?.LegalName,
           RolePermissionInfo = !isDelegatedOnly ? default : up.UserAccessRoles.Select(uar => new RolePermissionInfo
           {
             RoleId = uar.OrganisationEligibleRole.Id,
@@ -1290,7 +1284,8 @@ namespace CcsSso.Core.Service.External
           CcsServiceId = existingUserPrimaryDetails.CcsServiceId,
           DelegationStartDate = userProfileRequestInfo.Detail.StartDate,
           DelegationEndDate = userProfileRequestInfo.Detail.EndDate,
-          UserType = DbModel.Constants.UserType.Delegation
+          UserType = DbModel.Constants.UserType.Delegation,
+          OriginOrganizationId = existingUserPrimaryDetails.Party.Person.Organisation.Id
         }
       };
 
@@ -1531,7 +1526,8 @@ namespace CcsSso.Core.Service.External
         var user = await _dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(pr => pr.Organisation)
         .Where(u => !u.IsDeleted && u.UserName == userName && u.UserType == DbModel.Constants.UserType.Delegation
-               && u.Party.Person.Organisation.CiiOrganisationId == orgId).SingleOrDefaultAsync();
+               && u.Party.Person.Organisation.CiiOrganisationId == orgId
+               && !u.DelegationAccepted).SingleOrDefaultAsync();
 
         if (user == null)
         {
@@ -1569,7 +1565,7 @@ namespace CcsSso.Core.Service.External
         }
       }
 
-      var orgElegibleRoleIds = organisation.OrganisationEligibleRoles.Select(r => r.Id);
+      var orgElegibleRoleIds = organisation.OrganisationEligibleRoles.Where(r => !r.IsDeleted && !r.CcsAccessRole.IsDeleted).Select(r => r.Id);
       if (userProfileRequestInfo.Detail.RoleIds.Any(gId => excludeRoleIds.Contains(gId))
           || userProfileRequestInfo.Detail.RoleIds.Any(gId => !orgElegibleRoleIds.Contains(gId)))
       {
