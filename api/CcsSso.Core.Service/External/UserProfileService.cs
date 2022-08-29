@@ -310,7 +310,7 @@ namespace CcsSso.Core.Service.External
         {
           UserName = user.UserName,
           OrganisationId = user.Party.Person.Organisation.CiiOrganisationId,
-          OriginOrganisationName = isDelegated ? isSearchUser ? user.Party.Person.Organisation.LegalName : user.OriginOrganization?.LegalName : default,
+          OriginOrganisationName = isDelegated ? (user.UserType == DbModel.Constants.UserType.Primary ? user.Party.Person.Organisation.LegalName : user.OriginOrganization?.LegalName) : default,
           FirstName = user.Party.Person.FirstName,
           LastName = (isDelegated || !string.IsNullOrWhiteSpace(delegatedOrgId)) && !user.DelegationAccepted ?
                        user.Party.Person.LastName.Substring(0, 1).PadRight(user.Party.Person.LastName.Length, '*') :
@@ -1566,7 +1566,7 @@ namespace CcsSso.Core.Service.External
       }
 
       var orgElegibleRoleIds = organisation.OrganisationEligibleRoles.Where(r => !r.IsDeleted && !r.CcsAccessRole.IsDeleted).Select(r => r.Id);
-      if (userProfileRequestInfo.Detail.RoleIds.Any(gId => excludeRoleIds.Contains(gId))
+      if (!userProfileRequestInfo.Detail.RoleIds.Any() || userProfileRequestInfo.Detail.RoleIds.Any(gId => excludeRoleIds.Contains(gId))
           || userProfileRequestInfo.Detail.RoleIds.Any(gId => !orgElegibleRoleIds.Contains(gId)))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidUserRole);
