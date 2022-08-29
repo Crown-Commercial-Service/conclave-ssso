@@ -65,6 +65,7 @@ namespace CcsSso.ExternalApi.Controllers
 
     /// <summary>
     /// Allows a user to retrieve details for a given user
+    /// #Delegated
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
@@ -81,7 +82,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet]
-    [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR", "ORG_DEFAULT_USER", "DELEGATED_USER")]
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(UserProfileResponseInfo), 200)]
@@ -214,7 +215,7 @@ namespace CcsSso.ExternalApi.Controllers
     {
       await _userProfileService.AddAdminRoleAsync(userId);
     }
-
+    // #Delegated
     #region Delegated access
     /// <summary>
     /// Allows admin to delegate other org user to represent org
@@ -247,7 +248,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpPost("delegate-user")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
-    [OrganisationAuthorise("USER_POST")]
+    // [OrganisationAuthorise("USER_POST")] - No need to add this check for delegation
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(bool), 200)]
     public async Task CreateDelegatedUser(DelegatedUserProfileRequestInfo userProfileRequestInfo)
@@ -283,8 +284,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpPut("delegate-user")]
-    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
-    [OrganisationAuthorise("USER")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    // [OrganisationAuthorise("USER")] - No need to add this check for delegation
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(bool), 200)]
     public async Task UpdateDelegatedUser(DelegatedUserProfileRequestInfo userProfileRequestInfo)
@@ -311,7 +312,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpDelete("delegate-user")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
-    [OrganisationAuthorise("USER")]
+    // [OrganisationAuthorise("USER")] - No need to add this check for delegation
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task DeleteDelegatedUser([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "organisation-id")] string organisationId)
@@ -335,7 +336,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpGet("delegate-user-validation")]
     //[ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
-    //[OrganisationAuthorise("USER")]
+    //[OrganisationAuthorise("USER")] - No need to add this check for delegation
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(bool), 200)]
     public async Task DelegationUserAcceptance([FromQuery(Name = "acceptance-code")] string acceptanceCode)
@@ -359,8 +360,8 @@ namespace CcsSso.ExternalApi.Controllers
     /// PUT /delegate-user-resend-activation?user-id=user@mail.com&organisation-id='organisation id'
     /// </remarks>
     [HttpPut("delegate-user-resend-activation")]
-    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
-    [OrganisationAuthorise("USER")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    // [OrganisationAuthorise("USER")] - No need to add this check for delegation
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(bool), 200)]
     public async Task ResenedActivationLink([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "organisation-id")] string organisationId)

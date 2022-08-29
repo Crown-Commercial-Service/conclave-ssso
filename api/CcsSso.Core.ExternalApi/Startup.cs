@@ -57,6 +57,7 @@ namespace CcsSso.ExternalApi
         int.TryParse(Configuration["RedisCacheSettings:CacheExpirationInMinutes"], out int cacheExpirationInMinutes);
         int.TryParse(Configuration["InMemoryCacheExpirationInMinutes"], out int inMemoryCacheExpirationInMinutes);
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
+        // #Delegated
         int.TryParse(Configuration["UserDelegation:DelegatedEmailExpirationHours"], out int delegatedEmailExpirationHours);
 
         var globalServiceRoles = Configuration.GetSection("ExternalServiceDefaultRoles:GlobalServiceDefaultRoles").Get<List<string>>();
@@ -70,6 +71,7 @@ namespace CcsSso.ExternalApi
         {
           inMemoryCacheExpirationInMinutes = 10;
         }
+        // #Delegated
         delegatedEmailExpirationHours = delegatedEmailExpirationHours == 0 ? 36 : delegatedEmailExpirationHours;
 
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
@@ -79,6 +81,7 @@ namespace CcsSso.ExternalApi
           EnableAdapterNotifications = enableAdaptorNotifications,
           InMemoryCacheExpirationInMinutes = inMemoryCacheExpirationInMinutes,
           DashboardServiceClientId = Configuration["DashboardServiceClientId"],
+          // #Delegated
           DelegatedEmailExpirationHours = delegatedEmailExpirationHours,
           DelegationEmailTokenEncryptionKey = Configuration["UserDelegation:DelegationEmailTokenEncryptionKey"],
           DelegationExcludeRoles = Configuration.GetSection("UserDelegation:DelegationExcludeRoles").Get<string[]>(),
@@ -100,8 +103,8 @@ namespace CcsSso.ExternalApi
             UserProfileUpdateNotificationTemplateId = Configuration["Email:UserProfileUpdateNotificationTemplateId"],
             UserContactUpdateNotificationTemplateId = Configuration["Email:UserContactUpdateNotificationTemplateId"],
             UserPermissionUpdateNotificationTemplateId = Configuration["Email:UserPermissionUpdateNotificationTemplateId"],
+            // #Delegated
             UserDelegatedAccessEmailTemplateId = Configuration["Email:UserDelegatedAccessEmailTemplateId"],
-
             UserUpdateEmailOnlyFederatedIdpTemplateId= Configuration["Email:UserUpdateEmailOnlyFederatedIdpTemplateId"],
             UserUpdateEmailOnlyUserIdPwdTemplateId = Configuration["Email:UserUpdateEmailOnlyUserIdPwdTemplateId"],
             UserUpdateEmailBothIdpTemplateId = Configuration["Email:UserUpdateEmailBothIdpTemplateId"],

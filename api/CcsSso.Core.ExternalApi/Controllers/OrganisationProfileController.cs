@@ -780,6 +780,7 @@ namespace CcsSso.ExternalApi.Controllers
 
         /// <summary>
         /// Allows a user to retrieve users for a given organisation
+        /// #Delegated
         /// </summary>
         /// <response  code="200">Ok</response>
         /// <response  code="401">Unauthorised</response>
