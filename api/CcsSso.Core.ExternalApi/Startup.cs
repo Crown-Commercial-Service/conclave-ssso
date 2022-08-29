@@ -58,7 +58,7 @@ namespace CcsSso.ExternalApi
         int.TryParse(Configuration["InMemoryCacheExpirationInMinutes"], out int inMemoryCacheExpirationInMinutes);
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
         // #Delegated
-        int.TryParse(Configuration["UserDelegation:DelegatedEmailExpirationHours"], out int delegatedEmailExpirationHours);
+        int.TryParse(Configuration["UserDelegation:DelegationEmailExpirationHours"], out int delegatedEmailExpirationHours);
 
         var globalServiceRoles = Configuration.GetSection("ExternalServiceDefaultRoles:GlobalServiceDefaultRoles").Get<List<string>>();
         var scopedServiceRoles = Configuration.GetSection("ExternalServiceDefaultRoles:ScopedServiceDefaultRoles").Get<List<string>>();
