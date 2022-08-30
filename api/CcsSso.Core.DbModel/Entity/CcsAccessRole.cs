@@ -32,5 +32,7 @@ namespace CcsSso.DbModel.Entity
     public List<ServiceRolePermission> ServiceRolePermissions { get; set; }
 
     public List<IdamUserLoginRole> IdamUserLoginRoles { get; set; }
+
+    public string DefaultEligibility { get; set; }
   }
 }
