@@ -3,15 +3,17 @@ using System;
 using CcsSso.DbPersistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace CcsSso.Core.DbMigrations.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20220830043424_Add_CcsAccessRole_DefaultEligibility")]
+    partial class Add_CcsAccessRole_DefaultEligibility
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1496,9 +1498,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<bool>("MfaEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<int?>("OriginOrganizationId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("PartyId")
                         .HasColumnType("integer");
 
@@ -1514,8 +1513,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CcsServiceId");
-
-                    b.HasIndex("OriginOrganizationId");
 
                     b.HasIndex("PartyId")
                         .IsUnique();
@@ -2137,10 +2134,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .WithMany("CreatedUsers")
                         .HasForeignKey("CcsServiceId");
 
-                    b.HasOne("CcsSso.DbModel.Entity.Organisation", "OriginOrganization")
-                        .WithMany()
-                        .HasForeignKey("OriginOrganizationId");
-
                     b.HasOne("CcsSso.DbModel.Entity.Party", "Party")
                         .WithOne("User")
                         .HasForeignKey("CcsSso.DbModel.Entity.User", "PartyId")
@@ -2148,8 +2141,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .IsRequired();
 
                     b.Navigation("CcsService");
-
-                    b.Navigation("OriginOrganization");
 
                     b.Navigation("Party");
                 });
