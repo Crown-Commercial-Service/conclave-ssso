@@ -333,7 +333,6 @@ namespace CcsSso.Service
           }
         };
 
-        //TODO: 2809
         await _organisationProfileService.CreateOrganisationAsync(organisationProfileInfo);
       }
       catch (Exception)
@@ -359,7 +358,35 @@ namespace CcsSso.Service
         var adminRole = await _dataContext.OrganisationEligibleRole
           .FirstOrDefaultAsync(r => r.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && r.Organisation.CiiOrganisationId == ciiOrgId);
 
-        //TODO: 2809
+        var roleIds = new List<int> { adminRole.Id };
+
+        if (organisationRegistrationDto.SupplierBuyerType == 0) //Supplier
+        {
+          var defaultRoles = await _dataContext.OrganisationEligibleRole
+          .Where(r => r.Id != adminRole.Id && r.Organisation.CiiOrganisationId == ciiOrgId && 
+            !string.IsNullOrEmpty(r.CcsAccessRole.DefaultEligibility) && r.CcsAccessRole.DefaultEligibility.StartsWith("1"))
+          .ToListAsync();
+
+          roleIds.AddRange(defaultRoles.Select(r => r.Id));
+        }
+        else if (organisationRegistrationDto.SupplierBuyerType == 1) //Buyer
+        {
+          var defaultRoles = await _dataContext.OrganisationEligibleRole
+          .Where(r => r.Id != adminRole.Id && r.Organisation.CiiOrganisationId == ciiOrgId &&
+            !string.IsNullOrEmpty(r.CcsAccessRole.DefaultEligibility) && r.CcsAccessRole.DefaultEligibility.Substring(1, 1) == "1")
+          .ToListAsync();
+
+          roleIds.AddRange(defaultRoles.Select(r => r.Id));
+        }
+        else //Supplier & Buyer
+        {
+          var defaultRoles = await _dataContext.OrganisationEligibleRole
+          .Where(r => r.Id != adminRole.Id && r.Organisation.CiiOrganisationId == ciiOrgId &&
+            !string.IsNullOrEmpty(r.CcsAccessRole.DefaultEligibility) && r.CcsAccessRole.DefaultEligibility.EndsWith("1"))
+          .ToListAsync();
+
+          roleIds.AddRange(defaultRoles.Select(r => r.Id));
+        }
 
         UserProfileEditRequestInfo userProfileEditRequestInfo = new UserProfileEditRequestInfo
         {
@@ -371,7 +398,7 @@ namespace CcsSso.Service
           Detail = new UserRequestDetail
           {
             IdentityProviderIds = new List<int> { identifyProvider.Id },
-            RoleIds = new List<int> { adminRole.Id },
+            RoleIds = roleIds,
           }
         };
 
