@@ -128,13 +128,12 @@ namespace CcsSso.Core.Service
       };
       await SendEmailAsync(emailInfo);
     }
-
-    public async Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string[] roles, string encryptedCode)
+    // #Delegated
+    public async Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string encryptedCode)
     {
       var data = new Dictionary<string, dynamic>
                       {
                         { "orgName", orgName},
-                        { "roles" , string.Join(",",  roles) },
                         { "link", _appConfigInfo.ConclaveLoginUrl + "/delegated-user-activation" + $"?activationcode={encryptedCode}" }
                       };
       var emailInfo = new EmailInfo()

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using CcsSso.Shared.Domain.Dto;
 using CcsSso.Shared.Domain.Constants;
-using Newtonsoft.Json;
 
 namespace CcsSso.Shared.Services
 {
@@ -259,18 +258,18 @@ namespace CcsSso.Shared.Services
 
       csvUserData.Add(string.Join(",", csvUserHeader.ToArray()));
 
-      string userGroups = "N/A";
-      string rolePermissionInfo = "N/A";
-      string identityProviders = "N/A";
+      string userGroups = string.Empty;
+      string rolePermissionInfo = string.Empty;
+      string identityProviders = string.Empty;
       string userId = string.Empty;
 
       if (userProfileList != null)
       {
         foreach (var item in userProfileList)
         {
-          userGroups = "N/A";
-          rolePermissionInfo = "N/A";
-          identityProviders = "N/A";
+          userGroups = string.Empty;
+          rolePermissionInfo = string.Empty;
+          identityProviders = string.Empty;
 
           if (item.detail != null)
           {
@@ -364,11 +363,11 @@ namespace CcsSso.Shared.Services
             }
             else { appendPipe = string.Empty; }
 
-            addtionalIdentifiers = addtionalIdentifiers + OrganisationHeaderMap.AdditionalIdentifiers_Id + ":" + EscapeCharacter(addtionalIdentifierItem.Id) + " - "
-                                                        + OrganisationHeaderMap.AdditionalIdentifiers_LegalName + ":" + EscapeCharacter(addtionalIdentifierItem.LegalName.Replace(",", " ")) + " - "
-                                                        + OrganisationHeaderMap.AdditionalIdentifiers_URI + ":" + EscapeCharacter(addtionalIdentifierItem.Uri) + " - "
+            addtionalIdentifiers = addtionalIdentifiers + OrganisationHeaderMap.AdditionalIdentifiers_Id + ":" + CheckForNullFromChildFields(addtionalIdentifierItem.Id) + " - "
+                                                        + OrganisationHeaderMap.AdditionalIdentifiers_LegalName + ":" + CheckForNullFromChildFields(addtionalIdentifierItem.LegalName.Replace(",", " ")) + " - "
+                                                        + OrganisationHeaderMap.AdditionalIdentifiers_URI + ":" + CheckForNullFromChildFields(addtionalIdentifierItem.Uri) + " - "
                                                         //+ OrganisationHeaderMap.AdditionalIdentifiers_URI + ":" + EscapeCharacter(string.IsNullOrEmpty(addtionalIdentifierItem.Uri) ? OrganisationHeaderMap.AdditionalIdentifiers_NA : addtionalIdentifierItem.Uri).ToString() + " - "
-                                                        + OrganisationHeaderMap.AdditionalIdentifiers_Scheme + ":" + EscapeCharacter(addtionalIdentifierItem.Scheme) + appendPipe;
+                                                        + OrganisationHeaderMap.AdditionalIdentifiers_Scheme + ":" + CheckForNullFromChildFields(addtionalIdentifierItem.Scheme) + appendPipe;
             countset = countset + 1;
           }
 
@@ -412,7 +411,19 @@ namespace CcsSso.Shared.Services
         data = "";
 
       //return data.Replace(","," ").ToString();
-      return string.IsNullOrEmpty(data) ? "N/A" : data;
+      return data;
+    }
+
+    private string CheckForNullFromChildFields(string data)
+    {
+      if (string.IsNullOrEmpty(data))
+      {
+        return "NA";
+      }
+      else
+      {
+        return EscapeCharacter(data);
+      }
     }
   }
 }

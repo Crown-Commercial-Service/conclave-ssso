@@ -270,8 +270,10 @@ namespace CcsSso.Service
         .Include(c => c.Party)
         .ThenInclude(x => x.Person)
         .ThenInclude(o => o.Organisation)
-        .Where(u => u.IsDeleted == false && (_requestContext.UserId != 0 && u.Party.Person.Organisation.CiiOrganisationId != _requestContext.CiiOrganisationId) &&
-        u.UserType == Core.DbModel.Constants.UserType.Primary &&
+        .Where(u => u.IsDeleted == false
+        // #Delegated only return primary users
+        && u.UserType == Core.DbModel.Constants.UserType.Primary 
+        && (_requestContext.UserId != 0 && u.Party.Person.Organisation.CiiOrganisationId != _requestContext.CiiOrganisationId) &&
         (string.IsNullOrEmpty(name) || u.UserName.Contains(name) || (u.Party.Person.FirstName + " " + u.Party.Person.LastName).ToLower().Contains(name) || u.Party.Person.Organisation.LegalName.ToLower().Contains(name)) &&
         u.Party.Person.Organisation.IsDeleted == false).Select(user => new OrganisationUserDto
         {

@@ -45,10 +45,17 @@ namespace CcsSso.DbModel.Entity
 
         public UserType UserType { get; set; }
 
+        // #Delegated
+
         public DateTime? DelegationStartDate { get; set; }
 
         public DateTime? DelegationEndDate { get; set; }
 
         public bool DelegationAccepted { get; set; }
-    }
+
+        public Organisation OriginOrganization   { get; set; }
+
+        [ForeignKey("OriginOrganizationId")]
+        public int? OriginOrganizationId { get; set; }
+  }
 }
