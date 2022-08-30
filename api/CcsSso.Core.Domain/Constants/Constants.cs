@@ -68,6 +68,7 @@ namespace CcsSso.Domain.Constants
     public const string ErrorMfaFlagRequired = "MFA_DISABLED_USER";
     public const string ErrorMfaFlagForInvalidConnection = "MFA_ENABLED_INVALID_CONNECTION";
 
+    // #Delegated
     public const string ErrorInvalidUserDelegationPrimaryDetails = "INVALID_USER_DELEGATION_PRIMARY_DETAILS";
     public const string ErrorInvalidUserDelegation = "INVALID_USER_DELEGATION";
     public const string ErrorInvalidUserDelegationSameOrg = "INVALID_USER_DELEGATION_SAME_ORG";
@@ -151,6 +152,7 @@ namespace CcsSso.Domain.Constants
     public const string UserCreate = "User-create";
     public const string UserDelete = "User-delete";
     public const string UserUpdate = "User-update";
+    // #Delegated
     public const string UserDelegated = "User-delegated";
     public const string UserIdpUpdate = "User-idp-update";
     public const string UserGroupUpdate = "User-group-update";
