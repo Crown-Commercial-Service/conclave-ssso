@@ -121,10 +121,28 @@ namespace CcsSso.Shared.Services
     /// <returns></returns>
     public async Task SendMessageBatchAsync(string queueUrl, string messageGroupId, List<SqsMessageDto> sqsMessageDtoList)
     {
+      IEnumerable<SqsMessageDto[]> _mesageList;
+      List<Task> taskList = new List<Task>();
+
       if (sqsMessageDtoList.Any())
       {
-        SendMessageBatchRequest messageBatchRequest = CreateMessageBatch(queueUrl, sqsMessageDtoList, true, messageGroupId);
-        var result = await _sqsClient.SendMessageBatchAsync(messageBatchRequest);
+        if (sqsMessageDtoList.Count > 10)
+        {
+          _mesageList = sqsMessageDtoList.Chunk(10);
+          foreach (var eachSqlMessageBatch in _mesageList)
+          {
+            SendMessageBatchRequest messageBatchRequest = CreateMessageBatch(queueUrl, eachSqlMessageBatch.ToList(), true, messageGroupId);
+            taskList.Add(_sqsClient.SendMessageBatchAsync(messageBatchRequest));
+          }
+          await Task.WhenAll(taskList);
+        }
+        else
+        {
+          SendMessageBatchRequest messageBatchRequest = CreateMessageBatch(queueUrl, sqsMessageDtoList, true, messageGroupId);
+          await _sqsClient.SendMessageBatchAsync(messageBatchRequest);
+
+        }
+
       }
     }
 
