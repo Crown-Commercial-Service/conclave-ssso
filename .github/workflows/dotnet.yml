@@ -24,6 +24,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+    - name: Get the code manifest is used
+      uses: actions/checkout@v3
+    - run: ls -ltra
+    - run: pwd
     - name: Publish api-security to Sandbox CloudFoundry
       uses: brickendon/cloudfoundry@v7-blue-green-v2
       with:
