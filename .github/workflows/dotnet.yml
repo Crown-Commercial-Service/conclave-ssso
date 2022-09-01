@@ -1,0 +1,64 @@
+name: .NET
+
+on:
+  push:
+    branches: [ sandbox-cicd-new ]
+  pull_request:
+    branches: [ sandbox-cicd-new ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      run: dotnet restore ./api/CcsSso.sln
+    - name: Build artifacts
+      run: dotnet build --configuration Release ./api/CcsSso.sln
+    
+  security-API:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Publish api-security to Sandbox CloudFoundry
+      uses: brickendon/cloudfoundry@v7-blue-green-v2
+      with:
+        appname:  sand-api-security
+        api:      ${{ secrets.CF_API }}
+        org:      ${{ secrets.CF_ORG }}
+        username: ${{ secrets.CF_USERNAME }}
+        password: ${{ secrets.CF_PASSWORD }}
+        space:    sandbox
+        hostname: sand-api-security
+        domain:   london.cloudapps.digital
+        manifest: /home/runner/work/conclave-ssso/conclave-ssso/cf_scripts/sandbox/manifest.api.security.yml
+        validate: true          # set to false if you don't want to validate ssl
+
+  wrapper-API:
+    needs: 
+      Security-API
+    environment:
+      name: wrapper
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get the code manifest is used
+      uses: actions/checkout@v3
+    - run: ls -ltra
+    - run: pwd
+    - name: Publish api-wrapper to Sandbox CloudFoundry
+      uses: brickendon/cloudfoundry@v7-blue-green-v2
+      with:
+        appname:  sand-api-wrapper
+        api:      ${{ secrets.CF_API }}
+        org:      ${{ secrets.CF_ORG }}
+        username: ${{ secrets.CF_USERNAME }}
+        password: ${{ secrets.CF_PASSWORD }}
+        space:    sandbox
+        hostname: sand-api-wrapper
+        domain:   london.cloudapps.digital
+        manifest: /home/runner/work/conclave-ssso/conclave-ssso/cf_scripts/sandbox/manifest.api.external.yml
+        validate: true          # set to false if you don't want to validate ssl
