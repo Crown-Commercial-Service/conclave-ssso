@@ -294,7 +294,7 @@ namespace CcsSso.Core.Service.External
       var userDelegatedOrgs = users.Where(u => u.UserType == DbModel.Constants.UserType.Delegation &&
                               !u.IsDeleted &&
                               u.DelegationStartDate.Value.Date <= DateTime.UtcNow.Date &&
-                              u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date &&                              
+                              u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date &&
                               (!string.IsNullOrWhiteSpace(delegatedOrgId) || u.DelegationAccepted) &&
                               ((isDelegated && string.IsNullOrWhiteSpace(delegatedOrgId)) || u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId)
                               )
@@ -320,7 +320,7 @@ namespace CcsSso.Core.Service.External
                        user.Party.Person.LastName,
           MfaEnabled = user.MfaEnabled,
           Title = Enum.GetName(typeof(UserTitle), user.UserTitle),
-          AccountVerified = isDelegated ? default : user.AccountVerified,
+          AccountVerified = user.AccountVerified,
           Detail = new UserResponseDetail
           {
             Id = user.Id,
@@ -436,7 +436,9 @@ namespace CcsSso.Core.Service.External
             (havingMultipleWords && u.Party.Person.FirstName.ToLower().Contains(searchFirstNameLowerCase) &&
               (!isDelegatedOnly ? u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase) :
                 u.DelegationAccepted && u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase)
-              )
+              ) ||
+            // Allow searching for orign org in delegation
+            (isDelegatedOnly && u.OriginOrganization.LegalName.ToLower().Contains(searchString))
             )
         || (!havingMultipleWords &&
             (u.Party.Person.FirstName.ToLower().Contains(searchString) ||
@@ -466,6 +468,7 @@ namespace CcsSso.Core.Service.External
           EndDate = isDelegatedOnly ? up.DelegationEndDate : default,
           RemainingDays = !isDelegatedOnly || isDelegatedExpiredOnly || up.DelegationStartDate is null ? 0 : Convert.ToInt32((up.DelegationEndDate.Value - up.DelegationStartDate.Value).Days),
           OriginOrganisation = !isDelegatedOnly ? default : up.OriginOrganization?.LegalName,
+          DelegationAccepted = !isDelegatedOnly ? default : up.DelegationAccepted,
           RolePermissionInfo = !isDelegatedOnly ? default : up.UserAccessRoles.Select(uar => new RolePermissionInfo
           {
             RoleId = uar.OrganisationEligibleRole.Id,
@@ -1466,6 +1469,9 @@ namespace CcsSso.Core.Service.External
       string orgName = delegationDetails["org"];
       DateTime expirationTime = Convert.ToDateTime(delegationDetails["exp"]);
 
+      Console.WriteLine("3624 - Expiration Time" + expirationTime.ToString());
+      Console.WriteLine("3624 - DateTime UtcNow" + DateTime.UtcNow.ToString());
+
       if (expirationTime < DateTime.UtcNow)
       {
         throw new CcsSsoException(ErrorConstant.ErrorActivationLinkExpired);
@@ -1539,8 +1545,12 @@ namespace CcsSso.Core.Service.External
         orgName = user.Party.Person.Organisation.LegalName;
       }
 
+      Console.WriteLine("3624 - DelegatedEmailExpirationHours" + _appConfigInfo.DelegatedEmailExpirationHours);
+
       string activationInfo = "usr=" + userName + "&org=" + orgName + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegatedEmailExpirationHours);
       var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
+
+      Console.WriteLine("3624 - activationInfo" + activationInfo);
 
       if (string.IsNullOrWhiteSpace(encryptedInfo))
       {

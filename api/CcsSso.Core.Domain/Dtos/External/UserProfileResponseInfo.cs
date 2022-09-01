@@ -112,12 +112,15 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public int? RemainingDays { get; set; }
 
+    // #Delegated
     public DateTime? StartDate { get; set; }
 
     public DateTime? EndDate { get; set; }
 
     public string? OriginOrganisation { get; set; }
-    
+
+    public bool? DelegationAccepted { get; set; }
+
     public List<RolePermissionInfo> RolePermissionInfo { get; set; }
   }
 
