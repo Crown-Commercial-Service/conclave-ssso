@@ -1469,6 +1469,9 @@ namespace CcsSso.Core.Service.External
       string orgName = delegationDetails["org"];
       DateTime expirationTime = Convert.ToDateTime(delegationDetails["exp"]);
 
+      Console.WriteLine("3624 - Expiration Time" + expirationTime.ToString());
+      Console.WriteLine("3624 - DateTime UtcNow" + DateTime.UtcNow.ToString());
+
       if (expirationTime < DateTime.UtcNow)
       {
         throw new CcsSsoException(ErrorConstant.ErrorActivationLinkExpired);
@@ -1542,8 +1545,12 @@ namespace CcsSso.Core.Service.External
         orgName = user.Party.Person.Organisation.LegalName;
       }
 
+      Console.WriteLine("3624 - DelegatedEmailExpirationHours" + _appConfigInfo.DelegatedEmailExpirationHours);
+
       string activationInfo = "usr=" + userName + "&org=" + orgName + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegatedEmailExpirationHours);
       var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
+
+      Console.WriteLine("3624 - activationInfo" + activationInfo);
 
       if (string.IsNullOrWhiteSpace(encryptedInfo))
       {
