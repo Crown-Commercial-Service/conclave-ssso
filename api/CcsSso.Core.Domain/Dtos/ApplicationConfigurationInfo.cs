@@ -32,7 +32,7 @@ namespace CcsSso.Domain.Dtos
 
     public int BulkUploadMaxUserCount { get; set; }
     // #Delegated
-    public int DelegatedEmailExpirationHours { get; set; }
+    public int DelegationEmailExpirationHours { get; set; }
 
     public string DelegationEmailTokenEncryptionKey { get; set; }
 

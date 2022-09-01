@@ -87,7 +87,7 @@ namespace CcsSso.ExternalApi
           InMemoryCacheExpirationInMinutes = inMemoryCacheExpirationInMinutes,
           DashboardServiceClientId = Configuration["DashboardServiceClientId"],
           // #Delegated
-          DelegatedEmailExpirationHours = delegatedEmailExpirationHours,
+          DelegationEmailExpirationHours = delegatedEmailExpirationHours,
           DelegationEmailTokenEncryptionKey = Configuration["UserDelegation:DelegationEmailTokenEncryptionKey"],
           DelegationExcludeRoles = Configuration.GetSection("UserDelegation:DelegationExcludeRoles").Get<string[]>(),
           JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
