@@ -1,4 +1,4 @@
-﻿using CcsSso.Core.ReportingScheduler.Models;
+using CcsSso.Core.ReportingScheduler.Models;
 using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Dto;
@@ -100,6 +100,23 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
 
             var fileByteArray = _csvConverter.ConvertToCSV(auditLogList, "audit");
+
+            if (_appSettings.WriteCSVDataInLog)
+            {
+              try
+              {
+                MemoryStream ms = new MemoryStream(fileByteArray);
+                StreamReader reader = new StreamReader(ms);
+                string csvData = reader.ReadToEnd();
+                _logger.LogInformation("CSV Data as follows");
+                _logger.LogInformation(csvData);
+                _logger.LogInformation("");
+              }
+              catch (Exception ex)
+              {
+                _logger.LogWarning($"It is temporary logging to check the csv data which through exception -{ex.Message}");
+              }
+            }
 
             _logger.LogInformation("After converting the list of Audit Log object into CSV format and returned byte Array");
           
