@@ -1466,7 +1466,7 @@ namespace CcsSso.Core.Service.External
       Dictionary<string, string> delegationDetails = delegationActivationDetails.Split('&').Select(value => value.Split('='))
                                                   .ToDictionary(pair => pair[0], pair => pair[1]);
       string userName = delegationDetails["usr"];
-      string orgName = delegationDetails["org"];
+      string ciiOrganisationId = delegationDetails["org"];
       DateTime expirationTime = Convert.ToDateTime(delegationDetails["exp"]);
 
       if (expirationTime < DateTime.UtcNow)
@@ -1476,8 +1476,8 @@ namespace CcsSso.Core.Service.External
       }
 
       // get organisation actual id from ciiorganisation id
-      var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles)
-                          .FirstOrDefaultAsync(o => !o.IsDeleted && o.LegalName == orgName));
+      var organisation = (await _dataContext.Organisation
+                          .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId));
 
       if (organisation == default)
       {
@@ -1497,7 +1497,7 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorActivationLinkExpired);
       }
 
-      var existingDelegatedUserDetails = await _dataContext.User.Include(u => u.UserAccessRoles)
+      var existingDelegatedUserDetails = await _dataContext.User
                                           .Include(u => u.Party).ThenInclude(p => p.Person)
                                           .FirstOrDefaultAsync(u => u.UserName == userName &&
                                           !u.IsDeleted &&
@@ -1549,7 +1549,7 @@ namespace CcsSso.Core.Service.External
       }
 
 
-      string activationInfo = "usr=" + userName + "&org=" + orgName + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegationEmailExpirationHours);
+      string activationInfo = "usr=" + userName + "&org=" + orgId + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegationEmailExpirationHours);
       var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
 
       
