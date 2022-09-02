@@ -1471,7 +1471,6 @@ namespace CcsSso.Core.Service.External
 
       if (expirationTime < DateTime.UtcNow)
       {
-        Console.WriteLine("AcceptDelegationAsync - expirationTime < DateTime.UtcNow" + expirationTime  + " utcnow:" + DateTime.UtcNow);
         throw new CcsSsoException(ErrorConstant.ErrorActivationLinkExpired);
       }
 
@@ -1485,15 +1484,10 @@ namespace CcsSso.Core.Service.External
       }
 
       // check redis cache for latest token, if not exist then expired, not same then also expired
-      Console.WriteLine("AcceptDelegationAsync - get token key" + userName + "-" + organisation.CiiOrganisationId);
       var latestToken = await _remoteCacheService.GetValueAsync<string>(userName + "-" + organisation.CiiOrganisationId);
-
-      Console.WriteLine("AcceptDelegationAsync - get token" + latestToken?.Trim());
-      Console.WriteLine("AcceptDelegationAsync - get token" + acceptanceToken?.Trim());
 
       if (latestToken?.Trim() != acceptanceToken?.Trim())
       {
-        Console.WriteLine("AcceptDelegationAsync - latestToken?.Trim() != acceptanceToken?.Trim() expired");
         throw new CcsSsoException(ErrorConstant.ErrorActivationLinkExpired);
       }
 
@@ -1560,8 +1554,6 @@ namespace CcsSso.Core.Service.External
       // add username and token in redish cache with 36 hours expiry, if exist then replace
       await _remoteCacheService.SetValueAsync<string>(userName + "-" + orgId, encryptedInfo,
             new TimeSpan(_appConfigInfo.DelegationEmailExpirationHours, 0, 0));
-
-      Console.WriteLine("SendUserDelegatedAccessEmailAsync - set token key" +userName + "-" + orgId + " token val:" + encryptedInfo);
 
       // Send the delegation email
       await _ccsSsoEmailService.SendUserDelegatedAccessEmailAsync(userName, orgName, encryptedInfo);
