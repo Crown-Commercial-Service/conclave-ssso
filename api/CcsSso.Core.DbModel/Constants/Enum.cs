@@ -42,4 +42,5 @@ namespace CcsSso.Core.DbModel.Constants
     Primary,
     Delegation
   }
+  
 }

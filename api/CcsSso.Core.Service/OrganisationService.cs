@@ -363,7 +363,7 @@ namespace CcsSso.Service
         if (organisationRegistrationDto.SupplierBuyerType == 0) //Supplier
         {
           var defaultRoles = await _dataContext.OrganisationEligibleRole
-          .Where(r => r.Id != adminRole.Id && r.Organisation.CiiOrganisationId == ciiOrgId &&
+          .Where(r => r.Id != adminRole.Id && r.Organisation.CiiOrganisationId == ciiOrgId && 
             !string.IsNullOrEmpty(r.CcsAccessRole.DefaultEligibility) && r.CcsAccessRole.DefaultEligibility.StartsWith("1"))
           .ToListAsync();
 

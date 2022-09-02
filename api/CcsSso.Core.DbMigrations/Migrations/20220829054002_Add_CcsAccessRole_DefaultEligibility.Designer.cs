@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CcsSso.Core.DbMigrations.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20220830043424_Add_CcsAccessRole_DefaultEligibility")]
+    [Migration("20220829054002_Add_CcsAccessRole_DefaultEligibility")]
     partial class Add_CcsAccessRole_DefaultEligibility
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1498,6 +1498,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<bool>("MfaEnabled")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("OriginOrganizationId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("PartyId")
                         .HasColumnType("integer");
 
@@ -1513,6 +1516,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CcsServiceId");
+
+                    b.HasIndex("OriginOrganizationId");
 
                     b.HasIndex("PartyId")
                         .IsUnique();
@@ -2134,6 +2139,10 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .WithMany("CreatedUsers")
                         .HasForeignKey("CcsServiceId");
 
+                    b.HasOne("CcsSso.DbModel.Entity.Organisation", "OriginOrganization")
+                        .WithMany()
+                        .HasForeignKey("OriginOrganizationId");
+
                     b.HasOne("CcsSso.DbModel.Entity.Party", "Party")
                         .WithOne("User")
                         .HasForeignKey("CcsSso.DbModel.Entity.User", "PartyId")
@@ -2141,6 +2150,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .IsRequired();
 
                     b.Navigation("CcsService");
+
+                    b.Navigation("OriginOrganization");
 
                     b.Navigation("Party");
                 });

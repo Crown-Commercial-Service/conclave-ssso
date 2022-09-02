@@ -1,9 +1,9 @@
-START TRANSACTION;
+﻿START TRANSACTION;
 
 ALTER TABLE "CcsAccessRole" ADD "DefaultEligibility" text NULL;
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20220830043424_Add_CcsAccessRole_DefaultEligibility', '5.0.10');
+VALUES ('20220829054002_Add_CcsAccessRole_DefaultEligibility', '5.0.10');
 
 COMMIT;
 
@@ -25,3 +25,4 @@ UPDATE public."CcsAccessRole"
 	WHERE "CcsAccessRoleNameKey"='ACCESS_FP_CLIENT';
 
 COMMIT;
+

@@ -427,7 +427,7 @@ namespace CcsSso.Core.Service.External
         .Where(u => (isDelegatedExpiredOnly || !u.IsDeleted) && (includeSelf || u.Id != _requestContext.UserId) &&
         u.UserType == userTypeSearch &&
         // Delegated and delegated expired conditions
-        (!isDelegatedOnly || (isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date < DateTime.UtcNow.Date :
+        (!isDelegatedOnly || (isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date <= DateTime.UtcNow.Date :
                               u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date)) &&
         u.Party.Person.Organisation.CiiOrganisationId == organisationId &&
         (string.IsNullOrWhiteSpace(searchString) || u.UserName.ToLower().Contains(searchString)
@@ -1466,20 +1466,18 @@ namespace CcsSso.Core.Service.External
       Dictionary<string, string> delegationDetails = delegationActivationDetails.Split('&').Select(value => value.Split('='))
                                                   .ToDictionary(pair => pair[0], pair => pair[1]);
       string userName = delegationDetails["usr"];
-      string orgName = delegationDetails["org"];
+      string ciiOrganisationId = delegationDetails["org"];
       DateTime expirationTime = Convert.ToDateTime(delegationDetails["exp"]);
-
-      Console.WriteLine("3624 - Expiration Time" + expirationTime.ToString());
-      Console.WriteLine("3624 - DateTime UtcNow" + DateTime.UtcNow.ToString());
 
       if (expirationTime < DateTime.UtcNow)
       {
+        Console.WriteLine("AcceptDelegationAsync - expirationTime < DateTime.UtcNow" + expirationTime  + " utcnow:" + DateTime.UtcNow);
         throw new CcsSsoException(ErrorConstant.ErrorActivationLinkExpired);
       }
 
       // get organisation actual id from ciiorganisation id
-      var organisation = (await _dataContext.Organisation.Include(o => o.OrganisationEligibleRoles)
-                          .FirstOrDefaultAsync(o => !o.IsDeleted && o.LegalName == orgName));
+      var organisation = (await _dataContext.Organisation
+                          .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId));
 
       if (organisation == default)
       {
@@ -1487,14 +1485,19 @@ namespace CcsSso.Core.Service.External
       }
 
       // check redis cache for latest token, if not exist then expired, not same then also expired
+      Console.WriteLine("AcceptDelegationAsync - get token key" + userName + "-" + organisation.CiiOrganisationId);
       var latestToken = await _remoteCacheService.GetValueAsync<string>(userName + "-" + organisation.CiiOrganisationId);
+
+      Console.WriteLine("AcceptDelegationAsync - get token" + latestToken?.Trim());
+      Console.WriteLine("AcceptDelegationAsync - get token" + acceptanceToken?.Trim());
 
       if (latestToken?.Trim() != acceptanceToken?.Trim())
       {
+        Console.WriteLine("AcceptDelegationAsync - latestToken?.Trim() != acceptanceToken?.Trim() expired");
         throw new CcsSsoException(ErrorConstant.ErrorActivationLinkExpired);
       }
 
-      var existingDelegatedUserDetails = await _dataContext.User.Include(u => u.UserAccessRoles)
+      var existingDelegatedUserDetails = await _dataContext.User
                                           .Include(u => u.Party).ThenInclude(p => p.Person)
                                           .FirstOrDefaultAsync(u => u.UserName == userName &&
                                           !u.IsDeleted &&
@@ -1545,20 +1548,20 @@ namespace CcsSso.Core.Service.External
         orgName = user.Party.Person.Organisation.LegalName;
       }
 
-      Console.WriteLine("3624 - DelegatedEmailExpirationHours" + _appConfigInfo.DelegatedEmailExpirationHours);
 
-      string activationInfo = "usr=" + userName + "&org=" + orgName + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegatedEmailExpirationHours);
+      string activationInfo = "usr=" + userName + "&org=" + orgId + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegationEmailExpirationHours);
       var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
 
-      Console.WriteLine("3624 - activationInfo" + activationInfo);
-
+      
       if (string.IsNullOrWhiteSpace(encryptedInfo))
       {
         throw new CcsSsoException(ErrorConstant.ErrorSendingActivationLink);
       }
       // add username and token in redish cache with 36 hours expiry, if exist then replace
       await _remoteCacheService.SetValueAsync<string>(userName + "-" + orgId, encryptedInfo,
-            new TimeSpan(_appConfigInfo.DelegatedEmailExpirationHours, 0, 0));
+            new TimeSpan(_appConfigInfo.DelegationEmailExpirationHours, 0, 0));
+
+      Console.WriteLine("SendUserDelegatedAccessEmailAsync - set token key" +userName + "-" + orgId + " token val:" + encryptedInfo);
 
       // Send the delegation email
       await _ccsSsoEmailService.SendUserDelegatedAccessEmailAsync(userName, orgName, encryptedInfo);

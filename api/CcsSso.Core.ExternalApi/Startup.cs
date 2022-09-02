@@ -73,11 +73,7 @@ namespace CcsSso.ExternalApi
         }
         // #Delegated
 
-        Console.WriteLine("3624 - Start - DelegatedEmailExpirationHours Before" + delegatedEmailExpirationHours);
-
         delegatedEmailExpirationHours = delegatedEmailExpirationHours == 0 ? 36 : delegatedEmailExpirationHours;
-
-        Console.WriteLine("3624 - Start - DelegatedEmailExpirationHours After " + delegatedEmailExpirationHours);
 
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
@@ -87,7 +83,7 @@ namespace CcsSso.ExternalApi
           InMemoryCacheExpirationInMinutes = inMemoryCacheExpirationInMinutes,
           DashboardServiceClientId = Configuration["DashboardServiceClientId"],
           // #Delegated
-          DelegatedEmailExpirationHours = delegatedEmailExpirationHours,
+          DelegationEmailExpirationHours = delegatedEmailExpirationHours,
           DelegationEmailTokenEncryptionKey = Configuration["UserDelegation:DelegationEmailTokenEncryptionKey"],
           DelegationExcludeRoles = Configuration.GetSection("UserDelegation:DelegationExcludeRoles").Get<string[]>(),
           JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
