@@ -20,6 +20,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using static CcsSso.Security.Domain.Constants.Constants;
 
 namespace CcsSso.Security.Services
 {
@@ -392,24 +393,27 @@ namespace CcsSso.Security.Services
             }
         }
 
-        public async Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string clientSecret, string refreshToken, string sid)
+        public async Task<TokenResponseInfo> GetRenewedTokensAsync(TokenRequestInfo tokenRequestInfo, string sid)
         {
             try
             {
                 RefreshTokenRequest resourceOwnerTokenRequest = new RefreshTokenRequest()
                 {
-                    ClientId = clientId,
-                    RefreshToken = refreshToken,
+                    ClientId = tokenRequestInfo.ClientId,
+                    RefreshToken = tokenRequestInfo.RefreshToken,
                     Scope = "email offline_access openid profile" //Need this to receive a refresh token
                 };
 
-                if (!string.IsNullOrEmpty(clientSecret))
+                if (!string.IsNullOrEmpty(tokenRequestInfo.ClientSecret))
                 {
-                    resourceOwnerTokenRequest.ClientSecret = clientSecret;
+                    resourceOwnerTokenRequest.ClientSecret = tokenRequestInfo.ClientSecret;
                 }
 
                 // get the sid from refresh token sent from client.
-                sid = await GetSidFromRefreshToken(refreshToken, sid);
+                sid = await GetSidFromRefreshToken(tokenRequestInfo.RefreshToken, sid);
+
+                // #Delegated
+                string delegatedOrgId = await MapDelegatedOrgIdWithSid(sid, tokenRequestInfo.DelegatedOrgId);
 
                 var result = await _authenticationApiClient.GetTokenAsync(resourceOwnerTokenRequest);
                 if (result != null)
@@ -423,11 +427,11 @@ namespace CcsSso.Security.Services
                     {
                         throw new CcsSsoException("TOKEN_GENERATION_FAILED");
                     }
-
-                    var userDetails = await GetUserAsync(email);
-                    var customClaims = GetCustomClaimsForIdToken(tokenDecoded, clientId, email, sid, userDetails);
-                    var idToken = _jwtTokenHandler.CreateToken(clientId, customClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
-                    var accessToken = GetAccessToken(clientId, email, userDetails, sid);
+                    // #Delegated
+                    var userDetails = await GetUserAsync(email, delegatedOrgId);
+                    var customClaims = GetCustomClaimsForIdToken(tokenDecoded, tokenRequestInfo.ClientId, email, sid, userDetails);
+                    var idToken = _jwtTokenHandler.CreateToken(tokenRequestInfo.ClientId, customClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
+                    var accessToken = GetAccessToken(tokenRequestInfo.ClientId, email, userDetails, sid, delegatedOrgId);
                     return new TokenResponseInfo
                     {
                         IdToken = idToken,
@@ -447,7 +451,7 @@ namespace CcsSso.Security.Services
             }
         }
 
-        private async Task<string> GetSidFromRefreshToken(string refreshToken, string sid)
+        public async Task<string> GetSidFromRefreshToken(string refreshToken, string sid)
         {
             var sidCache = await _securityCacheService.GetValueAsync<string>(refreshToken);
             if (!string.IsNullOrEmpty(sidCache))
@@ -491,8 +495,8 @@ namespace CcsSso.Security.Services
                     };
                     result = await _authenticationApiClient.GetTokenAsync(resourceOwnerTokenRequest);
                 }
-
-                var tokenInfo = await GetTokensAsync(tokenRequestInfo.ClientId, result, sid);
+                // #Delegated
+                var tokenInfo = await GetTokensAsync(tokenRequestInfo.ClientId, result, sid, tokenRequestInfo.DelegatedOrgId);
                 return tokenInfo;
             }
             catch (ErrorApiException e)
@@ -836,13 +840,18 @@ namespace CcsSso.Security.Services
                 }
             }
         }
-
-        private async Task<UserProfileInfo> GetUserAsync(string email)
+        // #Delegated
+        private async Task<UserProfileInfo> GetUserAsync(string email, string delegatedOrgId = null)
         {
             var httpClient = _httpClientFactory.CreateClient();
             httpClient.BaseAddress = new Uri(_appConfigInfo.UserExternalApiDetails.UserServiceUrl);
             httpClient.DefaultRequestHeaders.Add("X-API-Key", _appConfigInfo.UserExternalApiDetails.ApiKey);
-            var result = await httpClient.GetAsync($"?user-id={HttpUtility.UrlEncode(email)}");
+            var requestUri = $"?user-id={HttpUtility.UrlEncode(email)}";
+            if (!string.IsNullOrEmpty(delegatedOrgId))
+            {
+              requestUri += $"&is-delegated=true&delegated-organisation-id={HttpUtility.UrlEncode(delegatedOrgId)}";
+            }
+            var result = await httpClient.GetAsync(requestUri);
             var userJsonString = await result.Content.ReadAsStringAsync();
             if (!string.IsNullOrEmpty(userJsonString))
             {
@@ -875,7 +884,7 @@ namespace CcsSso.Security.Services
             throw new RecordNotFoundException();
         }
 
-        private string GetAccessToken(string clientId, string email, UserProfileInfo userDetails, string sid)
+        private string GetAccessToken(string clientId, string email, UserProfileInfo userDetails, string sid, string delegatedOrgId)
         {
             var rolesFromUserRoles = userDetails.Detail.RolePermissionInfo.Where(rp => rp.ServiceClientId == clientId).ToList();
             var rolesFromUserGroups = userDetails.Detail.UserGroups.Where(ug => ug.ServiceClientId == clientId).ToList();
@@ -893,6 +902,12 @@ namespace CcsSso.Security.Services
                 foreach (var role in roles)
                 {
                     accesstokenClaims.Add(new ClaimInfo("roles", role));
+                }
+
+                // #Delegated: To handle authorization for delegate user
+                if (!string.IsNullOrEmpty(delegatedOrgId) && delegatedOrgId != "0")
+                {
+                    accesstokenClaims.Add(new ClaimInfo("roles", "DELEGATED_USER"));
                 }
 
                 accesstokenClaims.Add(new ClaimInfo("sub", email));
@@ -918,8 +933,8 @@ namespace CcsSso.Security.Services
             var accessToken = _jwtTokenHandler.CreateToken(serviceProfile.Audience, accesstokenClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
             return accessToken;
         }
-
-        private async Task<TokenResponseInfo> GetTokensAsync(string clientId, AccessTokenResponse accessTokenResponse, string sid = null)
+        // #Delegated
+        private async Task<TokenResponseInfo> GetTokensAsync(string clientId, AccessTokenResponse accessTokenResponse, string sid = null, string delegatedOrgId = null)
         {
             var tokenDecoded = _jwtTokenHandler.DecodeToken(accessTokenResponse.IdToken);
 
@@ -932,7 +947,8 @@ namespace CcsSso.Security.Services
             }
 
             await AttachSidWithRefreshTokenAsync(accessTokenResponse.RefreshToken, sid);
-
+            // #Delegated
+            delegatedOrgId = await MapDelegatedOrgIdWithSid(sid, delegatedOrgId);
 
             var email = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
             if (string.IsNullOrEmpty(email))
@@ -940,36 +956,41 @@ namespace CcsSso.Security.Services
                 throw new CcsSsoException("TOKEN_GENERATION_FAILED");
             }
 
-            var useMfa = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/use_mfa")?.Value;
-            if (useMfa != null)
+            var userDetails = await GetUserAsync(email, delegatedOrgId);
+
+            if (string.IsNullOrEmpty(delegatedOrgId))
             {
-                var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
-                using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
+                var useMfa = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/use_mfa")?.Value;
+                if (useMfa != null)
                 {
+                  var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
+                  using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
+                  {
                     var user = (await _managementApiClient.Users.GetUsersByEmailAsync(email)).FirstOrDefault();
                     if (user != null && user.UserMetadata != null && user.UserMetadata.mfa_reset_verified == false)
                     {
-                        throw new CcsSsoException("MFA_NOT_VERIFIED");
+                      throw new CcsSsoException("MFA_NOT_VERIFIED");
                     }
+                  }
                 }
-            }
 
-            var connection = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/connection")?.Value;
-            var userDetails = await GetUserAsync(email);
-            if (!userDetails.Detail.IdentityProviders.Any(idp => idp.IdentityProvider == connection))
-            {
-                throw new CcsSsoException("INVALID_CONNECTION");
-            }
+                var connection = tokenDecoded.Claims.FirstOrDefault(c => c.Type == "https://ccs-sso/connection")?.Value;
 
-            if (!userDetails.AccountVerified)
-            {
-                await VerifyUserAccountAsync(email);
+                if (!userDetails.Detail.IdentityProviders.Any(idp => idp.IdentityProvider == connection))
+                {
+                  throw new CcsSsoException("INVALID_CONNECTION");
+                }
+
+                if (!userDetails.AccountVerified)
+                {
+                  await VerifyUserAccountAsync(email);
+                }
             }
 
             var customClaims = GetCustomClaimsForIdToken(tokenDecoded, clientId, email, sid, userDetails);
             var idToken = _jwtTokenHandler.CreateToken(clientId, customClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
 
-            var accessToken = GetAccessToken(clientId, email, userDetails, sid);
+            var accessToken = GetAccessToken(clientId, email, userDetails, sid, delegatedOrgId);
 
             return new TokenResponseInfo
             {
@@ -1000,6 +1021,39 @@ namespace CcsSso.Security.Services
             }
 
             return new Tuple<string, string>(state, sid);
+        }
+
+        /// <summary>
+        /// #Deletegated: To manage delegate user access, set/get delegatedOrgId from cache using sid 
+        /// </summary>
+        /// <param name="sid"></param>
+        /// <param name="delegatedOrgId"></param>
+        /// <returns></returns>
+        private async Task<string> MapDelegatedOrgIdWithSid(string sid, string delegatedOrgId)
+        {
+          if (!string.IsNullOrEmpty(delegatedOrgId))
+          {
+            if (delegatedOrgId == "0")
+            {
+              // To switch user back to primary org
+              await _securityCacheService.RemoveAsync(CacheKey.DELEGATION + sid);
+              delegatedOrgId = null;
+            }
+            else
+            {
+              await _securityCacheService.SetValueAsync(CacheKey.DELEGATION + sid, delegatedOrgId, new TimeSpan(0, _appConfigInfo.SessionConfig.StateExpirationInMinutes, 0));
+            }
+          }
+          else
+          {
+            var _delegatedOrgId = await _securityCacheService.GetValueAsync<string>(CacheKey.DELEGATION + sid);
+            if (!string.IsNullOrEmpty(_delegatedOrgId))
+            {
+              delegatedOrgId = _delegatedOrgId;
+            }
+          }
+
+          return delegatedOrgId;
         }
 
         private List<ClaimInfo> GetCustomClaimsForIdToken(JwtSecurityToken tokenDecoded, string clientId, string email, string sid, UserProfileInfo userProfileInfo)

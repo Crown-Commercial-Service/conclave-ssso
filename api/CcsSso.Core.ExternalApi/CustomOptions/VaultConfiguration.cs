@@ -112,7 +112,8 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("Email:UserConfirmEmailBothIdpTemplateId", emailsettings.UserConfirmEmailBothIdpTemplateId);
         Data.Add("Email:UserConfirmEmailOnlyUserIdPwdTemplateId", emailsettings.UserConfirmEmailOnlyUserIdPwdTemplateId);
         Data.Add("Email:UserRegistrationEmailUserIdPwdTemplateId", emailsettings.UserRegistrationEmailUserIdPwdTemplateId);
-
+        // #Delegated
+        Data.Add("Email:UserDelegatedAccessEmailTemplateId", emailsettings.UserDelegatedAccessEmailTemplateId);
 
         Data.Add("Email:SendNotificationsEnabled", emailsettings.SendNotificationsEnabled);
       }
@@ -159,6 +160,20 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
           Data.Add($"ExternalServiceDefaultRoles:ScopedServiceDefaultRoles:{index++}", scopedRole);
         }
       }
+      // #Delegated
+      if (_secrets.Data.ContainsKey("UserDelegation"))
+      {
+        var userDelegationInfo = JsonConvert.DeserializeObject<UserDelegation>(_secrets.Data["UserDelegation"].ToString());
+        Data.Add("UserDelegation:DelegationEmailExpirationHours", userDelegationInfo.DelegationEmailExpirationHours.ToString());
+        Data.Add("UserDelegation:DelegationEmailTokenEncryptionKey", userDelegationInfo.DelegationEmailTokenEncryptionKey);
+        
+        int index = 0;
+        foreach (var excludeRole in userDelegationInfo.DelegationExcludeRoles)
+        {
+          Data.Add($"UserDelegation:DelegationExcludeRoles:{index++}", excludeRole);
+        }
+      }
+
     }
   }
 
@@ -219,8 +234,9 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
     public string UserConfirmEmailOnlyUserIdPwdTemplateId { get; set; }
 
     public string UserRegistrationEmailUserIdPwdTemplateId { get; set; }
-
-  public string SendNotificationsEnabled { get; set; }
+    // #Delegated
+    public string UserDelegatedAccessEmailTemplateId { get; set; }
+    public string SendNotificationsEnabled { get; set; }
   }
 
   public class Cii
@@ -262,6 +278,15 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
     public string[] GlobalServiceDefaultRoles { get; set; }
 
     public string[] ScopedServiceDefaultRoles { get; set; }
+  }
+  // #Delegated
+  public class UserDelegation
+  {
+    public int DelegationEmailExpirationHours { get; set; }
+
+    public string DelegationEmailTokenEncryptionKey { get; set; }
+
+    public string[] DelegationExcludeRoles { get; set; }
   }
 
   public class VaultOptions

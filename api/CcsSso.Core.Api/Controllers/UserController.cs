@@ -23,9 +23,9 @@ namespace CcsSso.Api.Controllers
 
     [HttpGet("permissions")]
     [SwaggerOperation(Tags = new[] { "User" })]
-    public async Task<List<ServicePermissionDto>> GetPermissions([FromQuery(Name = "user-name")] string userName, [FromQuery(Name = "service-client-id")] string serviceClientId)
+    public async Task<List<ServicePermissionDto>> GetPermissions([FromQuery(Name = "user-name")] string userName, [FromQuery(Name = "service-client-id")] string serviceClientId, [FromQuery(Name = "organisation-id")] string organisationId= "")
     {
-      return await _userService.GetPermissions(userName, serviceClientId);
+      return await _userService.GetPermissions(userName, serviceClientId, organisationId);
     }
 
     [HttpPost("nominees")]
