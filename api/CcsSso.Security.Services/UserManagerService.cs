@@ -162,6 +162,14 @@ namespace CcsSso.Security.Services
       }
       await _identityProviderService.SendUserActivationEmailAsync(email.ToLower(), null, isExpired);
     }
+    public async Task<string> GetActivationEmailVerificationLink(string email)
+    {
+      if (string.IsNullOrEmpty(email))
+      {
+        throw new CcsSsoException(ErrorCodes.EmailRequired);
+      }
+      return await _identityProviderService.GetActivationEmailVerificationLink(email.ToLower());
+    }
 
     private void ValidateEmail(string email)
     {

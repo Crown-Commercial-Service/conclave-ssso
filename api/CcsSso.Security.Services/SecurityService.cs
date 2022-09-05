@@ -56,7 +56,7 @@ namespace CcsSso.Security.Services
       return _identityProviderService.GetSAMLAuthenticationEndPoint(clientId);
     }
 
-    public async Task<TokenResponseInfo> GetRenewedTokenAsync(TokenRequestInfo tokenRequestInfo, string opbsValue, string host, string sid)
+    public async Task<TokenResponseInfo> GetRenewedTokenAsync(TokenRequestInfo tokenRequestInfo, string opbsValue, string host, string sid, List<string> visitedSiteList = null)
     {
       TokenResponseInfo tokenResponseInfo;
       if (tokenRequestInfo.GrantType == "authorization_code")
@@ -73,7 +73,15 @@ namespace CcsSso.Security.Services
       }
       else if (tokenRequestInfo.GrantType == "refresh_token")
       {
-        tokenResponseInfo = await _identityProviderService.GetRenewedTokensAsync(tokenRequestInfo.ClientId, tokenRequestInfo.ClientSecret, tokenRequestInfo.RefreshToken, sid);
+        tokenResponseInfo = await _identityProviderService.GetRenewedTokensAsync(tokenRequestInfo, sid);
+
+        // #Delegated: To perform back channel logout while switching delegated org
+        if (visitedSiteList != null && visitedSiteList.Count > 0 && !string.IsNullOrEmpty(tokenRequestInfo.DelegatedOrgId))
+        {
+          string sidFromToken = string.Empty;
+          sidFromToken = await _identityProviderService.GetSidFromRefreshToken(tokenResponseInfo.RefreshToken, sidFromToken);
+          await this.PerformBackChannelLogoutAsync(tokenRequestInfo.ClientId, sidFromToken, visitedSiteList);
+        }
       }
       else if (tokenRequestInfo.GrantType == "client_credentials")
       {
@@ -304,6 +312,7 @@ namespace CcsSso.Security.Services
     public async Task InvalidateSessionAsync(string sessionId)
     {
       await _securityCacheService.SetValueAsync(sessionId, true, new TimeSpan(0, _applicationConfigurationInfo.SessionConfig.SessionTimeoutInMinutes, 0));
+      await _securityCacheService.RemoveAsync(CacheKey.DELEGATION + sessionId);
     }
 
     private void ValidateEmail(string email)

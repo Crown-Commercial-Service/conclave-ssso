@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>CcsSso.Security.Api</RootNamespace>
     <UserSecretsId>cc410123-3e95-4bdd-99ad-0704ab07616a</UserSecretsId>
     <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>

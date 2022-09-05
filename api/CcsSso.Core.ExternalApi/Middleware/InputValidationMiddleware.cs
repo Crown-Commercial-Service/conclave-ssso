@@ -26,7 +26,6 @@ namespace CcsSso.Core.ExternalApi.Middleware
 
         // Reset the request body stream position so the next middleware can read it
         context.Request.Body.Position = 0;
-
         if (bodyString.IsInvalidCharactorIncluded(RegexExpression.INVALID_CHARACTORS_FOR_API_INPUT))
         {
           throw new CcsSsoException("ERROR_INVALID_INPUT_CHARACTER");

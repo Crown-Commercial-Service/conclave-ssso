@@ -31,11 +31,6 @@ then
     CF_SPACE="prod"
 fi
 
-if [ "$TRAVIS_BRANCH" = "development" ]
-then
-    CF_SPACE="dev"
-fi
-
 echo "$CF_SPACE"
 
 sed "s/CF_SPACE/$CF_SPACE/g" manifest-template.yml > manifest.yml

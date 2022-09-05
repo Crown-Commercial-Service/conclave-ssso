@@ -740,6 +740,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("DefaultEligibility")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
@@ -1469,6 +1472,15 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("DelegationAccepted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("DelegationEndDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("DelegationStartDate")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
@@ -1484,6 +1496,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<bool>("MfaEnabled")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("OriginOrganizationId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("PartyId")
                         .HasColumnType("integer");
 
@@ -1493,9 +1508,14 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("UserTitle")
                         .HasColumnType("integer");
 
+                    b.Property<int>("UserType")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CcsServiceId");
+
+                    b.HasIndex("OriginOrganizationId");
 
                     b.HasIndex("PartyId")
                         .IsUnique();
@@ -2117,6 +2137,10 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .WithMany("CreatedUsers")
                         .HasForeignKey("CcsServiceId");
 
+                    b.HasOne("CcsSso.DbModel.Entity.Organisation", "OriginOrganization")
+                        .WithMany()
+                        .HasForeignKey("OriginOrganizationId");
+
                     b.HasOne("CcsSso.DbModel.Entity.Party", "Party")
                         .WithOne("User")
                         .HasForeignKey("CcsSso.DbModel.Entity.User", "PartyId")
@@ -2124,6 +2148,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .IsRequired();
 
                     b.Navigation("CcsService");
+
+                    b.Navigation("OriginOrganization");
 
                     b.Navigation("Party");
                 });

@@ -31,6 +31,12 @@ namespace CcsSso.Domain.Dtos
     public ServiceDefaultRoleInfo ServiceDefaultRoleInfo { get; set; }
 
     public int BulkUploadMaxUserCount { get; set; }
+    // #Delegated
+    public int DelegationEmailExpirationHours { get; set; }
+
+    public string DelegationEmailTokenEncryptionKey { get; set; }
+
+    public string[] DelegationExcludeRoles { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -75,11 +81,25 @@ namespace CcsSso.Domain.Dtos
 
     public string UserPermissionUpdateNotificationTemplateId { get; set; }
 
+    public string UserUpdateEmailOnlyFederatedIdpTemplateId { get; set; }
+
+    public string UserUpdateEmailBothIdpTemplateId { get; set; }
+    public string UserUpdateEmailOnlyUserIdPwdTemplateId { get; set; }
+
+    public string UserConfirmEmailOnlyFederatedIdpTemplateId { get; set; }
+    public string UserConfirmEmailBothIdpTemplateId { get; set; }
+    public string UserConfirmEmailOnlyUserIdPwdTemplateId { get; set; }
+
+    public string UserRegistrationEmailUserIdPwdTemplateId { get; set; }
+
     public string OrganisationJoinRequestTemplateId { get; set; }
 
     public string NominateEmailTemplateId { get; set; }
+    // #Delegated
+    public string UserDelegatedAccessEmailTemplateId { get; set; }
 
     public bool SendNotificationsEnabled { get; set; }
+
   }
 
   public class QueueUrlInfo

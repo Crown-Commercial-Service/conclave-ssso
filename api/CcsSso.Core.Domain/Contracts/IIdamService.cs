@@ -12,5 +12,7 @@ namespace CcsSso.Core.Domain.Contracts
     Task UpdateUserMfaInIdamAsync(SecurityApiUserInfo securityApiUserInfo);
 
     Task ResetUserPasswordAsync(string userName);
+
+    Task<string> GetActivationEmailVerificationLink(string email);
   }
 }

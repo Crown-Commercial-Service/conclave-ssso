@@ -30,5 +30,9 @@ namespace CcsSso.Security.Api.Models
 
     [BindProperty(Name = "state")]
     public string State { get; set; }
+    // #Delegated
+    [BindProperty(Name = "delegated_org_id")]
+    public string DelegatedOrgId { get; set; }
+
   }
 }
