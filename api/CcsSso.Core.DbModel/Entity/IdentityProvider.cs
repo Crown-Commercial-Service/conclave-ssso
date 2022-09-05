@@ -21,5 +21,7 @@ namespace CcsSso.DbModel.Entity
     public bool ExternalIdpFlag { get; set; }
 
     public List<IdamUserLogin> IdamUserLogins { get; set; }
+
+    public int DisplayOrder { get; set; }
   }
 }
