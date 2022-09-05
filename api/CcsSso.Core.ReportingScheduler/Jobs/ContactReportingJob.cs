@@ -1,4 +1,4 @@
-﻿using CcsSso.Core.ReportingScheduler.Models;
+using CcsSso.Core.ReportingScheduler.Models;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
