@@ -32,7 +32,7 @@ namespace CcsSso.Core.ExternalApi.Authorisation
         var policyBuilder = new AuthorizationPolicyBuilder();
 
         var requestContext = _httpContextAccessor.HttpContext.RequestServices.GetService<RequestContext>();
-        
+
         if (!string.IsNullOrEmpty(xapiKey)) //  Requests with api key no authorization
         {
           policyBuilder.RequireAssertion(context => true);
@@ -66,7 +66,8 @@ namespace CcsSso.Core.ExternalApi.Authorisation
 
           policyBuilder.RequireAssertion(async context =>
           {
-            if (requestType == "ORGANISATION" || requestType == "USER_POST")
+            // #Delegated
+            if (requestType == "ORGANISATION" || requestType == "USER_POST" || requestType == "DELEGATION")
             {
               return await authService.AuthorizeForOrganisationAsync(RequestType.HavingOrgId);
             }

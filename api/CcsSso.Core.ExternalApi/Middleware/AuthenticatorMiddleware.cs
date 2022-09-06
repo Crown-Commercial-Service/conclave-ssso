@@ -22,9 +22,10 @@ namespace CcsSso.Core.ExternalApi.Middleware
     private readonly ApplicationConfigurationInfo _appConfig;
     private readonly ITokenService _tokenService;
     private readonly IRemoteCacheService _remoteCacheService;
+    // #Delegated
     private List<string> allowedPaths = new List<string>()
     {
-      "users/delegate-user-validation"
+      "users/delegate-user-validation", "user-profiles/delegate-user-validation"
     };
 
     public AuthenticatorMiddleware(RequestDelegate next, ApplicationConfigurationInfo appConfig, ITokenService tokenService, IRemoteCacheService remoteCacheService)
@@ -94,21 +95,21 @@ namespace CcsSso.Core.ExternalApi.Middleware
               }
             }
 
-            
-            if(result.ClaimValues["caller"] == "service")
+
+            if (result.ClaimValues["caller"] == "service")
             {
               requestContext.ServiceClientId = result.ClaimValues["sub"];
               requestContext.ServiceId = int.Parse(result.ClaimValues["uid"]);
             }
             else
             {
-              requestContext.UserId = int.Parse(result.ClaimValues["uid"]);              
+              requestContext.UserId = int.Parse(result.ClaimValues["uid"]);
               requestContext.UserName = result.ClaimValues["sub"];
 
               var serviceId = await configurationDetailService.GetDashboardServiceIdAsync();
               requestContext.ServiceId = serviceId;
             }
-            
+
             requestContext.CiiOrganisationId = result.ClaimValues["ciiOrgId"];
             requestContext.Roles = result.ClaimValues["roles"].Split(",").ToList();
           }
