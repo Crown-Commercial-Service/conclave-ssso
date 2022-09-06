@@ -248,7 +248,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpPost("delegate-user")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
-    // [OrganisationAuthorise("USER_POST")] - No need to add this check for delegation
+    [OrganisationAuthorise("DELEGATION")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(bool), 200)]
     public async Task CreateDelegatedUser(DelegatedUserProfileRequestInfo userProfileRequestInfo)
@@ -285,7 +285,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpPut("delegate-user")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
-    // [OrganisationAuthorise("USER")] - No need to add this check for delegation
+    [OrganisationAuthorise("DELEGATION")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(bool), 200)]
     public async Task UpdateDelegatedUser(DelegatedUserProfileRequestInfo userProfileRequestInfo)
@@ -312,10 +312,10 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpDelete("delegate-user")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
-    // [OrganisationAuthorise("USER")] - No need to add this check for delegation
+    [OrganisationAuthorise("DELEGATION")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task DeleteDelegatedUser([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "organisation-id")] string organisationId)
+    public async Task DeleteDelegatedUser([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "delegated-organisation-id")] string organisationId)
     {
       await _userProfileService.RemoveDelegatedAccessForUserAsync(userId, organisationId);
     }
@@ -361,10 +361,10 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpPut("delegate-user-resend-activation")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
-    // [OrganisationAuthorise("USER")] - No need to add this check for delegation
+    [OrganisationAuthorise("DELEGATION")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(bool), 200)]
-    public async Task ResenedActivationLink([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "organisation-id")] string organisationId)
+    public async Task ResenedActivationLink([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "delegated-organisation-id")] string organisationId)
     {
       await _userProfileService.SendUserDelegatedAccessEmailAsync(userId, organisationId);
     }
