@@ -907,7 +907,9 @@ namespace CcsSso.Security.Services
     {
       var rolesFromUserRoles = userDetails.Detail.RolePermissionInfo.Where(rp => rp.ServiceClientId == clientId).ToList();
       var rolesFromUserGroups = userDetails.Detail.UserGroups.Where(ug => ug.ServiceClientId == clientId).ToList();
-      if (rolesFromUserRoles.Any() || rolesFromUserGroups.Any())
+
+      // #Delegated in delegated org no dashboard roles given, allow to generate token
+      if ((!string.IsNullOrEmpty(delegatedOrgId) && delegatedOrgId != "0") || rolesFromUserRoles.Any() || rolesFromUserGroups.Any())
       {
         var roles = rolesFromUserRoles.Select(r => r.RoleKey).Concat(rolesFromUserGroups.Select(r => r.AccessRole)).Distinct();
         var accesstokenClaims = new List<ClaimInfo>();
