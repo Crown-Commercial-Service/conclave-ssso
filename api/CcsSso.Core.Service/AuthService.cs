@@ -135,6 +135,8 @@ namespace CcsSso.Core.Service
         return true;
       }
 
+      var isCcsAdminRequest = _requestContext.Roles.Contains("ORG_USER_SUPPORT") || _requestContext.Roles.Contains("MANAGE_SUBSCRIPTIONS");
+
       // #Delegated: Change to allow org admin to serach for user of other org
       var isDelegatedSearchRequest = isOrgAdmin && _requestContext.IsDelegated;
 
@@ -144,13 +146,12 @@ namespace CcsSso.Core.Service
         {
           return true;
         }
-        else if (_requestContext.CiiOrganisationId != _requestContext.RequestIntendedOrganisationId)
+        else if (_requestContext.CiiOrganisationId != _requestContext.RequestIntendedOrganisationId && !isCcsAdminRequest)
         {
           throw new ForbiddenException();
         }
       }
 
-      var isCcsAdminRequest = _requestContext.Roles.Contains("ORG_USER_SUPPORT") || _requestContext.Roles.Contains("MANAGE_SUBSCRIPTIONS");
       var isAuthorizedForOrganisation = false;
 
       if (requestType == RequestType.HavingOrgId)
