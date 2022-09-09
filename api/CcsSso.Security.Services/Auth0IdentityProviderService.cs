@@ -258,13 +258,18 @@ namespace CcsSso.Security.Services
         var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
         using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
         {
-          var user = (await _managementApiClient.Users.GetUsersByEmailAsync(userName)).FirstOrDefault();
-          if (user != null)
+          var users = (await _managementApiClient.Users.GetUsersByEmailAsync(userName)).ToList();
+          if (users != null && users.Count > 0)
           {
-            var enrollments = await _managementApiClient.Users.GetEnrollmentsAsync(user.UserId);
-            foreach (var enrollment in enrollments)
+            var allTask = new List<Task>();
+
+            foreach (var user in users)
             {
-              await _managementApiClient.Guardian.DeleteEnrollmentAsync(enrollment.Id);
+              var enrollments = await _managementApiClient.Users.GetEnrollmentsAsync(user.UserId);
+              foreach (var enrollment in enrollments)
+              {
+                await _managementApiClient.Guardian.DeleteEnrollmentAsync(enrollment.Id);
+              }
             }
           }
           else
@@ -724,6 +729,10 @@ namespace CcsSso.Security.Services
 
             foreach (var user in users)
             {
+              if (user.UserMetadata != null && user.UserMetadata.use_mfa != null && user.UserMetadata.use_mfa == true)
+              {
+                await ResetMfaAsync(user.Email);
+              }
               allTask.Add(_managementApiClient.Users.DeleteAsync(user.UserId));
             }
             await Task.WhenAll(allTask);
