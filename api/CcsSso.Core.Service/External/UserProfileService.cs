@@ -697,7 +697,8 @@ namespace CcsSso.Core.Service.External
       // #Delegated If first name or last name updated for primary account update in delegated as well.
       if (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() || user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim())
       {
-        var delegatedOrgDetails = await _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).Where(u => u.UserName == userName && u.UserType == DbModel.Constants.UserType.Delegation).ToListAsync();
+        var delegatedOrgDetails = await _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).Where(u => u.UserName == userName && 
+                                  u.UserType == DbModel.Constants.UserType.Delegation && !u.IsDeleted && u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date).ToListAsync();
 
         foreach (var delegatedUserDetail in delegatedOrgDetails)
         {
