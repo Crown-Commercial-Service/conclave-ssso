@@ -14,6 +14,7 @@ mono: none
 script:
   - dotnet build --configuration Release ./api/CcsSso.sln
   - pwd
+  - ls -l api/CcsSso.Core.ExternalApi/bin/Release/net6.0/
 deploy:
   - provider: cloudfoundry
     username: $username
