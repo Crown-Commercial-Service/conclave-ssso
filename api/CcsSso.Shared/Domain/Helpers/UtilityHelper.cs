@@ -217,6 +217,8 @@ namespace CcsSso.Shared.Domain.Helpers
 
     public static bool IsSiteNameValid(string Name)
     {
+      Console.WriteLine("IsSiteNameValid - Name " + Name);
+
       bool IsRestrictedChar = false;
       try
       {
@@ -231,6 +233,8 @@ namespace CcsSso.Shared.Domain.Helpers
         {
           Regex regex = new Regex(RegexExpression.VALID_SITENAME);
           Match match = regex.Match(Name);
+
+          Console.WriteLine("IsSiteNameValid - RegexExpression " + RegexExpression.VALID_SITENAME);
 
           Console.WriteLine("IsSiteNameValid - RegexExpression " + match.Success);
 
