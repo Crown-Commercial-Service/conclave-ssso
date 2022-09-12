@@ -1,4 +1,5 @@
-dist: xenial
+#dist: xenial
+dist: focal
 addons:
   snaps:
   - name: dotnet-sdk
@@ -12,7 +13,7 @@ install:
   - dotnet restore ./api/CcsSso.sln
 mono: none
 script:
-  - dotnet build --configuration Release ./api/CcsSso.sln --os linux-x64
+  - dotnet build --configuration Release ./api/CcsSso.sln
   - pwd
   - ls -l api/CcsSso.Core.ExternalApi/bin/Release/net6.0/
 deploy:
