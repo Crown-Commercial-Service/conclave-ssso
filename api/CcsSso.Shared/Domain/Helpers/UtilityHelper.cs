@@ -170,20 +170,17 @@ namespace CcsSso.Shared.Domain.Helpers
         IsRestrictedChar = tokens.Any(t => Name.Contains(t));
         if (IsRestrictedChar == true)
         {
-          Console.WriteLine("IsStreetAddressValid - IsRestrictedChar");
           return false;
         }
         else
         {
           Regex regex = new Regex(RegexExpression.VALID_STREET_ADDRESS);
           Match match = regex.Match(Name);
-          Console.WriteLine("IsStreetAddressValid - RegexExpression " + match.Success);
           return match.Success;
         }
       }
       catch (Exception ex)
       {
-        Console.WriteLine("IsStreetAddressValid - Exception " + ex.Message);
         return false;
       }
     }
@@ -197,28 +194,23 @@ namespace CcsSso.Shared.Domain.Helpers
         IsRestrictedChar = tokens.Any(t => Name.Contains(t));
         if (IsRestrictedChar == true)
         {
-          Console.WriteLine("IslocalityValid - IsRestrictedChar");
           return false;
         }
         else
         {
           Regex regex = new Regex(RegexExpression.VALID_LOCALITY);
           Match match = regex.Match(Name);
-          Console.WriteLine("IslocalityValid - RegexExpression " + match.Success);
           return match.Success;
         }
       }
       catch (Exception ex)
       {
-        Console.WriteLine("IslocalityValid - Exception " + ex.Message);
         return false;
       }
     }
 
     public static bool IsSiteNameValid(string Name)
     {
-      Console.WriteLine("IsSiteNameValid - Name " + Name);
-
       bool IsRestrictedChar = false;
       try
       {
@@ -226,25 +218,17 @@ namespace CcsSso.Shared.Domain.Helpers
         IsRestrictedChar = tokens.Any(t => Name.Contains(t));
         if (IsRestrictedChar == true)
         {
-          Console.WriteLine("IsSiteNameValid - IsRestrictedChar");
           return false;
         }
         else
         {
           Regex regex = new Regex(RegexExpression.VALID_SITENAME);
           Match match = regex.Match(Name);
-
-          Console.WriteLine("IsSiteNameValid - RegexExpression " + RegexExpression.VALID_SITENAME);
-
-          Console.WriteLine("IsSiteNameValid - RegexExpression " + match.Success);
-
           return match.Success;
         }
       }
       catch (Exception ex)
       {
-        Console.WriteLine("IsSiteNameValid - Exception " + ex.Message);
-
         return false;
       }
     }

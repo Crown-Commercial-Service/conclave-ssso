@@ -11,6 +11,6 @@ namespace CcsSso.Shared.Domain.Constants
     public const string VALID_CONTACT_NAME = @"^[a-zA-Z\0-9-.,'/&()]{3,256}$";
     public const string VALID_STREET_ADDRESS = @"^[a-zA-Z\0-9-,.&/()“+#;:@']{1,256}$";
     public const string VALID_LOCALITY = @"^[a-zA-Z\0-9-.,&/']{0,256}$";
-    public const string VALID_SITENAME = @"^[a-zA-Z\0-9-,.&/()""+#;:@']{3,256}$";
+    public const string VALID_SITENAME = @"^[a-zA-Z\0-9-,.&/()“+#;:@']{3,256}$";
   }
 }
