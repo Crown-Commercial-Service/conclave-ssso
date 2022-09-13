@@ -44,8 +44,6 @@ namespace CcsSso.Core.Service.External
     /// <returns></returns>
     public async Task<int> CreateSiteAsync(string ciiOrganisationId, OrganisationSiteInfo organisationSiteInfo)
     {
-      Console.WriteLine("CreateSiteAsync");
-
       Validate(organisationSiteInfo);
 
       //Validate duplication  Sitename - Create Site
@@ -261,8 +259,6 @@ namespace CcsSso.Core.Service.External
     /// <returns></returns>
     public async Task UpdateSiteAsync(string ciiOrganisationId, int siteId, OrganisationSiteInfo organisationSiteInfo)
     {
-      Console.WriteLine("UpdateSiteAsync");
-
       Validate(organisationSiteInfo);
 
       //Validate duplication  Sitename - Update Site
@@ -349,8 +345,6 @@ namespace CcsSso.Core.Service.External
     /// <param name="organisationSiteInfo"></param>
     private void Validate(OrganisationSiteInfo organisationSiteInfo)
     {
-      Console.WriteLine("Validate - organisationSiteInfo.SiteName " + organisationSiteInfo.SiteName);
-
       if (string.IsNullOrWhiteSpace(organisationSiteInfo.SiteName))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidSiteName);
