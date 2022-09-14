@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [ "$TRAVIS_BRANCH" = "development" ]
+then
+    CF_SPACE="dev"
+fi
 
 if [ "$TRAVIS_BRANCH" = "uat" ]
 then
