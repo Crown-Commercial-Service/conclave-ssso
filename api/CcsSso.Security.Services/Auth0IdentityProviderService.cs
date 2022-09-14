@@ -17,7 +17,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using static CcsSso.Security.Domain.Constants.Constants;
@@ -261,8 +260,6 @@ namespace CcsSso.Security.Services
           var users = (await _managementApiClient.Users.GetUsersByEmailAsync(userName)).ToList();
           if (users != null && users.Count > 0)
           {
-            var allTask = new List<Task>();
-
             foreach (var user in users)
             {
               var enrollments = await _managementApiClient.Users.GetEnrollmentsAsync(user.UserId);
@@ -723,19 +720,27 @@ namespace CcsSso.Security.Services
         try
         {
           var users = (await _managementApiClient.Users.GetUsersByEmailAsync(email)).ToList();
+
           if (users != null && users.Count > 0)
           {
-            var allTask = new List<Task>();
+            // While deleting user from auth0, the authenticators are not deleted from the user. 
+            // when the same user is registered again, the old authenticator appears for mfa validation
+            // So resetting MFA before deleting user is necessary.
+
+            try
+            {
+              await ResetMfaAsync(users[0].Email);
+            }
+            catch (Exception ex)
+            {
+              Console.WriteLine($"Exception while resetting mfa before deleting the user from Auth0. Error Message - {ex.Message}");              
+            }
+            
 
             foreach (var user in users)
             {
-              if (user.UserMetadata != null && user.UserMetadata.use_mfa != null && user.UserMetadata.use_mfa == true)
-              {
-                await ResetMfaAsync(user.Email);
-              }
-              allTask.Add(_managementApiClient.Users.DeleteAsync(user.UserId));
+             await _managementApiClient.Users.DeleteAsync(user.UserId);
             }
-            await Task.WhenAll(allTask);
           }
           else
           {
