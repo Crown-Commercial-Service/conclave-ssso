@@ -197,8 +197,22 @@ namespace CcsSso.Service
         if (!string.IsNullOrEmpty(token))
         {
           client.DefaultRequestHeaders.Add("Authorization", token);
+
+          // #1453
+          // Token based authenication is not working in local with CII API, it will wokr on server.
+          // Below condition to exclude this for local machine. 
+          // Send x-api-key only when token is not available
+#if !DEBUG
+          if (client.DefaultRequestHeaders.Any(x => x.Key == "x-api-key"))
+          {
+            client.DefaultRequestHeaders.Remove("x-api-key");
+          }
+#endif
         }
-        url += "/all";
+        else
+        {
+          url += "/all";
+        }
       }
       using var response = await client.GetAsync(url);
       if (response.IsSuccessStatusCode)
