@@ -26,7 +26,7 @@ namespace CcsSso.Core.Service.External
     }
     public async Task<List<IdentityProviderDetail>> GetIdentityProvidersAsync()
     {
-      var identityProviders = await _dataContext.IdentityProvider.Select(i => new IdentityProviderDetail
+      var identityProviders = await _dataContext.IdentityProvider.OrderBy(o => o.DisplayOrder).Select(i => new IdentityProviderDetail
       {
         Id = i.Id,
         ConnectionName = i.IdpConnectionName,

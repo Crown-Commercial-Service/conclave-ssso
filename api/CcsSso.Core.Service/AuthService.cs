@@ -130,16 +130,28 @@ namespace CcsSso.Core.Service
 
       // #Delegated: Change to handle request for delegate user
       var isDelegateUserRequest = _requestContext.Roles.Contains("DELEGATED_USER");
-
-      // #Delegated: Change to allow org admin to serach for user of other org
-      var isDelegatedSearchRequest = isOrgAdmin && _requestContext.IsDelegated;
-
-      if (isDelegateUserRequest || isDelegatedSearchRequest)
+      if (isDelegateUserRequest)
       {
         return true;
       }
 
       var isCcsAdminRequest = _requestContext.Roles.Contains("ORG_USER_SUPPORT") || _requestContext.Roles.Contains("MANAGE_SUBSCRIPTIONS");
+
+      // #Delegated: Change to allow org admin to serach for user of other org
+      var isDelegatedSearchRequest = isOrgAdmin && _requestContext.IsDelegated;
+
+      if (isDelegatedSearchRequest && _requestContext.RequestIntendedOrganisationId != null)
+      {
+        if (_requestContext.CiiOrganisationId == _requestContext.RequestIntendedOrganisationId)
+        {
+          return true;
+        }
+        else if (_requestContext.CiiOrganisationId != _requestContext.RequestIntendedOrganisationId && !isCcsAdminRequest)
+        {
+          throw new ForbiddenException();
+        }
+      }
+
       var isAuthorizedForOrganisation = false;
 
       if (requestType == RequestType.HavingOrgId)
@@ -158,7 +170,7 @@ namespace CcsSso.Core.Service
           await _remoteCacheService.SetValueAsync<string>($"{CacheKeyConstant.UserOrganisation}-{_requestContext.RequestIntendedUserName}", intendedOrganisationId,
             new TimeSpan(0, _applicationConfigurationInfo.RedisCacheSettings.CacheExpirationInMinutes, 0));
         }
-        
+
         isAuthorizedForOrganisation = _requestContext.CiiOrganisationId == intendedOrganisationId;
       }
 
