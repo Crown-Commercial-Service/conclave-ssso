@@ -12,7 +12,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CcsSso.Core.Api.Middleware
+namespace CcsSso.Core.Api.Middleware 
 {
   public class AuthenticationMiddleware
   {
@@ -23,9 +23,9 @@ namespace CcsSso.Core.Api.Middleware
 
     private List<string> allowedPaths = new List<string>()
     {
-      "auth/backchannel-logout", "auth/refresh-tokens","auth/mfa-reset-notifications","auth/mfa-reset-by-tickets",
-      "organisations/registrations", "users/permissions", "users/nominees", "users/activation-emails", "cii/schemes", "cii/identifiers",
-      "organisations/orgs-by-name","cii/organisation-details","organisations/org-admin-join-notification","configurations/country-details"
+      "auth/backchannel-logout,auth/mfa-reset-by-tickets",
+      "organisations/registrations", "users/nominees", "users/activation-emails", "cii/schemes", "cii/identifiers",
+      "organisations/orgs-by-name","organisations/org-admin-join-notification","configurations/country-details"
     };
 
     private List<string> allowedPathsForXSRFValidation = new List<string>()
