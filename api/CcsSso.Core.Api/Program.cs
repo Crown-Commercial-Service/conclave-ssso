@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using CcsSso.Core.Service;
 using CcsSso.Service;
 using CcsSso.Domain.Contracts;
+using CcsSso.Core.Api.CustomOptions;
 
 namespace CcsSso.Api
 {
@@ -34,11 +35,19 @@ namespace CcsSso.Api
           }
           else
           {
-            config.AddVault(options =>
+            var source = configBuilder.GetValue<string>("Source");
+            if (source == "AWS")
+            {
+              config.AddParameterStore();
+            }
+            else
+            {
+              config.AddVault(options =>
             {
               var vaultOptions = builtConfig.GetSection("Vault");
               options.Address = vaultOptions["Address"];
             });
+            }
           }
           config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
         })

@@ -20,10 +20,18 @@ namespace CcsSso.Shared.Services
 
     public AwsParameterStoreService()
     {
+      Console.WriteLine("AwsParameterStoreService");
       string env = Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
+      Console.WriteLine("env" + env);
       var envData = (JObject)JsonConvert.DeserializeObject(env);
+      Console.WriteLine("envData" + envData);
       string setting = JsonConvert.SerializeObject(envData["user-provided"].FirstOrDefault(obj => obj["name"].Value<string>().Contains("ssm-service")));
+      Console.WriteLine("setting" + setting);
       _settings = JsonConvert.DeserializeObject<AmazonSimpleSystemsManagementSettings>(setting.ToString());
+
+      Console.WriteLine("setting_aws_access_key_id" + _settings.credentials.aws_access_key_id);
+      Console.WriteLine("setting_aws_secret_access_key" + _settings.credentials.aws_secret_access_key);
+      Console.WriteLine("setting_region" + _settings.credentials.region);
 
       var credentials = new BasicAWSCredentials(_settings.credentials.aws_access_key_id, _settings.credentials.aws_secret_access_key);
       _client = new AmazonSimpleSystemsManagementClient(credentials, RegionEndpoint.GetBySystemName(_settings.credentials.region));

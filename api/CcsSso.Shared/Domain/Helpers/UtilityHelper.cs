@@ -237,9 +237,13 @@ namespace CcsSso.Shared.Domain.Helpers
 
     public static string GetDatbaseConnectionString(string name, string connectionString)
     {
+      Console.WriteLine("GetDatbaseConnectionString");
       string env = Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
+      Console.WriteLine("GetDatbaseConnectionString - env " + env);
       var envData = (JObject)JsonConvert.DeserializeObject(env);
+      Console.WriteLine("GetDatbaseConnectionString - envData " + envData);
       string setting = JsonConvert.SerializeObject(envData["postgres"].FirstOrDefault(obj => obj["name"].Value<string>() == name));
+      Console.WriteLine("GetDatbaseConnectionString - setting " + setting);
       var postgresSettings = JsonConvert.DeserializeObject<PostgresSettings>(setting.ToString());
 
       connectionString = connectionString.Replace("[Server]", postgresSettings.credentials.name);
@@ -253,9 +257,13 @@ namespace CcsSso.Shared.Domain.Helpers
 
     public static string GetRedisCacheConnectionString(string name, string connectionString)
     {
+      Console.WriteLine("GetRedisCacheConnectionString");
       string env = Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
+      Console.WriteLine("GetRedisCacheConnectionString - env " + env);
       var envData = (JObject)JsonConvert.DeserializeObject(env);
+      Console.WriteLine("GetRedisCacheConnectionString - envData " + envData);
       string setting = JsonConvert.SerializeObject(envData["redis"].FirstOrDefault(obj => obj["name"].Value<string>() == name));
+      Console.WriteLine("GetRedisCacheConnectionString - setting " + setting);
       var redisCacheSettings = JsonConvert.DeserializeObject<RedisCacheSettings>(setting.ToString());
 
       connectionString = connectionString.Replace("[Host]", redisCacheSettings.credentials.host);
@@ -267,18 +275,26 @@ namespace CcsSso.Shared.Domain.Helpers
 
     public static S3Settings GetS3Settings(string name)
     {
+      Console.WriteLine("GetS3Settings");
       string env = Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
+      Console.WriteLine("GetS3Settings - env " + env);
       var envData = (JObject)JsonConvert.DeserializeObject(env);
+      Console.WriteLine("GetS3Settings - envData " + envData);
       string setting = JsonConvert.SerializeObject(envData["aws-s3-bucket"].FirstOrDefault(obj => obj["name"].Value<string>() == name));
+      Console.WriteLine("GetS3Settings - setting " + setting);
       var settings = JsonConvert.DeserializeObject<S3Settings>(setting.ToString());
       return settings;
     }
 
     public static SqsSetting GetSqsSetting(string name)
     {
+      Console.WriteLine("GetSqsSetting");
       string env = Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
+      Console.WriteLine("GetSqsSetting - env " + env);
       var envData = (JObject)JsonConvert.DeserializeObject(env);
+      Console.WriteLine("GetSqsSetting - envData " + envData);
       string setting = JsonConvert.SerializeObject(envData["aws-sqs-queue"].FirstOrDefault(obj => obj["name"].Value<string>() == name));
+      Console.WriteLine("GetSqsSetting - setting " + setting);
       var settings = JsonConvert.DeserializeObject<SqsSetting>(setting.ToString());
       return settings;
     }
