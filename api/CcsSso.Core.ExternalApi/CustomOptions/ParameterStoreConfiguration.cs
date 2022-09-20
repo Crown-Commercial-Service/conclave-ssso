@@ -140,7 +140,11 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
           int index = 0;
           foreach (var item in items)
           {
-            Data.Add($"{key}:{index++}", item?.Trim());
+            var text = item != null ? item.Trim() : string.Empty;
+            if (!string.IsNullOrEmpty(text))
+            {
+              Data.Add($"{key}:{index++}", text);
+            }
           }
         }
       }

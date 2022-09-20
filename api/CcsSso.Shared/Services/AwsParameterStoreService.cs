@@ -68,7 +68,7 @@ namespace CcsSso.Shared.Services
       var parameter = parameters.FirstOrDefault(p => p.Name == name);
       if (parameter != null)
       {
-        value = Convert.ToString(parameter.Value);
+        value = Convert.ToString(parameter.Value?.Trim());
       }
       return value;
     }
