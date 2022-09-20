@@ -174,10 +174,13 @@ namespace CcsSso.Security.Api.CustomOptions
       if (value != null)
       {
         List<string> items = value.Split(',').ToList();
-        int index = 0;
-        foreach (var item in items)
+        if (items != null && items.Count > 0)
         {
-          Data.Add($"{key}:{index++}", item);
+          int index = 0;
+          foreach (var item in items)
+          {
+            Data.Add($"{key}:{index++}", item?.Trim());
+          }
         }
       }
     }
