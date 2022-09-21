@@ -98,6 +98,17 @@ namespace CcsSso.Core.JobScheduler
               redisCacheSettingsVault = (RedisCacheSettingsVault)FillAwsParamsValue(typeof(RedisCacheSettingsVault), parameters);
               docUploadConfig = (DocUploadInfoVault)FillAwsParamsValue(typeof(DocUploadInfoVault), parameters);
               s3ConfigurationInfo = (S3ConfigurationInfoVault)FillAwsParamsValue(typeof(S3ConfigurationInfoVault), parameters);
+
+              Console.WriteLine("Aws Param name: DbConnection value:" + dbConnection);
+              Console.WriteLine("Aws Param name: ciiSettings value:" + JsonConvert.SerializeObject(ciiSettings));
+              Console.WriteLine("Aws Param name: userDeleteJobSettings value:" + JsonConvert.SerializeObject(userDeleteJobSettings));
+              Console.WriteLine("Aws Param name: emailConfigurationInfo value:" + JsonConvert.SerializeObject(emailConfigurationInfo));
+              Console.WriteLine("Aws Param name: securityApiSettings value:" + JsonConvert.SerializeObject(securityApiSettings));
+              Console.WriteLine("Aws Param name: scheduleJobSettings value:" + JsonConvert.SerializeObject(scheduleJobSettings));
+              Console.WriteLine("Aws Param name: bulkUploadSettings value:" + JsonConvert.SerializeObject(bulkUploadSettings));
+              Console.WriteLine("Aws Param name: redisCacheSettingsVault value:" + JsonConvert.SerializeObject(redisCacheSettingsVault));
+              Console.WriteLine("Aws Param name: docUploadConfig value:" + JsonConvert.SerializeObject(docUploadConfig));
+              Console.WriteLine("Aws Param name: s3ConfigurationInfo value:" + JsonConvert.SerializeObject(s3ConfigurationInfo));
             }
             else
             {
@@ -112,6 +123,17 @@ namespace CcsSso.Core.JobScheduler
               redisCacheSettingsVault = JsonConvert.DeserializeObject<RedisCacheSettingsVault>(secrets["RedisCacheSettings"].ToString());
               docUploadConfig = JsonConvert.DeserializeObject<DocUploadInfoVault>(secrets["DocUpload"].ToString());
               s3ConfigurationInfo = JsonConvert.DeserializeObject<S3ConfigurationInfoVault>(secrets["S3ConfigurationInfo"].ToString());
+
+              Console.WriteLine("Harsicorp Param name: DbConnection value:" + JsonConvert.SerializeObject(dbConnection));
+              Console.WriteLine("Harsicorp Param name: ciiSettings value:" + JsonConvert.SerializeObject(ciiSettings));
+              Console.WriteLine("Harsicorp Param name: userDeleteJobSettings value:" + JsonConvert.SerializeObject(userDeleteJobSettings));
+              Console.WriteLine("Harsicorp Param name: emailConfigurationInfo value:" + JsonConvert.SerializeObject(emailConfigurationInfo));
+              Console.WriteLine("Harsicorp Param name: securityApiSettings value:" + JsonConvert.SerializeObject(securityApiSettings));
+              Console.WriteLine("Harsicorp Param name: scheduleJobSettings value:" + JsonConvert.SerializeObject(scheduleJobSettings));
+              Console.WriteLine("Harsicorp Param name: bulkUploadSettings value:" + JsonConvert.SerializeObject(bulkUploadSettings));
+              Console.WriteLine("Harsicorp Param name: redisCacheSettingsVault value:" + JsonConvert.SerializeObject(redisCacheSettingsVault));
+              Console.WriteLine("Harsicorp Param name: docUploadConfig value:" + JsonConvert.SerializeObject(docUploadConfig));
+              Console.WriteLine("Harsicorp Param name: s3ConfigurationInfo value:" + JsonConvert.SerializeObject(s3ConfigurationInfo));
             }
           }
           else
