@@ -3,6 +3,7 @@ using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Helpers;
 using CcsSso.Shared.Services;
 using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -98,6 +99,13 @@ namespace CcsSso.Adaptor.Api.CustomOptions
 
       Data.Add("CiiApiSettings:Url", _awsParameterStoreService.FindParameterByName(parameters, path + "CiiApiSettings/Url"));
       Data.Add("CiiApiSettings:SpecialToken", _awsParameterStoreService.FindParameterByName(parameters, path + "CiiApiSettings/SpecialToken"));
+
+      Console.WriteLine("Log from AWS");
+
+      foreach (var item in Data)
+      {
+        Console.WriteLine(item.Key + " -- " + item.Value);
+      }
     }
 
     private void GetParameterFromCommaSeparated(List<Parameter> parameters, string name, string key)
