@@ -248,8 +248,8 @@ namespace CcsSso.Core.JobScheduler
       {
         return new CiiSettings()
         {
-          Token = _awsParameterStoreService.FindParameterByName(parameters, path + "CIISettings/token"),
-          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "CIISettings/url")
+          Token = _awsParameterStoreService.FindParameterByName(parameters, path + "CIISettings/Token"),
+          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "CIISettings/Url")
         };
       }
       else if (objType == typeof(List<UserDeleteJobSetting>))
@@ -336,9 +336,9 @@ namespace CcsSso.Core.JobScheduler
       {
         return new DocUploadInfoVault()
         {
-          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "DocUpload/url"),
+          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "DocUpload/Url"),
           SizeValidationValue = _awsParameterStoreService.FindParameterByName(parameters, path + "DocUpload/SizeValidationValue"),
-          Token = _awsParameterStoreService.FindParameterByName(parameters, path + "DocUpload/token"),
+          Token = _awsParameterStoreService.FindParameterByName(parameters, path + "DocUpload/Token"),
           TypeValidationValue = _awsParameterStoreService.FindParameterByName(parameters, path + "DocUpload/TypeValidationValue")
         };
       }
