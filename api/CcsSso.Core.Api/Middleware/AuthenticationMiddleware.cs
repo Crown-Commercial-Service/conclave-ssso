@@ -23,7 +23,7 @@ namespace CcsSso.Core.Api.Middleware
 
     private List<string> allowedPaths = new List<string>()
     {
-      "auth/backchannel-logout,auth/mfa-reset-by-tickets",
+      "auth/backchannel-logout,auth/mfa-reset-by-tickets","auth/refresh-tokens",
       "organisations/registrations", "users/nominees", "users/activation-emails", "cii/schemes", "cii/identifiers",
       "organisations/orgs-by-name","organisations/org-admin-join-notification","configurations/country-details"
     };
