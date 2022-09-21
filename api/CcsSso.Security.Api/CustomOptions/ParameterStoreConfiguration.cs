@@ -162,10 +162,6 @@ namespace CcsSso.Security.Api.CustomOptions
       Data.Add("Email:ResetPasswordLinkTTLInMinutes", _awsParameterStoreService.FindParameterByName(parameters, path + "Email/ResetPasswordLinkTTLInMinutes"));
       Data.Add("Email:SendNotificationsEnabled", _awsParameterStoreService.FindParameterByName(parameters, path + "Email/SendNotificationsEnabled"));
 
-      foreach (var item in Data)
-      {
-        Console.WriteLine(item.Key + ":" + item.Value);
-      }
     }
 
     private void GetParameterFromCommaSeparated(List<Parameter> parameters, string name, string key)
