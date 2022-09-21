@@ -33,12 +33,12 @@ namespace CcsSso.Core.Api.CustomOptions
     {
       var parameters = await _awsParameterStoreService.GetParameters(path);
 
-      var dbConnectionName = _awsParameterStoreService.FindParameterByName(parameters, path + "DbConnectionName");
+      var dbName = _awsParameterStoreService.FindParameterByName(parameters, path + "DbName");
       var dbConnection = _awsParameterStoreService.FindParameterByName(parameters, path + "DbConnection");
 
-      if (!string.IsNullOrEmpty(dbConnectionName))
+      if (!string.IsNullOrEmpty(dbName))
       {
-        var dynamicDBConnection = UtilityHelper.GetDatbaseConnectionString(dbConnectionName, dbConnection);
+        var dynamicDBConnection = UtilityHelper.GetDatbaseConnectionString(dbName, dbConnection);
         Data.Add("DbConnection", dynamicDBConnection);
       }
       else
