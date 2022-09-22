@@ -206,8 +206,9 @@ namespace CcsSso.Service.External
       if (!string.IsNullOrWhiteSpace(name))
       {
         var nameArray = name.Trim().Split(" ");
+        
         firstName = nameArray[0];
-        lastName = nameArray.Length >= 2 ? nameArray[nameArray.Length - 1] : string.Empty;
+        lastName = string.Join(" ",nameArray.Skip(1).ToArray());
       }
       return (firstName, lastName);
     }
