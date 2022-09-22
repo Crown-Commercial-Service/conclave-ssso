@@ -147,16 +147,6 @@ namespace CcsSso.Core.ReportingScheduler
           azureBlobConfiguration = (AzureBlobConfiguration)FillAwsParamsValue(typeof(AzureBlobConfiguration), parameters);
           maxNumbeOfRecordInAReport =  _awsParameterStoreService.FindParameterByName(parameters, path + "MaxNumbeOfRecordInAReport");
           writeCSVDataInLog = _awsParameterStoreService.FindParameterByName(parameters, path + "WriteCSVDataInLog");
-
-          Console.WriteLine("Aws Param name: DbConnection value:" + dbConnection);
-          Console.WriteLine("Aws Param name: SecurityApi value:" + JsonConvert.SerializeObject(SecurityApi));
-          Console.WriteLine("Aws Param name: WrapperApi value:" + JsonConvert.SerializeObject(WrapperApi));
-          Console.WriteLine("Aws Param name: ScheduleJob value:" + JsonConvert.SerializeObject(ScheduleJob));
-          Console.WriteLine("Aws Param name: ReportDataDurations value:" + JsonConvert.SerializeObject(ReportDataDurations));
-          Console.WriteLine("Aws Param name: S3Configuration value:" + JsonConvert.SerializeObject(S3Configuration));
-          Console.WriteLine("Aws Param name: azureBlobConfiguration value:" + JsonConvert.SerializeObject(azureBlobConfiguration));
-          Console.WriteLine("Aws Param name: maxNumbeOfRecordInAReport value:" + JsonConvert.SerializeObject(maxNumbeOfRecordInAReport));
-          Console.WriteLine("Aws Param name: writeCSVDataInLog value:" + JsonConvert.SerializeObject(writeCSVDataInLog));
         }
         else
         {
@@ -170,16 +160,6 @@ namespace CcsSso.Core.ReportingScheduler
           azureBlobConfiguration = JsonConvert.DeserializeObject<AzureBlobConfiguration>(secrets["AzureBlobConfiguration"].ToString());
           maxNumbeOfRecordInAReport = secrets["MaxNumbeOfRecordInAReport"].ToString();
           writeCSVDataInLog = secrets["WriteCSVDataInLog"].ToString();
-
-          Console.WriteLine("Harsicorp Param name: DbConnection value:" + dbConnection);
-          Console.WriteLine("Harsicorp Param name: SecurityApi value:" + JsonConvert.SerializeObject(SecurityApi));
-          Console.WriteLine("Harsicorp Param name: WrapperApi value:" + JsonConvert.SerializeObject(WrapperApi));
-          Console.WriteLine("Harsicorp Param name: ScheduleJob value:" + JsonConvert.SerializeObject(ScheduleJob));
-          Console.WriteLine("Harsicorp Param name: ReportDataDurations value:" + JsonConvert.SerializeObject(ReportDataDurations));
-          Console.WriteLine("Harsicorp Param name: S3Configuration value:" + JsonConvert.SerializeObject(S3Configuration));
-          Console.WriteLine("Harsicorp Param name: azureBlobConfiguration value:" + JsonConvert.SerializeObject(azureBlobConfiguration));
-          Console.WriteLine("Harsicorp Param name: maxNumbeOfRecordInAReport value:" + JsonConvert.SerializeObject(maxNumbeOfRecordInAReport));
-          Console.WriteLine("Harsicorp Param name: writeCSVDataInLog value:" + JsonConvert.SerializeObject(writeCSVDataInLog));
         }
       }
       else

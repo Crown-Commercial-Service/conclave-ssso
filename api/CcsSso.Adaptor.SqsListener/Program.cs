@@ -62,11 +62,6 @@ namespace CcsSso.Adaptor.SqsListener
                   adaptorApiSettings = (AdaptorApiSetting)FillAwsParamsValue(typeof(AdaptorApiSetting), parameters);
                   sqsJobSettingsVault = (SqsListnerJobSettingVault)FillAwsParamsValue(typeof(SqsListnerJobSettingVault), parameters);
                   queueInfoVault = (QueueInfoVault)FillAwsParamsValue(typeof(QueueInfoVault), parameters);
-
-                  Console.WriteLine("Aws Param name: " + path + "IsApiGatewayEnabled value:" + _isApiGatewayEnabled);
-                  Console.WriteLine("Aws Param name: adaptorApiSettings value:" + JsonConvert.SerializeObject(adaptorApiSettings));
-                  Console.WriteLine("Aws Param name: sqsJobSettingsVault value:" + JsonConvert.SerializeObject(sqsJobSettingsVault));                  
-                  Console.WriteLine("Aws Param name: queueInfoVault value:" + JsonConvert.SerializeObject(queueInfoVault));
                 }
                 else
                 {
@@ -75,11 +70,6 @@ namespace CcsSso.Adaptor.SqsListener
                   adaptorApiSettings = JsonConvert.DeserializeObject<AdaptorApiSetting>(secrets["AdaptorApiSettings"].ToString());
                   sqsJobSettingsVault = JsonConvert.DeserializeObject<SqsListnerJobSettingVault>(secrets["SqsListnerJobSettings"].ToString());
                   queueInfoVault = JsonConvert.DeserializeObject<QueueInfoVault>(secrets["QueueInfo"].ToString());
-
-                  Console.WriteLine("harsicorp Param name: IsApiGatewayEnabled value:" + _isApiGatewayEnabled);
-                  Console.WriteLine("harsicorp Param name: adaptorApiSettings value:" + JsonConvert.SerializeObject(adaptorApiSettings));
-                  Console.WriteLine("harsicorp Param name: sqsJobSettingsVault value:" + JsonConvert.SerializeObject(sqsJobSettingsVault));
-                  Console.WriteLine("harsicorp Param name: queueInfoVault value:" + JsonConvert.SerializeObject(queueInfoVault));
                 }
               }
               else
