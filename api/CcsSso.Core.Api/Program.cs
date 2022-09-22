@@ -36,7 +36,7 @@ namespace CcsSso.Api
           else
           {
             var source = configBuilder.GetValue<string>("Source");
-            if (source == "AWS")
+            if (source.ToUpper() == "AWS")
             {
               config.AddParameterStore();
             }

@@ -123,7 +123,7 @@ namespace CcsSso.Core.ReportingScheduler
 
       if (vaultEnabled)
       {
-        if (vaultSource == "AWS")
+        if (vaultSource.ToUpper() == "AWS")
         {
           var parameters = LoadAwsSecretsAsync().Result;
 

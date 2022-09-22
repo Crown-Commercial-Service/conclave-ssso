@@ -73,7 +73,7 @@ namespace CcsSso.Core.JobScheduler
 
           if (vaultEnabled)
           {
-            if (vaultSource == "AWS")
+            if (vaultSource.ToUpper() == "AWS")
             {
               var parameters = LoadAwsSecretsAsync().Result;
 

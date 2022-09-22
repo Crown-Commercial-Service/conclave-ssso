@@ -60,6 +60,10 @@ namespace CcsSso.Shared.Services
       if (parameter != null)
       {
         value = Convert.ToString(parameter.Value?.Trim());
+      }      
+      else
+      {
+        Console.WriteLine("AWS - Parameter not found - " + name);
       }
       return value;
     }

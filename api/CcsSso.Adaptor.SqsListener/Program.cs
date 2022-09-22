@@ -55,7 +55,7 @@ namespace CcsSso.Adaptor.SqsListener
 
               if (vaultEnabled)
               {
-                if (vaultSource == "AWS")
+                if (vaultSource.ToUpper() == "AWS")
                 {
                   var parameters = LoadAwsSecretsAsync().Result;
                   _isApiGatewayEnabled = _awsParameterStoreService.FindParameterByName(parameters, path + "IsApiGatewayEnabled");
