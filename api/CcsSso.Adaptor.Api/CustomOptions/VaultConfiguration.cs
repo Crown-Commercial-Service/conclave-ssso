@@ -99,13 +99,6 @@ namespace CcsSso.Adaptor.Api.CustomOptions
         Data.Add("CiiApiSettings:Url", _cii.Url);
         Data.Add("CiiApiSettings:SpecialToken", _cii.SpecialToken);
       }
-
-      Console.WriteLine("Log from Hashicorp");
-
-      foreach (var item in Data)
-      {
-        Console.WriteLine(item.Key + " -- " + item.Value);
-      }
     }
   }
 

@@ -99,13 +99,6 @@ namespace CcsSso.Adaptor.Api.CustomOptions
 
       Data.Add("CiiApiSettings:Url", _awsParameterStoreService.FindParameterByName(parameters, path + "CiiApiSettings/Url"));
       Data.Add("CiiApiSettings:SpecialToken", _awsParameterStoreService.FindParameterByName(parameters, path + "CiiApiSettings/SpecialToken"));
-
-      Console.WriteLine("Log from AWS");
-
-      foreach (var item in Data)
-      {
-        Console.WriteLine(item.Key + " -- " + item.Value);
-      }
     }
 
     private void GetParameterFromCommaSeparated(List<Parameter> parameters, string name, string key)
