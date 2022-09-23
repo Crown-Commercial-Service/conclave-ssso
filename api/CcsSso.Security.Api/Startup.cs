@@ -177,7 +177,7 @@ namespace CcsSso.Security.Api
             ApiKeyValidationExcludedRoutes = Configuration.GetSection("SecurityApiKeySettings:ApiKeyValidationExcludedRoutes").Get<List<string>>(),
             BearerTokenValidationIncludedRoutes = Configuration.GetSection("SecurityApiKeySettings:BearerTokenValidationIncludedRoutes").Get<List<string>>()
           },
-          RedisCacheSettings = new RedisCacheSettings()
+          RedisCacheSettings = new Domain.Dtos.RedisCacheSettings()
           {
             ConnectionString = Configuration["RedisCacheSettings:ConnectionString"],
             IsEnabled = isRedisEnabled

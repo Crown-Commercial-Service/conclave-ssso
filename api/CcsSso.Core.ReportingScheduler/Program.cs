@@ -1,4 +1,5 @@
 
+using Amazon.SimpleSystemsManagement.Model;
 using CcsSso.Core.ReportingScheduler.Jobs;
 using CcsSso.Core.ReportingScheduler.Models;
 using CcsSso.DbPersistence;
@@ -6,6 +7,7 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
 using CcsSso.Shared.Domain.Contexts;
+using CcsSso.Shared.Domain.Helpers;
 using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -20,6 +22,9 @@ namespace CcsSso.Core.ReportingScheduler
   public class Program
   {
     private static bool vaultEnabled;
+    private static string vaultSource;
+    private static string path = "/conclave-sso/reporting-job/";
+    private static IAwsParameterStoreService _awsParameterStoreService;
 
     public static void Main(string[] args)
     {
@@ -36,6 +41,7 @@ namespace CcsSso.Core.ReportingScheduler
                            .Build();
             var builtConfig = config.Build();
             vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
+            vaultSource = configBuilder.GetValue<string>("Source");
             if (!vaultEnabled)
             {
               config.AddJsonFile("appsecrets.json", optional: false, reloadOnChange: true);
@@ -117,17 +123,44 @@ namespace CcsSso.Core.ReportingScheduler
 
       if (vaultEnabled)
       {
-        var secrets = LoadSecretsAsync().Result;
-        dbConnection = secrets["DbConnection"].ToString();
-        SecurityApi = JsonConvert.DeserializeObject<ApiConfig>(secrets["SecurityApi"].ToString());
-        WrapperApi = JsonConvert.DeserializeObject<ApiConfig>(secrets["WrapperApi"].ToString());
-        ScheduleJob = JsonConvert.DeserializeObject<ScheduleJob>(secrets["ScheduleJob"].ToString());
-        ReportDataDurations = JsonConvert.DeserializeObject<ReportDataDuration>(secrets["ReportDataDuration"].ToString());
-        S3Configuration = JsonConvert.DeserializeObject<S3Configuration>(secrets["S3Configuration"].ToString());
-        azureBlobConfiguration = JsonConvert.DeserializeObject<AzureBlobConfiguration>(secrets["AzureBlobConfiguration"].ToString());
-        maxNumbeOfRecordInAReport = secrets["MaxNumbeOfRecordInAReport"].ToString();
-        writeCSVDataInLog = secrets["WriteCSVDataInLog"].ToString();
+        if (vaultSource.ToUpper() == "AWS")
+        {
+          var parameters = LoadAwsSecretsAsync().Result;
 
+          var dbName = _awsParameterStoreService.FindParameterByName(parameters, path + "DbName");
+          var dbConnectionEndPoint = _awsParameterStoreService.FindParameterByName(parameters, path + "DbConnection");
+
+          if (!string.IsNullOrEmpty(dbName))
+          {
+            dbConnection = UtilityHelper.GetDatbaseConnectionString(dbName, dbConnectionEndPoint);
+          }
+          else
+          {
+            dbConnection = dbConnectionEndPoint;
+          }
+
+          SecurityApi = (ApiConfig)FillAwsParamsValue(typeof(ApiConfig), parameters, "SecurityApi");
+          WrapperApi = (ApiConfig)FillAwsParamsValue(typeof(ApiConfig), parameters, "WrapperApi");
+          ScheduleJob = (ScheduleJob)FillAwsParamsValue(typeof(ScheduleJob), parameters);
+          ReportDataDurations = (ReportDataDuration)FillAwsParamsValue(typeof(ReportDataDuration), parameters);
+          S3Configuration = (S3Configuration)FillAwsParamsValue(typeof(S3Configuration), parameters);
+          azureBlobConfiguration = (AzureBlobConfiguration)FillAwsParamsValue(typeof(AzureBlobConfiguration), parameters);
+          maxNumbeOfRecordInAReport =  _awsParameterStoreService.FindParameterByName(parameters, path + "MaxNumbeOfRecordInAReport");
+          writeCSVDataInLog = _awsParameterStoreService.FindParameterByName(parameters, path + "WriteCSVDataInLog");
+        }
+        else
+        {
+          var secrets = LoadSecretsAsync().Result;
+          dbConnection = secrets["DbConnection"].ToString();
+          SecurityApi = JsonConvert.DeserializeObject<ApiConfig>(secrets["SecurityApi"].ToString());
+          WrapperApi = JsonConvert.DeserializeObject<ApiConfig>(secrets["WrapperApi"].ToString());
+          ScheduleJob = JsonConvert.DeserializeObject<ScheduleJob>(secrets["ScheduleJob"].ToString());
+          ReportDataDurations = JsonConvert.DeserializeObject<ReportDataDuration>(secrets["ReportDataDuration"].ToString());
+          S3Configuration = JsonConvert.DeserializeObject<S3Configuration>(secrets["S3Configuration"].ToString());
+          azureBlobConfiguration = JsonConvert.DeserializeObject<AzureBlobConfiguration>(secrets["AzureBlobConfiguration"].ToString());
+          maxNumbeOfRecordInAReport = secrets["MaxNumbeOfRecordInAReport"].ToString();
+          writeCSVDataInLog = secrets["WriteCSVDataInLog"].ToString();
+        }
       }
       else
       {
@@ -174,6 +207,93 @@ namespace CcsSso.Core.ReportingScheduler
       var mountPathValue = vcapSettings.credentials.backends_shared.space.Split("/secret").FirstOrDefault();
       var _secrets = await client.V1.Secrets.KeyValue.V1.ReadSecretAsync("secret/reporting-job", mountPathValue);
       return _secrets.Data;
+    }
+
+    private static async Task<List<Parameter>> LoadAwsSecretsAsync()
+    {
+      _awsParameterStoreService = new AwsParameterStoreService();
+      return await _awsParameterStoreService.GetParameters(path);
+    }
+
+    private static dynamic FillAwsParamsValue(Type objType, List<Parameter> parameters, string apiConfig = "")
+    {
+      if (objType  == typeof(ApiConfig))
+      {
+        if (!string.IsNullOrWhiteSpace(apiConfig))
+        {
+          return new ApiConfig()
+          {
+            Url = _awsParameterStoreService.FindParameterByName(parameters, path + apiConfig + "/Url"),
+            ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + apiConfig + "/ApiKey"),
+          };
+        }
+        else
+        {
+          return null;
+        }
+      }
+      else if (objType  == typeof(ScheduleJob))
+      {
+        return new ScheduleJob()
+        {
+          AuditLogReportingJobScheduleInMinutes   = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJob/AuditLogReportingJobScheduleInMinutes")),
+          ContactReportingJobScheduleInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJob/ContactReportingJobScheduleInMinutes")),
+          OrganisationReportingJobScheduleInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJob/OrganisationReportingJobScheduleInMinutes")),
+          UserReportingJobScheduleInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJob/UserReportingJobScheduleInMinutes"))
+        };
+      }
+      else if (objType  == typeof(ReportDataDuration))
+      {
+        return new ReportDataDuration()
+        {
+          AuditLogReportingDurationInMinutes =Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ReportDataDuration/AuditLogReportingDurationInMinutes")),
+          ContactReportingDurationInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ReportDataDuration/ContactReportingDurationInMinutes")),
+          OrganisationReportingDurationInMinutes =Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ReportDataDuration/OrganisationReportingDurationInMinutes")),
+          UserReportingDurationInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ReportDataDuration/UserReportingDurationInMinutes"))
+        };
+      }
+      else if (objType  == typeof(S3Configuration))
+      {
+        var s3Name = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/Name"); 
+
+        if (!string.IsNullOrEmpty(s3Name))
+        {
+          var s3Settings = UtilityHelper.GetS3Settings(s3Name);
+
+          return new S3Configuration()
+          {
+            AccessKeyId = s3Settings?.credentials?.aws_access_key_id,
+            AccessSecretKey = s3Settings?.credentials?.aws_secret_access_key,
+            BucketName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/BucketName"),
+            ServiceUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/ServiceUrl")
+          };
+        }
+        else
+        {
+          return new S3Configuration()
+          {
+            AccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/AccessKeyId"),
+            AccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/AccessSecretKey"),
+            BucketName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/BucketName"),
+            ServiceUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/ServiceUrl")
+          };
+        }
+      }
+      else if (objType  == typeof(AzureBlobConfiguration))
+      {
+        return new AzureBlobConfiguration()
+        {
+          AccountKey = _awsParameterStoreService.FindParameterByName(parameters, path + "AzureBlobConfiguration/AccountKey"),
+          AccountName = _awsParameterStoreService.FindParameterByName(parameters, path + "AzureBlobConfiguration/AccountName"),
+          AzureBlobContainer = _awsParameterStoreService.FindParameterByName(parameters, path + "AzureBlobConfiguration/AzureBlobContainer"),
+          EndpointAzure = _awsParameterStoreService.FindParameterByName(parameters, path + "AzureBlobConfiguration/EndpointAzure"),
+          EndpointProtocol = _awsParameterStoreService.FindParameterByName(parameters, path + "AzureBlobConfiguration/EndpointProtocol"),
+          FileExtension = _awsParameterStoreService.FindParameterByName(parameters, path + "AzureBlobConfiguration/FileExtension"),
+          Fileheader = _awsParameterStoreService.FindParameterByName(parameters, path + "AzureBlobConfiguration/Fileheader"),
+          FilePathPrefix = _awsParameterStoreService.FindParameterByName(parameters, path + "AzureBlobConfiguration/FilePathPrefix")
+        };
+      }
+      return null;
     }
   }
 }
