@@ -97,5 +97,6 @@ applications:
     - CF_SPACE-sso-pg-service
     - CF_SPACE-vault 
     - CF_SPACE-ssm-service
+    - CF_SPACE-s3-service
   env:
     CACHE_NUGET_PACKAGES: false
