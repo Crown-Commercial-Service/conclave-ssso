@@ -630,12 +630,6 @@ namespace CcsSso.Core.Service.External
           user.UserGroupMemberships.RemoveAll(g => true);
           user.UserAccessRoles.RemoveAll(r => true);
 
-          Console.WriteLine("UpdateUserAsync userProfileRequestInfo.Detail.IdentityProviderIds is not null start.");
-          var elegibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
-                                        .Include(x => x.IdentityProvider)
-                                        .Where(o => o.Organisation.Id == organisation.Id)
-                                        .ToListAsync();
-
           Console.WriteLine("UpdateUserAsync previousGroups & previousRoles success.");
 
           var isPreviouslyUserNamePwdConnectionIncluded = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
@@ -647,6 +641,11 @@ namespace CcsSso.Core.Service.External
           // var isNonUserNamePwdConnectionIncluded = false;
           if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
           {
+            Console.WriteLine("UpdateUserAsync userProfileRequestInfo.Detail.IdentityProviderIds is not null start.");
+            var elegibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
+                                          .Include(x => x.IdentityProvider)
+                                          .Where(o => o.Organisation.Id == organisation.Id)
+                                          .ToListAsync();
 
             Console.WriteLine("UpdateUserAsync elegibleIdentityProviders count:" + elegibleIdentityProviders.Count() + "end.");
 
