@@ -73,7 +73,7 @@ namespace CcsSso.Core.JobScheduler
 
           if (vaultEnabled)
           {
-            if (vaultSource.ToUpper() == "AWS")
+            if (vaultSource?.ToUpper() == "AWS")
             {
               var parameters = LoadAwsSecretsAsync().Result;
 
@@ -177,7 +177,8 @@ namespace CcsSso.Core.JobScheduler
             };
           });
 
-          services.AddSingleton(s => {
+          services.AddSingleton(s =>
+          {
 
             int.TryParse(s3ConfigurationInfo.FileAccessExpirationInHours, out int fileAccessExpirationInHours);
             fileAccessExpirationInHours = fileAccessExpirationInHours == 0 ? 36 : fileAccessExpirationInHours;
@@ -244,9 +245,10 @@ namespace CcsSso.Core.JobScheduler
 
     private static dynamic FillAwsParamsValue(Type objType, List<Parameter> parameters)
     {
+      dynamic? returnParams = null;
       if (objType  == typeof(CiiSettings))
       {
-        return new CiiSettings()
+        returnParams = new CiiSettings()
         {
           Token = _awsParameterStoreService.FindParameterByName(parameters, path + "CIISettings/Token"),
           Url = _awsParameterStoreService.FindParameterByName(parameters, path + "CIISettings/Url")
@@ -254,33 +256,16 @@ namespace CcsSso.Core.JobScheduler
       }
       else if (objType == typeof(List<UserDeleteJobSetting>))
       {
-        var settings = new List<UserDeleteJobSetting>();
-
-        // Array will be like this ANY|12960000|false,|12960000|true
+        // Aws value will be like this ANY|12960000|false,|12960000|true
         string value = _awsParameterStoreService.FindParameterByName(parameters, path + "UserDeleteJobSettings");
         if (!string.IsNullOrWhiteSpace(value))
         {
-          List<string> items = value.Split(',').ToList();
-          foreach (var item in items)
-          {
-            List<string> itemValues = item?.Split('|').ToList();
-            if (itemValues.Any())
-            {
-              settings.Add(new UserDeleteJobSetting()
-              {
-                ServiceClientId = itemValues.Count() >= 1 ? itemValues[0] : String.Empty,
-                UserDeleteThresholdInMinutes = itemValues.Count() >= 2 ? Convert.ToInt32(itemValues[1]) : 0,
-                NotifyOrgAdmin = itemValues.Count() >= 3 ? Convert.ToBoolean(itemValues[2]) : false,
-              });
-            }
-          }
+          returnParams = FillUserDeleteJobSetting(value);
         }
-
-        return settings;
       }
       else if (objType == typeof(EmailConfigurationInfo))
       {
-        return new EmailConfigurationInfo()
+        returnParams = new EmailConfigurationInfo()
         {
           ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "Email/ApiKey"),
           BulkUploadReportTemplateId= _awsParameterStoreService.FindParameterByName(parameters, path + "Email/BulkUploadReportTemplateId"),
@@ -289,7 +274,7 @@ namespace CcsSso.Core.JobScheduler
       }
       else if (objType == typeof(SecurityApiSettings))
       {
-        return new SecurityApiSettings()
+        returnParams = new SecurityApiSettings()
         {
           ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "SecurityApiSettings/ApiKey"),
           Url = _awsParameterStoreService.FindParameterByName(parameters, path + "SecurityApiSettings/Url"),
@@ -297,7 +282,7 @@ namespace CcsSso.Core.JobScheduler
       }
       else if (objType == typeof(ScheduleJobSettings))
       {
-        return new ScheduleJobSettings()
+        returnParams = new ScheduleJobSettings()
         {
           BulkUploadJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/BulkUploadJobExecutionFrequencyInMinutes")),
           InactiveOrganisationDeletionJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/InactiveOrganisationDeletionJobExecutionFrequencyInMinutes")),
@@ -307,7 +292,7 @@ namespace CcsSso.Core.JobScheduler
       }
       else if (objType == typeof(BulkUploadSettings))
       {
-        return new BulkUploadSettings()
+        returnParams = new BulkUploadSettings()
         {
           BulkUploadReportUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "BulkUploadSettings/BulkUploadReportUrl")
         };
@@ -316,25 +301,21 @@ namespace CcsSso.Core.JobScheduler
       {
         var redisCacheName = _awsParameterStoreService.FindParameterByName(parameters, path + "RedisCacheSettings/Name");
         var redisCacheConnectionString = _awsParameterStoreService.FindParameterByName(parameters, path + "RedisCacheSettings/ConnectionString");
+        string dynamicRedisCacheConnectionString = null;
+
         if (!string.IsNullOrEmpty(redisCacheName))
         {
-          var dynamicRedisCacheConnectionString = UtilityHelper.GetRedisCacheConnectionString(redisCacheName, redisCacheConnectionString);
-          return new RedisCacheSettingsVault()
-          {
-            ConnectionString = dynamicRedisCacheConnectionString
-          };
-        }
-        else
+           dynamicRedisCacheConnectionString = UtilityHelper.GetRedisCacheConnectionString(redisCacheName, redisCacheConnectionString);
+        }        
+
+        returnParams = new RedisCacheSettingsVault()
         {
-          return new RedisCacheSettingsVault()
-          {
-            ConnectionString = redisCacheConnectionString
-          };
-        }
+          ConnectionString = dynamicRedisCacheConnectionString != null ? dynamicRedisCacheConnectionString : redisCacheConnectionString
+        };
       }
       else if (objType == typeof(DocUploadInfoVault))
       {
-        return new DocUploadInfoVault()
+        returnParams = new DocUploadInfoVault()
         {
           Url = _awsParameterStoreService.FindParameterByName(parameters, path + "DocUpload/Url"),
           SizeValidationValue = _awsParameterStoreService.FindParameterByName(parameters, path + "DocUpload/SizeValidationValue"),
@@ -344,7 +325,7 @@ namespace CcsSso.Core.JobScheduler
       }
       else if (objType == typeof(S3ConfigurationInfoVault))
       {
-        return new S3ConfigurationInfoVault()
+        returnParams = new S3ConfigurationInfoVault()
         {
           AccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/AccessKeyId"),
           AccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/AccessSecretKey"),
@@ -355,7 +336,28 @@ namespace CcsSso.Core.JobScheduler
           FileAccessExpirationInHours = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/FileAccessExpirationInHours"),
         };
       }
-      return null;
+      return returnParams;
+    }
+
+    private static List<UserDeleteJobSetting> FillUserDeleteJobSetting(string value)
+    {
+      var settings = new List<UserDeleteJobSetting>();
+      List<string> items = value.Split(',').ToList();
+
+      foreach (var item in items)
+      {
+        List<string> itemValues = item?.Split('|').ToList();
+        if (itemValues.Any())
+        {
+          settings.Add(new UserDeleteJobSetting()
+          {
+            ServiceClientId = itemValues.Count() >= 1 ? itemValues[0] : String.Empty,
+            UserDeleteThresholdInMinutes = itemValues.Count() >= 2 ? Convert.ToInt32(itemValues[1]) : 0,
+            NotifyOrgAdmin = itemValues.Count() >= 3 ? Convert.ToBoolean(itemValues[2]) : false,
+          });
+        }
+      }
+      return settings;
     }
   }
 }
