@@ -123,7 +123,7 @@ namespace CcsSso.Core.ReportingScheduler
 
       if (vaultEnabled)
       {
-        if (vaultSource.ToUpper() == "AWS")
+        if (vaultSource?.ToUpper() == "AWS")
         {
           var parameters = LoadAwsSecretsAsync().Result;
 
@@ -217,24 +217,18 @@ namespace CcsSso.Core.ReportingScheduler
 
     private static dynamic FillAwsParamsValue(Type objType, List<Parameter> parameters, string apiConfig = "")
     {
-      if (objType  == typeof(ApiConfig))
+      dynamic? returnParams = null;
+      if (objType  == typeof(ApiConfig) && !string.IsNullOrWhiteSpace(apiConfig))
       {
-        if (!string.IsNullOrWhiteSpace(apiConfig))
+        returnParams = new ApiConfig()
         {
-          return new ApiConfig()
-          {
-            Url = _awsParameterStoreService.FindParameterByName(parameters, path + apiConfig + "/Url"),
-            ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + apiConfig + "/ApiKey"),
-          };
-        }
-        else
-        {
-          return null;
-        }
+          Url = _awsParameterStoreService.FindParameterByName(parameters, path + apiConfig + "/Url"),
+          ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + apiConfig + "/ApiKey"),
+        };
       }
       else if (objType  == typeof(ScheduleJob))
       {
-        return new ScheduleJob()
+        returnParams = new ScheduleJob()
         {
           AuditLogReportingJobScheduleInMinutes   = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJob/AuditLogReportingJobScheduleInMinutes")),
           ContactReportingJobScheduleInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJob/ContactReportingJobScheduleInMinutes")),
@@ -244,7 +238,7 @@ namespace CcsSso.Core.ReportingScheduler
       }
       else if (objType  == typeof(ReportDataDuration))
       {
-        return new ReportDataDuration()
+        returnParams = new ReportDataDuration()
         {
           AuditLogReportingDurationInMinutes =Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ReportDataDuration/AuditLogReportingDurationInMinutes")),
           ContactReportingDurationInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ReportDataDuration/ContactReportingDurationInMinutes")),
@@ -254,34 +248,27 @@ namespace CcsSso.Core.ReportingScheduler
       }
       else if (objType  == typeof(S3Configuration))
       {
-        var s3Name = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/Name"); 
+        var s3Name = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/Name");
+        S3Settings? s3Settings = null;
 
         if (!string.IsNullOrEmpty(s3Name))
         {
-          var s3Settings = UtilityHelper.GetS3Settings(s3Name);
+          s3Settings = UtilityHelper.GetS3Settings(s3Name);
+        }
 
-          return new S3Configuration()
-          {
-            AccessKeyId = s3Settings?.credentials?.aws_access_key_id,
-            AccessSecretKey = s3Settings?.credentials?.aws_secret_access_key,
-            BucketName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/BucketName"),
-            ServiceUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/ServiceUrl")
-          };
-        }
-        else
+        returnParams = new S3Configuration()
         {
-          return new S3Configuration()
-          {
-            AccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/AccessKeyId"),
-            AccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/AccessSecretKey"),
-            BucketName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/BucketName"),
-            ServiceUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/ServiceUrl")
-          };
-        }
+          AccessKeyId = s3Settings != null ? s3Settings.credentials.aws_access_key_id :
+                                            _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/AccessKeyId"),
+          AccessSecretKey = s3Settings != null ? s3Settings.credentials?.aws_secret_access_key : 
+                                            _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/AccessSecretKey"),
+          BucketName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/BucketName"),
+          ServiceUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "S3Configuration/ServiceUrl")
+        };
       }
       else if (objType  == typeof(AzureBlobConfiguration))
       {
-        return new AzureBlobConfiguration()
+        returnParams = new AzureBlobConfiguration()
         {
           AccountKey = _awsParameterStoreService.FindParameterByName(parameters, path + "AzureBlobConfiguration/AccountKey"),
           AccountName = _awsParameterStoreService.FindParameterByName(parameters, path + "AzureBlobConfiguration/AccountName"),
@@ -293,7 +280,7 @@ namespace CcsSso.Core.ReportingScheduler
           FilePathPrefix = _awsParameterStoreService.FindParameterByName(parameters, path + "AzureBlobConfiguration/FilePathPrefix")
         };
       }
-      return null;
+      return returnParams;
     }
   }
 }

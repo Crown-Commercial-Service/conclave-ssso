@@ -60,12 +60,41 @@ namespace CcsSso.Shared.Services
       if (parameter != null)
       {
         value = Convert.ToString(parameter.Value?.Trim());
-      }      
+      }
       else
       {
         Console.WriteLine("AWS - Parameter not found - " + name);
       }
       return value;
+    }
+
+    public KeyValuePair<string, string> GetParameter(List<Parameter> parameters, string name, string key)
+    {
+      string value = FindParameterByName(parameters, name);
+      return new KeyValuePair<string, string>(key, value);
+    }
+
+    public List<KeyValuePair<string, string>> GetParameterFromCommaSeparated(List<Parameter> parameters, string name, string key)
+    {
+      List<KeyValuePair<string, string>> data = new List<KeyValuePair<string, string>>();
+      string value = FindParameterByName(parameters, name);
+      if (value != null)
+      {
+        List<string> items = value.Split(',').ToList();
+        if (items != null && items.Count > 0)
+        {
+          int index = 0;
+          foreach (var item in items)
+          {
+            var text = item != null ? item.Trim() : string.Empty;
+            if (!string.IsNullOrEmpty(text))
+            {
+              data.Add(new KeyValuePair<string, string>($"{key}:{index++}", text));
+            }
+          }
+        }
+      }
+      return data;
     }
   }
 }

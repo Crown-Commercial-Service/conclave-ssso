@@ -38,16 +38,17 @@ namespace CcsSso.Security.Api.CustomOptions
     public async Task GetSecrets()
     {
       var parameters = await _awsParameterStoreService.GetParameters(path);
+      var configurations = new List<KeyValuePair<string, string>>();
 
-      Data.Add("EnableAdditionalLogs", _awsParameterStoreService.FindParameterByName(parameters, path + "EnableAdditionalLogs"));
-      Data.Add("CustomDomain", _awsParameterStoreService.FindParameterByName(parameters, path + "CustomDomain"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "EnableAdditionalLogs", "EnableAdditionalLogs"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "CustomDomain", "CustomDomain"));
 
-      GetParameterFromCommaSeparated(parameters, path + "CorsDomains", "CorsDomains");
-      GetParameterFromCommaSeparated(parameters, path + "AllowedDomains", "AllowedDomains");
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "CorsDomains", "CorsDomains"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "AllowedDomains", "AllowedDomains"));
 
-      Data.Add("PasswordPolicy:LowerAndUpperCaseWithDigits", _awsParameterStoreService.FindParameterByName(parameters, path + "PasswordPolicy/LowerAndUpperCaseWithDigits"));
-      Data.Add("PasswordPolicy:RequiredLength", _awsParameterStoreService.FindParameterByName(parameters, path + "PasswordPolicy/RequiredLength"));
-      Data.Add("PasswordPolicy:RequiredUniqueChars", _awsParameterStoreService.FindParameterByName(parameters, path + "PasswordPolicy/RequiredUniqueChars"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "PasswordPolicy/LowerAndUpperCaseWithDigits", "PasswordPolicy:LowerAndUpperCaseWithDigits"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "PasswordPolicy/RequiredLength", "PasswordPolicy:RequiredLength"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "PasswordPolicy/RequiredUniqueChars", "PasswordPolicy:RequiredUniqueChars"));
 
       var redisCacheName = _awsParameterStoreService.FindParameterByName(parameters, path + "RedisCacheSettings/Name");
       var redisCacheConnectionString = _awsParameterStoreService.FindParameterByName(parameters, path + "RedisCacheSettings/ConnectionString");
@@ -62,35 +63,35 @@ namespace CcsSso.Security.Api.CustomOptions
         Data.Add("RedisCacheSettings:ConnectionString", redisCacheConnectionString);
       }
 
-      Data.Add("RedisCacheSettings:IsEnabled", _awsParameterStoreService.FindParameterByName(parameters, path + "RedisCacheSettings/IsEnabled"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "RedisCacheSettings/IsEnabled", "RedisCacheSettings:IsEnabled"));
 
-      Data.Add("SessionConfig:SessionTimeoutInMinutes", _awsParameterStoreService.FindParameterByName(parameters, path + "SessionConfig/SessionTimeoutInMinutes"));
-      Data.Add("SessionConfig:StateExpirationInMinutes", _awsParameterStoreService.FindParameterByName(parameters, path + "SessionConfig/StateExpirationInMinutes"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "SessionConfig/SessionTimeoutInMinutes", "SessionConfig:SessionTimeoutInMinutes"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "SessionConfig/StateExpirationInMinutes", "SessionConfig:StateExpirationInMinutes"));
 
-      Data.Add("SecurityApiKeySettings:SecurityApiKey", _awsParameterStoreService.FindParameterByName(parameters, path + "SecurityApiKeySettings/SecurityApiKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "SecurityApiKeySettings/SecurityApiKey", "SecurityApiKeySettings:SecurityApiKey"));
 
-      GetParameterFromCommaSeparated(parameters, path + "SecurityApiKeySettings/ApiKeyValidationExcludedRoutes", "SecurityApiKeySettings:ApiKeyValidationExcludedRoutes");
-      GetParameterFromCommaSeparated(parameters, path + "SecurityApiKeySettings/BearerTokenValidationIncludedRoutes", "SecurityApiKeySettings:BearerTokenValidationIncludedRoutes");
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "SecurityApiKeySettings/ApiKeyValidationExcludedRoutes", "SecurityApiKeySettings:ApiKeyValidationExcludedRoutes"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "SecurityApiKeySettings/BearerTokenValidationIncludedRoutes", "SecurityApiKeySettings:BearerTokenValidationIncludedRoutes"));
 
-      Data.Add("JwtTokenConfig:Issuer", _awsParameterStoreService.FindParameterByName(parameters, path + "JwtTokenConfig/Issuer"));
-      Data.Add("JwtTokenConfig:RsaPrivateKey", _awsParameterStoreService.FindParameterByName(parameters, path + "JwtTokenConfig/RsaPrivateKey"));
-      Data.Add("JwtTokenConfig:RsaPublicKey", _awsParameterStoreService.FindParameterByName(parameters, path + "JwtTokenConfig/RsaPublicKey"));
-      Data.Add("JwtTokenConfig:IDTokenExpirationTimeInMinutes", _awsParameterStoreService.FindParameterByName(parameters, path + "JwtTokenConfig/IDTokenExpirationTimeInMinutes"));
-      Data.Add("JwtTokenConfig:LogoutTokenExpireTimeInMinutes", _awsParameterStoreService.FindParameterByName(parameters, path + "JwtTokenConfig/LogoutTokenExpireTimeInMinutes"));
-      Data.Add("JwtTokenConfig:JwksUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "JwtTokenConfig/JwksUrl"));
-      Data.Add("JwtTokenConfig:IdamClienId", _awsParameterStoreService.FindParameterByName(parameters, path + "JwtTokenConfig/IdamClienId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "JwtTokenConfig/Issuer", "JwtTokenConfig:Issuer"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "JwtTokenConfig/RsaPrivateKey", "JwtTokenConfig:RsaPrivateKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "JwtTokenConfig/RsaPublicKey", "JwtTokenConfig:RsaPublicKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "JwtTokenConfig/IDTokenExpirationTimeInMinutes", "JwtTokenConfig:IDTokenExpirationTimeInMinutes"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "JwtTokenConfig/LogoutTokenExpireTimeInMinutes", "JwtTokenConfig:LogoutTokenExpireTimeInMinutes"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "JwtTokenConfig/JwksUrl", "JwtTokenConfig:JwksUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "JwtTokenConfig/IdamClienId", "JwtTokenConfig:IdamClienId"));
 
       // Keep the trailing "/" for all the urls. Ex: "https://abc.com/user-profiles/"
-      Data.Add("WrapperApi:ApiKey", _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApi/ApiKey"));
-      Data.Add("WrapperApi:UserServiceUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApi/UserServiceUrl"));
-      Data.Add("WrapperApi:ConfigurationServiceUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApi/ConfigurationServiceUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApi/ApiKey", "WrapperApi:ApiKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApi/UserServiceUrl", "WrapperApi:UserServiceUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApi/ConfigurationServiceUrl", "WrapperApi:ConfigurationServiceUrl"));
 
-      Data.Add("RollBarLogger:Token", _awsParameterStoreService.FindParameterByName(parameters, path + "RollBarLogger/Token"));
-      Data.Add("RollBarLogger:Environment", _awsParameterStoreService.FindParameterByName(parameters, path + "RollBarLogger/Environment"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "RollBarLogger/Token", "RollBarLogger:Token"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "RollBarLogger/Environment", "RollBarLogger:Environment"));
 
-      Data.Add("Serilog", _awsParameterStoreService.FindParameterByName(parameters, path + "Serilog"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Serilog", "Serilog"));
 
-      Data.Add("MockProvider:LoginUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "MockProvider/LoginUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "MockProvider/LoginUrl", "MockProvider:LoginUrl"));
 
       var securityDbName = _awsParameterStoreService.FindParameterByName(parameters, path + "SecurityDbName");
       var securityDbConnection = _awsParameterStoreService.FindParameterByName(parameters, path + "SecurityDbConnection");
@@ -105,85 +106,68 @@ namespace CcsSso.Security.Api.CustomOptions
         Data.Add("SecurityDbConnection", securityDbConnection);
       }
 
-      Data.Add("Crypto:CookieEncryptionKey", _awsParameterStoreService.FindParameterByName(parameters, path + "Crypto/CookieEncryptionKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Crypto/CookieEncryptionKey", "Crypto:CookieEncryptionKey"));
 
-      Data.Add("MfaSettings:TicketExpirationInMinutes", _awsParameterStoreService.FindParameterByName(parameters, path + "MfaSettings/TicketExpirationInMinutes"));
-      Data.Add("MfaSettings:MfaResetRedirectUri", _awsParameterStoreService.FindParameterByName(parameters, path + "MfaSettings/MfaResetRedirectUri"));
-      Data.Add("MfaSettings:MFAResetPersistentTicketListExpirationInDays", _awsParameterStoreService.FindParameterByName(parameters, path + "MfaSettings/MFAResetPersistentTicketListExpirationInDays"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "MfaSettings/TicketExpirationInMinutes", "MfaSettings:TicketExpirationInMinutes"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "MfaSettings/MfaResetRedirectUri", "MfaSettings:MfaResetRedirectUri"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "MfaSettings/MFAResetPersistentTicketListExpirationInDays", "MfaSettings:MFAResetPersistentTicketListExpirationInDays"));
 
-      Data.Add("OpenIdConfigurationSettings:Issuer", _awsParameterStoreService.FindParameterByName(parameters, path + "OpenIdConfigurationSettings/Issuer"));
-      Data.Add("OpenIdConfigurationSettings:AuthorizationEndpoint", _awsParameterStoreService.FindParameterByName(parameters, path + "OpenIdConfigurationSettings/AuthorizationEndpoint"));
-      Data.Add("OpenIdConfigurationSettings:TokenEndpoint", _awsParameterStoreService.FindParameterByName(parameters, path + "OpenIdConfigurationSettings/TokenEndpoint"));
-      Data.Add("OpenIdConfigurationSettings:DeviceAuthorizationEndpoint", _awsParameterStoreService.FindParameterByName(parameters, path + "OpenIdConfigurationSettings/DeviceAuthorizationEndpoint"));
-      Data.Add("OpenIdConfigurationSettings:UserinfoEndpoint", _awsParameterStoreService.FindParameterByName(parameters, path + "OpenIdConfigurationSettings/UserinfoEndpoint"));
-      Data.Add("OpenIdConfigurationSettings:MfaChallengeEndpoint", _awsParameterStoreService.FindParameterByName(parameters, path + "OpenIdConfigurationSettings/MfaChallengeEndpoint"));
-      Data.Add("OpenIdConfigurationSettings:JwksUri", _awsParameterStoreService.FindParameterByName(parameters, path + "OpenIdConfigurationSettings/JwksUri"));
-      Data.Add("OpenIdConfigurationSettings:RegistrationEndpoint", _awsParameterStoreService.FindParameterByName(parameters, path + "OpenIdConfigurationSettings/RegistrationEndpoint"));
-      Data.Add("OpenIdConfigurationSettings:RevocationEndpoint", _awsParameterStoreService.FindParameterByName(parameters, path + "OpenIdConfigurationSettings/RevocationEndpoint"));
-      Data.Add("OpenIdConfigurationSettings:RequestUriParameterSupported", _awsParameterStoreService.FindParameterByName(parameters, path + "OpenIdConfigurationSettings/RequestUriParameterSupported"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OpenIdConfigurationSettings/Issuer", "OpenIdConfigurationSettings:Issuer"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OpenIdConfigurationSettings/AuthorizationEndpoint", "OpenIdConfigurationSettings:AuthorizationEndpoint"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OpenIdConfigurationSettings/TokenEndpoint", "OpenIdConfigurationSettings:TokenEndpoint"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OpenIdConfigurationSettings/DeviceAuthorizationEndpoint", "OpenIdConfigurationSettings:DeviceAuthorizationEndpoint"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OpenIdConfigurationSettings/UserinfoEndpoint", "OpenIdConfigurationSettings:UserinfoEndpoint"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OpenIdConfigurationSettings/MfaChallengeEndpoint", "OpenIdConfigurationSettings:MfaChallengeEndpoint"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OpenIdConfigurationSettings/JwksUri", "OpenIdConfigurationSettings:JwksUri"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OpenIdConfigurationSettings/RegistrationEndpoint", "OpenIdConfigurationSettings:RegistrationEndpoint"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OpenIdConfigurationSettings/RevocationEndpoint", "OpenIdConfigurationSettings:RevocationEndpoint"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OpenIdConfigurationSettings/RequestUriParameterSupported", "OpenIdConfigurationSettings:RequestUriParameterSupported"));
 
-      GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/ScopesSupported", "OpenIdConfigurationSettings:ScopesSupported");
-      GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/ResponseTypesSupported", "OpenIdConfigurationSettings:ResponseTypesSupported");
-      GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/CodeChallengeMethodsSupported", "OpenIdConfigurationSettings:CodeChallengeMethodsSupported");
-      GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/ResponseModesSupported", "OpenIdConfigurationSettings:ResponseModesSupported");
-      GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/SubjectTypesSupported", "OpenIdConfigurationSettings:SubjectTypesSupported");
-      GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/IdTokenSigningAlgValuesSupported", "OpenIdConfigurationSettings:IdTokenSigningAlgValuesSupported");
-      GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/TokenEndpointAuthMethodsSupported", "OpenIdConfigurationSettings:TokenEndpointAuthMethodsSupported");
-      GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/ClaimsSupported", "OpenIdConfigurationSettings:ClaimsSupported");
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/ScopesSupported", "OpenIdConfigurationSettings:ScopesSupported"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/ResponseTypesSupported", "OpenIdConfigurationSettings:ResponseTypesSupported"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/CodeChallengeMethodsSupported", "OpenIdConfigurationSettings:CodeChallengeMethodsSupported"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/ResponseModesSupported", "OpenIdConfigurationSettings:ResponseModesSupported"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/SubjectTypesSupported", "OpenIdConfigurationSettings:SubjectTypesSupported"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/IdTokenSigningAlgValuesSupported", "OpenIdConfigurationSettings:IdTokenSigningAlgValuesSupported"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/TokenEndpointAuthMethodsSupported", "OpenIdConfigurationSettings:TokenEndpointAuthMethodsSupported"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OpenIdConfigurationSettings/ClaimsSupported", "OpenIdConfigurationSettings:ClaimsSupported"));
 
-      Data.Add("IsApiGatewayEnabled", _awsParameterStoreService.FindParameterByName(parameters, path + "IsApiGatewayEnabled"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "IsApiGatewayEnabled", "IsApiGatewayEnabled"));
 
-      Data.Add("Auth0:ClientId", _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/ClientId"));
-      Data.Add("Auth0:Secret", _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/Secret"));
-      Data.Add("Auth0:Domain", _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/Domain"));
-      Data.Add("Auth0:DBConnectionName", _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/DBConnectionName"));
-      Data.Add("Auth0:ManagementApiBaseUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/ManagementApiBaseUrl"));
-      Data.Add("Auth0:ManagementApiIdentifier", _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/ManagementApiIdentifier"));
-      Data.Add("Auth0:DefaultAudience", _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/DefaultAudience"));
-      Data.Add("Auth0:UserStore", _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/UserStore"));
-      Data.Add("Auth0:DefaultDBConnectionId", _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/DefaultDBConnectionId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Auth0/ClientId", "Auth0:ClientId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Auth0/Secret", "Auth0:Secret"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Auth0/Domain", "Auth0:Domain"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Auth0/DBConnectionName", "Auth0:DBConnectionName"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Auth0/ManagementApiBaseUrl", "Auth0:ManagementApiBaseUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Auth0/ManagementApiIdentifier", "Auth0:ManagementApiIdentifier"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Auth0/DefaultAudience", "Auth0:DefaultAudience"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Auth0/UserStore", "Auth0:UserStore"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Auth0/DefaultDBConnectionId", "Auth0:DefaultDBConnectionId"));
 
-      Data.Add("AWSCognito:Region", _awsParameterStoreService.FindParameterByName(parameters, path + "AWSCognito/Region"));
-      Data.Add("AWSCognito:PoolId", _awsParameterStoreService.FindParameterByName(parameters, path + "AWSCognito/PoolId"));
-      Data.Add("AWSCognito:AppClientId", _awsParameterStoreService.FindParameterByName(parameters, path + "AWSCognito/AppClientId"));
-      Data.Add("AWSCognito:AccessKeyId", _awsParameterStoreService.FindParameterByName(parameters, path + "AWSCognito/AccessKeyId"));
-      Data.Add("AWSCognito:AccessSecretKey", _awsParameterStoreService.FindParameterByName(parameters, path + "AWSCognito/AccessSecretKey"));
-      Data.Add("AWSCognito:AWSCognitoURL", _awsParameterStoreService.FindParameterByName(parameters, path + "AWSCognito/AWSCognitoURL"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "AWSCognito/Region", "AWSCognito:Region"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "AWSCognito/PoolId", "AWSCognito:PoolId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "AWSCognito/AppClientId", "AWSCognito:AppClientId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "AWSCognito/AccessKeyId", "AWSCognito:AccessKeyId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "AWSCognito/AccessSecretKey", "AWSCognito:AccessSecretKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "AWSCognito/AWSCognitoURL", "AWSCognito:AWSCognitoURL"));
 
-      Data.Add("IdentityProvider", _awsParameterStoreService.FindParameterByName(parameters, path + "IdentityProvider"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "IdentityProvider", "IdentityProvider"));
 
-      Data.Add("Email:ApiKey", _awsParameterStoreService.FindParameterByName(parameters, path + "Email/ApiKey"));
-      Data.Add("Email:UserActivationEmailTemplateId", _awsParameterStoreService.FindParameterByName(parameters, path + "Email/UserActivationEmailTemplateId"));
-      Data.Add("Email:ResetPasswordEmailTemplateId", _awsParameterStoreService.FindParameterByName(parameters, path + "Email/ResetPasswordEmailTemplateId"));
-      Data.Add("Email:NominateEmailTemplateId", _awsParameterStoreService.FindParameterByName(parameters, path + "Email/NominateEmailTemplateId"));
-      Data.Add("Email:MfaResetEmailTemplateId", _awsParameterStoreService.FindParameterByName(parameters, path + "Email/MfaResetEmailTemplateId"));
-      Data.Add("Email:UserActivationLinkTTLInMinutes", _awsParameterStoreService.FindParameterByName(parameters, path + "Email/UserActivationLinkTTLInMinutes"));
-      Data.Add("Email:ChangePasswordNotificationTemplateId", _awsParameterStoreService.FindParameterByName(parameters, path + "Email/ChangePasswordNotificationTemplateId"));
-      Data.Add("Email:ResetPasswordLinkTTLInMinutes", _awsParameterStoreService.FindParameterByName(parameters, path + "Email/ResetPasswordLinkTTLInMinutes"));
-      Data.Add("Email:SendNotificationsEnabled", _awsParameterStoreService.FindParameterByName(parameters, path + "Email/SendNotificationsEnabled"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/ApiKey", "Email:ApiKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/UserActivationEmailTemplateId", "Email:UserActivationEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/ResetPasswordEmailTemplateId", "Email:ResetPasswordEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/NominateEmailTemplateId", "Email:NominateEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/MfaResetEmailTemplateId", "Email:MfaResetEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/UserActivationLinkTTLInMinutes", "Email:UserActivationLinkTTLInMinutes"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/ChangePasswordNotificationTemplateId", "Email:ChangePasswordNotificationTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/ResetPasswordLinkTTLInMinutes", "Email:ResetPasswordLinkTTLInMinutes"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/SendNotificationsEnabled", "Email:SendNotificationsEnabled"));
 
-    }
-
-    private void GetParameterFromCommaSeparated(List<Parameter> parameters, string name, string key)
-    {
-      string value = _awsParameterStoreService.FindParameterByName(parameters, name);
-      if (value != null)
+      foreach (var configuration in configurations)
       {
-        List<string> items = value.Split(',').ToList();
-        if (items != null && items.Count > 0)
-        {
-          int index = 0;
-          foreach (var item in items)
-          {
-            var text = item != null ? item.Trim() : string.Empty;
-            if (!string.IsNullOrEmpty(text))
-            {
-              Data.Add($"{key}:{index++}", text);
-            }
-          }
-        }
+        Data.Add(configuration);
       }
-    }
+    }    
   }
 
   public class ParameterStoreConfigurationSource : IConfigurationSource

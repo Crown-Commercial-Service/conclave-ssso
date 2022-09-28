@@ -33,6 +33,7 @@ namespace CcsSso.Adaptor.Api.CustomOptions
     public async Task GetSecrets()
     {
       var parameters = await _awsParameterStoreService.GetParameters(path);
+      var configurations = new List<KeyValuePair<string, string>>();
 
       var dbName = _awsParameterStoreService.FindParameterByName(parameters, path + "DbName");
       var dbConnection = _awsParameterStoreService.FindParameterByName(parameters, path + "DbConnection");
@@ -47,20 +48,20 @@ namespace CcsSso.Adaptor.Api.CustomOptions
         Data.Add("DbConnection", dbConnection);
       }
 
-      Data.Add("ApiKey", _awsParameterStoreService.FindParameterByName(parameters, path + "ApiKey"));
-      Data.Add("IsApiGatewayEnabled", _awsParameterStoreService.FindParameterByName(parameters, path + "IsApiGatewayEnabled"));
-      Data.Add("InMemoryCacheExpirationInMinutes", _awsParameterStoreService.FindParameterByName(parameters, path + "InMemoryCacheExpirationInMinutes"));
-      Data.Add("OrganisationUserRequestPageSize", _awsParameterStoreService.FindParameterByName(parameters, path + "OrganisationUserRequestPageSize"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ApiKey", "ApiKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "IsApiGatewayEnabled", "IsApiGatewayEnabled"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "InMemoryCacheExpirationInMinutes", "InMemoryCacheExpirationInMinutes"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrganisationUserRequestPageSize", "OrganisationUserRequestPageSize"));
 
-      Data.Add("WrapperApiSettings:UserApiKey", _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/UserApiKey"));
-      Data.Add("WrapperApiSettings:OrgApiKey", _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/OrgApiKey"));
-      Data.Add("WrapperApiSettings:ContactApiKey", _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ContactApiKey"));
-      Data.Add("WrapperApiSettings:ApiGatewayEnabledUserUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledUserUrl"));
-      Data.Add("WrapperApiSettings:ApiGatewayEnabledOrgUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledOrgUrl"));
-      Data.Add("WrapperApiSettings:ApiGatewayEnabledContactUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledContactUrl"));
-      Data.Add("WrapperApiSettings:ApiGatewayDisabledUserUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledUserUrl"));
-      Data.Add("WrapperApiSettings:ApiGatewayDisabledOrgUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledOrgUrl"));
-      Data.Add("WrapperApiSettings:ApiGatewayDisabledContactUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledContactUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/UserApiKey", "WrapperApiSettings:UserApiKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/OrgApiKey", "WrapperApiSettings:OrgApiKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/ContactApiKey", "WrapperApiSettings:ContactApiKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/ApiGatewayEnabledUserUrl", "WrapperApiSettings:ApiGatewayEnabledUserUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/ApiGatewayEnabledOrgUrl", "WrapperApiSettings:ApiGatewayEnabledOrgUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/ApiGatewayEnabledContactUrl", "WrapperApiSettings:ApiGatewayEnabledContactUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/ApiGatewayDisabledUserUrl", "WrapperApiSettings:ApiGatewayDisabledUserUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/ApiGatewayDisabledOrgUrl", "WrapperApiSettings:ApiGatewayDisabledOrgUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/ApiGatewayDisabledContactUrl", "WrapperApiSettings:ApiGatewayDisabledContactUrl"));
 
       var redisCacheName = _awsParameterStoreService.FindParameterByName(parameters, path + "RedisCacheSettings/Name");
       var redisCacheConnectionString = _awsParameterStoreService.FindParameterByName(parameters, path + "RedisCacheSettings/ConnectionString");
@@ -75,8 +76,8 @@ namespace CcsSso.Adaptor.Api.CustomOptions
         Data.Add("RedisCacheSettings:ConnectionString", redisCacheConnectionString);
       }
 
-      Data.Add("RedisCacheSettings:IsEnabled", _awsParameterStoreService.FindParameterByName(parameters, path + "RedisCacheSettings/IsEnabled"));
-      Data.Add("RedisCacheSettings:CacheExpirationInMinutes", _awsParameterStoreService.FindParameterByName(parameters, path + "RedisCacheSettings/CacheExpirationInMinutes"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "RedisCacheSettings/IsEnabled", "RedisCacheSettings:IsEnabled"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "RedisCacheSettings/CacheExpirationInMinutes", "RedisCacheSettings:CacheExpirationInMinutes"));
 
       var queueInfoName = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/Name");
 
@@ -92,33 +93,17 @@ namespace CcsSso.Adaptor.Api.CustomOptions
         Data.Add("QueueInfo:AccessSecretKey", _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AccessSecretKey"));
       }
 
-      Data.Add("QueueInfo:ServiceUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/ServiceUrl"));
-      Data.Add("QueueInfo:RecieveMessagesMaxCount", _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/RecieveMessagesMaxCount"));
-      Data.Add("QueueInfo:RecieveWaitTimeInSeconds", _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/RecieveWaitTimeInSeconds"));
-      Data.Add("QueueInfo:PushDataQueueUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataQueueUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "QueueInfo/ServiceUrl", "QueueInfo:ServiceUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "QueueInfo/RecieveMessagesMaxCount", "QueueInfo:RecieveMessagesMaxCount"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "QueueInfo/RecieveWaitTimeInSeconds", "QueueInfo:RecieveWaitTimeInSeconds"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "QueueInfo/PushDataQueueUrl", "QueueInfo:PushDataQueueUrl"));
 
-      Data.Add("CiiApiSettings:Url", _awsParameterStoreService.FindParameterByName(parameters, path + "CiiApiSettings/Url"));
-      Data.Add("CiiApiSettings:SpecialToken", _awsParameterStoreService.FindParameterByName(parameters, path + "CiiApiSettings/SpecialToken"));
-    }
-
-    private void GetParameterFromCommaSeparated(List<Parameter> parameters, string name, string key)
-    {
-      string value = _awsParameterStoreService.FindParameterByName(parameters, name);
-      if (value != null)
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "CiiApiSettings/Url", "CiiApiSettings:Url"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "CiiApiSettings/SpecialToken", "CiiApiSettings:SpecialToken"));
+    
+      foreach (var configuration in configurations)
       {
-        List<string> items = value.Split(',').ToList();
-        if (items != null && items.Count > 0)
-        {
-          int index = 0;
-          foreach (var item in items)
-          {
-            var text = item != null ? item.Trim() : string.Empty;
-            if (!string.IsNullOrEmpty(text))
-            {
-              Data.Add($"{key}:{index++}", text);
-            }
-          }
-        }
+        Data.Add(configuration);
       }
     }
   }
