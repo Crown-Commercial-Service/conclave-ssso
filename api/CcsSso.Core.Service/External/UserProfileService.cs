@@ -633,7 +633,7 @@ namespace CcsSso.Core.Service.External
           Console.WriteLine("UpdateUserAsync userProfileRequestInfo.Detail.IdentityProviderIds is not null start.");
           var elegibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
                                         .Include(x => x.IdentityProvider)
-                                        //.Where(o => o.Organisation.Id == organisation.Id)
+                                        .Where(o => o.Organisation.Id == organisation.Id)
                                         .ToListAsync();
 
           Console.WriteLine("UpdateUserAsync previousGroups & previousRoles success.");
