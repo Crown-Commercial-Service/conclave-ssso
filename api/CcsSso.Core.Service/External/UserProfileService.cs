@@ -77,7 +77,7 @@ namespace CcsSso.Core.Service.External
 
       var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
         .Include(x => x.IdentityProvider)
-        .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id)).ToListAsync();
+        .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id) && i.Organisation.Id == organisation.Id).ToListAsync();
 
       var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
       var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
