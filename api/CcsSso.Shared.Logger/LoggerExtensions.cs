@@ -14,19 +14,24 @@ namespace CcsSso.Logs.Extensions
       return app;
     }
 
-    public static void AddRollbarLoggerServices(this IServiceCollection services)
-    {
-      services.AddRollbarLogger(loggerOptions =>
-      {
-        loggerOptions.Filter =
-          (loggerName, loglevel) => loglevel >= LogLevel.Trace;
-      });
-    }
+    //public static void AddRollbarLoggerServices(this IServiceCollection services)
+    //{
+    //  services.AddRollbarLogger(loggerOptions =>
+    //  {
+    //    loggerOptions.Filter =
+    //      (loggerName, loglevel) => loglevel >= LogLevel.Trace;
+    //  });
+    //}
 
-    public static void ConfigureRollbarSingleton(string rollbarAccessToken, string rollbarEnvironment)
+    public static void ConfigureRollbarSingleton(this IServiceCollection services, string rollbarAccessToken, string rollbarEnvironment)
     {
-      RollbarLocator.RollbarInstance
-        .Configure(new RollbarConfig(rollbarAccessToken) { Environment = rollbarEnvironment });
+      //RollbarLocator.RollbarInstance
+      //  .Configure(new RollbarConfig(rollbarAccessToken) { Environment = rollbarEnvironment });
+      RollbarInfrastructureConfig config = new RollbarInfrastructureConfig(
+        rollbarAccessToken,
+        rollbarEnvironment
+      );
+      RollbarMiddleware.ConfigureServices(services, LogLevel.Trace, config);
     }
   }
 }
