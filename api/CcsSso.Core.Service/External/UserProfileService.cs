@@ -392,8 +392,18 @@ namespace CcsSso.Core.Service.External
       throw new ResourceNotFoundException();
     }
     // #Delegated
-    public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null, bool includeSelf = false, bool isDelegatedOnly = false, bool isDelegatedExpiredOnly = false)
+    public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, UserFilterCriteria userFilterCriteria)
     {
+      if((_requestContext.Roles.Count == 1 && _requestContext.Roles.Contains("ORG_DEFAULT_USER")) && !userFilterCriteria.isAdmin)
+      {
+        throw new ForbiddenException();
+      }
+
+      string searchString = userFilterCriteria.searchString;
+      bool includeSelf = userFilterCriteria.includeSelf;
+      bool isDelegatedOnly = userFilterCriteria.isDelegatedOnly;
+      bool isDelegatedExpiredOnly = userFilterCriteria.isDelegatedExpiredOnly;
+      bool isAdmin = userFilterCriteria.isAdmin;
 
       if (!await _dataContext.Organisation.AnyAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId))
       {
@@ -417,39 +427,62 @@ namespace CcsSso.Core.Service.External
         }
       }
 
+      var Id = (await _dataContext.Organisation.FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId)).Id;
+
+      var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
+      .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+
+
       var userTypeSearch = isDelegatedOnly ? DbModel.Constants.UserType.Delegation : DbModel.Constants.UserType.Primary;
 
-      var userPagedInfo = await _dataContext.GetPagedResultAsync(_dataContext.User
+      var userQuery = _dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
         .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
         .Include(o => o.OriginOrganization)
         // Include deleted for delegated expired
-        .Where(u => (isDelegatedExpiredOnly || !u.IsDeleted) && (includeSelf || u.Id != _requestContext.UserId) &&
-        u.UserType == userTypeSearch &&
-        // Delegated and delegated expired conditions
-        (!isDelegatedOnly || (isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date <= DateTime.UtcNow.Date :
-                              u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date)) &&
-        u.Party.Person.Organisation.CiiOrganisationId == organisationId &&
-        (string.IsNullOrWhiteSpace(searchString) || u.UserName.ToLower().Contains(searchString)
+        .Where(u=>u.Party.Person.Organisation.CiiOrganisationId == organisationId && u.UserType == userTypeSearch);
+
+      if (!isDelegatedExpiredOnly)
+        userQuery = userQuery.Where(u => !u.IsDeleted);
+
+      if (!includeSelf)
+        userQuery = userQuery.Where(u => u.Id != _requestContext.UserId);
+
+      if (isAdmin)
+        userQuery = userQuery.Where(u => u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && u.AccountVerified && !u.IsDeleted);
+
+      // Delegated and delegated expired conditions
+      if (isDelegatedOnly)
+        userQuery = userQuery.Where(u => isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date <= DateTime.UtcNow.Date :
+                              u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date);
+
+
+      if (!string.IsNullOrWhiteSpace(searchString))
+      {
+        userQuery = userQuery.Where(u => u.UserName.ToLower().Contains(searchString)
         ||
             // Delegation search and delegation not accepted then don't search in last name
             (havingMultipleWords && u.Party.Person.FirstName.ToLower().Contains(searchFirstNameLowerCase) &&
-              (!isDelegatedOnly ? u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase) :
-                u.DelegationAccepted && u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase)
-              ) ||
-            // Allow searching for orign org in delegation
-            (isDelegatedOnly && u.OriginOrganization.LegalName.ToLower().Contains(searchString))
+              LastNameFilter(u, isDelegatedOnly, searchLastNameLowerCase)
+              ||
+              // Allow searching for orign org in delegation
+              LegalNameFilter(u, searchString, isDelegatedOnly)
             )
-        || (!havingMultipleWords &&
-            (u.Party.Person.FirstName.ToLower().Contains(searchString) ||
-              (!isDelegatedOnly ? u.Party.Person.LastName.ToLower().Contains(searchString) :
-                                  u.DelegationAccepted && u.Party.Person.LastName.ToLower().Contains(searchString)) ||
-            // Allow searching for orign org in delegation
-            (isDelegatedOnly && u.OriginOrganization.LegalName.ToLower().Contains(searchString))
+        || (!havingMultipleWords && (u.Party.Person.FirstName.ToLower().Contains(searchString)
+            ||
+              (LastNameFilter(u, isDelegatedOnly, searchString))
+             ||
+              // Allow searching for orign org in delegation
+              (isDelegatedOnly && u.OriginOrganization.LegalName.ToLower().Contains(searchString))
             )
            )
-        ))
-        .OrderBy(u => u.Party.Person.FirstName).ThenBy(u => u.Party.Person.LastName), resultSetCriteria);
+
+        );
+      }
+      userQuery = userQuery.OrderBy(u => u.Party.Person.FirstName).ThenBy(u => u.Party.Person.LastName);
+
+
+      var userPagedInfo = await _dataContext.GetPagedResultAsync(userQuery, resultSetCriteria);
 
       var userListResponse = new UserListResponse
       {
@@ -479,6 +512,17 @@ namespace CcsSso.Core.Service.External
       };
 
       return userListResponse;
+    }
+
+    private static bool LegalNameFilter(User u, string searchString, bool isDelegatedOnly)
+    {
+      return isDelegatedOnly && u.OriginOrganization.LegalName.ToLower().Contains(searchString);
+    }
+
+    private static bool LastNameFilter(User u, bool isDelegatedOnly, string searchLastNameLowerCase)
+    {
+      return !isDelegatedOnly ? u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase) :
+                      u.DelegationAccepted && u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase);
     }
 
     public async Task<AdminUserListResponse> GetAdminUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria)
