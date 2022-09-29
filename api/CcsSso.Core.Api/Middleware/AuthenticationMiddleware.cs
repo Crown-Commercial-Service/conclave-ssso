@@ -20,18 +20,68 @@ namespace CcsSso.Core.Api.Middleware
     private readonly ITokenService _tokenService;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private readonly IRemoteCacheService _remoteCacheService;
-
-    private List<string> allowedPaths = new List<string>()
-    {
-      "auth/backchannel-logout", "auth/refresh-tokens","auth/mfa-reset-notifications","auth/mfa-reset-by-tickets",
-      "organisations/registrations", "users/permissions", "users/nominees", "users/activation-emails", "cii/schemes", "cii/identifiers",
-      "organisations/orgs-by-name","cii/organisation-details","organisations/org-admin-join-notification","configurations/country-details"
-    };
-
     private List<string> allowedPathsForXSRFValidation = new List<string>()
     {
       "auth/sessions"
     };
+
+
+    public List<string> AllowedPaths
+    {
+      get
+      {
+        List<string> allowedPaths = new List<string>();
+        allowedPaths.AddRange(AllowedAuthAPIPath());
+        allowedPaths.AddRange(AllowedOrganisationAPIPath());
+        allowedPaths.AddRange(AllowedUserAPIPath());
+        allowedPaths.AddRange(AllowedConfigAPIPath());
+        allowedPaths.AddRange(AllowedCIIAPIPath());
+
+        return allowedPaths;
+
+      }
+    }
+
+    private List<string>  AllowedAuthAPIPath()
+    {
+      List<string> allowedPaths = new List<string>();
+      allowedPaths.Add("auth/backchannel-logout");
+      allowedPaths.Add("auth/mfa-reset-by-tickets");
+      allowedPaths.Add("auth/refresh-tokens");
+      return allowedPaths;
+    }
+    private List<string> AllowedOrganisationAPIPath()
+    {
+      List<string> allowedPaths = new List<string>();
+      allowedPaths.Add("organisations/registrations");
+      allowedPaths.Add("organisations/orgs-by-name");
+      allowedPaths.Add("organisations/org-admin-join-notification");
+      return allowedPaths;
+    }
+    private List<string> AllowedUserAPIPath()
+    {
+      List<string> allowedPaths = new List<string>();
+      allowedPaths.Add("users/nominees");
+      allowedPaths.Add("users/activation-emails");
+      return allowedPaths;
+    }
+    private List<string> AllowedConfigAPIPath()
+    {
+      List<string> allowedPaths = new List<string>();
+      allowedPaths.Add("configurations/country-details");
+      return allowedPaths;
+    }
+    
+    private List<string> AllowedCIIAPIPath()
+    {
+      List<string> allowedPaths = new List<string>();
+      allowedPaths.Add("cii/schemes");
+      allowedPaths.Add("cii/identifiers");
+      allowedPaths.Add("cii/organisation-details");
+      return allowedPaths;
+    }
+
+   
 
     public AuthenticationMiddleware(RequestDelegate next, ITokenService tokenService,
       ApplicationConfigurationInfo applicationConfigurationInfo, IRemoteCacheService remoteCacheService)
@@ -50,7 +100,7 @@ namespace CcsSso.Core.Api.Middleware
       var serviceId = await configurationDetailService.GetDashboardServiceIdAsync();
       requestContext.ServiceId = serviceId;
 
-      if (allowedPaths.Contains(path))
+      if (AllowedPaths.Contains(path))
       {
         await _next(context);
         return;

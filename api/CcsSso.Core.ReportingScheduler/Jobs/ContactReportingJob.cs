@@ -202,7 +202,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
           catch (Exception)
           {
 
-            _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of org in this set {contactDetailList.Count()} XXXXXXXXXXXX");
+            _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of contact in this set {contactDetailList.Count()} XXXXXXXXXXXX");
             _logger.LogError("");
 
           }
@@ -211,7 +211,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
         }
 
-        _logger.LogInformation($"Total number of organisation exported during this schedule => {totalNumberOfItemsDuringThisSchedule}");
+        _logger.LogInformation($"Total number of contacts exported during this schedule => {totalNumberOfItemsDuringThisSchedule}");
       }
       catch (Exception ex)
       {

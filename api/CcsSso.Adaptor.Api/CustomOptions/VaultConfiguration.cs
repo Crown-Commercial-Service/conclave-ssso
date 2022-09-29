@@ -22,7 +22,6 @@ namespace CcsSso.Adaptor.Api.CustomOptions
       _config = config;
 
       var env = System.Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
-      Console.WriteLine(env);
       var vault = (JObject)JsonConvert.DeserializeObject<JObject>(env)["hashicorp-vault"][0];
       _vcapSettings = JsonConvert.DeserializeObject<VCapSettings>(vault.ToString());
 
