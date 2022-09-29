@@ -42,6 +42,7 @@ applications:
     - CF_SPACE-data-redis-service
     - CF_SPACE-adaptor-sqs-service
     - CF_SPACE-ssm-service
+    - CF_SPACE-s3-service
   env:
     CACHE_NUGET_PACKAGES: false
 - name: CF_SPACE-api-adaptor
@@ -84,6 +85,7 @@ applications:
     - CF_SPACE-sso-pg-service
     - CF_SPACE-vault
     - CF_SPACE-ssm-service
+    - CF_SPACE-s3-service
   env:
     CACHE_NUGET_PACKAGES: false
 - name: CF_SPACE-reporting-job
