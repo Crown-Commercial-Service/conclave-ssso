@@ -464,22 +464,23 @@ namespace CcsSso.Core.Service.External
         ||
             // Delegation search and delegation not accepted then don't search in last name
             (havingMultipleWords && u.Party.Person.FirstName.ToLower().Contains(searchFirstNameLowerCase) &&
-              LastNameFilter(u, isDelegatedOnly, searchLastNameLowerCase)
-              ||
-              // Allow searching for orign org in delegation
-              LegalNameFilter(u, searchString, isDelegatedOnly)
+              (!isDelegatedOnly ? u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase) :
+                u.DelegationAccepted && u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase)
+              ) ||
+            // Allow searching for orign org in delegation
+            (isDelegatedOnly && u.OriginOrganization.LegalName.ToLower().Contains(searchString))
             )
-        || (!havingMultipleWords && (u.Party.Person.FirstName.ToLower().Contains(searchString)
-            ||
-              (LastNameFilter(u, isDelegatedOnly, searchString))
-             ||
-              // Allow searching for orign org in delegation
-              (isDelegatedOnly && u.OriginOrganization.LegalName.ToLower().Contains(searchString))
+        || (!havingMultipleWords &&
+            (u.Party.Person.FirstName.ToLower().Contains(searchString) ||
+              (!isDelegatedOnly ? u.Party.Person.LastName.ToLower().Contains(searchString) :
+                                  u.DelegationAccepted && u.Party.Person.LastName.ToLower().Contains(searchString)) ||
+            // Allow searching for orign org in delegation
+            (isDelegatedOnly && u.OriginOrganization.LegalName.ToLower().Contains(searchString))
             )
            )
-
         );
       }
+
       userQuery = userQuery.OrderBy(u => u.Party.Person.FirstName).ThenBy(u => u.Party.Person.LastName);
 
 
@@ -515,17 +516,7 @@ namespace CcsSso.Core.Service.External
       return userListResponse;
     }
 
-    private static bool LegalNameFilter(User u, string searchString, bool isDelegatedOnly)
-    {
-      return isDelegatedOnly && u.OriginOrganization.LegalName.ToLower().Contains(searchString);
-    }
-
-    private static bool LastNameFilter(User u, bool isDelegatedOnly, string searchLastNameLowerCase)
-    {
-      return !isDelegatedOnly ? u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase) :
-                      u.DelegationAccepted && u.Party.Person.LastName.ToLower().Contains(searchLastNameLowerCase);
-    }
-
+  
     public async Task<AdminUserListResponse> GetAdminUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria)
     {
       if (!await _dataContext.Organisation.AnyAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId))
