@@ -405,7 +405,10 @@ namespace CcsSso.Core.Service.External
       bool isDelegatedExpiredOnly = userFilterCriteria.isDelegatedExpiredOnly;
       bool isAdmin = userFilterCriteria.isAdmin;
 
-      if (!await _dataContext.Organisation.AnyAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId))
+      var organisation = await _dataContext.Organisation.FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId);
+
+
+      if (organisation==null)
       {
         throw new ResourceNotFoundException();
       }
@@ -427,10 +430,8 @@ namespace CcsSso.Core.Service.External
         }
       }
 
-      var Id = (await _dataContext.Organisation.FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId)).Id;
-
       var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
-      .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+      .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisation.Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
 
 
       var userTypeSearch = isDelegatedOnly ? DbModel.Constants.UserType.Delegation : DbModel.Constants.UserType.Primary;

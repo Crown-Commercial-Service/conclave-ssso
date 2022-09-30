@@ -1,24 +1,24 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace CcsSso.Core.Domain.Dtos.External
 {
   public class UserFilterCriteria
   {
 
-    [JsonProperty(PropertyName = "search-string")]
+    [FromQuery(Name = "search-string")]
     public string searchString { get; set; } = null;
 
-    [JsonProperty(PropertyName = "include-self")]
-    public bool includeSelf { get; set; } = false;
-
-    [JsonProperty(PropertyName = "delegated-only")]
+    [FromQuery(Name = "delegated-only")]
     public bool isDelegatedOnly { get; set; } = false;
 
-    [JsonProperty(PropertyName = "delegated-expired-only")]
+    [FromQuery(Name = "delegated-expired-only")]
     public bool isDelegatedExpiredOnly { get; set; } = false;
 
-    [JsonProperty(PropertyName = "isAdmin")]
     public bool isAdmin { get; set; } = false;
+
+    [FromQuery(Name = "include-self")]
+    public bool includeSelf { get; set; } = false;
 
 
   }
