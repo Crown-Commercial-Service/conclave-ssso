@@ -298,6 +298,18 @@ namespace CcsSso.Security.Services
           var users = (await _managementApiClient.Users.GetUsersByEmailAsync(userInfo.Email)).ToList();
           if (users != null && users.Count > 0)
           {
+            if (!userInfo.MfaEnabled) // reset MFA when the MFA is turned Off
+            {
+              try
+              {
+                await ResetMfaAsync(users[0].Email);
+              }
+              catch (Exception ex)
+              {
+                Console.WriteLine($"Exception while resetting mfa before disable MFA from Auth0. Error Message - {ex.Message}");
+              }
+            }
+
             var allTask = new List<Task>();
 
             foreach (var user in users)
