@@ -3,36 +3,37 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Contracts.External
 {
-    public interface IUserProfileService
-    {
-        Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo);
+  public interface IUserProfileService
+  {
+    Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo);
 
-        Task DeleteUserAsync(string userName, bool checkForLastAdmin = true);
-        // #Delegated
-        Task<UserProfileResponseInfo> GetUserAsync(string userName, bool isDelegated = false, bool isSearchUser = false, string delegatedOrgId = "");
-        // #Delegated
-        Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null, bool includeSelf = false, bool isDelegatedOnly = false, bool isDelegatedExpiredOnly = false);
+    Task DeleteUserAsync(string userName, bool checkForLastAdmin = true);
+    // #Delegated
+    Task<UserProfileResponseInfo> GetUserAsync(string userName, bool isDelegated = false, bool isSearchUser = false, string delegatedOrgId = "");
+    // #Delegated
+    Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, UserFilterCriteria userFilterCriteria);
 
-        Task<AdminUserListResponse> GetAdminUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria);
 
-        Task<UserEditResponseInfo> UpdateUserAsync(string userName, UserProfileEditRequestInfo userProfileRequestInfo);
+    Task<AdminUserListResponse> GetAdminUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria);
 
-        Task VerifyUserAccountAsync(string userName);
+    Task<UserEditResponseInfo> UpdateUserAsync(string userName, UserProfileEditRequestInfo userProfileRequestInfo);
 
-        Task ResetUserPasswodAsync(string userName, string? component);
+    Task VerifyUserAccountAsync(string userName);
 
-        Task RemoveAdminRolesAsync(string userName);
+    Task ResetUserPasswodAsync(string userName, string? component);
 
-        Task AddAdminRoleAsync(string userName);
-        // #Delegated
-        Task CreateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo);
+    Task RemoveAdminRolesAsync(string userName);
 
-        Task UpdateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo);
+    Task AddAdminRoleAsync(string userName);
+    // #Delegated
+    Task CreateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo);
 
-        Task RemoveDelegatedAccessForUserAsync(string userName, string organisationId);
+    Task UpdateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo);
 
-        Task AcceptDelegationAsync(string acceptanceToken);
+    Task RemoveDelegatedAccessForUserAsync(string userName, string organisationId);
 
-        Task SendUserDelegatedAccessEmailAsync(string userName, string orgId = "", string orgName = "");
-    }
+    Task AcceptDelegationAsync(string acceptanceToken);
+
+    Task SendUserDelegatedAccessEmailAsync(string userName, string orgId = "", string orgName = "");
+  }
 }
