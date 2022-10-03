@@ -233,6 +233,13 @@ namespace CcsSso.Security.Api.CustomOptions
         Data.Add("OpenIdConfigurationSettings:RequestUriParameterSupported", openIdConfigurationSettings.RequestUriParameterSupported.ToString());
       }
 
+      if (_secrets.Data.ContainsKey("ResetPasswordSettings"))
+      {
+        var resetPasswordSettings = JsonConvert.DeserializeObject<ResetPasswordSettings>(_secrets.Data["ResetPasswordSettings"].ToString());
+        Data.Add("ResetPasswordSettings:MaxAllowedAttempts", resetPasswordSettings.MaxAllowedAttempts);
+        Data.Add("ResetPasswordSettings:MaxAllowedAttemptsThresholdInMinutes", resetPasswordSettings.MaxAllowedAttemptsThresholdInMinutes);
+      }
+
       Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
       Data.Add("Auth0:ClientId", _auth0.ClientId);
       Data.Add("Auth0:Secret", _auth0.Secret);

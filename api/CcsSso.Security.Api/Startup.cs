@@ -216,6 +216,11 @@ namespace CcsSso.Security.Api
           MockProvider = new MockProvider()
           {
             LoginUrl = Configuration["MockProvider:LoginUrl"]
+          },
+          ResetPasswordSettings = new ResetPasswordSettings() 
+          {
+            MaxAllowedAttempts = Configuration["ResetPasswordSettings:MaxAllowedAttempts"],
+            MaxAllowedAttemptsThresholdInMinutes = Configuration["ResetPasswordSettings:MaxAllowedAttemptsThresholdInMinutes"],
           }
         };
         return appConfigInfo;
@@ -240,7 +245,7 @@ namespace CcsSso.Security.Api
       services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
       if (Configuration["IdentityProvider"] == "AUTH0")
       {
-        services.AddSingleton<IIdentityProviderService, Auth0IdentityProviderService>();
+        services.AddScoped<IIdentityProviderService, Auth0IdentityProviderService>();
       }
       else if (Configuration["IdentityProvider"] == "MOCK")
       {
