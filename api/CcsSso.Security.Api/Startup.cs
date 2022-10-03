@@ -245,7 +245,7 @@ namespace CcsSso.Security.Api
       services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
       if (Configuration["IdentityProvider"] == "AUTH0")
       {
-        services.AddScoped<IIdentityProviderService, Auth0IdentityProviderService>();
+        services.AddSingleton<IIdentityProviderService, Auth0IdentityProviderService>();
       }
       else if (Configuration["IdentityProvider"] == "MOCK")
       {
