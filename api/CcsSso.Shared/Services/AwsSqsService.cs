@@ -121,7 +121,8 @@ namespace CcsSso.Shared.Services
       {
         IEnumerable<SqsMessageDto[]> _mesageList;
         List<Task> taskList = new List<Task>();
-
+        // Here we are sending 10 messages for each batch call due to the restirction given by the AWSSDK.SQS(3.7.1.14)
+        // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SendMessageBatch.html
         if (sqsMessageDtoList.Any())
         {
           if (sqsMessageDtoList.Count > 10)
