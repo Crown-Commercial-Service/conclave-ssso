@@ -85,7 +85,8 @@ namespace CcsSso.Core.Service.External
 
       var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
         .Include(x => x.IdentityProvider)
-        .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id)).ToListAsync();
+        .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id) &&
+                    i.Organisation.Id == organisation.Id).ToListAsync();
 
       var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
       var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
@@ -766,16 +767,17 @@ namespace CcsSso.Core.Service.External
         user.UserGroupMemberships.RemoveAll(g => true);
         user.UserAccessRoles.RemoveAll(r => true);
 
-        var elegibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
-                                        .Include(x => x.IdentityProvider)
-                                        .ToListAsync();
-
         var isPreviouslyUserNamePwdConnectionIncluded = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
         var isPreviouslyNonUserNamePwdConnectionIncluded = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName);
         var isUserNamePwdConnectionIncluded = true;
         // var isNonUserNamePwdConnectionIncluded = false;
         if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
         {
+          var elegibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
+                                        .Include(x => x.IdentityProvider)
+                                        .Where(o => o.Organisation.Id == organisation.Id)
+                                        .ToListAsync();
+
           isUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName));
           // isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
         }
