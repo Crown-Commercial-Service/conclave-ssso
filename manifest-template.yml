@@ -11,6 +11,7 @@ applications:
     - CF_SPACE-security-pg-service
     - CF_SPACE-vault 
     - CF_SPACE-security-redis-service
+    - CF_SPACE-ssm-service
   env:
     CACHE_NUGET_PACKAGES: false
 - name: CF_SPACE-api-wrapper
@@ -25,6 +26,7 @@ applications:
     - CF_SPACE-vault
     - CF_SPACE-adaptor-sqs-service
     - CF_SPACE-data-redis-service
+    - CF_SPACE-ssm-service
   env:
     CACHE_NUGET_PACKAGES: false
 - name: CF_SPACE-api-core
@@ -39,6 +41,7 @@ applications:
     - CF_SPACE-vault
     - CF_SPACE-data-redis-service
     - CF_SPACE-adaptor-sqs-service
+    - CF_SPACE-ssm-service
   env:
     CACHE_NUGET_PACKAGES: false
 - name: CF_SPACE-api-adaptor
@@ -52,7 +55,8 @@ applications:
     - CF_SPACE-adaptor-pg-service
     - CF_SPACE-data-redis-service
     - CF_SPACE-push-data-sqs-service
-    - CF_SPACE-vault   
+    - CF_SPACE-vault
+    - CF_SPACE-ssm-service
   env:
     CACHE_NUGET_PACKAGES: false
 - name: CF_SPACE-adaptor-sqs-listener
@@ -66,6 +70,7 @@ applications:
     - CF_SPACE-vault
     - CF_SPACE-adaptor-sqs-service
     - CF_SPACE-push-data-sqs-service
+    - CF_SPACE-ssm-service
   env:
     CACHE_NUGET_PACKAGES: false
 - name: CF_SPACE-org-dereg-job
@@ -78,6 +83,7 @@ applications:
   services:
     - CF_SPACE-sso-pg-service
     - CF_SPACE-vault
+    - CF_SPACE-ssm-service
   env:
     CACHE_NUGET_PACKAGES: false
 - name: CF_SPACE-reporting-job
@@ -90,5 +96,6 @@ applications:
   services:
     - CF_SPACE-sso-pg-service
     - CF_SPACE-vault 
+    - CF_SPACE-ssm-service
   env:
     CACHE_NUGET_PACKAGES: false

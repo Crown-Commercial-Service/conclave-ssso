@@ -1,3 +1,4 @@
+using Amazon.SimpleSystemsManagement.Model;
 using CcsSso.Adaptor.Domain.SqsListener;
 using CcsSso.Adaptor.SqsListener.Listners;
 using CcsSso.Shared.Contracts;
@@ -10,7 +11,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
 using VaultSharp;
@@ -22,6 +22,9 @@ namespace CcsSso.Adaptor.SqsListener
   public class Program
   {
     private static bool vaultEnabled;
+    private static string vaultSource;
+    private static string path = "/conclave-sso/adaptor-sqs-listener/";
+    private static IAwsParameterStoreService _awsParameterStoreService;
 
     public static void Main(string[] args)
     {
@@ -37,6 +40,7 @@ namespace CcsSso.Adaptor.SqsListener
                              .Build();
               var builtConfig = config.Build();
               vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
+              vaultSource = configBuilder.GetValue<string>("Source");
               if (!vaultEnabled)
               {
                 config.AddJsonFile("appsecrets.json", optional: false, reloadOnChange: true);
@@ -51,11 +55,22 @@ namespace CcsSso.Adaptor.SqsListener
 
               if (vaultEnabled)
               {
-                var secrets = LoadSecretsAsync().Result;
-                _isApiGatewayEnabled = secrets["IsApiGatewayEnabled"].ToString();
-                adaptorApiSettings = JsonConvert.DeserializeObject<AdaptorApiSetting>(secrets["AdaptorApiSettings"].ToString());
-                sqsJobSettingsVault = JsonConvert.DeserializeObject<SqsListnerJobSettingVault>(secrets["SqsListnerJobSettings"].ToString());
-                queueInfoVault = JsonConvert.DeserializeObject<QueueInfoVault>(secrets["QueueInfo"].ToString());
+                if (vaultSource?.ToUpper() == "AWS")
+                {
+                  var parameters = LoadAwsSecretsAsync().Result;
+                  _isApiGatewayEnabled = _awsParameterStoreService.FindParameterByName(parameters, path + "IsApiGatewayEnabled");
+                  adaptorApiSettings = (AdaptorApiSetting)FillAwsParamsValue(typeof(AdaptorApiSetting), parameters);
+                  sqsJobSettingsVault = (SqsListnerJobSettingVault)FillAwsParamsValue(typeof(SqsListnerJobSettingVault), parameters);
+                  queueInfoVault = (QueueInfoVault)FillAwsParamsValue(typeof(QueueInfoVault), parameters);
+                }
+                else
+                {
+                  var secrets = LoadSecretsAsync().Result;
+                  _isApiGatewayEnabled = secrets["IsApiGatewayEnabled"].ToString();
+                  adaptorApiSettings = JsonConvert.DeserializeObject<AdaptorApiSetting>(secrets["AdaptorApiSettings"].ToString());
+                  sqsJobSettingsVault = JsonConvert.DeserializeObject<SqsListnerJobSettingVault>(secrets["SqsListnerJobSettings"].ToString());
+                  queueInfoVault = JsonConvert.DeserializeObject<QueueInfoVault>(secrets["QueueInfo"].ToString());
+                }
               }
               else
               {
@@ -140,5 +155,52 @@ namespace CcsSso.Adaptor.SqsListener
       var _secrets = await client.V1.Secrets.KeyValue.V1.ReadSecretAsync("secret/adaptor-sqs-listener", mountPathValue);
       return _secrets.Data;
     }
+
+    private static async Task<List<Parameter>> LoadAwsSecretsAsync()
+    {
+      _awsParameterStoreService = new AwsParameterStoreService();
+      return await _awsParameterStoreService.GetParameters(path);
+    }
+
+    private static dynamic FillAwsParamsValue(Type objType, List<Parameter> parameters)
+    {
+      dynamic? returnParams = null;
+      if (objType  == typeof(AdaptorApiSetting))
+      {
+        returnParams = new AdaptorApiSetting()
+        {
+          ApiGatewayEnabledUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "AdaptorApiSettings/ApiGatewayEnabledUrl"),
+          ApiGatewayDisabledUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "AdaptorApiSettings/ApiGatewayDisabledUrl"),
+          ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "AdaptorApiSettings/ApiKey"),
+        };
+      }
+      else if (objType  == typeof(SqsListnerJobSettingVault))
+      {
+        returnParams = new SqsListnerJobSettingVault()
+        {
+          JobSchedulerExecutionFrequencyInMinutes = _awsParameterStoreService.FindParameterByName(parameters, path + "SqsListnerJobSettings/JobSchedulerExecutionFrequencyInMinutes"),
+          MessageReadThreshold = _awsParameterStoreService.FindParameterByName(parameters, path + "SqsListnerJobSettings/MessageReadThreshold")
+        };
+      }
+      else if (objType  == typeof(QueueInfoVault))
+      {
+        returnParams = new QueueInfoVault()
+        {
+          AccessKeyId   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AccessKeyId"),
+          AccessSecretKey   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AccessSecretKey"),
+          ServiceUrl   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/ServiceUrl"),
+          RecieveMessagesMaxCount   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/RecieveMessagesMaxCount"),
+          RecieveWaitTimeInSeconds   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/RecieveWaitTimeInSeconds"),
+          AdaptorNotificationQueueUrl   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AdaptorNotificationQueueUrl"),
+          PushDataQueueUrl   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataQueueUrl"),
+          AdaptorNotificationAccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AdaptorNotificationAccessKeyId"),
+          AdaptorNotificationAccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AdaptorNotificationAccessSecretKey"),
+          PushDataAccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataAccessKeyId"),
+          PushDataAccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataAccessSecretKey")
+        };
+      }
+      return returnParams;
+    }
+
   }
 }

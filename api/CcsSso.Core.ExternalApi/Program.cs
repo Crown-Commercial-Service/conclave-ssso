@@ -1,3 +1,4 @@
+using CcsSso.Core.ExternalApi.CustomOptions;
 using CcsSso.ExternalApi.Api.CustomOptions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -31,11 +32,19 @@ namespace CcsSso.ExternalApi
           }
           else
           {
-            config.AddVault(options =>
+            var source = configBuilder.GetValue<string>("Source");
+            if (source.ToUpper() == "AWS")
+            {
+              config.AddParameterStore();
+            }
+            else
+            {
+              config.AddVault(options =>
             {
               var vaultOptions = builtConfig.GetSection("Vault");
               options.Address = vaultOptions["Address"];
             });
+            }
           }
           config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
         })
