@@ -650,8 +650,9 @@ namespace CcsSso.Security.Services
         }
         else
         {
-          var remianingMinutsForExpiration = DateTime.UtcNow.Subtract(userResetEmailFirstAttemptTime).Minutes;
-          remianingMinutsForExpiration = remianingMinutsForExpiration > 1 ? remianingMinutsForExpiration : 1;
+          var elepsMinutsForExpiration = DateTime.UtcNow.Subtract(userResetEmailFirstAttemptTime).Minutes;
+          elepsMinutsForExpiration = elepsMinutsForExpiration > 1 ? elepsMinutsForExpiration : 1;
+          var remianingMinutsForExpiration = Convert.ToInt32(_appConfigInfo.ResetPasswordSettings.MaxAllowedAttemptsThresholdInMinutes) - elepsMinutsForExpiration;
           await _remoteCacheService.SetValueAsync<string>(resetAttemptRedisKey, (userResetEmailAttempts + 1) + "|" + userResetEmailFirstAttemptTime, new TimeSpan(0, remianingMinutsForExpiration, 0));
         }
       }
