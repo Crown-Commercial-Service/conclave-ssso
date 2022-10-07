@@ -395,7 +395,25 @@ namespace CcsSso.Core.Service.External
     // #Delegated
     public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, UserFilterCriteria userFilterCriteria)
     {
-      if((_requestContext.Roles.Count == 1 && _requestContext.Roles.Contains("ORG_DEFAULT_USER")) && !userFilterCriteria.isAdmin)
+
+      var apiKey = _appConfigInfo.ApiKey;
+      var apiKeyInRequest = _requestContext.apiKey;
+
+      if(apiKeyInRequest != null)
+      {
+        if (apiKey != apiKeyInRequest)
+        {
+          throw new ForbiddenException();
+        }
+      }
+     else if (_requestContext.Roles != null)
+      {
+        if ((_requestContext.Roles.Count == 1 && _requestContext.Roles.Contains("ORG_DEFAULT_USER")) && !userFilterCriteria.isAdmin)
+        {
+          throw new ForbiddenException();
+        }
+      }
+      else
       {
         throw new ForbiddenException();
       }
