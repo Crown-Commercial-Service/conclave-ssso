@@ -48,6 +48,7 @@ namespace CcsSso.Core.Api.Middleware
       allowedPaths.Add("auth/backchannel-logout");
       allowedPaths.Add("auth/mfa-reset-by-tickets");
       allowedPaths.Add("auth/refresh-tokens");
+      allowedPaths.Add("auth/mfa-reset-notifications");
       return allowedPaths;
     }
     private List<string> AllowedOrganisationAPIPath()
