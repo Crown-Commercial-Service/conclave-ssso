@@ -141,7 +141,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
           catch (Exception)
           {
 
-            _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of org in this set {auditLogList.Count()} XXXXXXXXXXXX");
+            _logger.LogError($"XXXXXXXXXXXX Failed to transfer the report. Number of audit in this set {auditLogList.Count()} XXXXXXXXXXXX");
             _logger.LogError("");
 
           }
