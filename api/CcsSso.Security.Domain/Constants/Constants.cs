@@ -15,6 +15,7 @@ namespace CcsSso.Security.Domain.Constants
       public const string EmailFormatError = "ERROR_EMAIL_FORMAT";
       public const string EmailTooLongError = "ERROR_EMAIL_TOO_LONG";
       public const string InvalidTicket = "INVALID_TICKET";
+      public const string MaxPasswordResetAttempt = "ERROR_MAX_ATTEMPT";
     }
 
     public static class CacheKey
