@@ -29,5 +29,7 @@ namespace CcsSso.Shared.Domain.Contexts
 
     // #Deleated: To manage delegate user search
     public bool IsDelegated { get; set; }
+
+    public string apiKey { get; set; }
   }
 }

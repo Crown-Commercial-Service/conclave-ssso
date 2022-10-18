@@ -8,6 +8,7 @@ using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
 using CcsSso.Security.Services.Helpers;
+using CcsSso.Shared.Cache.Contracts;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -33,9 +34,11 @@ namespace CcsSso.Security.Services
     private readonly ISecurityCacheService _securityCacheService;
 
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
+    private readonly IRemoteCacheService _remoteCacheService;
+
     public Auth0IdentityProviderService(ApplicationConfigurationInfo appConfigInfo, TokenHelper tokenHelper,
       IHttpClientFactory httpClientFactory, ICcsSsoEmailService ccsSsoEmailService, IJwtTokenHandler jwtTokenHandler,
-      ISecurityCacheService securityCacheService)
+      ISecurityCacheService securityCacheService, IRemoteCacheService remoteCacheService)
     {
       _appConfigInfo = appConfigInfo;
       _authenticationApiClient = new AuthenticationApiClient(_appConfigInfo.Auth0ConfigurationInfo.Domain);
@@ -44,6 +47,7 @@ namespace CcsSso.Security.Services
       _ccsSsoEmailService = ccsSsoEmailService;
       _jwtTokenHandler = jwtTokenHandler;
       _securityCacheService = securityCacheService;
+      _remoteCacheService = remoteCacheService;
     }
 
     /// <summary>
@@ -298,6 +302,18 @@ namespace CcsSso.Security.Services
           var users = (await _managementApiClient.Users.GetUsersByEmailAsync(userInfo.Email)).ToList();
           if (users != null && users.Count > 0)
           {
+            if (!userInfo.MfaEnabled) // reset MFA when the MFA is turned Off
+            {
+              try
+              {
+                await ResetMfaAsync(users[0].Email);
+              }
+              catch (Exception ex)
+              {
+                Console.WriteLine($"Exception while resetting mfa before disable MFA from Auth0. Error Message - {ex.Message}");
+              }
+            }
+
             var allTask = new List<Task>();
 
             foreach (var user in users)
@@ -614,6 +630,33 @@ namespace CcsSso.Security.Services
 
     public async Task InitiateResetPasswordAsync(ChangePasswordInitiateRequest changePasswordInitiateRequest)
     {
+      string resetAttemptRedisKey = "ResetRequestAttempt-" + changePasswordInitiateRequest.UserName;
+      var userResetEmailAttemptInfo = await _remoteCacheService.GetValueAsync<string>(resetAttemptRedisKey);
+      int userResetEmailAttempts = Convert.ToInt32(userResetEmailAttemptInfo?.Split("|")[0]);
+      DateTime userResetEmailFirstAttemptTime = Convert.ToDateTime(userResetEmailAttemptInfo?.Split("|")[1]);
+
+      // Admin reset password then not threshold validation otherwise validate
+      if (!changePasswordInitiateRequest.ForceLogout)
+      {
+        // Attempt threshold validation
+        if (userResetEmailAttempts >= Convert.ToInt32(_appConfigInfo.ResetPasswordSettings.MaxAllowedAttempts))
+        {
+          throw new CcsSsoException(ErrorCodes.MaxPasswordResetAttempt);
+        }
+        else if (userResetEmailAttempts == 0)
+        {
+          await _remoteCacheService.SetValueAsync<string>(resetAttemptRedisKey, (userResetEmailAttempts + 1) + "|" + DateTime.UtcNow,
+          new TimeSpan(0, Convert.ToInt32(_appConfigInfo.ResetPasswordSettings.MaxAllowedAttemptsThresholdInMinutes), 0));
+        }
+        else
+        {
+          var elepsMinutsForExpiration = DateTime.UtcNow.Subtract(userResetEmailFirstAttemptTime).Minutes;
+          elepsMinutsForExpiration = elepsMinutsForExpiration > 1 ? elepsMinutsForExpiration : 1;
+          var remianingMinutsForExpiration = Convert.ToInt32(_appConfigInfo.ResetPasswordSettings.MaxAllowedAttemptsThresholdInMinutes) - elepsMinutsForExpiration;
+          await _remoteCacheService.SetValueAsync<string>(resetAttemptRedisKey, (userResetEmailAttempts + 1) + "|" + userResetEmailFirstAttemptTime, new TimeSpan(0, remianingMinutsForExpiration, 0));
+        }
+      }
+
       var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
       using (ManagementApiClient _managementApiClient = new ManagementApiClient(managementApiToken, _appConfigInfo.Auth0ConfigurationInfo.Domain))
       {
@@ -628,6 +671,7 @@ namespace CcsSso.Security.Services
             EmailVerified = !changePasswordInitiateRequest.ForceLogout
           };
           await _managementApiClient.Users.UpdateAsync(userId, userUpdateRequest);
+
           await _ccsSsoEmailService.SendResetPasswordAsync(changePasswordInitiateRequest.UserName, ticket);
         }
       }
