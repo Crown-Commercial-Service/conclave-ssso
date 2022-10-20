@@ -40,8 +40,6 @@ namespace CcsSso.Domain.Dtos
 
     // #Auto validation
     public OrgAutoValidation OrgAutoValidation { get; set; }
-
-    public ExternalApiDetails ExternalApiDetails { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
