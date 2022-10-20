@@ -401,8 +401,8 @@ namespace CcsSso.Service
             RoleIds = roleIds,
           }
         };
-
-        await _userProfileService.CreateUserAsync(userProfileEditRequestInfo);
+        // #Auto validation
+        await _userProfileService.CreateUserAsync(userProfileEditRequestInfo, isNewOrgAdmin: true);
       }
       catch (ResourceAlreadyExistsException)
       {

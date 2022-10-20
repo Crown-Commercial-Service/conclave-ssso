@@ -37,6 +37,11 @@ namespace CcsSso.Domain.Dtos
     public string DelegationEmailTokenEncryptionKey { get; set; }
 
     public string[] DelegationExcludeRoles { get; set; }
+
+    // #Auto validation
+    public OrgAutoValidation OrgAutoValidation { get; set; }
+
+    public ExternalApiDetails ExternalApiDetails { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -98,6 +103,9 @@ namespace CcsSso.Domain.Dtos
     // #Delegated
     public string UserDelegatedAccessEmailTemplateId { get; set; }
 
+    // #Auto validation
+    public string OrgPendingVerificationEmailTemplateId { get; set; }
+
     public bool SendNotificationsEnabled { get; set; }
 
   }
@@ -125,5 +133,18 @@ namespace CcsSso.Domain.Dtos
     public int DefaultSizeValidationValue { get; set; }
 
     public string DefaultTypeValidationValue { get; set; }
+  }
+
+  public class OrgAutoValidation 
+  {
+    public string CCSAdminEmailId { get; set; }
+    public string[] AdditionalRoles { get; set; }
+  }
+
+  public class ExternalApiDetails
+  {
+    public string Url { get; set; }
+
+    public string ApiKey { get; set; }
   }
 }

@@ -146,6 +146,30 @@ namespace CcsSso.Api.CustomOptions
         Data.Add("RedisCacheSettings:IsEnabled", redisCacheSettingsVault.IsEnabled);
         Data.Add("RedisCacheSettings:CacheExpirationInMinutes", redisCacheSettingsVault.CacheExpirationInMinutes);
       }
+
+      // #Auto validation
+      if (_secrets.Data.ContainsKey("ExternalApiSettings"))
+      {
+        var securityApiKeySettings = JsonConvert.DeserializeObject<SecurityApiSettingsVault>(_secrets.Data["ExternalApiSettings"].ToString());
+        Data.Add("ExternalApiSettings:ApiKey", securityApiKeySettings.ApiKey);
+        Data.Add("ExternalApiSettings:Url", securityApiKeySettings.Url);
+      }
+
+      if (_secrets.Data.ContainsKey("WrapperApiSettings"))
+      {
+        var wrapperApiKeySettings = JsonConvert.DeserializeObject<WrapperApiSettingsVault>(_secrets.Data["WrapperApiSettings"].ToString());
+        Data.Add("WrapperApiSettings:OrgApiKey", wrapperApiKeySettings.OrgApiKey);
+        Data.Add("WrapperApiSettings:ApiGatewayEnabledOrgUrl", wrapperApiKeySettings.ApiGatewayEnabledOrgUrl); // Keep the trailing "/"
+        Data.Add("WrapperApiSettings:ApiGatewayDisabledOrgUrl", wrapperApiKeySettings.ApiGatewayDisabledOrgUrl); // Keep the trailing "/"
+      }
+
+      if (_secrets.Data.ContainsKey("LookUpApiSettings"))
+      {
+        var wrapperApiKeySettings = JsonConvert.DeserializeObject<LookUpApiSettings>(_secrets.Data["LookUpApiSettings"].ToString());
+        Data.Add("LookUpApiSettings:LookUpApiKey", wrapperApiKeySettings.LookUpApiKey);
+        Data.Add("LookUpApiSettings:LookUpApiUrl", wrapperApiKeySettings.LookUpApiUrl);
+      }
+
     }
   }
 
@@ -284,6 +308,23 @@ namespace CcsSso.Api.CustomOptions
     public string IsEnabled { get; set; }
 
     public string CacheExpirationInMinutes { get; set; }
+  }
+
+  // #Auto validation
+  public class WrapperApiSettingsVault
+  {
+    public string OrgApiKey { get; set; }
+
+    public string ApiGatewayEnabledOrgUrl { get; set; }
+
+    public string ApiGatewayDisabledOrgUrl { get; set; }
+  }
+
+  public class LookUpApiSettings
+  {
+    public string LookUpApiKey { get; set; }
+
+    public string LookUpApiUrl { get; set; }
   }
 
 }

@@ -42,5 +42,12 @@ namespace CcsSso.Core.DbModel.Constants
     Primary,
     Delegation
   }
+
+  // #Auto validation
+  public enum OrgAutoApprovalStatus 
+  {
+    Approved,
+    Pending
+  }
   
 }

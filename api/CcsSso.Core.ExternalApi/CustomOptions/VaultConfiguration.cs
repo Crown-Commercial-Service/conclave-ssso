@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using CcsSso.Shared.Domain;
+using CcsSso.Domain.Dtos;
 
 namespace CcsSso.ExternalApi.Api.CustomOptions
 {
@@ -114,6 +115,8 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("Email:UserRegistrationEmailUserIdPwdTemplateId", emailsettings.UserRegistrationEmailUserIdPwdTemplateId);
         // #Delegated
         Data.Add("Email:UserDelegatedAccessEmailTemplateId", emailsettings.UserDelegatedAccessEmailTemplateId);
+        // #Auto validation
+        Data.Add("Email:OrgPendingVerificationEmailTemplateId", emailsettings.OrgPendingVerificationEmailTemplateId);
 
         Data.Add("Email:SendNotificationsEnabled", emailsettings.SendNotificationsEnabled);
       }
@@ -171,6 +174,19 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         foreach (var excludeRole in userDelegationInfo.DelegationExcludeRoles)
         {
           Data.Add($"UserDelegation:DelegationExcludeRoles:{index++}", excludeRole);
+        }
+      }
+
+      // #Auto validation
+      if (_secrets.Data.ContainsKey("OrgAutoValidation"))
+      {
+        var orgAutoValidation = JsonConvert.DeserializeObject<OrgAutoValidation>(_secrets.Data["OrgAutoValidation"].ToString());
+        Data.Add("OrgAutoValidation:CCSAdminEmailId", orgAutoValidation.CCSAdminEmailId.ToString());
+
+        int index = 0;
+        foreach (var excludeRole in orgAutoValidation.AdditionalRoles)
+        {
+          Data.Add($"OrgAutoValidation:AdditionalRoles:{index++}", excludeRole);
         }
       }
 
@@ -236,6 +252,8 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
     public string UserRegistrationEmailUserIdPwdTemplateId { get; set; }
     // #Delegated
     public string UserDelegatedAccessEmailTemplateId { get; set; }
+    // #Auto validation
+    public string OrgPendingVerificationEmailTemplateId { get; set; }
     public string SendNotificationsEnabled { get; set; }
   }
 

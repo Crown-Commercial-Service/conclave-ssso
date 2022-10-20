@@ -145,6 +145,34 @@ namespace CcsSso.ExternalApi.Controllers
       await _organisationService.UpdateOrganisationAsync(organisationId, organisationProfileInfo);
     }
 
+    // # Auto validation
+    /// <summary>
+    /// Organisation auto validation for verified buyer
+    /// </summary>
+    /// <response  code="200">Ok. Return true if auto validation passed else return false</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes:  INVALID_CII_ORGANISATION_ID
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /organisations/1/auto-validate
+    ///     {
+    ///       "AdminEmailId" : "user@mail.com",
+    ///       "IsFromBackgroundJob" : false
+    ///     }
+    ///     
+    /// </remarks>
+    [HttpPost("{ciiOrganisationId}/auto-validate")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Auto Validation" })]
+    [ProducesResponseType(typeof(string), 200)]
+    public async Task<bool> AutoValidateOrganisation(string ciiOrganisationId, AutoValidationDetails autoValidationDetails)
+    {
+      return await _organisationService.AutoValidateOrganisation(ciiOrganisationId, autoValidationDetails.AdminEmailId, autoValidationDetails.IsFromBackgroundJob);
+    }
     #endregion
 
     #region Organisation Contacts

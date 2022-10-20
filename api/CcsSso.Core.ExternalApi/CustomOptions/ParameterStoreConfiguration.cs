@@ -81,7 +81,9 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/UserRegistrationEmailUserIdPwdTemplateId", "Email:UserRegistrationEmailUserIdPwdTemplateId"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/UserDelegatedAccessEmailTemplateId", "Email:UserDelegatedAccessEmailTemplateId"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/SendNotificationsEnabled", "Email:SendNotificationsEnabled"));
-      
+      // #Auto validation
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/OrgPendingVerificationEmailTemplateId", "Email:OrgPendingVerificationEmailTemplateId"));
+
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Cii/Url", "Cii:Url"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Cii/Token", "Cii:Token"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Cii/Delete_Token", "Cii:Delete_Token"));
@@ -129,7 +131,11 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserDelegation/DelegationEmailTokenEncryptionKey", "UserDelegation:DelegationEmailTokenEncryptionKey"));
       
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "UserDelegation/DelegationExcludeRoles", "UserDelegation:DelegationExcludeRoles"));
-    
+
+      // #Auto validation
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/CCSAdminEmailId", "OrgAutoValidation:CCSAdminEmailId"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/AdditionalRoles", "OrgAutoValidation:AdditionalRoles"));
+
       foreach (var configuration in configurations)
       {
         Data.Add(configuration);

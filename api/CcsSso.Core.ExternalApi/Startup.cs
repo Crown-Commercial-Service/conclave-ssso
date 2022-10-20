@@ -113,6 +113,8 @@ namespace CcsSso.ExternalApi
             UserConfirmEmailOnlyUserIdPwdTemplateId = Configuration["Email:UserConfirmEmailOnlyUserIdPwdTemplateId"],
             UserConfirmEmailBothIdpTemplateId = Configuration["Email:UserConfirmEmailBothIdpTemplateId"],
             UserRegistrationEmailUserIdPwdTemplateId= Configuration["Email:UserRegistrationEmailUserIdPwdTemplateId"],
+            // #Auto validation
+            OrgPendingVerificationEmailTemplateId = Configuration["Email:OrgPendingVerificationEmailTemplateId"],
             SendNotificationsEnabled = sendNotificationsEnabled,
           },
           QueueUrlInfo = new QueueUrlInfo
@@ -129,7 +131,13 @@ namespace CcsSso.ExternalApi
           {
             GlobalServiceDefaultRoles = globalServiceRoles,
             ScopedServiceDefaultRoles = scopedServiceRoles
-          }
+          },
+          // #Auto validation
+          OrgAutoValidation = new OrgAutoValidation()
+          {
+            CCSAdminEmailId = Configuration["OrgAutoValidation:CCSAdminEmailId"],
+            AdditionalRoles = Configuration.GetSection("OrgAutoValidation:AdditionalRoles").Get<string[]>(),
+          },
         };
         return appConfigInfo;
       });
@@ -184,6 +192,9 @@ namespace CcsSso.ExternalApi
       services.AddSingleton<ILocalCacheService, InMemoryCacheService>();
       services.AddSingleton<IAuthorizationPolicyProvider, ClaimAuthorisationPolicyProvider>();
       services.AddSingleton<ICryptographyService, CryptographyService>();
+      // #Auto validation
+      services.AddSingleton<IWrapperApiService, WrapperApiService>();
+      services.AddSingleton<ILookUpService, LookUpService>();
       services.AddMemoryCache();
 
       services.AddScoped<IDataContext>(s => s.GetRequiredService<DataContext>());
@@ -214,6 +225,12 @@ namespace CcsSso.ExternalApi
       {
         c.BaseAddress = new Uri(Configuration["Cii:Url"]);
         c.DefaultRequestHeaders.Add("x-api-key", Configuration["Cii:Token"]);
+      });
+      // #Auto validation
+      services.AddHttpClient("LookupApi", c =>
+      {
+        c.BaseAddress = new Uri(Configuration["LookUpApiSettings:LookUpApiUrl"]);
+        c.DefaultRequestHeaders.Add("X-API-Key", Configuration["LookUpApiSettings:LookUpApiKey"]);
       });
       services.AddSwaggerGen(c =>
       {

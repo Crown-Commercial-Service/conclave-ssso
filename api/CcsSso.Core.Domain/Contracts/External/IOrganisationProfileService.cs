@@ -1,4 +1,5 @@
 using CcsSso.Core.Domain.Dtos.External;
+using CcsSso.DbModel.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,5 +26,8 @@ namespace CcsSso.Core.Domain.Contracts.External
     Task UpdateIdentityProviderAsync(OrgIdentityProviderSummary orgIdentityProviderSummary);
 
     Task UpdateOrganisationEligibleRolesAsync(string ciiOrganisationId, bool isBuyer, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete);
+
+    // #Auto validation
+    Task<bool> AutoValidateOrganisation(string organisationId, string adminEmailId, bool isFromBackgroundJob = false);
   }
 }

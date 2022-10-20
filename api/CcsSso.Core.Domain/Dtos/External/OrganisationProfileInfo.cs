@@ -127,6 +127,11 @@ namespace CcsSso.Core.Domain.Dtos.External
     public List<OrganisationRole> RolesToDelete { get; set; }
   }
 
-
+  // #Auto validation
+  public class AutoValidationDetails 
+  {
+    public string AdminEmailId { get; set; }
+    public bool IsFromBackgroundJob { get; set; } = false;
+  }
 
 }

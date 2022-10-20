@@ -89,6 +89,9 @@ namespace CcsSso.Domain.Contracts
 
         DbSet<CountryDetails> CountryDetails { get; set; }
 
+        // #Auto validation
+        DbSet<OrganisationAudit> OrganisationAudit { get; set; }
+
         Task<PagedResultSet<T>> GetPagedResultAsync<T>(IQueryable<T> query, ResultSetCriteria resultSetCriteria);
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

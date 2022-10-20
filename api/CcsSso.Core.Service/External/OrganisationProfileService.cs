@@ -34,11 +34,13 @@ namespace CcsSso.Core.Service.External
     private readonly RequestContext _requestContext;
     private readonly IIdamService _idamService;
     private readonly IRemoteCacheService _remoteCacheService;
+    private readonly ILookUpService _lookUpService;
 
     public OrganisationProfileService(IDataContext dataContext, IContactsHelperService contactsHelper, ICcsSsoEmailService ccsSsoEmailService,
       ICiiService ciiService, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ILocalCacheService localCacheService,
-      ApplicationConfigurationInfo applicationConfigurationInfo, RequestContext requestContext, IIdamService idamService, IRemoteCacheService remoteCacheService)
+      ApplicationConfigurationInfo applicationConfigurationInfo, RequestContext requestContext, IIdamService idamService, IRemoteCacheService remoteCacheService,
+      ILookUpService lookUpService)
     {
       _dataContext = dataContext;
       _contactsHelper = contactsHelper;
@@ -51,6 +53,7 @@ namespace CcsSso.Core.Service.External
       _requestContext = requestContext;
       _idamService = idamService;
       _remoteCacheService = remoteCacheService;
+      _lookUpService = lookUpService;
     }
 
     /// <summary>
@@ -576,6 +579,7 @@ namespace CcsSso.Core.Service.External
       return orgAdmins;
     }
 
+    // #Auto validation
     /// <summary>
     /// Add/Delete OrgElegibleRoles
     /// </summary>
@@ -591,14 +595,17 @@ namespace CcsSso.Core.Service.External
       var organisation = await _dataContext.Organisation
         .Include(er => er.OrganisationEligibleRoles)
        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
+      var userAccessRolesForOrgUsers = await _dataContext.UserAccessRole
+            .Where(uar => !uar.IsDeleted && uar.OrganisationEligibleRole.OrganisationId == organisation.Id).ToListAsync();
+
 
       if (organisation != null)
       {
         organisation.RightToBuy = isBuyer;
 
+        var ccsAccessRoles = await _dataContext.CcsAccessRole.ToListAsync();
         if (rolesToAdd != null && rolesToAdd.Any())
         {
-          var ccsAccessRoles = await _dataContext.CcsAccessRole.ToListAsync();
 
           if (!rolesToAdd.All(ar => ccsAccessRoles.Any(r => r.Id == ar.RoleId)))
           {
@@ -637,9 +644,8 @@ namespace CcsSso.Core.Service.External
             .Where(oger => !oger.IsDeleted && oger.OrganisationEligibleRole.OrganisationId == organisation.Id && deletingRoleIds.Contains(oger.OrganisationEligibleRole.CcsAccessRoleId))
             .ToListAsync();
 
-          var userAccessRolesWithDeletedRoles = await _dataContext.UserAccessRole
-            .Where(uar => !uar.IsDeleted && uar.OrganisationEligibleRole.OrganisationId == organisation.Id && deletingRoleIds.Contains(uar.OrganisationEligibleRole.CcsAccessRoleId))
-            .ToListAsync();
+          var userAccessRolesWithDeletedRoles = userAccessRolesForOrgUsers
+            .Where(uar => deletingRoleIds.Contains(uar.OrganisationEligibleRole.CcsAccessRoleId)).ToList();
 
           deletingOrgEligibleRoles.ForEach((deletingOrgEligibleRole) =>
           {
@@ -656,6 +662,50 @@ namespace CcsSso.Core.Service.External
             userAccessRolesWithDeletedRole.IsDeleted = true;
           });
         }
+
+        // #Auto validation testing
+        string[] autoValidationDefaultRoles = _applicationConfigurationInfo.OrgAutoValidation.AdditionalRoles;
+        var defaultOrgRoles = ccsAccessRoles.Where(x => !x.IsDeleted && autoValidationDefaultRoles.Contains(x.CcsAccessRoleNameKey)).ToList();
+
+        // additional roles for org added if not exist
+        foreach (var role in defaultOrgRoles)
+        {
+          var defaultOrgRole = new OrganisationEligibleRole
+          {
+            OrganisationId = organisation.Id,
+            CcsAccessRoleId = role.Id
+          };
+          var defaultUserRole = new UserAccessRole
+          {
+            OrganisationEligibleRoleId = role.Id
+          };
+
+          if (isBuyer)
+          {
+            if (!organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == role.Id))
+            {
+              organisation.OrganisationEligibleRoles.Add(defaultOrgRole);
+            }
+          }
+          else if (!isBuyer) 
+          {
+            if (organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == role.Id))
+            {
+              organisation.OrganisationEligibleRoles.Remove(defaultOrgRole);
+            }
+            userAccessRolesForOrgUsers.RemoveAll(x => x.OrganisationEligibleRoleId == role.Id);
+          }
+        }
+
+        var orgStatus = new OrganisationAudit
+        {
+          Status = OrgAutoApprovalStatus.Approved.ToString(),
+          OrganisationId = organisation.Id,
+          Action = "Automatic acceptation of right to buy",
+          ActionedBy = "Auto validation",
+          SchemeIdentifier = "",
+          CreatedOnUtc = DateTime.UtcNow,
+        };
 
         await _dataContext.SaveChangesAsync();
 
@@ -847,5 +897,130 @@ namespace CcsSso.Core.Service.External
       return eligibleRoles;
     }
 
+  // #Auto validation
+  #region auto validation
+  public async Task<bool> AutoValidateOrganisation(string ciiOrganisationId, string adminEmailId, bool isFromBackgroundJob = false) 
+  {
+      var organisation = await _dataContext.Organisation.Include(er => er.OrganisationEligibleRoles)
+                              .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
+
+      if (organisation == null) 
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidCiiOrganisationId);
+      }
+      bool isdomainValid = false;
+
+      // call lookup api
+      try
+      {
+        isdomainValid = await _lookUpService.IsDomainValidForAutoValidation(adminEmailId);
+      }
+      catch (Exception ex) 
+      {
+        //TODO: lookup api not available logic
+        Console.WriteLine(ex.Message);
+      }
+      // valid domain
+      if (isdomainValid)
+      {
+         return await AutoValidateForValidDomain(organisation, adminEmailId);
+      }
+      // invalid domain
+      else
+      {
+          return await AutoValidateForInValidDomain(organisation, organisation.LegalName, isFromBackgroundJob);
+      }
   }
+
+  private async Task<bool> AutoValidateForValidDomain(Organisation organisation, string adminEmailId) 
+  {
+        // Add additional roles for auto validation from appsecreat
+        string[] autoValidationDefaultRoles = _applicationConfigurationInfo.OrgAutoValidation.AdditionalRoles;
+        var defaultOrgRoles = _dataContext.CcsAccessRole.Where(x => !x.IsDeleted && autoValidationDefaultRoles.Contains(x.CcsAccessRoleNameKey)).ToList();
+        var adminUserDetails = _dataContext.User.Include(x => x.UserAccessRoles)
+                              .Where(x => !x.IsDeleted && x.UserName.ToLower() == adminEmailId.ToLower() && x.UserType == UserType.Primary).FirstOrDefault();
+
+        organisation.RightToBuy = true;
+
+        // additional roles for org added if not exist
+        foreach (var role in defaultOrgRoles)
+        {
+          if (!organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == role.Id))
+          {
+            var defaultOrgRole = new OrganisationEligibleRole
+            {
+              OrganisationId = organisation.Id,
+              CcsAccessRoleId = role.Id
+            };
+            organisation.OrganisationEligibleRoles.Add(defaultOrgRole);
+          }
+          // additional roles for admin user added if not exist
+          if (!adminUserDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id))
+          {
+            var defaultUserRole = new UserAccessRole
+            {
+              OrganisationEligibleRoleId = role.Id
+            };
+            adminUserDetails.UserAccessRoles.Add(defaultUserRole);
+          }
+        }
+
+        var orgStatus = new OrganisationAudit
+        {
+          Status = OrgAutoApprovalStatus.Approved.ToString(),
+          OrganisationId = organisation.Id,
+          Action = "Automatic acceptation of right to buy",
+          ActionedBy = "Auto validation",
+          SchemeIdentifier = "",
+          CreatedOnUtc = DateTime.UtcNow,
+        };
+
+        _dataContext.OrganisationAudit.Add(orgStatus);
+      try
+      {
+        await _dataContext.SaveChangesAsync();
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine(ex.Message);
+        throw;
+      }
+      // Do entries in org audit table
+
+      return true;
+}
+
+  private async Task<bool> AutoValidateForInValidDomain(Organisation organisation, string orgName, bool isFromBackgroundJob = false) 
+  { 
+      // invalid
+      // Send email to CCS admin to notify
+      if (!isFromBackgroundJob)
+      {
+        await _ccsSsoEmailService.SendOrgPendingVerificationEmailToCCSAdminAsync(_applicationConfigurationInfo.OrgAutoValidation.CCSAdminEmailId, orgName, "");
+      }
+
+      var orgStatus = new OrganisationAudit
+      {
+        Status = OrgAutoApprovalStatus.Pending.ToString(),
+        OrganisationId = organisation.Id,
+        CreatedOnUtc = DateTime.UtcNow,
+      };
+
+      _dataContext.OrganisationAudit.Add(orgStatus);
+      try
+      {
+        await _dataContext.SaveChangesAsync();
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine(ex.Message);
+        throw;
+      }
+      // Audit table entry
+      //await _auditService.IsDomainValidForAutoValidation("Autovalidation", "Organisation not recognized as verified buyer in autovalidation process");
+      return false;
+    }
+  #endregion
+
+    }
 }

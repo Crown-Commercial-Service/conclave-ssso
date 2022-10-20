@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
@@ -35,13 +36,15 @@ namespace CcsSso.Core.Service.External
     private readonly ICacheInvalidateService _cacheInvalidateService;
     private readonly ICryptographyService _cryptographyService;
     private readonly ApplicationConfigurationInfo _appConfigInfo;
+    private readonly ILookUpService _lookUpService;
+    private readonly IWrapperApiService _wrapperApiService;
 
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
       IAdaptorNotificationService adapterNotificationService, IWrapperCacheService wrapperCacheService,
       IAuditLoginService auditLoginService, IRemoteCacheService remoteCacheService,
       ICacheInvalidateService cacheInvalidateService, ICryptographyService cryptographyService,
-      ApplicationConfigurationInfo appConfigInfo)
+      ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -55,9 +58,11 @@ namespace CcsSso.Core.Service.External
       _cacheInvalidateService = cacheInvalidateService;
       _cryptographyService = cryptographyService;
       _appConfigInfo = appConfigInfo;
+      _lookUpService = lookUpService;
+      _wrapperApiService = wrapperApiService;
     }
 
-    public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo)
+    public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo, bool isNewOrgAdmin = false)
     {
       var isRegisteredInIdam = false;
       var userName = userProfileRequestInfo.UserName.ToLower();
@@ -208,6 +213,33 @@ namespace CcsSso.Core.Service.External
 
       if (userProfileRequestInfo.SendUserRegistrationEmail)
       {
+        var isAutovalidationSuccess = false;
+        // #Auto validation
+        if (isNewOrgAdmin) 
+        {
+          bool isDomainValidForAutoValidation = false;
+          try
+          {
+            isDomainValidForAutoValidation = await _lookUpService.IsDomainValidForAutoValidation(userName);
+          }
+          catch(Exception ex)
+          {
+            // TODO: lookup api fail logic
+            Console.WriteLine(ex.Message);
+          }
+
+          // If auto validation on and user is buyer or both
+          if (organisation.SupplierBuyerType == ((int)RoleEligibleTradeType.Buyer) || organisation.SupplierBuyerType == ((int)RoleEligibleTradeType.Both))
+          {
+            //await _organisationProfileService.AutoValidateOrganisation(ciiOrgId, organisationRegistrationDto.AdminUserName);
+            var autoValidationDetails = new AutoValidationDetails { 
+                AdminEmailId = userProfileRequestInfo.UserName
+            };
+
+            isAutovalidationSuccess = await _wrapperApiService.PostAsync<bool>($"{userProfileRequestInfo.OrganisationId}/auto-validate", autoValidationDetails, "ERROR_ORGANISATION_AUTOVALIDATION");
+          }
+        }
+
         if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)
         {
           var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
@@ -224,8 +256,10 @@ namespace CcsSso.Core.Service.External
         }
         else if (isConclaveConnectionIncluded)
         {
+          string ccsMsg = isAutovalidationSuccess ? "Please note that notification has been sent to CCS " +
+                          "to verify the buyer status of your Organisation. You will be informed within the next 24 to 72 hours" : string.Empty;
           var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
-          await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink));
+          await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink), ccsMsg);
         }
       }
 

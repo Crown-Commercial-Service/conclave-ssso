@@ -473,6 +473,7 @@ namespace CcsSso.Core.Tests.External
       }
       var mockWrapperCacheService = new Mock<IWrapperCacheService>();
       var mockRemoteCacheService = new Mock<IRemoteCacheService>();
+      var mockLookUpService = new Mock<ILookUpService>();
 
       if (mockIdamService == null)
       {
@@ -482,7 +483,7 @@ namespace CcsSso.Core.Tests.External
       RequestContext requestContext = new();
       var service = new OrganisationProfileService(dataContext, contactsHelperService, mockCcsSsoEmailService.Object,
        mockCiiService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object,
-       mockLocalCacheService.Object, applicationConfigurationInfo, requestContext, mockIdamService.Object, mockRemoteCacheService.Object);
+       mockLocalCacheService.Object, applicationConfigurationInfo, requestContext, mockIdamService.Object, mockRemoteCacheService.Object, mockLookUpService.Object);
       return service;
     }
 

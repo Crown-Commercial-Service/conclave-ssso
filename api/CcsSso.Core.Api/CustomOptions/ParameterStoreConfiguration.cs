@@ -140,6 +140,13 @@ namespace CcsSso.Core.Api.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "RedisCacheSettings/IsEnabled", "RedisCacheSettings:IsEnabled"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "RedisCacheSettings/CacheExpirationInMinutes", "RedisCacheSettings:CacheExpirationInMinutes"));
 
+      // #Auto validation
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/OrgApiKey", "WrapperApiSettings:OrgApiKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/ApiGatewayEnabledOrgUrl", "WrapperApiSettings:ApiGatewayEnabledOrgUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/ApiGatewayDisabledOrgUrl", "WrapperApiSettings:ApiGatewayDisabledOrgUrl"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "LookUpApiSettings/LookUpApiKey", "LookUpApiSettings:LookUpApiKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "LookUpApiSettings/LookUpApiUrl", "LookUpApiSettings:LookUpApiUrl"));
+
       foreach (var configuration in configurations)
       {
         Data.Add(configuration);
