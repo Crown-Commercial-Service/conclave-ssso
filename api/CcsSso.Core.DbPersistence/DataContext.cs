@@ -192,6 +192,8 @@ namespace CcsSso.DbPersistence
 
         public DbSet<CountryDetails> CountryDetails { get; set; }
 
+        public DbSet<OrganisationAuditEvent> OrganisationAuditEvent { get; set; }
+
         public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
             ValidateEntities();

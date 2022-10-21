@@ -193,6 +193,7 @@ namespace CcsSso.ExternalApi
       services.AddScoped<IOrganisationContactService, OrganisationContactService>();
       services.AddScoped<IOrganisationSiteService, OrganisationSiteService>();
       services.AddScoped<IOrganisationSiteContactService, OrganisationSiteContactService>();
+      services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();
       services.AddScoped<IUserProfileService, UserProfileService>();
       services.AddScoped<IUserContactService, UserContactService>();
       services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
