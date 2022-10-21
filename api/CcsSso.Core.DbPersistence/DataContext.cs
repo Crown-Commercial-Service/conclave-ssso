@@ -191,11 +191,13 @@ namespace CcsSso.DbPersistence
         public DbSet<BulkUploadDetail> BulkUploadDetail { get; set; }
 
         public DbSet<CountryDetails> CountryDetails { get; set; }
+
+        public DbSet<OrganisationAuditEvent> OrganisationAuditEvent { get; set; }
         
         // #Auto validation
         public DbSet<OrganisationAudit> OrganisationAudit { get; set; }
 
-    public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
             ValidateEntities();
             return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
