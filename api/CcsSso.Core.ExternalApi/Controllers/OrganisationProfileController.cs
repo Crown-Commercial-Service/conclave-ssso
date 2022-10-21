@@ -21,10 +21,11 @@ namespace CcsSso.ExternalApi.Controllers
     private readonly IOrganisationSiteContactService _siteContactService;
     private readonly IUserProfileService _userProfileService;
     private readonly IOrganisationGroupService _organisationGroupService;
+    private readonly IOrganisationAuditEventService _organisationAuditEventService;
 
     public OrganisationProfileController(IOrganisationProfileService organisationService, IOrganisationContactService contactService,
        IOrganisationSiteService siteService, IOrganisationSiteContactService siteContactService, IUserProfileService userProfileService,
-       IOrganisationGroupService organisationGroupService)
+       IOrganisationGroupService organisationGroupService, IOrganisationAuditEventService organisationAuditEventService)
     {
       _organisationService = organisationService;
       _contactService = contactService;
@@ -32,6 +33,7 @@ namespace CcsSso.ExternalApi.Controllers
       _siteContactService = siteContactService;
       _userProfileService = userProfileService;
       _organisationGroupService = organisationGroupService;
+      _organisationAuditEventService = organisationAuditEventService;
     }
 
     #region Organisation profile
@@ -1110,5 +1112,45 @@ namespace CcsSso.ExternalApi.Controllers
 
     #endregion
 
+    #region Organisation Audit Event
+    /// <summary>
+    /// To create organisation audit event log
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: ERROR_ORGANISATION_ID_REQUIRED
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /organisations/auditevent
+    ///     [
+    ///       {
+    ///         "organisationId": 1,
+    ///         "schemeIdentifier": "08236144",
+    ///         "firstName": "",
+    ///         "lastName": "",
+    ///         "groupId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///         "actioned": "",
+    ///         "actionedBy": "",
+    ///         "event": "",
+    ///         "roles": ""
+    ///       }
+    ///     ]
+    ///     
+    ///
+    /// </remarks>
+    [HttpPost("auditevent")]
+    [SwaggerOperation(Tags = new[] { "Organisation Audit Event" })]
+    [ProducesResponseType(typeof(int), 200)]
+    public async Task CreateOrganisationContact(List<OrganisationAuditEventInfo> organisationAuditEventInfoList)
+    {
+      await _organisationAuditEventService.CreateOrganisationAuditEvent(organisationAuditEventInfoList);
+    }
+
+    #endregion
   }
 }
