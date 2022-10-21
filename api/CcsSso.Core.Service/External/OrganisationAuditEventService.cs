@@ -29,7 +29,7 @@ namespace CcsSso.Core.Service.External
     /// </summary>
     /// <param name="organisationAuditEventInfoList"></param>
     /// <returns></returns>
-    public async Task CreateOrganisationAuditEvent(List<OrganisationAuditEventInfo> organisationAuditEventInfoList)
+    public async Task CreateOrganisationAuditEventAsync(List<OrganisationAuditEventInfo> organisationAuditEventInfoList)
     {
       List<OrganisationAuditEvent> organisationAuditEvents = new List<OrganisationAuditEvent>();
 
