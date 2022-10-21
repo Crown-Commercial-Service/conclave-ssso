@@ -1146,9 +1146,9 @@ namespace CcsSso.ExternalApi.Controllers
     [HttpPost("auditevent")]
     [SwaggerOperation(Tags = new[] { "Organisation Audit Event" })]
     [ProducesResponseType(typeof(int), 200)]
-    public async Task CreateOrganisationContact(List<OrganisationAuditEventInfo> organisationAuditEventInfoList)
+    public async Task CreateOrganisationAuditEvent(List<OrganisationAuditEventInfo> organisationAuditEventInfoList)
     {
-      await _organisationAuditEventService.CreateOrganisationAuditEvent(organisationAuditEventInfoList);
+      await _organisationAuditEventService.CreateOrganisationAuditEventAsync(organisationAuditEventInfoList);
     }
 
     #endregion
