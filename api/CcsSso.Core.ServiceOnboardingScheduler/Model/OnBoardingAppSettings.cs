@@ -22,6 +22,8 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Model
     public List<string>? CASDefaultRoles { get; set; }
     public int MaxNumbeOfRecordInAReport { get; set; }
 
+    public Email EmailSettings { get; set; }
+
   }
 
 
@@ -53,6 +55,8 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Model
   {
     public string? ApiKey { get; set; }
     public string? FailedAutoValidationNotificationTemplateId { get; set; }
+
+    public List<string> EmailIds { get; set; }
 
   }
 }
