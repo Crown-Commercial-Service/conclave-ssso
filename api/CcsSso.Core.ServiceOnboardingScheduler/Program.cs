@@ -1,18 +1,18 @@
-
-using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.ServiceOnboardingScheduler.Jobs;
 using CcsSso.Core.ServiceOnboardingScheduler.Model;
+using CcsSso.DbPersistence;
+using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Services;
-using System.Reflection.Metadata;
+using Microsoft.EntityFrameworkCore;
+using CcsSso.Shared.Domain.Contexts;
 
 namespace CcsSso.Core.ServiceOnboardingScheduler
-  {
+{
   public class Program
   {
     private static bool vaultEnabled;
-    private static string vaultSource;
-
+   
     public static void Main(string[] args)
     {
       CreateHostBuilder(args).Build().Run();
@@ -28,7 +28,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
                            .Build();
             var builtConfig = config.Build();
             vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
-            vaultSource = configBuilder.GetValue<string>("Source");
+
             if (!vaultEnabled)
             {
               config.AddJsonFile("appsecrets.json", optional: false, reloadOnChange: true);
@@ -45,8 +45,8 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
             services.AddSingleton<IDateTimeService, DateTimeService>();
 
 
-            //services.AddSingleton<RequestContext>(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
-            //services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(appSettings.DbConnection));
+            services.AddSingleton(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
+            services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(appSettings.DbConnection));
 
             services.AddHostedService<CASOnboardingJob>();
             
@@ -74,7 +74,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
 
     private static OnBoardingAppSettings GetConfigurationDetails(HostBuilderContext hostContext)
     {
-      ApiSettings SecurityApi, WrapperApi;
+      ApiSettings SecurityApi, WrapperApi, LookupApi;
       ScheduleJob ScheduleJob;
       OnBoardingDataDuration OnBoardingDataDuration;
 
@@ -86,7 +86,9 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
         dbConnection = config["DbConnection"];
         SecurityApi = config.GetSection("SecurityApi").Get<ApiSettings>();
         WrapperApi = config.GetSection("WrapperApi").Get<ApiSettings>();
-        ScheduleJob = config.GetSection("ScheduleJob").Get<ScheduleJob>();
+      LookupApi = config.GetSection("LookupApi").Get<ApiSettings>();
+
+      ScheduleJob = config.GetSection("ScheduleJob").Get<ScheduleJob>();
         OnBoardingDataDuration = config.GetSection("OnBoardingDataDuration").Get<OnBoardingDataDuration>();
         maxNumbeOfRecordInAReport = config["MaxNumbeOfRecordInAReport"].ToString();
       
@@ -97,6 +99,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
         OnBoardingDataDuration = OnBoardingDataDuration,
         ScheduleJobSettings = ScheduleJob,
         SecurityApiSettings = SecurityApi,
+        LookupApiSettings = LookupApi,
         WrapperApiSettings = WrapperApi,
         MaxNumbeOfRecordInAReport = int.Parse(maxNumbeOfRecordInAReport),
         
