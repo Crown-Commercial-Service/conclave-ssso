@@ -2,6 +2,8 @@
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.ServiceOnboardingScheduler.Jobs;
 using CcsSso.Core.ServiceOnboardingScheduler.Model;
+using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Services;
 using System.Reflection.Metadata;
 
 namespace CcsSso.Core.ServiceOnboardingScheduler
@@ -39,6 +41,8 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
             services.AddSingleton(s => appSettings);
 
             ConfigureHttpClients(services, appSettings);
+
+            services.AddSingleton<IDateTimeService, DateTimeService>();
 
 
             //services.AddSingleton<RequestContext>(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
