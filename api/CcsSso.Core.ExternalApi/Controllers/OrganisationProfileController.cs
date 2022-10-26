@@ -1151,6 +1151,27 @@ namespace CcsSso.ExternalApi.Controllers
       await _organisationAuditEventService.CreateOrganisationAuditEventAsync(organisationAuditEventInfoList);
     }
 
+    /// <summary>
+    /// To get organisation audit event log
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET organisations/1/auditevents
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/auditevents")]
+    [SwaggerOperation(Tags = new[] { "Organisation Audit Event" })]
+    [ProducesResponseType(typeof(OrganisationAuditEventInfoList), 200)]
+    public async Task<OrganisationAuditEventInfoList> GetOrganisationContactsList(int organisationId)
+    {
+      return await _organisationAuditEventService.GetOrganisationAuditEventsListAsync(organisationId);
+    }
+
     #endregion
   }
 }

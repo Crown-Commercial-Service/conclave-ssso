@@ -26,4 +26,35 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string Roles { get; set; }
   }
+
+  public class OrganisationAuditEventResponseInfo
+  {
+    public int OrganisationId { get; set; }
+
+    public string FirstName { get; set; }
+
+    public string LastName { get; set; }
+
+    public Guid GroupId { get; set; }
+
+    public string Actioned { get; set; }
+
+    public string ActionedBy { get; set; }
+
+    public string Event { get; set; }
+
+    public string Roles { get; set; }
+  }
+
+  public class OrganisationAuditEventDetailInfo
+  {
+    public int OrganisationId { get; set; }
+  }
+
+  public class OrganisationAuditEventInfoList
+  {
+    public OrganisationAuditEventDetailInfo Detail { get; set; }
+
+    public List<OrganisationAuditEventResponseInfo> AuditEvents { get; set; }
+  }
 }

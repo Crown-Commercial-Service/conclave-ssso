@@ -3,12 +3,12 @@ using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
+using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Contracts;
-using System;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
@@ -22,6 +22,47 @@ namespace CcsSso.Core.Service.External
     {
       _dataContext = dataContext;
       _dateTimeService = dateTimeService;
+    }
+
+    /// <summary>
+    /// Get organisation audit events
+    /// </summary>
+    /// <param name="organisationId"></param>
+    /// <returns></returns>
+    public async Task<OrganisationAuditEventInfoList> GetOrganisationAuditEventsListAsync(int organisationId)
+    {
+
+      List<OrganisationAuditEventResponseInfo> auditEventInfos = new List<OrganisationAuditEventResponseInfo>();
+
+      var auditEvents = await _dataContext.OrganisationAuditEvent
+        .Where(c => c.OrganisationId == organisationId)
+        .ToListAsync();
+
+      foreach (var auditEvent in auditEvents)
+      {
+        var auditEventInfo = new OrganisationAuditEventResponseInfo
+        {
+          OrganisationId = auditEvent.OrganisationId,
+          FirstName = auditEvent.FirstName,
+          LastName = auditEvent.LastName,
+          GroupId = auditEvent.GroupId,
+          Actioned = auditEvent.Actioned,
+          ActionedBy = auditEvent.ActionedBy,
+          Event = auditEvent.Event,
+          Roles = auditEvent.Roles
+        };
+
+        auditEventInfos.Add(auditEventInfo);
+      }
+
+      return new OrganisationAuditEventInfoList
+      {
+        Detail = new OrganisationAuditEventDetailInfo
+        {
+          OrganisationId = organisationId,
+        },
+        AuditEvents = auditEventInfos
+      };
     }
 
     /// <summary>
