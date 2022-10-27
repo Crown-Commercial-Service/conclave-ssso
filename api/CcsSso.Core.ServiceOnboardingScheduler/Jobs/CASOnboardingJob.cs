@@ -48,9 +48,13 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 
         int interval = _appSettings.ScheduleJobSettings.CASOnboardingJobScheduleInMinutes * 60000;
 
-        _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+        _logger.LogInformation("");
+        _logger.LogInformation("Worker started at: {time}", DateTimeOffset.Now);
 
         await PerformJob();
+
+        _logger.LogInformation("Worker Finsied at: {time}", DateTimeOffset.Now);
+        _logger.LogInformation("");
 
         await Task.Delay(interval, stoppingToken);
       }
@@ -60,6 +64,9 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
     {
       try
       {
+        var successOrgList = new List<string>();
+        var failedOrgList = new List<string>();
+
         var listOfRegisteredOrgs = await GetRegisteredOrgsIds();
 
         List<OrganizationDetails> failedOrganizations = new List<OrganizationDetails>();
@@ -118,6 +125,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 
             if (isValid)
             {
+              successOrgList.Add($"OrgId:{orgId}-CII Org Id:{ciiOrgId}-Org LegalName:{orgLegalName}");
               _logger.LogInformation($"Auto validation succeeded for org. LegalName =  {eachOrgs.Item2}");
               await UpdateRightToBuy(eachOrgs.Item1);
 
@@ -126,6 +134,8 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
             }
             else
             {
+              failedOrgList.Add($"OrgId:{orgId}-CII Org Id:{ciiOrgId}-Org LegalName:{orgLegalName}");
+
               _logger.LogInformation($"Auto validation failed for org. LegalName =  {eachOrgs.Item2}");
 
               OrganizationDetails organizationDetails = new OrganizationDetails();
@@ -140,11 +150,31 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
           }
           catch (Exception ex)
           {
-            _logger.LogError($"Inner Exception while processing the org: {eachOrgs.Item2}, exception message =  {ex.Message}");
+            _logger.LogError($"*****Inner Exception while processing the org: {eachOrgs.Item2}, exception message =  {ex.Message}");
           }
         }
 
-      if (failedOrganizations.Count > 0)
+        if (successOrgList.Count > 0)
+        {
+          _logger.LogInformation("***********************");
+          _logger.LogInformation("Success-OrgList");
+          foreach (var eachOrgs in successOrgList)
+          {
+            _logger.LogInformation(eachOrgs);
+          }
+        }
+
+        if (failedOrgList.Count > 0)
+        {
+          _logger.LogInformation("***********************");
+          _logger.LogInformation("Success-OrgList");
+          foreach (var eachOrgs in failedOrgList)
+          {
+            _logger.LogInformation(eachOrgs);
+          }
+        }
+
+        if (failedOrganizations.Count > 0)
         {
           await SendFailedOrganizationEmailAsync(failedOrganizations, toEmailIds); //new List<string> { "" }
         }
@@ -152,7 +182,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
       }
       catch (Exception ex)
       {
-        _logger.LogError($"Outer Exception during this schedule, exception message =  {ex.Message}");
+        _logger.LogError($"*****Outer Exception during this schedule, exception message =  {ex.Message}");
       }
     }
 
@@ -418,7 +448,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
       foreach (var toEmail in toEmails)
       {
         var emailTempalteId = _appSettings.EmailSettings.FailedAutoValidationNotificationTemplateId;
-        var emailInfo = GetEmailInfo(toEmail, emailTempalteId , data); //"69e0933d-23af-4e6d-8fa5-e96f199a7492"
+        var emailInfo = GetEmailInfo(toEmail, emailTempalteId, data); //"69e0933d-23af-4e6d-8fa5-e96f199a7492"
 
 
 
