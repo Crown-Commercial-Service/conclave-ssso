@@ -167,7 +167,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
         if (failedOrgList.Count > 0)
         {
           _logger.LogInformation("***********************");
-          _logger.LogInformation("Success-OrgList");
+          _logger.LogInformation("Failed-OrgList");
           foreach (var eachOrgs in failedOrgList)
           {
             _logger.LogInformation(eachOrgs);
