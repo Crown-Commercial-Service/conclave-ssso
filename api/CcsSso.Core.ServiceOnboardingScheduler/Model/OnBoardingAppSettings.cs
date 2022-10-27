@@ -19,7 +19,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Model
     public ScheduleJob? ScheduleJobSettings { get; set; }
     public OnBoardingDataDuration? OnBoardingDataDuration { get; set; }
 
-    public List<string>? CASDefaultRoles { get; set; }
+    public string[]? CASDefaultRoles { get; set; }
     public int MaxNumbeOfRecordInAReport { get; set; }
 
     public Email EmailSettings { get; set; }

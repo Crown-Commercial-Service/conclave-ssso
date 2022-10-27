@@ -13,7 +13,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
   public class Program
   {
     private static bool vaultEnabled;
-   
+
     public static void Main(string[] args)
     {
       CreateHostBuilder(args).Build().Run();
@@ -59,7 +59,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
             services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(appSettings.DbConnection));
 
             services.AddHostedService<CASOnboardingJob>();
-            
+
           });
     }
 
@@ -87,21 +87,24 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
       ApiSettings SecurityApi, WrapperApi, LookupApi;
       ScheduleJob ScheduleJob;
       OnBoardingDataDuration OnBoardingDataDuration;
+      Email emailInfo;
 
       string dbConnection;
       string maxNumbeOfRecordInAReport;
+      string[] casDefaultRoles;
 
-      
-        var config = hostContext.Configuration;
-        dbConnection = config["DbConnection"];
-        SecurityApi = config.GetSection("SecurityApi").Get<ApiSettings>();
-        WrapperApi = config.GetSection("WrapperApi").Get<ApiSettings>();
+
+      var config = hostContext.Configuration;
+      dbConnection = config["DbConnection"];
+      SecurityApi = config.GetSection("SecurityApi").Get<ApiSettings>();
+      WrapperApi = config.GetSection("WrapperApi").Get<ApiSettings>();
       LookupApi = config.GetSection("LookupApi").Get<ApiSettings>();
 
       ScheduleJob = config.GetSection("ScheduleJob").Get<ScheduleJob>();
-        OnBoardingDataDuration = config.GetSection("OnBoardingDataDuration").Get<OnBoardingDataDuration>();
-        maxNumbeOfRecordInAReport = config["MaxNumbeOfRecordInAReport"].ToString();
-      
+      OnBoardingDataDuration = config.GetSection("OnBoardingDataDuration").Get<OnBoardingDataDuration>();
+      maxNumbeOfRecordInAReport = config["MaxNumbeOfRecordInAReport"].ToString();
+      casDefaultRoles = config.GetSection("Roles:CASDefaultRoles").Get<string[]>();
+      emailInfo= config.GetSection("Email").Get<Email>();
 
       var appSettings = new OnBoardingAppSettings()
       {
@@ -112,12 +115,14 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
         LookupApiSettings = LookupApi,
         WrapperApiSettings = WrapperApi,
         MaxNumbeOfRecordInAReport = int.Parse(maxNumbeOfRecordInAReport),
-        
+        CASDefaultRoles = casDefaultRoles,
+        EmailSettings = emailInfo,
+
       };
       return appSettings;
     }
 
-    
+
   }
 }
 
