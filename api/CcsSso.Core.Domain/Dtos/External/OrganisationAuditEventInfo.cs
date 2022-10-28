@@ -43,18 +43,13 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string Event { get; set; }
 
-    public string Roles { get; set; }
+    public string Role { get; set; }
+
+    public DateTime Date { get; set; }
   }
 
-  public class OrganisationAuditEventDetailInfo
+  public class OrganisationAuditEventInfoListResponse : PaginationInfo
   {
-    public int OrganisationId { get; set; }
-  }
-
-  public class OrganisationAuditEventInfoList
-  {
-    public OrganisationAuditEventDetailInfo Detail { get; set; }
-
-    public List<OrganisationAuditEventResponseInfo> AuditEvents { get; set; }
+    public List<OrganisationAuditEventResponseInfo> OrganisationAuditEventList { get; set; }
   }
 }

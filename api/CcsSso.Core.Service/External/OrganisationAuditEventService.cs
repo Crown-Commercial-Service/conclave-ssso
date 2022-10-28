@@ -1,4 +1,5 @@
-﻿using CcsSso.Core.DbModel.Entity;
+﻿using CcsSso.Core.DbModel.Constants;
+using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Domain.Constants;
@@ -6,7 +7,9 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -29,9 +32,8 @@ namespace CcsSso.Core.Service.External
     /// </summary>
     /// <param name="organisationId"></param>
     /// <returns></returns>
-    public async Task<OrganisationAuditEventInfoList> GetOrganisationAuditEventsListAsync(int organisationId)
+    public async Task<OrganisationAuditEventInfoListResponse> GetOrganisationAuditEventsListAsync(int organisationId, ResultSetCriteria resultSetCriteria)
     {
-
       List<OrganisationAuditEventResponseInfo> auditEventInfos = new List<OrganisationAuditEventResponseInfo>();
 
       var auditEvents = await _dataContext.OrganisationAuditEvent
@@ -40,28 +42,51 @@ namespace CcsSso.Core.Service.External
 
       foreach (var auditEvent in auditEvents)
       {
-        var auditEventInfo = new OrganisationAuditEventResponseInfo
+        if (auditEvent.Event == OrganisationAuditEventType.RoleAssigned.ToString() 
+          || auditEvent.Event == OrganisationAuditEventType.RoleUnassigned.ToString())
         {
-          OrganisationId = auditEvent.OrganisationId,
-          FirstName = auditEvent.FirstName,
-          LastName = auditEvent.LastName,
-          GroupId = auditEvent.GroupId,
-          Actioned = auditEvent.Actioned,
-          ActionedBy = auditEvent.ActionedBy,
-          Event = auditEvent.Event,
-          Roles = auditEvent.Roles
-        };
+          var roles = auditEvent.Roles.Split(",");
 
-        auditEventInfos.Add(auditEventInfo);
+          foreach (var role in roles)
+          {
+            OrganisationAuditEventResponseInfo auditEventInfo = GetAuditEventInfo(auditEvent, role);
+            auditEventInfos.Add(auditEventInfo);
+          }
+        }
+        else
+        {
+          OrganisationAuditEventResponseInfo auditEventInfo = GetAuditEventInfo(auditEvent, "");
+          auditEventInfos.Add(auditEventInfo);
+        }
       }
 
-      return new OrganisationAuditEventInfoList
+      auditEventInfos = auditEventInfos.OrderByDescending(x => x.Date).ToList();
+
+      int pageCount;
+      var result = UtilityHelper.GetPagedResult(auditEventInfos, resultSetCriteria.CurrentPage, resultSetCriteria.PageSize, out pageCount);
+
+      return new OrganisationAuditEventInfoListResponse
       {
-        Detail = new OrganisationAuditEventDetailInfo
-        {
-          OrganisationId = organisationId,
-        },
-        AuditEvents = auditEventInfos
+        CurrentPage = resultSetCriteria.CurrentPage,
+        PageCount = resultSetCriteria.PageSize,
+        RowCount = auditEventInfos.Count,
+        OrganisationAuditEventList = result ?? new List<OrganisationAuditEventResponseInfo>()
+      };
+    }
+
+    private static OrganisationAuditEventResponseInfo GetAuditEventInfo(OrganisationAuditEvent auditEvent, string role)
+    {
+      return new OrganisationAuditEventResponseInfo
+      {
+        OrganisationId = auditEvent.OrganisationId,
+        FirstName = auditEvent.FirstName,
+        LastName = auditEvent.LastName,
+        GroupId = auditEvent.GroupId,
+        Actioned = auditEvent.Actioned,
+        ActionedBy = auditEvent.ActionedBy,
+        Event = auditEvent.Event,
+        Role = role,
+        Date = auditEvent.Date
       };
     }
 

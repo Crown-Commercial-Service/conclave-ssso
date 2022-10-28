@@ -1159,17 +1159,26 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <remarks>
+    /// NOTE:- query params page-size, current-page
     /// Sample request:
     ///
-    ///     GET organisations/1/auditevents
+    ///     GET organisations/1/auditevents?page-size=10,current-page=1
     ///     
     /// </remarks>
     [HttpGet("{organisationId}/auditevents")]
     [SwaggerOperation(Tags = new[] { "Organisation Audit Event" })]
-    [ProducesResponseType(typeof(OrganisationAuditEventInfoList), 200)]
-    public async Task<OrganisationAuditEventInfoList> GetOrganisationContactsList(int organisationId)
+    [ProducesResponseType(typeof(OrganisationAuditEventInfoListResponse), 200)]
+    public async Task<OrganisationAuditEventInfoListResponse> GetOrganisationContactsList(int organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
     {
-      return await _organisationAuditEventService.GetOrganisationAuditEventsListAsync(organisationId);
+      resultSetCriteria ??= new ResultSetCriteria
+      {
+        CurrentPage = 1,
+        PageSize = 10
+      };
+      resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
+      resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
+
+      return await _organisationAuditEventService.GetOrganisationAuditEventsListAsync(organisationId, resultSetCriteria);
     }
 
     #endregion

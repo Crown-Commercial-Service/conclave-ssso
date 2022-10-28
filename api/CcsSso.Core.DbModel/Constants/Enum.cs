@@ -42,5 +42,31 @@ namespace CcsSso.Core.DbModel.Constants
     Primary,
     Delegation
   }
-  
+
+  public enum OrganisationAuditActionType
+  {
+    Autovalidation,
+    OrganisationRegistration,
+    Admin
+  }
+
+  public enum OrganisationAuditEventType
+  {
+    RoleAssigned,
+    RoleUnassigned,
+    ManualAcceptationRightToBuy,
+    ManualDeclineRightToBuy,
+    AutomaticAcceptationRightToBuy,
+    AutomaticDeclineRightToBuy,
+    OrganisationTypeBuyerToSupplier,
+    OrganisationTypeBuyerToBoth,
+    OrganisationTypeBothToSupplier,
+    OrganisationTypeBothToBuyer,
+    OrganisationTypeSupplierToBoth,
+    OrganisationTypeSupplierToBuyer,
+    NotRecognizedAsVerifiedBuyer,
+    OrganisationRegistrationTypeBuyer,
+    OrganisationRegistrationTypeBoth,
+    InactiveOrganisationRemoved
+  }
 }

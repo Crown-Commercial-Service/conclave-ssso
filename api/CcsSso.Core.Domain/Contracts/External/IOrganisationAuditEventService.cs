@@ -9,7 +9,7 @@ namespace CcsSso.Core.Domain.Contracts.External
 {
   public interface IOrganisationAuditEventService
   {
-    Task<OrganisationAuditEventInfoList> GetOrganisationAuditEventsListAsync(int organisationId);
+    Task<OrganisationAuditEventInfoListResponse> GetOrganisationAuditEventsListAsync(int organisationId, ResultSetCriteria resultSetCriteria);
     Task CreateOrganisationAuditEventAsync(List<OrganisationAuditEventInfo> organisationAuditEventInfoList);
   }
 }
