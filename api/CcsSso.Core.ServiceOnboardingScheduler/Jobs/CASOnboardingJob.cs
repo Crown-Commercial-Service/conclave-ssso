@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Notify.Client;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
@@ -94,6 +95,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
             var orgId = eachOrgs.Item1;
             var ciiOrgId = eachOrgs.Item2;
             var orgLegalName = eachOrgs.Item3;
+            var orgCreatedOn = eachOrgs.Item4;
 
 
             _logger.LogInformation($"OrgName {orgLegalName}");
@@ -143,7 +145,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
               organizationDetails.Name = eachOrgs.Item3;
               organizationDetails.AdminEmail = oldestOrgAdmin.Item3;
               organizationDetails.AutovalidationStatus = "false";
-              organizationDetails.DateTime = DateTime.UtcNow.ToString();
+              organizationDetails.DateTime = ConvertToGmtDateTime(orgCreatedOn);
 
               failedOrganizations.Add(organizationDetails);
             }
@@ -206,7 +208,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
         roleList.Add("CAT_USER");
         roleList.Add("ACCESS_CAAAC_CLIENT");
         roleList.Add("JAGGAER_USER");
-        roleList.Add("ACCESS_JAGGAER");
+        roleList.Add("JAEGGER_BUYER"); //As per the discussion with Artur - Change from ACCESS_JAGGAER to JAEGGER_BUYER
       }
       else
       {
@@ -306,7 +308,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
       roleList.Add("CAT_USER");
       roleList.Add("ACCESS_CAAAC_CLIENT");
       roleList.Add("JAGGAER_USER");
-      roleList.Add("ACCESS_JAGGAER");
+      roleList.Add("JAEGGER_BUYER");
 
       var defaultRoles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted && roleList.Contains(ar.CcsAccessRoleNameKey)).ToListAsync();
 
@@ -411,7 +413,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 
     }
 
-    private async Task<List<Tuple<int, string, string>>> GetRegisteredOrgsIds()
+    private async Task<List<Tuple<int, string, string, DateTime>>> GetRegisteredOrgsIds()
     {
       var dataDuration = _appSettings.OnBoardingDataDuration.CASOnboardingDurationInMinutes;
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
@@ -421,7 +423,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
         var organisationIds = await _dataContext.Organisation.Where(
                           org => !org.IsDeleted && org.RightToBuy == false && org.SupplierBuyerType > 0 // ToDo: change to buyer or both
                           && org.LastUpdatedOnUtc > untilDateTime)
-                          .Select(o => new Tuple<int, string, string>(o.Id, o.CiiOrganisationId, o.LegalName)).ToListAsync();
+                          .Select(o => new Tuple<int, string, string, DateTime>(o.Id, o.CiiOrganisationId, o.LegalName, o.CreatedOnUtc)).ToListAsync();
         return organisationIds;
       }
       catch (Exception ex)
@@ -538,8 +540,12 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
       return false;
     }
 
-
+    private string ConvertToGmtDateTime(DateTime dateTime)
+    {
+      var easternZone = TimeZoneInfo.FindSystemTimeZoneById("GMT Standard Time");
+      var convertedDateTime = TimeZoneInfo.ConvertTimeFromUtc(dateTime, easternZone);
+      return convertedDateTime.ToString("dd/MM/yyyy hh:mm", CultureInfo.InvariantCulture);
+    }
 
   }
-
 }
