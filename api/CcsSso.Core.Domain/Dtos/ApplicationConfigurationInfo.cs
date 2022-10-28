@@ -135,6 +135,7 @@ namespace CcsSso.Domain.Dtos
 
   public class OrgAutoValidation 
   {
+    public bool Enable { get; set; } = false;
     public string CCSAdminEmailId { get; set; }
     public string[] AdditionalRoles { get; set; }
   }

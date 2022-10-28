@@ -134,23 +134,28 @@ namespace CcsSso.Core.Service.External
 
       // Set user roles
       var userAccessRoles = new List<UserAccessRole>();
-      userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
-      {
-        userAccessRoles.Add(new UserAccessRole
-        {
-          OrganisationEligibleRoleId = roleId
-        });
-      });
 
-      var defaultUserRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.DefaultUserRoleNameKey).Id;
-
-      // Set default user role if no role available
-      if (userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() || !userAccessRoles.Exists(ur => ur.OrganisationEligibleRoleId == defaultUserRoleId))
+      // #Auto validation role assignment will not be applicable here if auto validation on. Role assignment will be done as part of auto validation
+      if (!_appConfigInfo.OrgAutoValidation.Enable || !isNewOrgAdmin)
       {
-        userAccessRoles.Add(new UserAccessRole
+        userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
         {
-          OrganisationEligibleRoleId = defaultUserRoleId
+          userAccessRoles.Add(new UserAccessRole
+          {
+            OrganisationEligibleRoleId = roleId
+          });
         });
+
+        var defaultUserRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.DefaultUserRoleNameKey).Id;
+
+        // Set default user role if no role available
+        if (userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() || !userAccessRoles.Exists(ur => ur.OrganisationEligibleRoleId == defaultUserRoleId))
+        {
+          userAccessRoles.Add(new UserAccessRole
+          {
+            OrganisationEligibleRoleId = defaultUserRoleId
+          });
+        }
       }
 
       var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(p => p.PartyTypeName == PartyTypeName.User)).Id;
@@ -215,29 +220,26 @@ namespace CcsSso.Core.Service.External
       {
         var isAutovalidationSuccess = false;
         // #Auto validation
-        if (isNewOrgAdmin) 
+        if (isNewOrgAdmin && _appConfigInfo.OrgAutoValidation.Enable && organisation.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier) 
         {
-          bool isDomainValidForAutoValidation = false;
-          try
-          {
-            isDomainValidForAutoValidation = await _lookUpService.IsDomainValidForAutoValidation(userName);
-          }
-          catch(Exception ex)
-          {
-            // TODO: lookup api fail logic
-            Console.WriteLine(ex.Message);
-          }
+          //bool isDomainValidForAutoValidation = false;
+          //try
+          //{
+          //  isDomainValidForAutoValidation = await _lookUpService.IsDomainValidForAutoValidation(userName);
+          //}
+          //catch(Exception ex)
+          //{
+          //  // TODO: lookup api fail logic
+          //  Console.WriteLine(ex.Message);
+          //}
 
           // If auto validation on and user is buyer or both
-          if (organisation.SupplierBuyerType == ((int)RoleEligibleTradeType.Buyer) || organisation.SupplierBuyerType == ((int)RoleEligibleTradeType.Both))
-          {
-            //await _organisationProfileService.AutoValidateOrganisation(ciiOrgId, organisationRegistrationDto.AdminUserName);
-            var autoValidationDetails = new AutoValidationDetails { 
-                AdminEmailId = userProfileRequestInfo.UserName
+           var autoValidationDetails = new AutoValidationDetails { 
+                AdminEmailId = userProfileRequestInfo.UserName,
+              CompanyHouseId = userProfileRequestInfo.CompanyHouseId
             };
 
-            isAutovalidationSuccess = await _wrapperApiService.PostAsync<bool>($"{userProfileRequestInfo.OrganisationId}/auto-validate", autoValidationDetails, "ERROR_ORGANISATION_AUTOVALIDATION");
-          }
+            isAutovalidationSuccess = await _wrapperApiService.PostAsync<bool>($"{userProfileRequestInfo.OrganisationId}/registration", autoValidationDetails, "ERROR_ORGANISATION_AUTOVALIDATION");
         }
 
         if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)
@@ -248,6 +250,7 @@ namespace CcsSso.Core.Service.External
           await _ccsSsoEmailService.SendUserConfirmEmailBothIdpAsync(party.User.UserName, string.Join(",", listOfIdpName), activationlink);
 
         }
+
         else if (isNonUserNamePwdConnectionIncluded)
         {
           var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
@@ -256,8 +259,10 @@ namespace CcsSso.Core.Service.External
         }
         else if (isConclaveConnectionIncluded)
         {
-          string ccsMsg = isAutovalidationSuccess ? "Please note that notification has been sent to CCS " +
-                          "to verify the buyer status of your Organisation. You will be informed within the next 24 to 72 hours" : string.Empty;
+          // #Auto validation
+          string ccsMsg = (isNewOrgAdmin && !isAutovalidationSuccess && organisation.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier) ? 
+                          "Please note that notification has been sent to CCS to verify the buyer status of your Organisation. " +
+                          "You will be informed within the next 24 to 72 hours" : string.Empty;
           var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
           await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink), ccsMsg);
         }

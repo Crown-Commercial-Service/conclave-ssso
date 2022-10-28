@@ -181,6 +181,7 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       if (_secrets.Data.ContainsKey("OrgAutoValidation"))
       {
         var orgAutoValidation = JsonConvert.DeserializeObject<OrgAutoValidation>(_secrets.Data["OrgAutoValidation"].ToString());
+        Data.Add("OrgAutoValidation:Enable", orgAutoValidation.Enable.ToString());
         Data.Add("OrgAutoValidation:CCSAdminEmailId", orgAutoValidation.CCSAdminEmailId.ToString());
 
         int index = 0;

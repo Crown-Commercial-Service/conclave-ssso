@@ -141,6 +141,7 @@ namespace CcsSso.Core.Api.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "RedisCacheSettings/CacheExpirationInMinutes", "RedisCacheSettings:CacheExpirationInMinutes"));
 
       // #Auto validation
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/Enable", "OrgAutoValidation:Enable"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/OrgApiKey", "WrapperApiSettings:OrgApiKey"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/ApiGatewayEnabledOrgUrl", "WrapperApiSettings:ApiGatewayEnabledOrgUrl"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "WrapperApiSettings/ApiGatewayDisabledOrgUrl", "WrapperApiSettings:ApiGatewayDisabledOrgUrl"));

@@ -102,7 +102,12 @@ namespace CcsSso.Api
           {
             BaseUrl = Configuration["ConclaveSettings:BaseUrl"],
             OrgRegistrationRoute = Configuration["ConclaveSettings:OrgRegistrationRoute"]
-          }
+          },
+          // #Auto validation
+          OrgAutoValidation = new OrgAutoValidation()
+          {
+            Enable = Convert.ToBoolean(Configuration["OrgAutoValidation:Enable"])
+          },
         };
         return appConfigInfo;
       });
@@ -230,6 +235,8 @@ namespace CcsSso.Api
             services.AddScoped<IOrganisationProfileService, OrganisationProfileService>();
             services.AddScoped<IUserProfileService, UserProfileService>();
             services.AddScoped<IOrganisationContactService, OrganisationContactService>();
+            services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
+            services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();
             services.AddScoped<IContactsHelperService, ContactsHelperService>();
             services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
             services.AddScoped<IIdamService, IdamService>();

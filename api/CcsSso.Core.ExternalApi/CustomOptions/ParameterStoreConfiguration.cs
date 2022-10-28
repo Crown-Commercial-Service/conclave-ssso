@@ -133,6 +133,7 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "UserDelegation/DelegationExcludeRoles", "UserDelegation:DelegationExcludeRoles"));
 
       // #Auto validation
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/Enable", "OrgAutoValidation:Enable"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/CCSAdminEmailId", "OrgAutoValidation:CCSAdminEmailId"));
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/AdditionalRoles", "OrgAutoValidation:AdditionalRoles"));
 

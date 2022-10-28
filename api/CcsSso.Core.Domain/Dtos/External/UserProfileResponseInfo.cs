@@ -31,6 +31,9 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string? OriginOrganisationName { get; set; }
 
+    // #Auto validation
+    public string? CompanyHouseId { get; set; }
+
   }
 
   public class UserRequestDetail

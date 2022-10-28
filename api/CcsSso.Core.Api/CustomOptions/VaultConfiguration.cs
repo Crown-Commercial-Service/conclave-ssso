@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using CcsSso.Shared.Domain;
+using CcsSso.Domain.Dtos;
 
 namespace CcsSso.Api.CustomOptions
 {
@@ -148,11 +149,10 @@ namespace CcsSso.Api.CustomOptions
       }
 
       // #Auto validation
-      if (_secrets.Data.ContainsKey("ExternalApiSettings"))
+      if (_secrets.Data.ContainsKey("OrgAutoValidation"))
       {
-        var securityApiKeySettings = JsonConvert.DeserializeObject<SecurityApiSettingsVault>(_secrets.Data["ExternalApiSettings"].ToString());
-        Data.Add("ExternalApiSettings:ApiKey", securityApiKeySettings.ApiKey);
-        Data.Add("ExternalApiSettings:Url", securityApiKeySettings.Url);
+        var orgAutoValidation = JsonConvert.DeserializeObject<OrgAutoValidation>(_secrets.Data["OrgAutoValidation"].ToString());
+        Data.Add("OrgAutoValidation:Enable", orgAutoValidation.Enable.ToString());
       }
 
       if (_secrets.Data.ContainsKey("WrapperApiSettings"))

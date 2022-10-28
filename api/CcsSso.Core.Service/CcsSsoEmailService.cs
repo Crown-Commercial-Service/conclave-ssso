@@ -146,13 +146,12 @@ namespace CcsSso.Core.Service
     }
 
     // #Auto validation
-    public async Task SendOrgPendingVerificationEmailToCCSAdminAsync(string email, string orgName, string manageBuyerLink) 
+    public async Task SendOrgPendingVerificationEmailToCCSAdminAsync(string email, string orgName)
     {
-      // TODO: Change link address
       var data = new Dictionary<string, dynamic>
                       {
                         { "orgName", orgName},
-                        { "link", _appConfigInfo.ConclaveLoginUrl + manageBuyerLink }
+                        { "link", _appConfigInfo.ConclaveLoginUrl + "/manage-buyer-both" }
                       };
 
       var emailInfo = new EmailInfo()

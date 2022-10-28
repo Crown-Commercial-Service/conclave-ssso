@@ -132,6 +132,7 @@ namespace CcsSso.Core.Domain.Dtos.External
   {
     public string AdminEmailId { get; set; }
     public bool IsFromBackgroundJob { get; set; } = false;
+    public string? CompanyHouseId { get; set; }
   }
 
 }

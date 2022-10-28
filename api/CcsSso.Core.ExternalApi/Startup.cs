@@ -135,6 +135,7 @@ namespace CcsSso.ExternalApi
           // #Auto validation
           OrgAutoValidation = new OrgAutoValidation()
           {
+            Enable = Convert.ToBoolean(Configuration["OrgAutoValidation:Enable"]),
             CCSAdminEmailId = Configuration["OrgAutoValidation:CCSAdminEmailId"],
             AdditionalRoles = Configuration.GetSection("OrgAutoValidation:AdditionalRoles").Get<string[]>(),
           },
@@ -205,6 +206,7 @@ namespace CcsSso.ExternalApi
       services.AddScoped<IOrganisationSiteService, OrganisationSiteService>();
       services.AddScoped<IOrganisationSiteContactService, OrganisationSiteContactService>();
       services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();
+      services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
       services.AddScoped<IUserProfileService, UserProfileService>();
       services.AddScoped<IUserContactService, UserContactService>();
       services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
