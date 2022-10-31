@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.DbModel.Entity;
 using System;
@@ -28,6 +29,8 @@ namespace CcsSso.Core.Domain.Contracts.External
     Task UpdateOrganisationEligibleRolesAsync(string ciiOrganisationId, bool isBuyer, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete);
 
     // #Auto validation
-    Task<bool> AutoValidateOrganisation(string organisationId, AutoValidationDetails autoValidationDetails);
+    Task<bool> AutoValidateOrganisationRegistration(string organisationId, AutoValidationDetails autoValidationDetails);
+    Task UpdateOrgAutoValidationEligibleRolesAsync(string ciiOrganisationId, RoleEligibleTradeType orgType, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete);
+    Task<Tuple<bool, string>> AutoValidateOrganisationDetails(string ciiOrganisationId, string adminEmailId = "");
   }
 }

@@ -44,10 +44,13 @@ namespace CcsSso.Core.DbModel.Constants
   }
 
   // #Auto validation
-  public enum OrgAutoApprovalStatus 
+  public enum OrgAutoValidationStatus
   {
-    Approved,
-    Pending
+    AutoApproved,
+    AutoPending,
+    ManuallyApproved,
+    ManuallyDecliend,
+    ManualRemovalOfRightToBuy
   }
   
 }

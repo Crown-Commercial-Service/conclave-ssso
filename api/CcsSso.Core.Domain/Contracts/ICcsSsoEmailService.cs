@@ -34,5 +34,7 @@ namespace CcsSso.Core.Domain.Contracts
     Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string encryptedInfo);
     // #Auto validation
     Task SendOrgPendingVerificationEmailToCCSAdminAsync(string email, string orgName);
+
+    Task SendOrgBuyerStatusChangeUpdateToAllAdminsAsync(string email);
   }
 }

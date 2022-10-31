@@ -163,6 +163,17 @@ namespace CcsSso.Core.Service
       await SendEmailAsync(emailInfo);
     }
 
+    public async Task SendOrgBuyerStatusChangeUpdateToAllAdminsAsync(string email)
+    {
+
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.EmailInfo.OrgBuyerStatusChangeUpdateToAllAdmins
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
     private async Task SendEmailAsync(EmailInfo emailInfo)
     {
       try

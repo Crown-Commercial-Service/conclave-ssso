@@ -12,7 +12,7 @@ namespace CcsSso.Core.DbModel.Entity
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
-    public OrgAutoApprovalStatus Status { get; set; }
+    public OrgAutoValidationStatus Status { get; set; }
 
     public int OrganisationId { get; set; }
 

@@ -4,7 +4,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 {
   public class OrganisationAuditInfo
   {
-    public OrgAutoApprovalStatus Status { get; set; }
+    public OrgAutoValidationStatus Status { get; set; }
 
     public int OrganisationId { get; set; }
 

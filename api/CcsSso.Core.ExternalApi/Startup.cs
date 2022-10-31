@@ -115,6 +115,7 @@ namespace CcsSso.ExternalApi
             UserRegistrationEmailUserIdPwdTemplateId= Configuration["Email:UserRegistrationEmailUserIdPwdTemplateId"],
             // #Auto validation
             OrgPendingVerificationEmailTemplateId = Configuration["Email:OrgPendingVerificationEmailTemplateId"],
+            OrgBuyerStatusChangeUpdateToAllAdmins = Configuration["Email:OrgBuyerStatusChangeUpdateToAllAdmins"],
             SendNotificationsEnabled = sendNotificationsEnabled,
           },
           QueueUrlInfo = new QueueUrlInfo
@@ -137,7 +138,6 @@ namespace CcsSso.ExternalApi
           {
             Enable = Convert.ToBoolean(Configuration["OrgAutoValidation:Enable"]),
             CCSAdminEmailId = Configuration["OrgAutoValidation:CCSAdminEmailId"],
-            AdditionalRoles = Configuration.GetSection("OrgAutoValidation:AdditionalRoles").Get<string[]>(),
           },
         };
         return appConfigInfo;

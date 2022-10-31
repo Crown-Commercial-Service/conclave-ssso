@@ -83,6 +83,7 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/SendNotificationsEnabled", "Email:SendNotificationsEnabled"));
       // #Auto validation
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/OrgPendingVerificationEmailTemplateId", "Email:OrgPendingVerificationEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/OrgBuyerStatusChangeUpdateToAllAdmins", "Email:OrgBuyerStatusChangeUpdateToAllAdmins"));
 
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Cii/Url", "Cii:Url"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Cii/Token", "Cii:Token"));
@@ -135,7 +136,6 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       // #Auto validation
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/Enable", "OrgAutoValidation:Enable"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/CCSAdminEmailId", "OrgAutoValidation:CCSAdminEmailId"));
-      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/AdditionalRoles", "OrgAutoValidation:AdditionalRoles"));
 
       foreach (var configuration in configurations)
       {

@@ -104,6 +104,8 @@ namespace CcsSso.Domain.Dtos
     // #Auto validation
     public string OrgPendingVerificationEmailTemplateId { get; set; }
 
+    public string OrgBuyerStatusChangeUpdateToAllAdmins { get; set; }
+
     public bool SendNotificationsEnabled { get; set; }
 
   }
@@ -137,7 +139,6 @@ namespace CcsSso.Domain.Dtos
   {
     public bool Enable { get; set; } = false;
     public string CCSAdminEmailId { get; set; }
-    public string[] AdditionalRoles { get; set; }
   }
 
   public class ExternalApiDetails

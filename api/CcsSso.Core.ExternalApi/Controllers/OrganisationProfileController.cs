@@ -6,6 +6,7 @@ using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -166,71 +167,51 @@ namespace CcsSso.ExternalApi.Controllers
     ///     }
     ///     
     /// </remarks>
-    [HttpPost("{ciiOrganisationId}/registration")]
+    [HttpPost("{organisationId}/registration")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
     [OrganisationAuthorise("ORGANISATION")]
-    [SwaggerOperation(Tags = new[] { "Auto Validation" })]
+    [SwaggerOperation(Tags = new[] { "Auto Validation organisation registration" })]
     [ProducesResponseType(typeof(string), 200)]
     public async Task<bool> AutoValidateOrganisation(string ciiOrganisationId, AutoValidationDetails autoValidationDetails)
     {
-      return await _organisationService.AutoValidateOrganisation(ciiOrganisationId, autoValidationDetails);
+      return await _organisationService.AutoValidateOrganisationRegistration(ciiOrganisationId, autoValidationDetails);
     }
 
-    /// <summary>
-    /// Organisation auto validation for verified buyer
-    /// </summary>
-    /// <response  code="200">Ok. Return true if auto validation passed else return false</response>
-    /// <response  code="401">Unauthorised</response>
-    /// <response  code="400">Bad request.
-    /// Error Codes:  INVALID_CII_ORGANISATION_ID
-    /// </response>
-    /// <remarks>
-    /// Sample request:
-    ///
-    ///     POST /organisations/1/job
-    ///     {
-    ///       "AdminEmailId" : "user@mail.com",
-    ///       "IsFromBackgroundJob" : false
-    ///     }
-    ///     
-    /// </remarks>
-    [HttpPost("{ciiOrganisationId}/job")]
-    [ClaimAuthorise("ORG_ADMINISTRATOR")]
-    [OrganisationAuthorise("ORGANISATION")]
-    [SwaggerOperation(Tags = new[] { "Auto Validation" })]
-    [ProducesResponseType(typeof(string), 200)]
-    public async Task<bool> AutoValidateOrganisationJob(string ciiOrganisationId, AutoValidationDetails autoValidationDetails)
-    {
-      return await _organisationService.AutoValidateOrganisation(ciiOrganisationId, autoValidationDetails);
-    }
+   
 
     /// <summary>
-    /// Organisation auto validation for verified buyer
+    /// Update organisation eligible roles
     /// </summary>
-    /// <response  code="200">Ok. Return true if auto validation passed else return false</response>
+    /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
-    /// <response  code="400">Bad request.
-    /// Error Codes:  INVALID_CII_ORGANISATION_ID
-    /// </response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
     /// <remarks>
     /// Sample request:
     ///
     ///     POST /organisations/1/switch
     ///     {
-    ///       "AdminEmailId" : "user@mail.com",
-    ///       "IsFromBackgroundJob" : false
-    ///     }
+    ///       isBuyer: true,
+    ///       rolesToAdd: [
+    ///         {
+    ///           id: 1
+    ///         }
+    ///       ],
+    ///       rolesToDelete: [
+    ///         {
+    ///           id: 1
+    ///         }
+    ///       ]
+    ///      }
     ///     
     /// </remarks>
     [HttpPost("{ciiOrganisationId}/switch")]
-    [ClaimAuthorise("ORG_ADMINISTRATOR")]
-    [OrganisationAuthorise("ORGANISATION")]
-    [SwaggerOperation(Tags = new[] { "Auto Validation" })]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
+    [SwaggerOperation(Tags = new[] { "Auto Validation switch organisation type" })]
     [ProducesResponseType(typeof(string), 200)]
-    public async Task<bool> AutoValidateOrganisationTypeswitch(string ciiOrganisationId,string switchTo, bool notifyWithEmail, AutoValidationDetails autoValidationDetails)
+    public async Task AutoValidateOrganisationTypeswitch(string organisationId, OrganisationAutoValidationRoleUpdate model)
     {
-      // TODO: #Auto validation
-      return await _organisationService.AutoValidateOrganisation(ciiOrganisationId, autoValidationDetails);
+      await _organisationService.UpdateOrgAutoValidationEligibleRolesAsync(organisationId, model.OrgType, model.RolesToAdd, model.RolesToDelete);
     }
     #endregion
 
@@ -1236,6 +1217,27 @@ namespace CcsSso.ExternalApi.Controllers
       await _organisationAuditEventService.CreateOrganisationAuditEventAsync(organisationAuditEventInfoList);
     }
 
+    /// <summary>
+    /// Get organisation auto validation status with older admin user id
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/autovalidate
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/autovalidate")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
+    public async Task<Tuple<bool,string>> GetOrganisationAutoVlidateDetails(string organisationId)
+    {
+      return await _organisationService.AutoValidateOrganisationDetails(organisationId);
+    }
     #endregion
   }
 }

@@ -39,7 +39,7 @@ namespace CcsSso.Core.Service.External
         {
           OrganisationId = organisationAuditInfo.OrganisationId,
           SchemeIdentifier = organisationAuditInfo.SchemeIdentifier,
-          Status = OrgAutoApprovalStatus.Approved,
+          Status = OrgAutoValidationStatus.AutoApproved,
           Actioned = organisationAuditInfo.Actioned,
           ActionedBy = organisationAuditInfo.ActionedBy,
           CreatedOnUtc = _dateTimeService.GetUTCNow(),

@@ -117,6 +117,7 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("Email:UserDelegatedAccessEmailTemplateId", emailsettings.UserDelegatedAccessEmailTemplateId);
         // #Auto validation
         Data.Add("Email:OrgPendingVerificationEmailTemplateId", emailsettings.OrgPendingVerificationEmailTemplateId);
+        Data.Add("Email:OrgBuyerStatusChangeUpdateToAllAdmins", emailsettings.OrgBuyerStatusChangeUpdateToAllAdmins);
 
         Data.Add("Email:SendNotificationsEnabled", emailsettings.SendNotificationsEnabled);
       }
@@ -183,14 +184,7 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         var orgAutoValidation = JsonConvert.DeserializeObject<OrgAutoValidation>(_secrets.Data["OrgAutoValidation"].ToString());
         Data.Add("OrgAutoValidation:Enable", orgAutoValidation.Enable.ToString());
         Data.Add("OrgAutoValidation:CCSAdminEmailId", orgAutoValidation.CCSAdminEmailId.ToString());
-
-        int index = 0;
-        foreach (var excludeRole in orgAutoValidation.AdditionalRoles)
-        {
-          Data.Add($"OrgAutoValidation:AdditionalRoles:{index++}", excludeRole);
-        }
       }
-
     }
   }
 
@@ -255,6 +249,7 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
     public string UserDelegatedAccessEmailTemplateId { get; set; }
     // #Auto validation
     public string OrgPendingVerificationEmailTemplateId { get; set; }
+    public string OrgBuyerStatusChangeUpdateToAllAdmins { get; set; }
     public string SendNotificationsEnabled { get; set; }
   }
 

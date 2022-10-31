@@ -135,4 +135,11 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string? CompanyHouseId { get; set; }
   }
 
+  public class OrganisationAutoValidationRoleUpdate
+  {
+    public RoleEligibleTradeType OrgType { get; set; }
+    public List<OrganisationRole> RolesToAdd { get; set; }
+    public List<OrganisationRole> RolesToDelete { get; set; }
+  }
+
 }
