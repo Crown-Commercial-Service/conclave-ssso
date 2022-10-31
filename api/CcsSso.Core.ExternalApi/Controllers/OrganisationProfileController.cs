@@ -1168,7 +1168,7 @@ namespace CcsSso.ExternalApi.Controllers
     [HttpGet("{organisationId}/auditevents")]
     [SwaggerOperation(Tags = new[] { "Organisation Audit Event" })]
     [ProducesResponseType(typeof(OrganisationAuditEventInfoListResponse), 200)]
-    public async Task<OrganisationAuditEventInfoListResponse> GetOrganisationContactsList(int organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
+    public async Task<OrganisationAuditEventInfoListResponse> GetOrganisationAuditEventsList(int organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
     {
       resultSetCriteria ??= new ResultSetCriteria
       {
