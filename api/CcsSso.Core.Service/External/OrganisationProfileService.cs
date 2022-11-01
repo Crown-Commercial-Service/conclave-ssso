@@ -864,6 +864,30 @@ namespace CcsSso.Core.Service.External
     // #Auto validation
     #region auto validation
 
+    public async Task<bool> AutoValidateOrganisationJob(string ciiOrganisationId)
+    {
+      if (!_applicationConfigurationInfo.OrgAutoValidation.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var organisation = await _dataContext.Organisation.Include(er => er.OrganisationEligibleRoles)
+                              .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
+
+      if (organisation == null)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidCiiOrganisationId);
+      }
+
+      //call lookup api
+      bool isDomainValid = AutoValidateOrganisationDetails(ciiOrganisationId, "").Result.Item1;
+
+      return isDomainValid;
+
+     //TODO: Assing role to buyer or both type of org
+
+    }
+
     // Registration
     public async Task<bool> AutoValidateOrganisationRegistration(string ciiOrganisationId, AutoValidationDetails autoValidationDetails)
     {
@@ -1301,6 +1325,7 @@ namespace CcsSso.Core.Service.External
         SchemeIdentifier = schemeIdentifier
       };
     }
+
     #endregion
 
   }

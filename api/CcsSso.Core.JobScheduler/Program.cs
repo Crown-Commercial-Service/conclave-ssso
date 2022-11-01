@@ -64,6 +64,7 @@ namespace CcsSso.Core.JobScheduler
           CiiSettings ciiSettings;
           List<UserDeleteJobSetting> userDeleteJobSettings;
           SecurityApiSettings securityApiSettings;
+          WrapperApiSettings wrapperApiSettings;
           ScheduleJobSettings scheduleJobSettings;
           BulkUploadSettings bulkUploadSettings;
           RedisCacheSettingsVault redisCacheSettingsVault;
@@ -92,6 +93,7 @@ namespace CcsSso.Core.JobScheduler
               ciiSettings = (CiiSettings)FillAwsParamsValue(typeof(CiiSettings), parameters);
               userDeleteJobSettings = (List<UserDeleteJobSetting>)FillAwsParamsValue(typeof(List<UserDeleteJobSetting>), parameters);
               emailConfigurationInfo = (EmailConfigurationInfo)FillAwsParamsValue(typeof(EmailConfigurationInfo), parameters);
+              wrapperApiSettings = (WrapperApiSettings)FillAwsParamsValue(typeof(WrapperApiSettings), parameters);
               securityApiSettings = (SecurityApiSettings)FillAwsParamsValue(typeof(SecurityApiSettings), parameters);
               scheduleJobSettings = (ScheduleJobSettings)FillAwsParamsValue(typeof(ScheduleJobSettings), parameters);
               bulkUploadSettings = (BulkUploadSettings)FillAwsParamsValue(typeof(BulkUploadSettings), parameters);
@@ -106,6 +108,7 @@ namespace CcsSso.Core.JobScheduler
               ciiSettings = JsonConvert.DeserializeObject<CiiSettings>(secrets["CIISettings"].ToString());
               userDeleteJobSettings = JsonConvert.DeserializeObject<List<UserDeleteJobSetting>>(secrets["UserDeleteJobSettings"].ToString());
               emailConfigurationInfo = JsonConvert.DeserializeObject<EmailConfigurationInfo>(secrets["Email"].ToString());
+              wrapperApiSettings = JsonConvert.DeserializeObject<WrapperApiSettings>(secrets["WrapperApiSettings"].ToString());
               securityApiSettings = JsonConvert.DeserializeObject<SecurityApiSettings>(secrets["SecurityApiSettings"].ToString());
               scheduleJobSettings = JsonConvert.DeserializeObject<ScheduleJobSettings>(secrets["ScheduleJobSettings"].ToString());
               bulkUploadSettings = JsonConvert.DeserializeObject<BulkUploadSettings>(secrets["BulkUploadSettings"].ToString());
@@ -120,6 +123,7 @@ namespace CcsSso.Core.JobScheduler
             dbConnection = config["DbConnection"];
             ciiSettings = config.GetSection("CIISettings").Get<CiiSettings>();
             userDeleteJobSettings = config.GetSection("UserDeleteJobSettings").Get<List<UserDeleteJobSetting>>();
+            wrapperApiSettings = config.GetSection("WrapperApiSettings").Get<WrapperApiSettings>();
             securityApiSettings = config.GetSection("SecurityApiSettings").Get<SecurityApiSettings>();
             scheduleJobSettings = config.GetSection("ScheduleJobSettings").Get<ScheduleJobSettings>();
             bulkUploadSettings = config.GetSection("BulkUploadSettings").Get<BulkUploadSettings>();
@@ -135,6 +139,11 @@ namespace CcsSso.Core.JobScheduler
             {
               DbConnection = dbConnection,
               UserDeleteJobSettings = userDeleteJobSettings,
+              WrapperApiSettings = new WrapperApiSettings()
+              {
+                ApiKey = wrapperApiSettings.ApiKey,
+                Url = wrapperApiSettings.Url
+              },
               SecurityApiSettings = new SecurityApiSettings()
               {
                 ApiKey = securityApiSettings.ApiKey,
@@ -217,6 +226,7 @@ namespace CcsSso.Core.JobScheduler
           services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
           services.AddHostedService<UnverifiedUserDeleteJob>();
           services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
+          services.AddHostedService<OrganisationAutovalidationJob>();
 
         });
 

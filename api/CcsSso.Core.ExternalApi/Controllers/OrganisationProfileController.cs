@@ -1269,5 +1269,27 @@ namespace CcsSso.ExternalApi.Controllers
     }
 
     #endregion
+
+
+    /// <summary>
+    /// Organisation autovalidation from job
+    /// </summary>
+    /// <response  code="200">Ok. Return true if autovalidation passed else return false</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="400">Bad request.
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /organisations/1/autovalidationjob
+    ///     
+    /// </remarks>
+    [HttpPost("{ciiOrganisationId}/autovalidationjob")]
+    [SwaggerOperation(Tags = new[] { "Autovalidation for organisation from job" })]
+    [ProducesResponseType(typeof(string), 200)]
+    public async Task<bool> AutovalidationJob(string ciiOrganisationId)
+    {
+      return await _organisationService.AutoValidateOrganisationJob(ciiOrganisationId);
+    }
   }
 }
