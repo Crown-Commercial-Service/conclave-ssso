@@ -5,6 +5,7 @@ using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
+using System;
 using System.Threading.Tasks;
 
 namespace CcsSso.ExternalApi.Controllers
@@ -88,6 +89,7 @@ namespace CcsSso.ExternalApi.Controllers
     [ProducesResponseType(typeof(UserProfileResponseInfo), 200)]
     public async Task<UserProfileResponseInfo> GetUser([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "is-delegated")] bool isDelegated = false, [FromQuery(Name = "is-delegated-search")] bool isSearchUser = false, [FromQuery(Name = "delegated-organisation-id")] string delegatedOrgId = "")
     {
+      Console.WriteLine($"20. Readh User api");
       return await _userProfileService.GetUserAsync(userId, isDelegated, isSearchUser, delegatedOrgId);
     }
 

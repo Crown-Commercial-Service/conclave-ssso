@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.ExternalApi.Authorisation
@@ -23,6 +24,8 @@ namespace CcsSso.Core.ExternalApi.Authorisation
 
     public async Task<AuthorizationPolicy> GetPolicyAsync(string policyName)
     {
+      Console.WriteLine($"1. Policy Name {policyName}");
+
       var xapiKey = _httpContextAccessor.HttpContext.Request.Headers["X-API-Key"];
 
       if (policyName.StartsWith(ClaimAuthoriseAttribute.POLICY_PREFIX))
@@ -52,10 +55,15 @@ namespace CcsSso.Core.ExternalApi.Authorisation
 
       else if (policyName.StartsWith(OrganisationAuthoriseAttribute.POLICY_PREFIX))
       {
+        Console.WriteLine($"2. Policy Name starts with  {OrganisationAuthoriseAttribute.POLICY_PREFIX}");
+
         var requestType = policyName.Substring(OrganisationAuthoriseAttribute.POLICY_PREFIX.Length);
         var policyBuilder = new AuthorizationPolicyBuilder();
 
+        Console.WriteLine($"3. requestType {requestType}");
+
         var requestContext = _httpContextAccessor.HttpContext.RequestServices.GetService<RequestContext>();
+
         if (!string.IsNullOrEmpty(xapiKey)) //  Requests with api key no authorization
         {
           policyBuilder.RequireAssertion(context => true);
@@ -69,10 +77,14 @@ namespace CcsSso.Core.ExternalApi.Authorisation
             // #Delegated
             if (requestType == "ORGANISATION" || requestType == "USER_POST" || requestType == "DELEGATION")
             {
+              Console.WriteLine($"4. requestType is  ORGANISATION or USER_POST or DELEGATION");
+
               return await authService.AuthorizeForOrganisationAsync(RequestType.HavingOrgId);
             }
             else if (requestType == "USER")
             {
+              Console.WriteLine($"4. requestType is  User");
+
               return await authService.AuthorizeForOrganisationAsync(RequestType.NotHavingOrgId);
             }
             return false;
