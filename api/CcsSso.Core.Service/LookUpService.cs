@@ -38,10 +38,11 @@ namespace CcsSso.Core.Service
       }
 
       using var response = await client.GetAsync(url);
+      var responseString =  await response.Content.ReadAsStringAsync();
 
       if (response.IsSuccessStatusCode)
       {
-        return true;
+        return Convert.ToBoolean(responseString);
       }
       else if (response.StatusCode == HttpStatusCode.NotFound)
       {

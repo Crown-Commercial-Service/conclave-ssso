@@ -220,7 +220,7 @@ namespace CcsSso.Core.Service.External
       {
         var isAutovalidationSuccess = false;
         // #Auto validation
-        if (isNewOrgAdmin && _appConfigInfo.OrgAutoValidation.Enable && organisation.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier) 
+        if (isNewOrgAdmin && _appConfigInfo.OrgAutoValidation.Enable) 
         {
           //bool isDomainValidForAutoValidation = false;
           //try

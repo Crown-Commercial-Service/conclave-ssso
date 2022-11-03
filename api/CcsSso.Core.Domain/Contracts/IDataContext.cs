@@ -94,6 +94,8 @@ namespace CcsSso.Domain.Contracts
         // #Auto validation
         DbSet<OrganisationAudit> OrganisationAudit { get; set; }
 
+        DbSet<AutoValidationRole> AutoValidationRole { get; set; }
+
         Task<PagedResultSet<T>> GetPagedResultAsync<T>(IQueryable<T> query, ResultSetCriteria resultSetCriteria);
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

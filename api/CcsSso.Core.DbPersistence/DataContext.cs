@@ -197,6 +197,8 @@ namespace CcsSso.DbPersistence
         // #Auto validation
         public DbSet<OrganisationAudit> OrganisationAudit { get; set; }
 
+        public DbSet<AutoValidationRole> AutoValidationRole { get; set; }
+
         public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
             ValidateEntities();
