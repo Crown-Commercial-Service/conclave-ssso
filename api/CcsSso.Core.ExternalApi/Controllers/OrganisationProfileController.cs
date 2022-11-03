@@ -6,6 +6,7 @@ using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -1181,6 +1182,116 @@ namespace CcsSso.ExternalApi.Controllers
       return await _organisationAuditEventService.GetOrganisationAuditEventsListAsync(organisationId, resultSetCriteria);
     }
 
+    #endregion
+
+    #region Auto validation
+    /// <summary>
+    /// Get organisation auto validation status with older admin user id
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">NotFound</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/autovalidate
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/autovalidate")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "AutoValidation" })]
+    [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
+    public async Task<object> GetOrganisationAutoVlidateDetails(string organisationId)
+    {
+      var validationResult = await _organisationService.AutoValidateOrganisationDetails(organisationId);
+      return new { AutoValidationSuccess = validationResult.Item1, OrgAdminUserName = validationResult.Item2 };
+    }
+
+    /// <summary>
+    /// Organisation registration with auto validation
+    /// </summary>
+    /// <response  code="200">Ok. Return true if auto validation passed else return false</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes:  INVALID_CII_ORGANISATION_ID
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /organisations/1/registration
+    ///     {
+    ///       "adminEmailId" : "user@mail.com",
+    ///       "companyHouseId" : "123"
+    ///     }
+    ///     
+    /// </remarks>
+    [HttpPost("{organisationId}/registration")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "AutoValidation" })]
+    [ProducesResponseType(typeof(string), 200)]
+    public async Task<bool> AutoValidateOrganisation(string organisationId, AutoValidationDetails autoValidationDetails)
+    {
+      return await _organisationService.AutoValidateOrganisationRegistration(organisationId, autoValidationDetails);
+    }
+
+    /// <summary>
+    /// Update organisation eligible roles
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /organisations/1/switch
+    ///     {
+    ///       orgType: 1,
+    ///       rolesToAdd: [
+    ///         {
+    ///           id: 1
+    ///         }
+    ///       ],
+    ///       rolesToDelete: [
+    ///         {
+    ///           id: 1
+    ///         }
+    ///       ]
+    ///      }
+    ///     
+    /// </remarks>
+    [HttpPost("{organisationId}/switch")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
+    [SwaggerOperation(Tags = new[] { "AutoValidation" })]
+    [ProducesResponseType(typeof(string), 200)]
+    public async Task AutoValidateOrganisationTypeswitch(string organisationId, OrganisationAutoValidationRoleUpdate model)
+    {
+      await _organisationService.UpdateOrgAutoValidationEligibleRolesAsync(organisationId, model.OrgType, model.RolesToAdd, model.RolesToDelete);
+    }
+
+    /// <summary>
+    /// Organisation autovalidation from job
+    /// </summary>
+    /// <response  code="200">Ok. Return true if autovalidation passed else return false</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="400">Bad request.
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /organisations/1/autovalidationjob
+    ///     
+    /// </remarks>
+    [HttpPost("{ciiOrganisationId}/autovalidationjob")]
+    [SwaggerOperation(Tags = new[] { "AutoValidation" })]
+    [ProducesResponseType(typeof(string), 200)]
+    public async Task<bool> AutovalidationJob(string ciiOrganisationId)
+    {
+      return await _organisationService.AutoValidateOrganisationJob(ciiOrganisationId);
+    }
     #endregion
   }
 }

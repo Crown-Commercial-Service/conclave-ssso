@@ -3,15 +3,17 @@ using System;
 using CcsSso.DbPersistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace CcsSso.Core.DbMigrations.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20221027092836_Add_Table_OrganisationAudit")]
+    partial class Add_Table_OrganisationAudit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,44 +52,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AuditLog");
-                });
-
-            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.AutoValidationRole", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
-
-                    b.Property<bool>("AssignToAdmin")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("AssignToOrg")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("CcsAccessRoleId")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsBothFailed")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsBothSuccess")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsBuyerFalied")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsBuyerSuccess")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsSupplier")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CcsAccessRoleId");
-
-                    b.ToTable("AutoValidationRole");
                 });
 
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.BulkUploadDetail", b =>
@@ -1893,17 +1857,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("VirtualAddressType");
-                });
-
-            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.AutoValidationRole", b =>
-                {
-                    b.HasOne("CcsSso.DbModel.Entity.CcsAccessRole", "CcsAccessRole")
-                        .WithMany()
-                        .HasForeignKey("CcsAccessRoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CcsAccessRole");
                 });
 
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.CcsServiceLogin", b =>

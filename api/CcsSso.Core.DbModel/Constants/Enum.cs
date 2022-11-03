@@ -69,4 +69,15 @@ namespace CcsSso.Core.DbModel.Constants
     OrganisationRegistrationTypeBoth,
     InactiveOrganisationRemoved
   }
+
+  // #Auto validation
+  public enum OrgAutoValidationStatus
+  {
+    AutoApproved,
+    AutoPending,
+    ManuallyApproved,
+    ManuallyDecliend,
+    ManualRemovalOfRightToBuy
+  }
+  
 }
