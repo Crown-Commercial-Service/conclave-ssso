@@ -1131,7 +1131,6 @@ namespace CcsSso.Core.Service.External
     {
       Guid groupId = Guid.NewGuid();
       List<OrganisationAuditEventInfo> auditEventLogs = new();
-      var defaultOrgRoles = _dataContext.CcsAccessRole.Where(x => !x.IsDeleted && autoValidationDefaultRoles.Contains(x.CcsAccessRoleNameKey)).ToList();
       var adminUserDetails = _dataContext.User.Include(x => x.UserAccessRoles)
                             //.Include(x => x.Party).ThenInclude(x => x.Organisation)
                             .Where(x => !x.IsDeleted && x.UserName.ToLower() == adminEmailId.ToLower() && x.UserType == UserType.Primary).FirstOrDefault();
