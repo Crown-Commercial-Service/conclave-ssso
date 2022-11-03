@@ -88,6 +88,13 @@ namespace CcsSso.Domain.Contracts
         DbSet<BulkUploadDetail> BulkUploadDetail { get; set; }
 
         DbSet<CountryDetails> CountryDetails { get; set; }
+        
+        DbSet<OrganisationAuditEvent> OrganisationAuditEvent { get; set; }
+
+        // #Auto validation
+        DbSet<OrganisationAudit> OrganisationAudit { get; set; }
+
+        DbSet<AutoValidationRole> AutoValidationRole { get; set; }
 
         Task<PagedResultSet<T>> GetPagedResultAsync<T>(IQueryable<T> query, ResultSetCriteria resultSetCriteria);
 
