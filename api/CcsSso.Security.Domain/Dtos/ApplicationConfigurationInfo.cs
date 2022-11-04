@@ -34,8 +34,10 @@ namespace CcsSso.Security.Domain.Dtos
     public string CustomDomain { get; set; }
 
     public List<string> AllowedDomains { get; set; }
+
     public OpenIdConfigurationSettings OpenIdConfigurationSettings { get; set; }
 
+    public ResetPasswordSettings ResetPasswordSettings { get; set; }
   }
 
   public class SecurityApiKeySettings
@@ -228,5 +230,11 @@ namespace CcsSso.Security.Domain.Dtos
     
     [JsonPropertyName("request_uri_parameter_supported")]
     public bool RequestUriParameterSupported { get; set; }
+  }
+
+  public class ResetPasswordSettings
+  {
+    public string MaxAllowedAttempts { get; set; }
+    public string MaxAllowedAttemptsThresholdInMinutes { get; set; }
   }
 }

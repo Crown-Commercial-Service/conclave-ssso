@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
@@ -34,11 +35,15 @@ namespace CcsSso.Core.Service.External
     private readonly RequestContext _requestContext;
     private readonly IIdamService _idamService;
     private readonly IRemoteCacheService _remoteCacheService;
+    private readonly ILookUpService _lookUpService;
+    private readonly IOrganisationAuditService _organisationAuditService;
+    private readonly IOrganisationAuditEventService _organisationAuditEventService;
 
     public OrganisationProfileService(IDataContext dataContext, IContactsHelperService contactsHelper, ICcsSsoEmailService ccsSsoEmailService,
       ICiiService ciiService, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ILocalCacheService localCacheService,
-      ApplicationConfigurationInfo applicationConfigurationInfo, RequestContext requestContext, IIdamService idamService, IRemoteCacheService remoteCacheService)
+      ApplicationConfigurationInfo applicationConfigurationInfo, RequestContext requestContext, IIdamService idamService, IRemoteCacheService remoteCacheService,
+      ILookUpService lookUpService, IOrganisationAuditService organisationAuditService, IOrganisationAuditEventService organisationAuditEventService)
     {
       _dataContext = dataContext;
       _contactsHelper = contactsHelper;
@@ -51,6 +56,9 @@ namespace CcsSso.Core.Service.External
       _requestContext = requestContext;
       _idamService = idamService;
       _remoteCacheService = remoteCacheService;
+      _lookUpService = lookUpService;
+      _organisationAuditService = organisationAuditService;
+      _organisationAuditEventService = organisationAuditEventService;
     }
 
     /// <summary>
@@ -86,7 +94,13 @@ namespace CcsSso.Core.Service.External
       organisation.CcsServiceId = _requestContext.ServiceId == 0 ? null : _requestContext.ServiceId;
 
       var eligibleRoles = await GetOrganisationEligibleRolesAsync(organisation, organisationProfileInfo.Detail.SupplierBuyerType);
-      _dataContext.OrganisationEligibleRole.AddRange(eligibleRoles);
+      // #Auto validation enabled then only org admin and user roles will be assigned
+      if (_applicationConfigurationInfo.OrgAutoValidation.Enable)
+      {
+        eligibleRoles = eligibleRoles.Where(r => r.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey || 
+                                                 r.CcsAccessRole.CcsAccessRoleNameKey == Contstant.DefaultUserRoleNameKey).ToList();
+      }
+        _dataContext.OrganisationEligibleRole.AddRange(eligibleRoles);
 
       var eligibleIdentityProviders = new List<OrganisationEligibleIdentityProvider>();
       var identityProviders = await _dataContext.IdentityProvider.Where(idp => !idp.IsDeleted && idp.ExternalIdpFlag == false).ToListAsync();
@@ -131,7 +145,9 @@ namespace CcsSso.Core.Service.External
       if (!string.IsNullOrEmpty(_requestContext.ServiceClientId))
       {
         var service = await _dataContext.CcsService.FirstOrDefaultAsync(s => s.ServiceClientId == _requestContext.ServiceClientId);
-        if (!service.GlobalLevelOrganisationAccess)
+
+        // #Auto validation
+        if (!service.GlobalLevelOrganisationAccess && !_applicationConfigurationInfo.OrgAutoValidation.Enable)
         {
           var eligibleRolesForService = eligibleRoles.Where(oer => _applicationConfigurationInfo.ServiceDefaultRoleInfo.ScopedServiceDefaultRoles.Contains(oer.CcsAccessRole.CcsAccessRoleNameKey)).ToList();
           foreach (var eligibleRole in eligibleRolesForService)
@@ -584,8 +600,6 @@ namespace CcsSso.Core.Service.External
     /// <param name="rolesToAdd"></param>
     /// <param name="rolesToDelete"></param>
     /// <returns></returns>
-
-
     public async Task UpdateOrganisationEligibleRolesAsync(string ciiOrganisationId, bool isBuyer, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete)
     {
       var organisation = await _dataContext.Organisation
@@ -819,7 +833,7 @@ namespace CcsSso.Core.Service.External
           !roles.Any(r => r.Id == ar.Id) &&
           !string.IsNullOrEmpty(ar.DefaultEligibility) && ar.DefaultEligibility.EndsWith("1")
         ).ToList();
-        
+
       }
 
       roles.ForEach((role) =>
@@ -846,6 +860,509 @@ namespace CcsSso.Core.Service.External
 
       return eligibleRoles;
     }
+
+    // #Auto validation
+    #region auto validation
+
+    public async Task<bool> AutoValidateOrganisationJob(string ciiOrganisationId)
+    {
+      if (!_applicationConfigurationInfo.OrgAutoValidation.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var organisation = await _dataContext.Organisation.Include(er => er.OrganisationEligibleRoles)
+                              .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
+
+      if (organisation == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+
+      //call lookup api
+      bool isDomainValid = AutoValidateOrganisationDetails(ciiOrganisationId, "").Result.Item1;
+
+      return isDomainValid;
+
+     //TODO: Assing role to buyer or both type of org
+
+    }
+
+    // Registration
+    public async Task<bool> AutoValidateOrganisationRegistration(string ciiOrganisationId, AutoValidationDetails autoValidationDetails)
+    {
+      if (!_applicationConfigurationInfo.OrgAutoValidation.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var organisation = await _dataContext.Organisation.Include(er => er.OrganisationEligibleRoles)
+                              .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
+
+      if (organisation == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+
+      // call lookup api
+      bool isDomainValid = AutoValidateOrganisationDetails(ciiOrganisationId, autoValidationDetails.AdminEmailId).Result.Item1;
+
+      // buyer and both only auto validated
+      if ((organisation.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier))
+      {
+        // valid domain
+        if (isDomainValid)
+        {
+          return await AutoValidateForValidDomain(organisation, autoValidationDetails.AdminEmailId, autoValidationDetails.CompanyHouseId);
+        }
+        // invalid domain
+        else
+        {
+          return await AutoValidateForInValidDomain(organisation, autoValidationDetails.AdminEmailId, autoValidationDetails.CompanyHouseId, autoValidationDetails.IsFromBackgroundJob);
+        }
+      }
+      else
+      {
+        //TODO: Add supplier roles
+        await SupplierRoleAssignmentAsync(organisation, autoValidationDetails.AdminEmailId);
+        return false;
+      }
+    }
+
+    // Org eligiblity 
+    public async Task UpdateOrgAutoValidationEligibleRolesAsync(string ciiOrganisationId, RoleEligibleTradeType orgType, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete)
+    {
+      if (!_applicationConfigurationInfo.OrgAutoValidation.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+      Guid groupId = Guid.NewGuid();
+      List<OrganisationAuditEventInfo> auditEventLogs = new();
+      OrganisationAuditInfo orgStatus = default;
+      string schemeIdentifier = string.Empty;
+
+      var organisation = await _dataContext.Organisation.Include(er => er.OrganisationEligibleRoles)
+                         .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
+
+      if (organisation != null)
+      {
+        var userAccessRolesForOrgUsers = await _dataContext.UserAccessRole.Where(uar => !uar.IsDeleted && 
+                                         uar.OrganisationEligibleRole.OrganisationId == organisation.Id).ToListAsync();
+
+        int? oldOrgSupplierBuyerType = organisation.SupplierBuyerType;
+        bool isOrgTypeSwitched = organisation.SupplierBuyerType != (int)orgType;
+        organisation.RightToBuy = orgType != RoleEligibleTradeType.Supplier ? true : false;
+        //// Switched from supplier to buyer or both
+        //if (isOrgTypeSwitched && orgType != RoleEligibleTradeType.Supplier) 
+        //{
+        //  var autoValidationOrgDetails = await AutoValidateOrganisationDetails(organisation.CiiOrganisationId);
+        //  bool autoValidationSuccess = autoValidationOrgDetails.Item1;
+        //}
+
+        var ccsAccessRoles = await _dataContext.CcsAccessRole.ToListAsync();
+        if (rolesToAdd != null && rolesToAdd.Any())
+        {
+
+          if (!rolesToAdd.All(ar => ccsAccessRoles.Any(r => r.Id == ar.RoleId)))
+          {
+            throw new CcsSsoException("INVALID_ROLES_TO_ADD");
+          }
+
+          if (rolesToAdd.Any(ar => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == ar.RoleId)))
+          {
+            throw new CcsSsoException("ROLE_ALREADY_EXISTS_FOR_ORGANISATION");
+          }
+
+          List<OrganisationEligibleRole> addedEligibleRoles = new List<OrganisationEligibleRole>();
+          StringBuilder rolesAssigned = new();
+          rolesToAdd.ForEach((addedRole) =>
+          {
+            addedEligibleRoles.Add(new OrganisationEligibleRole
+            {
+              OrganisationId = organisation.Id,
+              CcsAccessRoleId = addedRole.RoleId
+            });
+            rolesAssigned.Append(rolesAssigned.Length > 0 ? "," + addedRole.RoleName : addedRole.RoleName);
+
+          });
+          _dataContext.OrganisationEligibleRole.AddRange(addedEligibleRoles);
+          // No event log if org was supplier and changes in role only.
+          if (isOrgTypeSwitched || orgType != RoleEligibleTradeType.Supplier)
+          {
+            auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.RoleAssigned, groupId, organisation.Id, schemeIdentifier));
+          }
+        }
+
+        if (rolesToDelete != null && rolesToDelete.Any())
+        {
+          var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
+
+          if (!deletingRoleIds.All(dr => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == dr)))
+          {
+            throw new CcsSsoException("INVALID_ROLES_TO_DELETE");
+          }
+
+          var deletingOrgEligibleRoles = organisation.OrganisationEligibleRoles.Where(oer => deletingRoleIds.Contains(oer.CcsAccessRoleId)).ToList();
+
+          var orgGroupRolesWithDeletedRoles = await _dataContext.OrganisationGroupEligibleRole
+            .Where(oger => !oger.IsDeleted && oger.OrganisationEligibleRole.OrganisationId == organisation.Id && deletingRoleIds.Contains(oger.OrganisationEligibleRole.CcsAccessRoleId))
+            .ToListAsync();
+
+          var userAccessRolesWithDeletedRoles = userAccessRolesForOrgUsers
+            .Where(uar => deletingRoleIds.Contains(uar.OrganisationEligibleRole.CcsAccessRoleId)).ToList();
+
+          deletingOrgEligibleRoles.ForEach((deletingOrgEligibleRole) =>
+          {
+            deletingOrgEligibleRole.IsDeleted = true;
+          });
+
+          orgGroupRolesWithDeletedRoles.ForEach((orgGroupRolesWithDeletedRole) =>
+          {
+            orgGroupRolesWithDeletedRole.IsDeleted = true;
+          });
+
+          userAccessRolesWithDeletedRoles.ForEach((userAccessRolesWithDeletedRole) =>
+          {
+            userAccessRolesWithDeletedRole.IsDeleted = true;
+          });
+
+          // SUPPLIER add log, event if changed to supplier. No log if org was supplier and changes in role only.
+          if (isOrgTypeSwitched || orgType != RoleEligibleTradeType.Supplier) 
+          {
+            auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, oldOrgSupplierBuyerType == (int)RoleEligibleTradeType.Buyer ?
+                            OrganisationAuditEventType.OrganisationTypeBuyerToSupplier : OrganisationAuditEventType.OrganisationTypeBothToSupplier, groupId, organisation.Id, schemeIdentifier));
+
+          }
+        }
+
+        // mandatory roles as per org type NEED TO CONFIRM 
+
+        // Org type change to supplier then notify all org admins
+        if (isOrgTypeSwitched && orgType == RoleEligibleTradeType.Supplier)
+        {
+          organisation.SupplierBuyerType = (int)RoleEligibleTradeType.Supplier;
+          // get all admins
+          var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
+          .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisation.Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+
+          var allActiveAdminsOfOrg = _dataContext.User
+            .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
+            .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
+            .Where(u => u.Party.Person.Organisation.CiiOrganisationId == organisation.CiiOrganisationId && u.UserType == UserType.Primary &&
+            u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && u.AccountVerified && !u.IsDeleted)
+            .ToList();
+
+
+          // email all admins to notify org type change to supplier and right to buy is removed
+          foreach (var admin in allActiveAdminsOfOrg)
+          {
+            await _ccsSsoEmailService.SendOrgBuyerStatusChangeUpdateToAllAdminsAsync(admin.UserName);
+          }
+          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, oldOrgSupplierBuyerType == (int)RoleEligibleTradeType.Buyer ?
+                            OrganisationAuditEventType.OrganisationTypeBuyerToSupplier : OrganisationAuditEventType.OrganisationTypeBothToSupplier, groupId, organisation.Id, schemeIdentifier));
+          
+          orgStatus = new OrganisationAuditInfo
+          {
+            Status = OrgAutoValidationStatus.ManualRemovalOfRightToBuy,
+            OrganisationId = organisation.Id,
+            Actioned = OrganisationAuditActionType.Autovalidation.ToString(),
+            SchemeIdentifier = schemeIdentifier,
+          };
+        }
+
+        await _dataContext.SaveChangesAsync();
+        
+        if (isOrgTypeSwitched)
+        {
+          await _organisationAuditService.CreateOrganisationAuditAsync(orgStatus);
+          await _organisationAuditEventService.CreateOrganisationAuditEventAsync(auditEventLogs);
+        }
+          // Remove service client id inmemory cache since role update
+        _localCacheService.Remove($"ORGANISATION_SERVICE_CLIENT_IDS-{ciiOrganisationId}");
+
+        // add log, event if changed to supplier. No log if org was supplier and changes in role only.
+      }
+      else
+      {
+        throw new ResourceNotFoundException();
+      }
+    }
+
+    // Auto validate org details
+    public async Task<Tuple<bool, string>> AutoValidateOrganisationDetails(string ciiOrganisationId, string adminEmailId = "")
+    {
+      if (string.IsNullOrWhiteSpace(adminEmailId)) 
+      {
+        var organisation = await _dataContext.Organisation.Include(er => er.OrganisationEligibleRoles)
+                                .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
+
+        if (organisation == null)
+        {
+          throw new ResourceNotFoundException();
+        }
+
+        var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
+        .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisation.Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+
+        var olderAdmin = _dataContext.User
+          .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
+          .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
+          .OrderBy(u => u.CreatedOnUtc)
+          .FirstOrDefault(u => u.Party.Person.Organisation.CiiOrganisationId == organisation.CiiOrganisationId && u.UserType == UserType.Primary &&
+          u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && u.AccountVerified && !u.IsDeleted);
+
+          adminEmailId = olderAdmin.UserName;
+      }
+
+      bool isDomainValid = false;
+      try
+      {
+        isDomainValid = await _lookUpService.IsDomainValidForAutoValidation(adminEmailId);
+      }
+      catch (Exception ex)
+      {
+        //TODO: lookup api not available logic
+        Console.WriteLine(ex.Message);
+      }
+      return Tuple.Create(isDomainValid, adminEmailId);
+    }
+
+    private async Task<bool> AutoValidateForValidDomain(Organisation organisation, string adminEmailId, string schemeIdentifier)
+    {
+      Guid groupId = Guid.NewGuid();
+      List<OrganisationAuditEventInfo> auditEventLogs = new();
+      var adminUserDetails = _dataContext.User.Include(x => x.UserAccessRoles)
+                            //.Include(x => x.Party).ThenInclude(x => x.Organisation)
+                            .Where(x => !x.IsDeleted && x.UserName.ToLower() == adminEmailId.ToLower() && x.UserType == UserType.Primary).FirstOrDefault();
+
+      organisation.RightToBuy = true;
+
+      // TODO: Auto validation Role assignment as per new logic buyer/both
+      //  all role logs added owner Autovalidation
+      //for org roles
+      string rolesAsssignToOrg = await AutoValidationOrgRoleAssignmentAsync(organisation, isAutoValidationSuccess: true);
+      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.RoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToOrg));
+
+      //for admin roles
+      string rolesAsssignToAdmin = await AutoValidationAdminRoleAssignmentAsync(adminUserDetails, organisation.SupplierBuyerType, organisation.CiiOrganisationId, isAutoValidationSuccess: true);
+      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.RoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToAdmin));
+      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.AutomaticAcceptationRightToBuy, groupId, organisation.Id, schemeIdentifier));
+      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Buyer ? 
+        OrganisationAuditEventType.OrganisationRegistrationTypeBuyer : OrganisationAuditEventType.OrganisationRegistrationTypeBoth, 
+        groupId, organisation.Id, schemeIdentifier));
+
+      var orgStatus = new OrganisationAuditInfo
+      {
+        Status = OrgAutoValidationStatus.AutoApproved,
+        OrganisationId = organisation.Id,
+        Actioned = OrganisationAuditActionType.Autovalidation.ToString(),
+        SchemeIdentifier = schemeIdentifier,
+      };
+      // Events and log entry
+      await _organisationAuditService.CreateOrganisationAuditAsync(orgStatus);
+      await _organisationAuditEventService.CreateOrganisationAuditEventAsync(auditEventLogs);
+
+      try
+      {
+        await _dataContext.SaveChangesAsync();
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine(ex.Message);
+        throw;
+      }
+      // Do entries in org audit table
+
+      return true;
+    }
+
+    private async Task<bool> AutoValidateForInValidDomain(Organisation organisation, string adminEmailId, string schemeIdentifier, bool isFromBackgroundJob = false)
+    {
+      Guid groupId = Guid.NewGuid();
+      List<OrganisationAuditEventInfo> auditEventLogs = new();
+      var adminUserDetails = _dataContext.User.Include(x => x.UserAccessRoles)
+                            //.Include(x => x.Party).ThenInclude(x => x.Organisation)
+                            .Where(x => !x.IsDeleted && x.UserName.ToLower() == adminEmailId.ToLower() && x.UserType == UserType.Primary).FirstOrDefault();
+      organisation.RightToBuy = false;
+
+      //for org roles
+      string rolesAsssignToOrg = await AutoValidationOrgRoleAssignmentAsync(organisation, isAutoValidationSuccess: false);
+      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.RoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToOrg));
+
+      //for admin roles
+      string rolesAsssignToAdmin = await AutoValidationAdminRoleAssignmentAsync(adminUserDetails, organisation.SupplierBuyerType, organisation.CiiOrganisationId, isAutoValidationSuccess: false);
+      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.RoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToAdmin));
+
+      // invalid
+      // Send email to CCS admin to notify
+      if (!isFromBackgroundJob)
+      {
+        await _ccsSsoEmailService.SendOrgPendingVerificationEmailToCCSAdminAsync(_applicationConfigurationInfo.OrgAutoValidation.CCSAdminEmailId, organisation.LegalName);
+      }
+
+      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.AutomaticDeclineRightToBuy, groupId, organisation.Id, schemeIdentifier));
+      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Buyer ?
+        OrganisationAuditEventType.OrganisationRegistrationTypeBuyer : OrganisationAuditEventType.OrganisationRegistrationTypeBoth, 
+        groupId, organisation.Id, schemeIdentifier));
+
+      // TODO: AC23 change org type as buyer need to confirm
+      organisation.SupplierBuyerType = (int)RoleEligibleTradeType.Buyer;
+
+      try
+      {
+        await _dataContext.SaveChangesAsync();
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine(ex.Message);
+        throw;
+      }
+
+      var orgStatus = new OrganisationAuditInfo
+      {
+        Status = OrgAutoValidationStatus.AutoPending,
+        OrganisationId = organisation.Id,
+        Actioned = OrganisationAuditActionType.Autovalidation.ToString(),
+        SchemeIdentifier = schemeIdentifier,
+      };
+
+      await _organisationAuditService.CreateOrganisationAuditAsync(orgStatus);
+      await _organisationAuditEventService.CreateOrganisationAuditEventAsync(auditEventLogs);
+      return false;
+    }
+
+    private async Task<string> AutoValidationOrgRoleAssignmentAsync(Organisation organisation, bool isAutoValidationSuccess)
+    {
+      var defaultOrgRoles = await _dataContext.AutoValidationRole.Include(x => x.CcsAccessRole)
+        .Where(ar => !ar.CcsAccessRole.IsDeleted && ar.AssignToOrg).ToListAsync();
+
+      if (organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Both)
+      {
+        defaultOrgRoles = isAutoValidationSuccess ? defaultOrgRoles.Where(o => o.IsBothSuccess == true).ToList() : defaultOrgRoles.Where(o => o.IsBothFailed == true).ToList();
+      }
+      else 
+      {
+        defaultOrgRoles = isAutoValidationSuccess ? defaultOrgRoles.Where(o => o.IsBuyerSuccess == true).ToList() : defaultOrgRoles.Where(o => o.IsBuyerFalied == true).ToList();
+      }
+
+      StringBuilder rolesAssigned = new();
+      foreach (var role in defaultOrgRoles.Select(x => x.CcsAccessRole))
+      {
+        if (!organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == role.Id))
+        {
+          var defaultOrgRole = new OrganisationEligibleRole
+          {
+            OrganisationId = organisation.Id,
+            CcsAccessRoleId = role.Id
+          };
+          organisation.OrganisationEligibleRoles.Add(defaultOrgRole);
+          rolesAssigned.Append(rolesAssigned.Length > 0 ? "," + role.CcsAccessRoleName : role.CcsAccessRoleName);
+        }
+      }
+      await _dataContext.SaveChangesAsync();
+      return rolesAssigned.ToString();
+    }
+
+    private async Task<string> AutoValidationAdminRoleAssignmentAsync(User adminDetails, int? orgType, string ciiOrganisation, bool isAutoValidationSuccess)
+    {
+      var defaultAdminRoles = await _dataContext.AutoValidationRole.Where(ar => ar.AssignToAdmin).ToListAsync();      
+
+      if (orgType == (int)RoleEligibleTradeType.Both)
+      {
+        defaultAdminRoles = isAutoValidationSuccess ? defaultAdminRoles.Where(o => o.IsBothSuccess == true).ToList() : defaultAdminRoles.Where(o => o.IsBothFailed == true).ToList();
+      }
+      else
+      {
+        defaultAdminRoles = isAutoValidationSuccess ? defaultAdminRoles.Where(o => o.IsBuyerSuccess == true).ToList() : defaultAdminRoles.Where(o => o.IsBuyerFalied == true).ToList();
+      }
+
+      var defaultRoles = await _dataContext.OrganisationEligibleRole
+            .Where(r => r.Organisation.CiiOrganisationId == ciiOrganisation && 
+            defaultAdminRoles.Select(x => x.CcsAccessRoleId).Contains(r.CcsAccessRoleId))
+            .ToListAsync();
+
+      // if (organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Buyer)
+      StringBuilder rolesAssigned = new();
+      foreach (var role in defaultRoles)
+      {
+        // additional roles for admin user added if not exist
+        if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id))
+        {
+          var defaultUserRole = new UserAccessRole
+          {
+            OrganisationEligibleRoleId = role.Id
+          };
+          adminDetails.UserAccessRoles.Add(defaultUserRole);
+          rolesAssigned.Append(rolesAssigned.Length > 0 ? "," + role.CcsAccessRole.CcsAccessRoleName : role.CcsAccessRole.CcsAccessRoleName);
+        }
+      }
+      return rolesAssigned.ToString();
+    }
+
+    private async Task SupplierRoleAssignmentAsync(Organisation organisation, string adminEmailId)
+    {
+      var adminDetails = _dataContext.User.Include(x => x.UserAccessRoles)
+                            //.Include(x => x.Party).ThenInclude(x => x.Organisation)
+                            .Where(x => !x.IsDeleted && x.UserName.ToLower() == adminEmailId.ToLower() && x.UserType == UserType.Primary).FirstOrDefault();
+
+
+      var defaultOrgRoles = await _dataContext.AutoValidationRole.Include(x => x.CcsAccessRole)
+        .Where(ar => !ar.CcsAccessRole.IsDeleted && ar.AssignToOrg && ar.IsSupplier).ToListAsync();
+
+
+      StringBuilder rolesAssigned = new();
+      foreach (var role in defaultOrgRoles.Select(x => x.CcsAccessRole))
+      {
+        if (!organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == role.Id))
+        {
+          var defaultOrgRole = new OrganisationEligibleRole
+          {
+            OrganisationId = organisation.Id,
+            CcsAccessRoleId = role.Id
+          };
+          organisation.OrganisationEligibleRoles.Add(defaultOrgRole);
+          rolesAssigned.Append(rolesAssigned.Length > 0 ? "," + role.CcsAccessRoleName : role.CcsAccessRoleName);
+        }
+      }
+      await _dataContext.SaveChangesAsync();
+
+      // Admin role assignment
+
+      var defaultAdminRoles = await _dataContext.AutoValidationRole.Where(ar => ar.AssignToAdmin && ar.IsSupplier).ToListAsync();
+
+      var defaultRoles = await _dataContext.OrganisationEligibleRole.Where(r => r.Organisation.CiiOrganisationId == organisation.CiiOrganisationId &&
+                          defaultAdminRoles.Select(x => x.CcsAccessRoleId).Contains(r.CcsAccessRoleId)).ToListAsync();
+
+      foreach (var role in defaultRoles)
+      {
+        // additional roles for admin user added if not exist
+        if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id))
+        {
+          var defaultUserRole = new UserAccessRole
+          {
+            OrganisationEligibleRoleId = role.Id
+          };
+          adminDetails.UserAccessRoles.Add(defaultUserRole);
+          rolesAssigned.Append(rolesAssigned.Length > 0 ? "," + role.CcsAccessRole.CcsAccessRoleName : role.CcsAccessRole.CcsAccessRoleName);
+        }
+      }
+
+      await _dataContext.SaveChangesAsync();
+    }
+
+    private static OrganisationAuditEventInfo CreateAutoValidationEventLog(OrganisationAuditActionType actioned, OrganisationAuditEventType eventType, Guid groupId, int orgId, string schemeIdentifier, string roles = "") {
+      return new OrganisationAuditEventInfo
+      {
+        Actioned = actioned.ToString(),
+        Event = eventType.ToString(),
+        GroupId = groupId,
+        OrganisationId = orgId,
+        Roles = roles,
+        SchemeIdentifier = schemeIdentifier
+      };
+    }
+
+    #endregion
 
   }
 }

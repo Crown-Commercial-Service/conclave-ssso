@@ -216,6 +216,11 @@ namespace CcsSso.Security.Api
           MockProvider = new MockProvider()
           {
             LoginUrl = Configuration["MockProvider:LoginUrl"]
+          },
+          ResetPasswordSettings = new ResetPasswordSettings() 
+          {
+            MaxAllowedAttempts = Configuration["ResetPasswordSettings:MaxAllowedAttempts"],
+            MaxAllowedAttemptsThresholdInMinutes = Configuration["ResetPasswordSettings:MaxAllowedAttemptsThresholdInMinutes"],
           }
         };
         return appConfigInfo;

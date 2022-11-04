@@ -262,7 +262,7 @@ namespace CcsSso.Service.External
 
       var user = await _dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(prs => prs.Organisation)
-        .FirstOrDefaultAsync(u => u.UserName == userName);
+        .FirstOrDefaultAsync(u => u.UserName == userName && !u.IsDeleted);
 
       if (user == null)
       {

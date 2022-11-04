@@ -14,6 +14,7 @@ namespace CcsSso.Core.Domain.Jobs
 
     public CiiSettings CiiSettings { get; set; }
 
+    public WrapperApiSettings WrapperApiSettings { get; set; }
     public SecurityApiSettings SecurityApiSettings { get; set; }
 
     public List<UserDeleteJobSetting> UserDeleteJobSettings { get; set; }
@@ -38,6 +39,14 @@ namespace CcsSso.Core.Domain.Jobs
 
     public int BulkUploadJobExecutionFrequencyInMinutes { get; set; }
 
+    public int OrganisationAutovalidationJobExecutionFrequencyInMinutes { get; set; }
+
+  }
+  public class WrapperApiSettings
+  {
+    public string ApiKey { get; set; }
+
+    public string Url { get; set; }
   }
 
   public class SecurityApiSettings

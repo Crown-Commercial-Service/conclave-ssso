@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
@@ -35,13 +36,15 @@ namespace CcsSso.Core.Service.External
     private readonly ICacheInvalidateService _cacheInvalidateService;
     private readonly ICryptographyService _cryptographyService;
     private readonly ApplicationConfigurationInfo _appConfigInfo;
+    private readonly ILookUpService _lookUpService;
+    private readonly IWrapperApiService _wrapperApiService;
 
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
       IAdaptorNotificationService adapterNotificationService, IWrapperCacheService wrapperCacheService,
       IAuditLoginService auditLoginService, IRemoteCacheService remoteCacheService,
       ICacheInvalidateService cacheInvalidateService, ICryptographyService cryptographyService,
-      ApplicationConfigurationInfo appConfigInfo)
+      ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -55,9 +58,11 @@ namespace CcsSso.Core.Service.External
       _cacheInvalidateService = cacheInvalidateService;
       _cryptographyService = cryptographyService;
       _appConfigInfo = appConfigInfo;
+      _lookUpService = lookUpService;
+      _wrapperApiService = wrapperApiService;
     }
 
-    public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo)
+    public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo, bool isNewOrgAdmin = false)
     {
       var isRegisteredInIdam = false;
       var userName = userProfileRequestInfo.UserName.ToLower();
@@ -85,7 +90,8 @@ namespace CcsSso.Core.Service.External
 
       var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
         .Include(x => x.IdentityProvider)
-        .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id)).ToListAsync();
+        .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id) &&
+                    i.Organisation.Id == organisation.Id).ToListAsync();
 
       var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
       var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
@@ -128,23 +134,28 @@ namespace CcsSso.Core.Service.External
 
       // Set user roles
       var userAccessRoles = new List<UserAccessRole>();
-      userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
-      {
-        userAccessRoles.Add(new UserAccessRole
-        {
-          OrganisationEligibleRoleId = roleId
-        });
-      });
 
-      var defaultUserRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.DefaultUserRoleNameKey).Id;
-
-      // Set default user role if no role available
-      if (userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() || !userAccessRoles.Exists(ur => ur.OrganisationEligibleRoleId == defaultUserRoleId))
+      // #Auto validation role assignment will not be applicable here if auto validation on. Role assignment will be done as part of auto validation
+      if (!_appConfigInfo.OrgAutoValidation.Enable || !isNewOrgAdmin)
       {
-        userAccessRoles.Add(new UserAccessRole
+        userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
         {
-          OrganisationEligibleRoleId = defaultUserRoleId
+          userAccessRoles.Add(new UserAccessRole
+          {
+            OrganisationEligibleRoleId = roleId
+          });
         });
+
+        var defaultUserRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.DefaultUserRoleNameKey).Id;
+
+        // Set default user role if no role available
+        if (userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() || !userAccessRoles.Exists(ur => ur.OrganisationEligibleRoleId == defaultUserRoleId))
+        {
+          userAccessRoles.Add(new UserAccessRole
+          {
+            OrganisationEligibleRoleId = defaultUserRoleId
+          });
+        }
       }
 
       var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(p => p.PartyTypeName == PartyTypeName.User)).Id;
@@ -207,6 +218,30 @@ namespace CcsSso.Core.Service.External
 
       if (userProfileRequestInfo.SendUserRegistrationEmail)
       {
+        var isAutovalidationSuccess = false;
+        // #Auto validation
+        if (isNewOrgAdmin && _appConfigInfo.OrgAutoValidation.Enable) 
+        {
+          //bool isDomainValidForAutoValidation = false;
+          //try
+          //{
+          //  isDomainValidForAutoValidation = await _lookUpService.IsDomainValidForAutoValidation(userName);
+          //}
+          //catch(Exception ex)
+          //{
+          //  // TODO: lookup api fail logic
+          //  Console.WriteLine(ex.Message);
+          //}
+
+          // If auto validation on and user is buyer or both
+           var autoValidationDetails = new AutoValidationDetails { 
+                AdminEmailId = userProfileRequestInfo.UserName,
+              CompanyHouseId = userProfileRequestInfo.CompanyHouseId
+            };
+
+            isAutovalidationSuccess = await _wrapperApiService.PostAsync<bool>($"{userProfileRequestInfo.OrganisationId}/registration", autoValidationDetails, "ERROR_ORGANISATION_AUTOVALIDATION");
+        }
+
         if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)
         {
           var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
@@ -215,6 +250,7 @@ namespace CcsSso.Core.Service.External
           await _ccsSsoEmailService.SendUserConfirmEmailBothIdpAsync(party.User.UserName, string.Join(",", listOfIdpName), activationlink);
 
         }
+
         else if (isNonUserNamePwdConnectionIncluded)
         {
           var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
@@ -223,8 +259,12 @@ namespace CcsSso.Core.Service.External
         }
         else if (isConclaveConnectionIncluded)
         {
+          // #Auto validation
+          string ccsMsg = (isNewOrgAdmin && !isAutovalidationSuccess && organisation.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier) ? 
+                          "Please note that notification has been sent to CCS to verify the buyer status of your Organisation. " +
+                          "You will be informed within the next 24 to 72 hours" : string.Empty;
           var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
-          await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink));
+          await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink), ccsMsg);
         }
       }
 
@@ -394,7 +434,25 @@ namespace CcsSso.Core.Service.External
     // #Delegated
     public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, UserFilterCriteria userFilterCriteria)
     {
-      if((_requestContext.Roles.Count == 1 && _requestContext.Roles.Contains("ORG_DEFAULT_USER")) && !userFilterCriteria.isAdmin)
+
+      var apiKey = _appConfigInfo.ApiKey;
+      var apiKeyInRequest = _requestContext.apiKey;
+
+      if(apiKeyInRequest != null)
+      {
+        if (apiKey != apiKeyInRequest)
+        {
+          throw new ForbiddenException();
+        }
+      }
+     else if (_requestContext.Roles != null)
+      {
+        if ((_requestContext.Roles.Count == 1 && _requestContext.Roles.Contains("ORG_DEFAULT_USER")) && !userFilterCriteria.isAdmin)
+        {
+          throw new ForbiddenException();
+        }
+      }
+      else
       {
         throw new ForbiddenException();
       }
@@ -766,16 +824,17 @@ namespace CcsSso.Core.Service.External
         user.UserGroupMemberships.RemoveAll(g => true);
         user.UserAccessRoles.RemoveAll(r => true);
 
-        var elegibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
-                                        .Include(x => x.IdentityProvider)
-                                        .ToListAsync();
-
         var isPreviouslyUserNamePwdConnectionIncluded = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
         var isPreviouslyNonUserNamePwdConnectionIncluded = user.UserIdentityProviders.Any(uidp => !uidp.IsDeleted && uidp.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName);
         var isUserNamePwdConnectionIncluded = true;
         // var isNonUserNamePwdConnectionIncluded = false;
         if (userProfileRequestInfo.Detail.IdentityProviderIds is not null)
         {
+          var elegibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
+                                        .Include(x => x.IdentityProvider)
+                                        .Where(o => o.Organisation.Id == organisation.Id)
+                                        .ToListAsync();
+
           isUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName));
           // isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
         }

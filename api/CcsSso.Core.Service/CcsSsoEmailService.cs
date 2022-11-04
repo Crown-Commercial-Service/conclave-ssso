@@ -145,6 +145,35 @@ namespace CcsSso.Core.Service
       await SendEmailAsync(emailInfo);
     }
 
+    // #Auto validation
+    public async Task SendOrgPendingVerificationEmailToCCSAdminAsync(string email, string orgName)
+    {
+      var data = new Dictionary<string, dynamic>
+                      {
+                        { "orgName", orgName},
+                        { "link", _appConfigInfo.ConclaveLoginUrl + "/manage-buyer-both" }
+                      };
+
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.EmailInfo.OrgPendingVerificationEmailTemplateId,
+        BodyContent = data
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
+    public async Task SendOrgBuyerStatusChangeUpdateToAllAdminsAsync(string email)
+    {
+
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.EmailInfo.OrgBuyerStatusChangeUpdateToAllAdmins
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
     private async Task SendEmailAsync(EmailInfo emailInfo)
     {
       try

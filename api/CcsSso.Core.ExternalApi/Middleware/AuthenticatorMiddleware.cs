@@ -43,6 +43,7 @@ namespace CcsSso.Core.ExternalApi.Middleware
       var path = context.Request.Path.Value.TrimStart('/').TrimEnd('/');
       requestContext.IpAddress = context.GetRemoteIPAddress();
       requestContext.Device = context.Request.Headers["User-Agent"];
+      requestContext.apiKey = apiKey;
 
       if (allowedPaths.Contains(path))
       {

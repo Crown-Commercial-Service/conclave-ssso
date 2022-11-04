@@ -163,6 +163,9 @@ namespace CcsSso.Security.Api.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/ResetPasswordLinkTTLInMinutes", "Email:ResetPasswordLinkTTLInMinutes"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/SendNotificationsEnabled", "Email:SendNotificationsEnabled"));
 
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ResetPasswordSettings/MaxAllowedAttempts", "ResetPasswordSettings:MaxAllowedAttempts"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ResetPasswordSettings/MaxAllowedAttemptsThresholdInMinutes", "ResetPasswordSettings:MaxAllowedAttemptsThresholdInMinutes"));
+
       foreach (var configuration in configurations)
       {
         Data.Add(configuration);
