@@ -118,6 +118,7 @@ namespace CcsSso.Core.Domain.Dtos.External
     public RoleEligibleSubscriptionType SubscriptionTypeEligibility { get; set; }
 
     public RoleEligibleTradeType TradeEligibility { get; set; }
+    public int[] AutoValidationRoleTypeEligibility { get; set; }
   }
 
   public class OrganisationRoleUpdate
