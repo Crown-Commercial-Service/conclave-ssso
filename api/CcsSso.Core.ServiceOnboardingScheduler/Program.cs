@@ -7,6 +7,7 @@ using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Domain;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CcsSso.Core.ServiceOnboardingScheduler
 {
@@ -88,7 +89,9 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
       ScheduleJob ScheduleJob;
       OnBoardingDataDuration OnBoardingDataDuration;
       Email emailInfo;
+      OneTimeValidation oneTimeValidation;
 
+      string reportingMode;
       string dbConnection;
       string maxNumbeOfRecordInAReport;
       string[] casDefaultRoles;
@@ -105,6 +108,8 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
       maxNumbeOfRecordInAReport = config["MaxNumbeOfRecordInAReport"].ToString();
       casDefaultRoles = config.GetSection("Roles:CASDefaultRoles").Get<string[]>();
       emailInfo= config.GetSection("Email").Get<Email>();
+      oneTimeValidation = config.GetSection("OneTimeValidation").Get<OneTimeValidation>();
+      reportingMode = config["ReportingMode"];
 
       var appSettings = new OnBoardingAppSettings()
       {
@@ -117,6 +122,8 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
         MaxNumbeOfRecordInAReport = int.Parse(maxNumbeOfRecordInAReport),
         CASDefaultRoles = casDefaultRoles,
         EmailSettings = emailInfo,
+        OneTimeValidation = oneTimeValidation,
+        ReportingMode = bool.TryParse(reportingMode, out bool result) ? result : false
 
       };
       return appSettings;

@@ -1,20 +1,13 @@
-﻿using Amazon.Runtime;
-using Amazon.S3.Model;
-using CcsSso.Core.DbModel.Entity;
-using CcsSso.Core.Domain.Dtos.External;
-using CcsSso.Core.Domain.Jobs;
+﻿using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.ServiceOnboardingScheduler.Model;
 using CcsSso.DbModel.Entity;
-using CcsSso.DbPersistence;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
-using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Notify.Client;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
@@ -28,6 +21,10 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IEmailProviderService _emaillProviderService;
     private readonly ILogger<CASOnboardingJob> _logger;
+    private bool ranOnce;
+    private bool reportingMode;
+    private DateTime startDate ;
+    private DateTime endDate;
 
 
     public CASOnboardingJob(ILogger<CASOnboardingJob> logger, OnBoardingAppSettings appSettings, IDateTimeService dataTimeService,
@@ -38,6 +35,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
       _dataTimeService = dataTimeService;
       _httpClientFactory = httpClientFactory;
       _emaillProviderService = emailProviderService;
+      ranOnce = false;
 
       _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
     }
@@ -48,11 +46,56 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
       {
 
         int interval = _appSettings.ScheduleJobSettings.CASOnboardingJobScheduleInMinutes * 60000;
+        reportingMode = _appSettings.ReportingMode;
+
+        var oneTimeValidationSwitch = _appSettings.OneTimeValidation.Switch;
+
+        if (oneTimeValidationSwitch && ranOnce)
+        {
+          _logger.LogInformation("One time validation ran already. Skipping this iteration.");
+          await Task.Delay(interval, stoppingToken);
+          continue;
+        }
+        if (oneTimeValidationSwitch)
+        {
+          var startDateString = _appSettings.OneTimeValidation.StartDate;
+          var endDateString = _appSettings.OneTimeValidation.EndDate;
+          
+          if(startDateString==null || endDateString == null)
+          {
+            _logger.LogError("One time validation needs start and end date. Skipping this iteration.");
+            await Task.Delay(interval, stoppingToken);
+            continue;
+
+          }
+          try
+          {
+             startDate = DateTime.ParseExact(startDateString, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+             endDate = DateTime.ParseExact(endDateString, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+          }
+          catch (FormatException)
+          {
+            _logger.LogError("{0} or {1} is not in the correct format. Date format should be as follows 'yyyy-MM-dd' Skipping this iteration.", startDateString, endDateString);
+            await Task.Delay(interval, stoppingToken);
+            continue;
+          }
+          catch (Exception)
+          {
+            _logger.LogError("Error while reading the start or end date {0}, {1}. Skipping this iteration.", startDateString, endDateString);
+            await Task.Delay(interval, stoppingToken);
+            continue;
+          }
+
+
+          _logger.LogInformation("One time validation job switched on. So it runs once to process all the organisation between dates");
+        }
 
         _logger.LogInformation("");
         _logger.LogInformation("Worker started at: {time}", DateTimeOffset.Now);
 
         await PerformJob();
+        ranOnce = true;
 
         _logger.LogInformation("Worker Finsied at: {time}", DateTimeOffset.Now);
         _logger.LogInformation("");
@@ -68,7 +111,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
         var successOrgList = new List<string>();
         var failedOrgList = new List<string>();
 
-        var listOfRegisteredOrgs = await GetRegisteredOrgsIds();
+        var listOfRegisteredOrgs = await GetRegisteredOrgsIds(ranOnce,startDate,endDate);
 
         List<OrganizationDetails> failedOrganizations = new List<OrganizationDetails>();
 
@@ -90,14 +133,13 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 
         foreach (var eachOrgs in listOfRegisteredOrgs)
         {
+          var orgId = eachOrgs.Item1;
+          var ciiOrgId = eachOrgs.Item2;
+          var orgLegalName = eachOrgs.Item3;
+          var orgCreatedOn = eachOrgs.Item4;
+
           try
           {
-            var orgId = eachOrgs.Item1;
-            var ciiOrgId = eachOrgs.Item2;
-            var orgLegalName = eachOrgs.Item3;
-            var orgCreatedOn = eachOrgs.Item4;
-
-
             _logger.LogInformation($"OrgName {orgLegalName}");
 
             var adminList = await GetOrgAdmins(orgId, ciiOrgId);
@@ -107,11 +149,6 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
               _logger.LogWarning($"No Org admin found");
               continue;
             }
-
-            //var userId = eachOrgs.Item1;
-            //var userName = eachOrgs.Item2;
-            //var userEmailId =eachOrgs.Item3;
-            //var userCreatedOn =eachOrgs.
 
             _logger.LogInformation($"Org Admins {string.Join(", ", adminList.Select(t => $"['{t.Item1}', '{t.Item2}','{t.Item3}','{t.Item4}']"))}");
 
@@ -131,7 +168,14 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
               _logger.LogInformation($"Auto validation succeeded for org. LegalName =  {eachOrgs.Item2}");
               await UpdateRightToBuy(eachOrgs.Item1);
 
-              await AddDefaultRole(eachOrgs.Item1, adminList.Select(t => t.Item3).ToList());
+              if (!reportingMode)
+              {
+                await AddDefaultRole(eachOrgs.Item1, adminList.Select(t => t.Item3).ToList());
+              }
+              else
+              {
+                _logger.LogInformation($"Reporting Mode is On. So no default roles are assigned");
+              }
 
             }
             else
@@ -153,6 +197,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
           catch (Exception ex)
           {
             _logger.LogError($"*****Inner Exception while processing the org: {eachOrgs.Item2}, exception message =  {ex.Message}");
+            failedOrgList.Add($"OrgId:{orgId}-CII Org Id:{ciiOrgId}-Org LegalName:{orgLegalName}");
           }
         }
 
@@ -413,18 +458,29 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 
     }
 
-    private async Task<List<Tuple<int, string, string, DateTime>>> GetRegisteredOrgsIds()
+    private async Task<List<Tuple<int, string, string, DateTime>>> GetRegisteredOrgsIds(bool ranOnce, DateTime startDate, DateTime dateTime)
     {
       var dataDuration = _appSettings.OnBoardingDataDuration.CASOnboardingDurationInMinutes;
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
 
       try
       {
-        var organisationIds = await _dataContext.Organisation.Where(
-                          org => !org.IsDeleted && org.RightToBuy == false && org.SupplierBuyerType > 0 // ToDo: change to buyer or both
-                          && org.LastUpdatedOnUtc > untilDateTime)
-                          .Select(o => new Tuple<int, string, string, DateTime>(o.Id, o.CiiOrganisationId, o.LegalName, o.CreatedOnUtc)).ToListAsync();
-        return organisationIds;
+        if (!ranOnce)
+        {
+          var organisationIds = await _dataContext.Organisation.Where(
+                            org => !org.IsDeleted && org.RightToBuy == false && org.SupplierBuyerType > 0
+                            && org.CreatedOnUtc > untilDateTime)
+                            .Select(o => new Tuple<int, string, string, DateTime>(o.Id, o.CiiOrganisationId, o.LegalName, o.CreatedOnUtc)).ToListAsync();
+          return organisationIds;
+        }
+        else
+        {
+          var organisationIds = await _dataContext.Organisation.Where(
+                            org => !org.IsDeleted && org.RightToBuy == false && org.SupplierBuyerType > 0
+                            && org.CreatedOnUtc >= startDate && org.CreatedOnUtc <= endDate)
+                            .Select(o => new Tuple<int, string, string, DateTime>(o.Id, o.CiiOrganisationId, o.LegalName, o.CreatedOnUtc)).ToListAsync();
+          return organisationIds;
+        }
       }
       catch (Exception ex)
       {

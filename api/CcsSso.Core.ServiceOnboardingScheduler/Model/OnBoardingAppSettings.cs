@@ -10,6 +10,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Model
   public class OnBoardingAppSettings
   {
     public string DbConnection { get; set; }
+    public bool ReportingMode { get; set; }
     public ApiSettings? SecurityApiSettings { get; set; }
 
     public ApiSettings? WrapperApiSettings { get; set; }
@@ -23,6 +24,8 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Model
     public int MaxNumbeOfRecordInAReport { get; set; }
 
     public Email EmailSettings { get; set; }
+
+    public OneTimeValidation? OneTimeValidation { get; set; }
 
   }
 
@@ -57,6 +60,15 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Model
     public string? FailedAutoValidationNotificationTemplateId { get; set; }
 
     public List<string> EmailIds { get; set; }
+
+  }
+
+  public class OneTimeValidation
+  {
+    public bool Switch { get; set; }
+    public string StartDate { get; set; }
+
+    public string EndDate { get; set; }
 
   }
 }
