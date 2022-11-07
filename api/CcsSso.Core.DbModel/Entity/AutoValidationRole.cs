@@ -16,7 +16,7 @@ namespace CcsSso.Core.DbModel.Entity
 
     public bool IsBuyerSuccess { get; set; }
 
-    public bool IsBuyerFalied { get; set; }
+    public bool IsBuyerFailed { get; set; }
 
     public bool IsBothSuccess { get; set; }
 
