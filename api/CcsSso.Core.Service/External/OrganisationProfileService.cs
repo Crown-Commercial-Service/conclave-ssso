@@ -14,10 +14,12 @@ using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
@@ -946,79 +948,57 @@ namespace CcsSso.Core.Service.External
         int? oldOrgSupplierBuyerType = organisation.SupplierBuyerType;
         bool isOrgTypeSwitched = organisation.SupplierBuyerType != (int)orgType;
         organisation.RightToBuy = orgType != RoleEligibleTradeType.Supplier ? true : false;
+        bool autoValidationSuccess = false;
 
         // Switched from supplier to buyer or both
-        if (isOrgTypeSwitched && orgType != RoleEligibleTradeType.Supplier)
+        if (isOrgTypeSwitched)
         {
-          var autoValidationOrgDetails = await AutoValidateOrganisationDetails(organisation.CiiOrganisationId);
-          bool autoValidationSuccess = autoValidationOrgDetails!= null ? autoValidationOrgDetails.Item1 : false;
-
-          var rolesAssigned =  await AddNewOrgRoles(rolesToAdd, organisation, autoValidationSuccess);
-          var rolesUnassigned = await RemoveOrgRoles(rolesToDelete, organisation);
-
-          // No event log if org was supplier and changes in role only.
-          if (isOrgTypeSwitched)
+          if (orgType != RoleEligibleTradeType.Supplier)
           {
-            auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, orgType == RoleEligibleTradeType.Buyer ? 
-              OrganisationAuditEventType.OrganisationTypeBothToBuyer : OrganisationAuditEventType.OrganisationTypeBuyerToBoth, 
-              groupId, organisation.Id, schemeIdentifier));
+            var autoValidationOrgDetails = await AutoValidateOrganisationDetails(organisation.CiiOrganisationId, verifiedAdminOnly: true);
+            autoValidationSuccess = autoValidationOrgDetails != null ? autoValidationOrgDetails.Item1 : false;
           }
-          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.RoleAssigned, groupId, organisation.Id, schemeIdentifier, roles: rolesAssigned));
-          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.RoleUnassigned, groupId, organisation.Id, schemeIdentifier, roles: rolesUnassigned));
+          // supplier
+          else
+          {
+            orgStatus = new OrganisationAuditInfo
+            {
+              Status = OrgAutoValidationStatus.ManualRemovalOfRightToBuy,
+              OrganisationId = organisation.Id,
+              Actioned = OrganisationAuditActionType.Autovalidation.ToString(),
+              SchemeIdentifier = schemeIdentifier,
+            };
+          }
         }
-        // supplier
-        else 
-        {
-          var rolesAssigned = await AddNewOrgRoles(rolesToAdd, organisation);
-          var rolesUnassigned = await RemoveOrgRoles(rolesToDelete, organisation);
 
-          if (isOrgTypeSwitched)
-          {
-            auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, oldOrgSupplierBuyerType == (int)RoleEligibleTradeType.Buyer ?
-              OrganisationAuditEventType.OrganisationTypeBuyerToSupplier : OrganisationAuditEventType.OrganisationTypeBothToSupplier,
-              groupId, organisation.Id, schemeIdentifier));
-            
-            auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.RoleAssigned, groupId, organisation.Id, schemeIdentifier, roles: rolesAssigned));
-            auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.RoleUnassigned, groupId, organisation.Id, schemeIdentifier, roles: rolesUnassigned));
-          }
+
+        var rolesAssigned = await AddNewOrgRoles(rolesToAdd, organisation, autoValidationSuccess);
+        var rolesUnassigned = await RemoveOrgRoles(rolesToDelete, organisation);
+
+        // No event log if org was supplier and changes in role only.
+        if (isOrgTypeSwitched)
+        {
+          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, GetOrgEventTypeChange((int)oldOrgSupplierBuyerType, (int)orgType), groupId, organisation.Id, schemeIdentifier));
+        }
+        if (!string.IsNullOrWhiteSpace(rolesAssigned) && (isOrgTypeSwitched || orgType == RoleEligibleTradeType.Supplier))
+        {
+          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.RoleAssigned, groupId, organisation.Id, schemeIdentifier, roles: rolesAssigned));
+        }
+        if (!string.IsNullOrWhiteSpace(rolesAssigned) && (isOrgTypeSwitched || orgType == RoleEligibleTradeType.Supplier))
+        {
+          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.RoleUnassigned, groupId, organisation.Id, schemeIdentifier, roles: rolesUnassigned));
         }
 
         // Org type change to supplier then notify all org admins
         if (isOrgTypeSwitched && orgType == RoleEligibleTradeType.Supplier)
         {
           organisation.SupplierBuyerType = (int)RoleEligibleTradeType.Supplier;
-          // get all admins
-          var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
-          .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisation.Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
-
-          var allActiveAdminsOfOrg = await _dataContext.User
-            .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
-            .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
-            .Where(u => u.Party.Person.Organisation.CiiOrganisationId == organisation.CiiOrganisationId && u.UserType == UserType.Primary &&
-            u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && u.AccountVerified && !u.IsDeleted)
-            .ToListAsync();
-
-
-          // email all admins to notify org type change to supplier and right to buy is removed
-          foreach (var admin in allActiveAdminsOfOrg)
-          {
-            await _ccsSsoEmailService.SendOrgBuyerStatusChangeUpdateToAllAdminsAsync(admin.UserName);
-          }
-          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, oldOrgSupplierBuyerType == (int)RoleEligibleTradeType.Buyer ?
-                            OrganisationAuditEventType.OrganisationTypeBuyerToSupplier : OrganisationAuditEventType.OrganisationTypeBothToSupplier, groupId, organisation.Id, schemeIdentifier));
-
-          orgStatus = new OrganisationAuditInfo
-          {
-            Status = OrgAutoValidationStatus.ManualRemovalOfRightToBuy,
-            OrganisationId = organisation.Id,
-            Actioned = OrganisationAuditActionType.Autovalidation.ToString(),
-            SchemeIdentifier = schemeIdentifier,
-          };
+          await NotifyAllOrgAdmins(organisation);
         }
 
         await _dataContext.SaveChangesAsync();
 
-        if (isOrgTypeSwitched)
+        if (isOrgTypeSwitched && orgStatus != null)
         {
           await _organisationAuditService.CreateOrganisationAuditAsync(orgStatus);
         }
@@ -1323,8 +1303,9 @@ namespace CcsSso.Core.Service.External
       {
         // list of roles to remove for non verified buyer
         var autoValidationFailedRolesForOrg = await _dataContext.AutoValidationRole.Where(x => x.AssignToOrg == true && !x.IsBuyerFailed).ToListAsync();
+        var roleToAddWithOutRemovingVerfiedBuyer = rolesToAdd.ToList();
 
-        foreach (var role in rolesToAdd) 
+        foreach (var role in roleToAddWithOutRemovingVerfiedBuyer) 
         {
           if (autoValidationFailedRolesForOrg.Any(r => r.CcsAccessRoleId == role.RoleId)) {
             rolesToAdd.Remove(role);
@@ -1340,21 +1321,18 @@ namespace CcsSso.Core.Service.External
           throw new CcsSsoException("INVALID_ROLES_TO_ADD");
         }
 
-        if (rolesToAdd.Any(ar => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == ar.RoleId)))
-        {
-          throw new CcsSsoException("ROLE_ALREADY_EXISTS_FOR_ORGANISATION");
-        }
-
         List<OrganisationEligibleRole> addedEligibleRoles = new List<OrganisationEligibleRole>();
         rolesToAdd.ForEach((addedRole) =>
         {
-          addedEligibleRoles.Add(new OrganisationEligibleRole
+          if (!organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == addedRole.RoleId))
           {
-            OrganisationId = organisation.Id,
-            CcsAccessRoleId = addedRole.RoleId
-          });
-          rolesAssigned.Append(rolesAssigned.Length > 0 ? "," + addedRole.RoleName : addedRole.RoleName);
-
+            addedEligibleRoles.Add(new OrganisationEligibleRole
+            {
+              OrganisationId = organisation.Id,
+              CcsAccessRoleId = addedRole.RoleId
+            });
+            rolesAssigned.Append(rolesAssigned.Length > 0 ? "," + addedRole.RoleName : addedRole.RoleName);
+          }
         });
         _dataContext.OrganisationEligibleRole.AddRange(addedEligibleRoles);
       }
@@ -1405,7 +1383,44 @@ namespace CcsSso.Core.Service.External
 
       return rolesAssigned.ToString();
     }
-      
+
+    private static OrganisationAuditEventType GetOrgEventTypeChange(int oldOrgSupplierBuyerType, int newOrgSupplierBuyerType) 
+    {
+      if (oldOrgSupplierBuyerType == (int)RoleEligibleTradeType.Supplier)
+      {
+        return newOrgSupplierBuyerType == (int)RoleEligibleTradeType.Buyer ? OrganisationAuditEventType.OrganisationTypeSupplierToBuyer : OrganisationAuditEventType.OrganisationTypeSupplierToBoth;
+      }
+      else if (oldOrgSupplierBuyerType == (int)RoleEligibleTradeType.Buyer)
+      {
+        return newOrgSupplierBuyerType == (int)RoleEligibleTradeType.Supplier ? OrganisationAuditEventType.OrganisationTypeBuyerToSupplier : OrganisationAuditEventType.OrganisationTypeBuyerToBoth;
+      }
+      else
+      {
+        return newOrgSupplierBuyerType == (int)RoleEligibleTradeType.Supplier ? OrganisationAuditEventType.OrganisationTypeBothToSupplier : OrganisationAuditEventType.OrganisationTypeBothToBuyer;
+      }
+    }
+
+    private async Task NotifyAllOrgAdmins(Organisation organisation) 
+    {
+      // TODO: find better way to get all admin
+      // get all admins
+      var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
+      .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisation.Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+
+      var allActiveAdminsOfOrg = await _dataContext.User
+        .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
+        .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
+        .Where(u => u.Party.Person.Organisation.CiiOrganisationId == organisation.CiiOrganisationId && u.UserType == UserType.Primary &&
+        u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && u.AccountVerified && !u.IsDeleted)
+        .ToListAsync();
+
+      // email all admins to notify org type change to supplier and right to buy is removed
+      foreach (var admin in allActiveAdminsOfOrg)
+      {
+        await _ccsSsoEmailService.SendOrgBuyerStatusChangeUpdateToAllAdminsAsync(admin.UserName);
+      }
+    }
+
     #endregion
 
   }
