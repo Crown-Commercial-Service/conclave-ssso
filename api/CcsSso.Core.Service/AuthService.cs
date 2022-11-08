@@ -173,7 +173,8 @@ namespace CcsSso.Core.Service
         {
           Console.WriteLine($"15. intendedOrganisationId is empty from cache => {intendedOrganisationId}");
 
-                   // Based on the delegation user logic we only come to this point when the request comes for primary user.
+          // Based on the delegation user logic we only come to this point when the request comes for primary user.
+          // primary condition has been added to fix the issue https://crowncommercialservice.atlassian.net/jira/software/c/projects/CON/issues/CON-3108
           intendedOrganisationId = await _dataContext.User.Where(u => !u.IsDeleted && u.UserName == _requestContext.RequestIntendedUserName 
           && (u.UserType== UserType.Primary))
             .Select(u => u.Party.Person.Organisation.CiiOrganisationId).FirstOrDefaultAsync();
