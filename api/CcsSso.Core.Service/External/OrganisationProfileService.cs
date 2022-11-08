@@ -831,7 +831,7 @@ namespace CcsSso.Core.Service.External
           !roles.Any(r => r.Id == ar.Id) &&
           !string.IsNullOrEmpty(ar.DefaultEligibility) && ar.DefaultEligibility.EndsWith("1")
         ).ToList();
-
+        
       }
 
       roles.ForEach((role) =>
