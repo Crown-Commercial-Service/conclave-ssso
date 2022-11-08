@@ -76,7 +76,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<bool>("IsBothSuccess")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsBuyerFalied")
+                    b.Property<bool>("IsBuyerFailed")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsBuyerSuccess")
