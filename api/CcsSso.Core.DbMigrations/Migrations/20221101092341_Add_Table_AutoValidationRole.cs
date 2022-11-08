@@ -16,7 +16,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     CcsAccessRoleId = table.Column<int>(type: "integer", nullable: false),
                     IsSupplier = table.Column<bool>(type: "boolean", nullable: false),
                     IsBuyerSuccess = table.Column<bool>(type: "boolean", nullable: false),
-                    IsBuyerFalied = table.Column<bool>(type: "boolean", nullable: false),
+                    IsBuyerFailed = table.Column<bool>(type: "boolean", nullable: false),
                     IsBothSuccess = table.Column<bool>(type: "boolean", nullable: false),
                     IsBothFailed = table.Column<bool>(type: "boolean", nullable: false),
                     AssignToOrg = table.Column<bool>(type: "boolean", nullable: false),
