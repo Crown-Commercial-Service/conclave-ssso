@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Dtos;
 using CcsSso.Domain.Constants;
@@ -156,26 +157,44 @@ namespace CcsSso.Core.Service
 
       if (requestType == RequestType.HavingOrgId)
       {
+        Console.WriteLine($"13. Having Org Id - {requestType}");
+
         isAuthorizedForOrganisation = _requestContext.CiiOrganisationId == _requestContext.RequestIntendedOrganisationId;
       }
       else if (requestType == RequestType.NotHavingOrgId)
       {
-        var intendedOrganisationId = await _remoteCacheService.GetValueAsync<string>($"{CacheKeyConstant.UserOrganisation}-{_requestContext.RequestIntendedUserName}");
+        Console.WriteLine($"13. not Having Org Id - {requestType}");
+
+       var intendedOrganisationId = await _remoteCacheService.GetValueAsync<string>($"{CacheKeyConstant.UserOrganisation}-{_requestContext.RequestIntendedUserName}");
+
+        Console.WriteLine($"14. intendedOrganisationId  from cache - {intendedOrganisationId} for key => {CacheKeyConstant.UserOrganisation}-{_requestContext.RequestIntendedUserName}");
 
         if (string.IsNullOrEmpty(intendedOrganisationId))
         {
-          intendedOrganisationId = await _dataContext.User.Where(u => !u.IsDeleted && u.UserName == _requestContext.RequestIntendedUserName)
+          Console.WriteLine($"15. intendedOrganisationId is empty from cache => {intendedOrganisationId}");
+
+                   // Based on the delegation user logic we only come to this point when the request comes for primary user.
+          intendedOrganisationId = await _dataContext.User.Where(u => !u.IsDeleted && u.UserName == _requestContext.RequestIntendedUserName 
+          && (u.UserType== UserType.Primary))
             .Select(u => u.Party.Person.Organisation.CiiOrganisationId).FirstOrDefaultAsync();
+
+          Console.WriteLine($"16. set intendedOrganisationId value to cache for the user => {_requestContext.RequestIntendedUserName}");
 
           await _remoteCacheService.SetValueAsync<string>($"{CacheKeyConstant.UserOrganisation}-{_requestContext.RequestIntendedUserName}", intendedOrganisationId,
             new TimeSpan(0, _applicationConfigurationInfo.RedisCacheSettings.CacheExpirationInMinutes, 0));
         }
 
         isAuthorizedForOrganisation = _requestContext.CiiOrganisationId == intendedOrganisationId;
+        Console.WriteLine($"17. _requestContext.CiiOrganisationId => {_requestContext.CiiOrganisationId} and intendedOrganisationId={intendedOrganisationId}");
+
+        Console.WriteLine($"18. isAuthorizedForOrganisation=> {isAuthorizedForOrganisation}");
+
       }
 
       if (!isAuthorizedForOrganisation && !isCcsAdminRequest)
       {
+        Console.WriteLine($"19. forbidden =>isAuthorizedForOrganisation {!isAuthorizedForOrganisation} and isCcsAdminRequest {!isCcsAdminRequest}");
+
         throw new ForbiddenException();
       }
 
