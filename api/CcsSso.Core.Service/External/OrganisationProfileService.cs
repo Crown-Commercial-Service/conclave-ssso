@@ -358,7 +358,6 @@ namespace CcsSso.Core.Service.External
       return identityProviders;
     }
 
-    // #Auto validation
     public async Task<List<OrganisationRole>> GetOrganisationRolesAsync(string ciiOrganisationId)
     {
       // Read org table to find the Org and then include all roles (FirstOrDefaultAsync get the Org)
@@ -883,7 +882,7 @@ namespace CcsSso.Core.Service.External
 
       return isDomainValid;
 
-      //TODO: Assing role to buyer or both type of org
+     //TODO: Assing role to buyer or both type of org
 
     }
 
