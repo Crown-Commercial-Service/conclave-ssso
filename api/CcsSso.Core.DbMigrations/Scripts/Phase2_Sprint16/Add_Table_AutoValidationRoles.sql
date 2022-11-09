@@ -5,7 +5,7 @@ CREATE TABLE "AutoValidationRole" (
     "CcsAccessRoleId" integer NOT NULL,
     "IsSupplier" boolean NOT NULL,
     "IsBuyerSuccess" boolean NOT NULL,
-    "IsBuyerFalied" boolean NOT NULL,
+    "IsBuyerFailed" boolean NOT NULL,
     "IsBothSuccess" boolean NOT NULL,
     "IsBothFailed" boolean NOT NULL,
     "AssignToOrg" boolean NOT NULL,

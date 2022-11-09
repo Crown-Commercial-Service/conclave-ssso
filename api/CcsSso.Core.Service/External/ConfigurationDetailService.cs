@@ -1,3 +1,5 @@
+using CcsSso.Core.DbModel.Constants;
+using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Domain.Constants;
@@ -38,6 +40,7 @@ namespace CcsSso.Core.Service.External
 
     public async Task<List<OrganisationRole>> GetRolesAsync()
     {
+      var autoValidationRolesForOrg = await _dataContext.AutoValidationRole.Where(x => x.AssignToOrg == true).ToListAsync();
       var roles = await _dataContext.CcsAccessRole
                           .Where(r => !r.IsDeleted)
                           .Include(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
@@ -49,7 +52,8 @@ namespace CcsSso.Core.Service.External
                             ServiceName = i.ServiceRolePermissions.FirstOrDefault().ServicePermission.CcsService.ServiceName,
                             OrgTypeEligibility = i.OrgTypeEligibility,
                             SubscriptionTypeEligibility = i.SubscriptionTypeEligibility,
-                            TradeEligibility = i.TradeEligibility
+                            TradeEligibility = i.TradeEligibility,
+                            AutoValidationRoleTypeEligibility = _applicationConfigurationInfo.OrgAutoValidation.Enable ? GetAutoValidationTypeEligibility(i.Id, autoValidationRolesForOrg) : default
                           }).ToListAsync();
 
       return roles;
@@ -130,5 +134,29 @@ namespace CcsSso.Core.Service.External
 
       return countryDetail;
     }
+
+    // #Auto validation
+    private static int[] GetAutoValidationTypeEligibility(int CcsAccessRoleId, List<AutoValidationRole> autoValidationRoles)
+    {
+      var role = autoValidationRoles.FirstOrDefault(x => x.CcsAccessRoleId == CcsAccessRoleId);
+      List<int> eligibleTradeTypeArrayList = new List<int>();
+      if (role != null)
+      {
+        if (role.IsBothSuccess || role.IsBothFailed)
+        {
+          eligibleTradeTypeArrayList.Add((int)RoleEligibleTradeType.Both);
+        }
+        if (role.IsSupplier)
+        {
+          eligibleTradeTypeArrayList.Add((int)RoleEligibleTradeType.Supplier);
+        }
+        if (role.IsBuyerSuccess || role.IsBuyerFailed)
+        {
+          eligibleTradeTypeArrayList.Add((int)RoleEligibleTradeType.Buyer);
+        }
+      }
+      return eligibleTradeTypeArrayList.ToArray();
+    }
+
   }
 }

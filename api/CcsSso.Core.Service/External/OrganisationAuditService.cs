@@ -79,7 +79,7 @@ namespace CcsSso.Core.Service.External
 
     private void Validate(OrganisationAuditInfo organisationAuditInfo)
     {
-      if (organisationAuditInfo.OrganisationId <= 0)
+      if (organisationAuditInfo == null || organisationAuditInfo.OrganisationId <= 0)
       {
         throw new CcsSsoException(ErrorConstant.ErrorOrganisationIdRequired);
       }
