@@ -185,6 +185,12 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("OrgAutoValidation:Enable", orgAutoValidation.Enable.ToString());
         Data.Add("OrgAutoValidation:CCSAdminEmailId", orgAutoValidation.CCSAdminEmailId.ToString());
       }
+      if (_secrets.Data.ContainsKey("LookUpApiSettings"))
+      {
+        var wrapperApiKeySettings = JsonConvert.DeserializeObject<LookUpApiSettings>(_secrets.Data["LookUpApiSettings"].ToString());
+        Data.Add("LookUpApiSettings:LookUpApiKey", wrapperApiKeySettings.LookUpApiKey);
+        Data.Add("LookUpApiSettings:LookUpApiUrl", wrapperApiKeySettings.LookUpApiUrl);
+      }
     }
   }
 

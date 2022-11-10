@@ -135,6 +135,7 @@ namespace CcsSso.Domain.Dtos
     public string DefaultTypeValidationValue { get; set; }
   }
 
+  // #Auto validation
   public class OrgAutoValidation 
   {
     public bool Enable { get; set; } = false;
@@ -146,5 +147,12 @@ namespace CcsSso.Domain.Dtos
     public string Url { get; set; }
 
     public string ApiKey { get; set; }
+  }
+
+  public class LookUpApiSettings
+  {
+    public string LookUpApiKey { get; set; }
+
+    public string LookUpApiUrl { get; set; }
   }
 }
