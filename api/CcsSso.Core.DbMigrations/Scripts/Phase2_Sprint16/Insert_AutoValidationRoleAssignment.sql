@@ -47,7 +47,7 @@ BEGIN
 	VALUES (eSourcingDashboardId, true, true, false, true, true, true, false);
 
 	--eSourcing Service - add service
-	SELECT "Id" into eSourcingServiceId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'JAGGAER_TMP' LIMIT 1;
+	SELECT "Id" into eSourcingServiceId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'JAGGAER_USER' LIMIT 1;
 	
 	INSERT INTO public."AutoValidationRole"("CcsAccessRoleId", "IsSupplier", "IsBuyerSuccess", "IsBuyerFailed", "IsBothSuccess", "IsBothFailed", "AssignToOrg", "AssignToAdmin")
 	VALUES (eSourcingServiceId, true, true, false, true, true, true, false);

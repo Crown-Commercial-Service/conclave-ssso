@@ -141,6 +141,7 @@ namespace CcsSso.Core.Domain.Dtos.External
     public RoleEligibleTradeType OrgType { get; set; }
     public List<OrganisationRole> RolesToAdd { get; set; }
     public List<OrganisationRole> RolesToDelete { get; set; }
+    public string? CompanyHouseId { get; set; }
   }
 
 }
