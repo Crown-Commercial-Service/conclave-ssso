@@ -49,7 +49,8 @@ namespace CcsSso.Core.ReportingScheduler
 
             ConfigureHttpClients(services, appSettings);
 
-            services.AddSingleton(s => {
+            services.AddSingleton(s =>
+            {
 
               return new S3Configuration
               {
@@ -59,7 +60,8 @@ namespace CcsSso.Core.ReportingScheduler
               };
             });
 
-            services.AddSingleton(s => {
+            services.AddSingleton(s =>
+            {
 
               return new AzureBlobConfiguration
               {
@@ -111,6 +113,7 @@ namespace CcsSso.Core.ReportingScheduler
 
       string dbConnection;
       string maxNumbeOfRecordInAReport;
+      string writeCSVDataInLog;
 
       if (vaultEnabled)
       {
@@ -123,6 +126,8 @@ namespace CcsSso.Core.ReportingScheduler
         S3Configuration = JsonConvert.DeserializeObject<S3Configuration>(secrets["S3Configuration"].ToString());
         azureBlobConfiguration = JsonConvert.DeserializeObject<AzureBlobConfiguration>(secrets["AzureBlobConfiguration"].ToString());
         maxNumbeOfRecordInAReport = secrets["MaxNumbeOfRecordInAReport"].ToString();
+        writeCSVDataInLog = secrets["WriteCSVDataInLog"].ToString();
+
       }
       else
       {
@@ -135,6 +140,7 @@ namespace CcsSso.Core.ReportingScheduler
         S3Configuration = config.GetSection("S3Configuration").Get<S3Configuration>();
         azureBlobConfiguration = config.GetSection("AzureBlobConfiguration").Get<AzureBlobConfiguration>();
         maxNumbeOfRecordInAReport = config["MaxNumbeOfRecordInAReport"].ToString();
+        writeCSVDataInLog = config["WriteCSVDataInLog"].ToString();
       }
 
       var appSettings = new AppSettings()
@@ -146,7 +152,8 @@ namespace CcsSso.Core.ReportingScheduler
         WrapperApiSettings = WrapperApi,
         S3Configuration =S3Configuration,
         AzureBlobConfiguration = azureBlobConfiguration,
-        MaxNumbeOfRecordInAReport = int.Parse(maxNumbeOfRecordInAReport)
+        MaxNumbeOfRecordInAReport = int.Parse(maxNumbeOfRecordInAReport),
+        WriteCSVDataInLog = bool.Parse(writeCSVDataInLog)
       };
       return appSettings;
     }
