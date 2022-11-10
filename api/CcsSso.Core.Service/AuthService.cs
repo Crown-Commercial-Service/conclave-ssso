@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Dtos;
 using CcsSso.Domain.Constants;
@@ -152,7 +153,11 @@ namespace CcsSso.Core.Service
 
         if (string.IsNullOrEmpty(intendedOrganisationId))
         {
-          intendedOrganisationId = await _dataContext.User.Where(u => !u.IsDeleted && u.UserName == _requestContext.RequestIntendedUserName)
+          // Based on the delegation user logic we only come to this point when the request comes for primary user.
+          // primary condition has been added to fix the issue https://crowncommercialservice.atlassian.net/jira/software/c/projects/CON/issues/CON-3108
+
+          intendedOrganisationId = await _dataContext.User
+            .Where(u => !u.IsDeleted && u.UserName == _requestContext.RequestIntendedUserName && (u.UserType == UserType.Primary))
             .Select(u => u.Party.Person.Organisation.CiiOrganisationId).FirstOrDefaultAsync();
 
           await _remoteCacheService.SetValueAsync<string>($"{CacheKeyConstant.UserOrganisation}-{_requestContext.RequestIntendedUserName}", intendedOrganisationId,
