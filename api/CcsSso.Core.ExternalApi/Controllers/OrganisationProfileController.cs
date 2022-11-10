@@ -1263,13 +1263,13 @@ namespace CcsSso.ExternalApi.Controllers
     ///      }
     ///     
     /// </remarks>
-    [HttpPost("{organisationId}/switch")]
+    [HttpPut("{organisationId}/switch")]
     [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
     [SwaggerOperation(Tags = new[] { "AutoValidation" })]
     [ProducesResponseType(typeof(string), 200)]
-    public async Task AutoValidateOrganisationTypeswitch(string organisationId, OrganisationAutoValidationRoleUpdate model)
+    public async Task AutoValidateOrganisationTypeswitch(string organisationId, OrganisationAutoValidationRoleUpdate orgUpdateDetails)
     {
-      await _organisationService.UpdateOrgAutoValidationEligibleRolesAsync(organisationId, model.OrgType, model.RolesToAdd, model.RolesToDelete);
+      await _organisationService.UpdateOrgAutoValidationEligibleRolesAsync(organisationId, orgUpdateDetails.OrgType, orgUpdateDetails.RolesToAdd, orgUpdateDetails.RolesToDelete, orgUpdateDetails.CompanyHouseId);
     }
 
     /// <summary>
