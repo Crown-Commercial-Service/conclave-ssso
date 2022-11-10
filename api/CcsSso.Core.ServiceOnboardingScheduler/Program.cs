@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Domain;
 using Microsoft.AspNetCore.Mvc;
+using CcsSso.Core.ServiceOnboardingScheduler.Service.Contracts;
+using CcsSso.Core.ServiceOnboardingScheduler.Service;
 
 namespace CcsSso.Core.ServiceOnboardingScheduler
 {
@@ -55,11 +57,13 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
 
             services.AddSingleton<IDateTimeService, DateTimeService>();
             services.AddSingleton<IEmailProviderService, EmailProviderService>();
+            services.AddSingleton<ICASOnBoardingService, CASOnBoardingService>();
 
             services.AddSingleton(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
             services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(appSettings.DbConnection));
 
-            services.AddHostedService<CASOnboardingJob>();
+            //services.AddHostedService<CASOnboardingJob>();
+            services.AddHostedService<OneTimeCASOnboardingJob>();
 
           });
     }
@@ -95,6 +99,9 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
       string dbConnection;
       string maxNumbeOfRecordInAReport;
       string[] casDefaultRoles;
+      string[] supplierRole;
+      string logReportEmailId;
+
 
 
       var config = hostContext.Configuration;
@@ -107,9 +114,12 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
       OnBoardingDataDuration = config.GetSection("OnBoardingDataDuration").Get<OnBoardingDataDuration>();
       maxNumbeOfRecordInAReport = config["MaxNumbeOfRecordInAReport"].ToString();
       casDefaultRoles = config.GetSection("Roles:CASDefaultRoles").Get<string[]>();
-      emailInfo= config.GetSection("Email").Get<Email>();
+      supplierRole = config.GetSection("Roles:SupplierRoles").Get<string[]>();
+      logReportEmailId= config["LogReportEmailId"];
+      emailInfo = config.GetSection("Email").Get<Email>();
       oneTimeValidation = config.GetSection("OneTimeValidation").Get<OneTimeValidation>();
       reportingMode = config["ReportingMode"];
+
 
       var appSettings = new OnBoardingAppSettings()
       {
@@ -121,10 +131,11 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
         WrapperApiSettings = WrapperApi,
         MaxNumbeOfRecordInAReport = int.Parse(maxNumbeOfRecordInAReport),
         CASDefaultRoles = casDefaultRoles,
+        SupplierRoles = supplierRole,
         EmailSettings = emailInfo,
         OneTimeValidation = oneTimeValidation,
-        ReportingMode = bool.TryParse(reportingMode, out bool result) ? result : false
-
+        ReportingMode = bool.TryParse(reportingMode, out bool result) ? result : false,
+        LogReportEmailId = logReportEmailId
       };
       return appSettings;
     }

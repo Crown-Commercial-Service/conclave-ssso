@@ -21,9 +21,13 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Model
     public OnBoardingDataDuration? OnBoardingDataDuration { get; set; }
 
     public string[]? CASDefaultRoles { get; set; }
+    public string[]? SupplierRoles { get; set; }
+   
     public int MaxNumbeOfRecordInAReport { get; set; }
 
     public Email EmailSettings { get; set; }
+
+    public string? LogReportEmailId { get; set; }
 
     public OneTimeValidation? OneTimeValidation { get; set; }
 

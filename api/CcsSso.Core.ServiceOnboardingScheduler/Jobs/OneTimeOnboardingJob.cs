@@ -11,12 +11,13 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Notify.Client;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using Organisation = CcsSso.Core.ServiceOnboardingScheduler.Model.Organisation;
 
 namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 {
-  public class CASOnboardingJob : BackgroundService
+  public class OneTimeCASOnboardingJob : BackgroundService
   {
     private readonly OnBoardingAppSettings _appSettings;
     private readonly IDateTimeService _dataTimeService;
@@ -25,12 +26,13 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
     private readonly IEmailProviderService _emaillProviderService;
     private readonly ICASOnBoardingService _onBoardingService;
     private readonly ILogger<CASOnboardingJob> _logger;
+    private bool ranOnce;
     private bool reportingMode;
     private DateTime startDate;
     private DateTime endDate;
 
 
-    public CASOnboardingJob(ILogger<CASOnboardingJob> logger, OnBoardingAppSettings appSettings, IDateTimeService dataTimeService,
+    public OneTimeCASOnboardingJob(ILogger<CASOnboardingJob> logger, OnBoardingAppSettings appSettings, IDateTimeService dataTimeService,
        IHttpClientFactory httpClientFactory, IServiceScopeFactory factory, IEmailProviderService emailProviderService,
        ICASOnBoardingService onBoardingService)
     {
@@ -40,6 +42,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
       _httpClientFactory = httpClientFactory;
       _emaillProviderService = emailProviderService;
       _onBoardingService = onBoardingService;
+      ranOnce = false;
 
       _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
     }
@@ -54,15 +57,54 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 
         var oneTimeValidationSwitch = _appSettings.OneTimeValidation.Switch;
 
-        _logger.LogInformation("");
-        _logger.LogInformation("CAS Scheduled job started at: {time}", DateTimeOffset.Now);
-
-        if (!oneTimeValidationSwitch)
+        if (oneTimeValidationSwitch && ranOnce)
         {
-          await PerformJob(oneTimeValidationSwitch);
+          _logger.LogInformation("One time validation ran already. Skipping this iteration.");
+          await Task.Delay(interval, stoppingToken);
+          continue;
+        }
+        if (oneTimeValidationSwitch)
+        {
+          var startDateString = _appSettings.OneTimeValidation.StartDate;
+          var endDateString = _appSettings.OneTimeValidation.EndDate;
+
+          if (startDateString == null || endDateString == null)
+          {
+            _logger.LogError("One time validation needs start and end date. Skipping this iteration.");
+            await Task.Delay(interval, stoppingToken);
+            continue;
+
+          }
+          try
+          {
+            startDate = DateTime.ParseExact(startDateString, "yyyy-MM-dd hh:mm", CultureInfo.InvariantCulture);
+            endDate = DateTime.ParseExact(endDateString, "yyyy-MM-dd hh:mm", CultureInfo.InvariantCulture);
+
+          }
+          catch (FormatException)
+          {
+            _logger.LogError("{0} or {1} is not in the correct format. Date format should be as follows 'yyyy-MM-dd' Skipping this iteration.", startDateString, endDateString);
+            await Task.Delay(interval, stoppingToken);
+            continue;
+          }
+          catch (Exception)
+          {
+            _logger.LogError("Error while reading the start or end date {0}, {1}. Skipping this iteration.", startDateString, endDateString);
+            await Task.Delay(interval, stoppingToken);
+            continue;
+          }
+
+
+          _logger.LogInformation("One time validation job switched on. So it runs once to process all the organisation between dates");
         }
 
-        _logger.LogInformation("CAS Scheduled job Finsied at: {time}", DateTimeOffset.Now);
+        _logger.LogInformation("");
+        _logger.LogInformation("Worker started at: {time}", DateTimeOffset.Now);
+
+        await PerformJob(oneTimeValidationSwitch);
+        ranOnce = true;
+
+        _logger.LogInformation("Worker Finsied at: {time}", DateTimeOffset.Now);
         _logger.LogInformation("");
 
         await Task.Delay(interval, stoppingToken);
@@ -78,6 +120,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 
         //var jobReport = new List<string>();
         var jobReport = new List<LogJobDetail>();
+
         var listOfRegisteredOrgs = await _onBoardingService.GetRegisteredOrgsIds(oneTimeValidationSwitch, startDate, endDate);
 
         List<OrganizationDetails> failedOrganizations = new List<OrganizationDetails>();
@@ -89,6 +132,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
         }
 
         var toEmailIds = _appSettings.EmailSettings.EmailIds.ToList();
+
         var logEmailIds = _appSettings.LogReportEmailId;
 
         if (listOfRegisteredOrgs == null || listOfRegisteredOrgs.Count() == 0)
@@ -126,9 +170,16 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 
             _logger.LogInformation($"Admin domain name  {domainName}");
 
-            var isValid = await IsValidBuyer(domainName);
+            var isValid = false;
 
-            //jobReport.Add($"OrgId:{orgId}-CII Org Id:{ciiOrgId}-Org LegalName:{orgLegalName}-Autovalidation:{isValid}-oldest org admin:{oldestOrgAdmin.Item3}");
+            if (eachOrgs.SupplierBuyerType > 0)
+            {
+              isValid = await IsValidBuyer(domainName);
+            }
+            else
+            {
+              await AddSupplierRole(eachOrgs.Id, adminList.Select(t => t.Item3).ToList());
+            }
 
             jobReport.Add(new LogJobDetail()
             {
@@ -140,42 +191,39 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
               DateTime = ConvertToGmtDateTime(orgCreatedOn)
             });
 
-            if (!reportingMode)
+            if (eachOrgs.SupplierBuyerType > 0)
             {
-              if (isValid)
+              if (!reportingMode)
               {
-                //successOrgList.Add($"OrgId:{orgId}-CII Org Id:{ciiOrgId}-Org LegalName:{orgLegalName}");
-                _logger.LogInformation($"Auto validation succeeded for org. LegalName =  {eachOrgs.LegalName}");
-
-                if (eachOrgs.SupplierBuyerType > 0) // 0 supplier 0 and 1 are buyer or both.
+                if (isValid)
                 {
-                  await UpdateRightToBuy(eachOrgs.Id);
-                }
+                  _logger.LogInformation($"Auto validation succeeded for org. LegalName =  {eachOrgs.LegalName}");
 
-                if (!reportingMode)
-                {
-                  await AddDefaultRole(eachOrgs.Id, adminList.Select(t => t.Item3).ToList());
+                  if (eachOrgs.SupplierBuyerType > 0)
+                  {
+                    await UpdateRightToBuy(eachOrgs.Id);
+                    await AddDefaultRole(eachOrgs.Id, adminList.Select(t => t.Item3).ToList());
+                  }
+
                 }
                 else
                 {
-                  _logger.LogInformation($"Reporting Mode is On. So no default roles are assigned");
-                }
 
+                  _logger.LogInformation($"Auto validation failed for org. LegalName =  {eachOrgs.CiiOrganisationId}");
+
+                  OrganizationDetails organizationDetails = new OrganizationDetails();
+                  organizationDetails.Id = eachOrgs.CiiOrganisationId.ToString();
+                  organizationDetails.Name = eachOrgs.LegalName;
+                  organizationDetails.AdminEmail = oldestOrgAdmin.Item3;
+                  organizationDetails.AutovalidationStatus = "false";
+                  organizationDetails.DateTime = ConvertToGmtDateTime(orgCreatedOn);
+
+                  failedOrganizations.Add(organizationDetails);
+                }
               }
               else
               {
-                //failedOrgList.Add($"OrgId:{orgId}-CII Org Id:{ciiOrgId}-Org LegalName:{orgLegalName}");
-
-                _logger.LogInformation($"Auto validation failed for org. LegalName =  {eachOrgs.CiiOrganisationId}");
-
-                OrganizationDetails organizationDetails = new OrganizationDetails();
-                organizationDetails.Id = eachOrgs.CiiOrganisationId.ToString();
-                organizationDetails.Name = eachOrgs.LegalName;
-                organizationDetails.AdminEmail = oldestOrgAdmin.Item3;
-                organizationDetails.AutovalidationStatus = "false";
-                organizationDetails.DateTime = ConvertToGmtDateTime(orgCreatedOn);
-
-                failedOrganizations.Add(organizationDetails);
+                _logger.LogInformation($"Reporting Mode is On. So no default roles are assigned");
               }
             }
           }
@@ -185,16 +233,6 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
             //failedOrgList.Add($"OrgId:{orgId}-CII Org Id:{ciiOrgId}-Org LegalName:{orgLegalName}");
           }
         }
-
-        //if (jobReport.Count > 0)
-        //{
-        //  _logger.LogInformation("***********************");
-        //  _logger.LogInformation("Report");
-        //  foreach (var eachOrgs in jobReport)
-        //  {
-        //    _logger.LogInformation(eachOrgs);
-        //  }
-        //}
 
         if (jobReport.Count > 0)
         {
@@ -212,8 +250,6 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
           }
         }
 
-
-
         if (failedOrganizations.Count > 0)
         {
           await SendFailedOrganizationEmailAsync(failedOrganizations, toEmailIds); //new List<string> { "" }
@@ -226,6 +262,52 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
       }
     }
 
+    private async Task AddSupplierRole(int orgId, List<string> adminList)
+    {
+      var roleList = new List<string>();
+      var roles = _appSettings.SupplierRoles;
+
+      if (roles == null)
+      {
+        roleList.Add("JAGGAER_USER");
+      }
+      else
+      {
+        roleList = roles.ToList();
+      }
+
+
+      var supplierRoles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted && roleList.Contains(ar.CcsAccessRoleNameKey)).ToListAsync();
+
+      List<OrganisationEligibleRole> addedEligibleRoles = new List<OrganisationEligibleRole>();
+
+      var orgRoles = await _dataContext.OrganisationEligibleRole.Where(x => x.OrganisationId == orgId).ToListAsync();
+
+      supplierRoles.ForEach(async (role) =>
+      {
+        var alreadyExist = orgRoles.FirstOrDefault(x => x.OrganisationId == orgId && x.CcsAccessRoleId == role.Id);
+        if (alreadyExist == null)
+        {
+          addedEligibleRoles.Add(new OrganisationEligibleRole
+          {
+            OrganisationId = orgId,
+            CcsAccessRoleId = role.Id
+          });
+
+          _logger.LogInformation($"Added org role:{role.CcsAccessRoleNameKey}");
+        }
+        else
+        {
+
+        }
+      });
+
+      if (addedEligibleRoles.Count > 0)
+      {
+        _dataContext.OrganisationEligibleRole.AddRange(addedEligibleRoles);
+        await _dataContext.SaveChangesAsync();
+      }
+    }
 
     private async Task UpdateRightToBuy(int orgId)
     {
@@ -365,23 +447,6 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
       await Task.WhenAll(emailTaskList);
     }
 
-    private static byte[] ConvertToCsv(List<LogJobDetail> logs)
-    {
-      var csv = new StringBuilder();
-
-      var csvHeader = string.Format("{0},{1},{2},{3},{4},{5}", "Organisation Id", "Organisation Name", "Administrator Email", "Autovalidation Status", "Date and Time", "Org Type");
-      csv.AppendLine(csvHeader);
-
-      foreach (var item in logs)
-      {
-        var newLine = string.Format("{0},{1},{2},{3},{4},{5}", item.Id, item.Name, item.AdminEmail, item.AutovalidationStatus, item.DateTime, item.SupplierBuyerType);
-        csv.AppendLine(newLine);
-      }
-
-      byte[] documentContents = Encoding.ASCII.GetBytes(csv.ToString());
-      return documentContents;
-    }
-
     private async Task SendFailedOrganizationEmailAsync(List<OrganizationDetails> organizations, List<string> toEmails)
     {
       byte[] documentContents = ConvertToCsv(organizations);
@@ -412,12 +477,8 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
     {
       var csv = new StringBuilder();
 
-
-
       var csvHeader = string.Format("{0},{1},{2},{3},{4}", "Organisation Id", "Organisation Name", "Administrator Email", "Autovalidation Status", "Date and Time");
       csv.AppendLine(csvHeader);
-
-
 
       foreach (var item in organizations)
       {
@@ -425,7 +486,22 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
         csv.AppendLine(newLine);
       }
 
+      byte[] documentContents = Encoding.ASCII.GetBytes(csv.ToString());
+      return documentContents;
+    }
 
+    private static byte[] ConvertToCsv(List<LogJobDetail> logs)
+    {
+      var csv = new StringBuilder();
+
+      var csvHeader = string.Format("{0},{1},{2},{3},{4},{5}", "Organisation Id", "Organisation Name", "Administrator Email", "Autovalidation Status", "Date and Time", "Org Type");
+      csv.AppendLine(csvHeader);
+
+      foreach (var item in logs)
+      {
+        var newLine = string.Format("{0},{1},{2},{3},{4},{5}", item.Id, item.Name, item.AdminEmail, item.AutovalidationStatus, item.DateTime, item.SupplierBuyerType);
+        csv.AppendLine(newLine);
+      }
 
       byte[] documentContents = Encoding.ASCII.GetBytes(csv.ToString());
       return documentContents;

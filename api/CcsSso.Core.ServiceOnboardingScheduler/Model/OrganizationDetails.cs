@@ -13,5 +13,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Model
     public string AdminEmail { get; set; }
     public string AutovalidationStatus { get; set; }
     public string DateTime { get; set; }
+
+   
   }
 }
