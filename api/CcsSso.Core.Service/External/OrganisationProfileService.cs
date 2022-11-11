@@ -370,9 +370,9 @@ namespace CcsSso.Core.Service.External
       return roles;
     }
 
-   
 
-   
+
+
 
     private async Task<List<User>> GetAffectedUsersByRemovedIdp(string ciiOrganisationId, List<int> idpRemovedList)
     {
@@ -775,62 +775,74 @@ namespace CcsSso.Core.Service.External
     private async Task<List<OrganisationEligibleRole>> GetOrganisationEligibleRolesAsync(Organisation org, int supplierBuyerType)
     {
       var eligibleRoles = new List<OrganisationEligibleRole>();
+
+      var defaultRoles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted).ToListAsync();
+      var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted).ToListAsync();
+
       if (supplierBuyerType == 0) //Supplier
       {
-        var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
+        roles = roles.Where(ar => !ar.IsDeleted &&
           ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
           ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
           (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Both)
-        ).ToListAsync();
+        ).ToList();
 
-        roles.ForEach((role) =>
-        {
-          var eligibleRole = new OrganisationEligibleRole
-          {
-            CcsAccessRole = role,
-            Organisation = org,
-            MfaEnabled = role.MfaEnabled
-          };
-          eligibleRoles.Add(eligibleRole);
-        });
+        defaultRoles = defaultRoles.Where(ar => !ar.IsDeleted &&
+          !roles.Any(r => r.Id == ar.Id) &&
+          !string.IsNullOrEmpty(ar.DefaultEligibility) && ar.DefaultEligibility.StartsWith("1")
+        ).ToList();
+
       }
       else if (supplierBuyerType == 1) //Buyer
       {
-        var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
+        roles = roles.Where(ar => !ar.IsDeleted &&
           ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
           ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
           (ar.TradeEligibility == RoleEligibleTradeType.Buyer || ar.TradeEligibility == RoleEligibleTradeType.Both)
-        ).ToListAsync();
-        roles.ForEach((role) =>
-        {
-          var eligibleRole = new OrganisationEligibleRole
-          {
-            CcsAccessRole = role,
-            Organisation = org,
-            MfaEnabled = role.MfaEnabled
-          };
-          eligibleRoles.Add(eligibleRole);
-        });
+        ).ToList();
+
+        defaultRoles = defaultRoles.Where(ar => !ar.IsDeleted &&
+          !roles.Any(r => r.Id == ar.Id) &&
+          !string.IsNullOrEmpty(ar.DefaultEligibility) && ar.DefaultEligibility.Substring(1, 1) == "1"
+        ).ToList();
+
       }
       else //Supplier & Buyer
       {
-        var roles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted &&
+        roles = roles.Where(ar => !ar.IsDeleted &&
          ar.SubscriptionTypeEligibility == RoleEligibleSubscriptionType.Default &&
          ar.OrgTypeEligibility != RoleEligibleOrgType.Internal &&
          (ar.TradeEligibility == RoleEligibleTradeType.Supplier || ar.TradeEligibility == RoleEligibleTradeType.Buyer || ar.TradeEligibility == RoleEligibleTradeType.Both)
-       ).ToListAsync();
+        ).ToList();
 
-        roles.ForEach((role) =>
-        {
-          var eligibleRole = new OrganisationEligibleRole
-          {
-            CcsAccessRole = role,
-            Organisation = org,
-            MfaEnabled = role.MfaEnabled
-          };
-          eligibleRoles.Add(eligibleRole);
-        });
+        defaultRoles = defaultRoles.Where(ar => !ar.IsDeleted &&
+          !roles.Any(r => r.Id == ar.Id) &&
+          !string.IsNullOrEmpty(ar.DefaultEligibility) && ar.DefaultEligibility.EndsWith("1")
+        ).ToList();
+        
       }
+
+      roles.ForEach((role) =>
+      {
+        var eligibleRole = new OrganisationEligibleRole
+        {
+          CcsAccessRole = role,
+          Organisation = org,
+          MfaEnabled = role.MfaEnabled
+        };
+        eligibleRoles.Add(eligibleRole);
+      });
+
+      defaultRoles.ForEach((defaultRole) =>
+      {
+        var eligibleRole = new OrganisationEligibleRole
+        {
+          CcsAccessRole = defaultRole,
+          Organisation = org,
+          MfaEnabled = defaultRole.MfaEnabled
+        };
+        eligibleRoles.Add(eligibleRole);
+      });
 
       return eligibleRoles;
     }
