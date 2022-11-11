@@ -52,8 +52,10 @@ namespace CcsSso.Core.DbModel.Constants
 
   public enum OrganisationAuditEventType
   {
-    RoleAssigned,
-    RoleUnassigned,
+    OrgRoleAssigned,
+    OrgRoleUnassigned,
+    AdminRoleAssigned,
+    AdminRoleUnassigned,
     ManualAcceptationRightToBuy,
     ManualDeclineRightToBuy,
     AutomaticAcceptationRightToBuy,
@@ -69,4 +71,15 @@ namespace CcsSso.Core.DbModel.Constants
     OrganisationRegistrationTypeBoth,
     InactiveOrganisationRemoved
   }
+
+  // #Auto validation
+  public enum OrgAutoValidationStatus
+  {
+    AutoApproved,
+    AutoPending,
+    ManuallyApproved,
+    ManuallyDecliend,
+    ManualRemovalOfRightToBuy
+  }
+  
 }
