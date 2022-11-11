@@ -52,8 +52,10 @@ namespace CcsSso.Core.DbModel.Constants
 
   public enum OrganisationAuditEventType
   {
-    RoleAssigned,
-    RoleUnassigned,
+    OrgRoleAssigned,
+    OrgRoleUnassigned,
+    AdminRoleAssigned,
+    AdminRoleUnassigned,
     ManualAcceptationRightToBuy,
     ManualDeclineRightToBuy,
     AutomaticAcceptationRightToBuy,

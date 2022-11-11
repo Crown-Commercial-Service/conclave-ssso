@@ -42,8 +42,8 @@ namespace CcsSso.Core.Service.External
 
       foreach (var auditEvent in auditEvents)
       {
-        if (auditEvent.Event == OrganisationAuditEventType.RoleAssigned.ToString() 
-          || auditEvent.Event == OrganisationAuditEventType.RoleUnassigned.ToString())
+        if (auditEvent.Event == OrganisationAuditEventType.OrgRoleAssigned.ToString() || auditEvent.Event == OrganisationAuditEventType.OrgRoleUnassigned.ToString() ||
+            auditEvent.Event == OrganisationAuditEventType.AdminRoleAssigned.ToString() || auditEvent.Event == OrganisationAuditEventType.AdminRoleUnassigned.ToString())
         {
           var roles = auditEvent.Roles.Split(",");
 
