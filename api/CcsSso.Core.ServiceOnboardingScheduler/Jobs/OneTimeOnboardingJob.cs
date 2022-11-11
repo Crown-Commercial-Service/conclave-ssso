@@ -1,4 +1,5 @@
-﻿using CcsSso.Core.DbModel.Entity;
+﻿using CcsSso.Core.DbModel.Constants;
+using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.ServiceOnboardingScheduler.Model;
 using CcsSso.Core.ServiceOnboardingScheduler.Service;
 using CcsSso.Core.ServiceOnboardingScheduler.Service.Contracts;
@@ -281,7 +282,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 
       List<OrganisationEligibleRole> addedEligibleRoles = new List<OrganisationEligibleRole>();
 
-      var orgRoles = await _dataContext.OrganisationEligibleRole.Where(x => x.OrganisationId == orgId).ToListAsync();
+      var orgRoles = await _dataContext.OrganisationEligibleRole.Where(x => x.OrganisationId == orgId && !x.IsDeleted).ToListAsync();
 
       supplierRoles.ForEach(async (role) =>
       {
@@ -374,7 +375,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
         var user = await _dataContext.User
                   .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation)
                   .Include(u => u.UserAccessRoles)
-                  .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
+                  .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName && u.UserType == UserType.Primary);
 
         if (user == null)
         {
