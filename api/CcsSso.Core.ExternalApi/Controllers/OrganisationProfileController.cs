@@ -1192,6 +1192,9 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="401">Unauthorised</response>
     /// <response  code="403">Forbidden</response>
     /// <response  code="404">NotFound</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes:  AUTO_VALIDATION_NOT_ALLOWED
+    /// </response>
     /// <remarks>
     /// Sample request:
     ///
@@ -1205,7 +1208,7 @@ namespace CcsSso.ExternalApi.Controllers
     [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
     public async Task<object> GetOrganisationAutoVlidateDetails(string organisationId)
     {
-      var validationResult = await _organisationService.AutoValidateOrganisationDetails(organisationId);
+      var validationResult = await _organisationService.AutoValidateOrganisationDetails(organisationId, isReportingMode: true);
       return new { AutoValidationSuccess = validationResult.Item1, OrgAdminUserName = validationResult.Item2 };
     }
 

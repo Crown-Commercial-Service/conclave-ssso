@@ -966,7 +966,7 @@ namespace CcsSso.Core.Service.External
               OrganisationId = organisation.Id,
               Actioned = OrganisationAuditActionType.Admin.ToString(),
               SchemeIdentifier = companyHouseId,
-              ActionedBy = actionedBy.UserName
+              ActionedBy = actionedBy?.UserName
             };
         }
 
@@ -1020,7 +1020,7 @@ namespace CcsSso.Core.Service.External
     }
 
     // Auto validate org details
-    public async Task<Tuple<bool, string>> AutoValidateOrganisationDetails(string ciiOrganisationId, string adminEmailId = "", bool verifiedAdminOnly = false)
+    public async Task<Tuple<bool, string>> AutoValidateOrganisationDetails(string ciiOrganisationId, string adminEmailId = "", bool verifiedAdminOnly = false, bool isReportingMode = false)
     {
       if (string.IsNullOrWhiteSpace(adminEmailId))
       {
@@ -1031,12 +1031,13 @@ namespace CcsSso.Core.Service.External
         {
           throw new ResourceNotFoundException();
         }
+        // Not allowed in reporting mode
+        if (isReportingMode && organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Supplier) 
+        {
+          throw new CcsSsoException("AUTO_VALIDATION_NOT_ALLOWED");
+        }
 
         var orgAdminAccessRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => !x.IsDeleted && x.CcsAccessRole?.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey).Id;
-
-        var orgAdminAccessRoleIdTmp = (await _dataContext.OrganisationEligibleRole
-      .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisation.Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
-
 
         var olderAdmin = await _dataContext.User
           .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
