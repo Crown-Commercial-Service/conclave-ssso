@@ -30,11 +30,11 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     // #Auto validation
     Task<bool> AutoValidateOrganisationJob(string ciiOrganisationId);
-    
+
     Task<bool> AutoValidateOrganisationRegistration(string organisationId, AutoValidationDetails autoValidationDetails);
-    
+
     Task UpdateOrgAutoValidationEligibleRolesAsync(string ciiOrganisationId, RoleEligibleTradeType orgType, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete, string? companyHouseId);
 
-    Task<Tuple<bool, string>> AutoValidateOrganisationDetails(string ciiOrganisationId, string adminEmailId = "", bool verifiedAdminOnly = false, bool isReportingMode = false);
+    Task<Tuple<bool, string>> AutoValidateOrganisationDetails(string ciiOrganisationId, string adminEmailId = "");
   }
 }
