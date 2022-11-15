@@ -71,6 +71,7 @@ namespace CcsSso.Core.JobScheduler
           EmailConfigurationInfo emailConfigurationInfo;
           DocUploadInfoVault docUploadConfig;
           S3ConfigurationInfoVault s3ConfigurationInfo;
+          OrgAutoValidationJobSettings orgAutoValidationJobSettings;
 
           if (vaultEnabled)
           {
@@ -100,6 +101,8 @@ namespace CcsSso.Core.JobScheduler
               redisCacheSettingsVault = (RedisCacheSettingsVault)FillAwsParamsValue(typeof(RedisCacheSettingsVault), parameters);
               docUploadConfig = (DocUploadInfoVault)FillAwsParamsValue(typeof(DocUploadInfoVault), parameters);
               s3ConfigurationInfo = (S3ConfigurationInfoVault)FillAwsParamsValue(typeof(S3ConfigurationInfoVault), parameters);
+              // #Auto validation
+              orgAutoValidationJobSettings = (OrgAutoValidationJobSettings)FillAwsParamsValue(typeof(OrgAutoValidationJobSettings), parameters);
             }
             else
             {
@@ -115,6 +118,8 @@ namespace CcsSso.Core.JobScheduler
               redisCacheSettingsVault = JsonConvert.DeserializeObject<RedisCacheSettingsVault>(secrets["RedisCacheSettings"].ToString());
               docUploadConfig = JsonConvert.DeserializeObject<DocUploadInfoVault>(secrets["DocUpload"].ToString());
               s3ConfigurationInfo = JsonConvert.DeserializeObject<S3ConfigurationInfoVault>(secrets["S3ConfigurationInfo"].ToString());
+              // #Auto validation
+              orgAutoValidationJobSettings = JsonConvert.DeserializeObject<OrgAutoValidationJobSettings>(secrets["OrgAutoValidation"].ToString());
             }
           }
           else
@@ -131,6 +136,8 @@ namespace CcsSso.Core.JobScheduler
             redisCacheSettingsVault = config.GetSection("RedisCacheSettings").Get<RedisCacheSettingsVault>();
             docUploadConfig = config.GetSection("DocUpload").Get<DocUploadInfoVault>();
             s3ConfigurationInfo = config.GetSection("S3ConfigurationInfo").Get<S3ConfigurationInfoVault>();
+            // #Auto validation
+            orgAutoValidationJobSettings = config.GetSection("OrgAutoValidation").Get<OrgAutoValidationJobSettings>(); 
           }
 
           services.AddSingleton(s =>
@@ -155,7 +162,8 @@ namespace CcsSso.Core.JobScheduler
               {
                 Token = ciiSettings.Token,
                 Url = ciiSettings.Url
-              }
+              },
+              OrgAutoValidationJobSettings = orgAutoValidationJobSettings
             };
           });
 
@@ -218,10 +226,15 @@ namespace CcsSso.Core.JobScheduler
           services.AddSingleton<ApplicationConfigurationInfo, ApplicationConfigurationInfo>();
 
           services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(dbConnection));
+
+
           services.AddScoped<IOrganisationSupportService, OrganisationSupportService>();
           services.AddScoped<IContactSupportService, ContactSupportService>();
           services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
           services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
+          // #Auto validation
+          services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
+          services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();
 
           services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
           services.AddHostedService<UnverifiedUserDeleteJob>();
@@ -344,6 +357,13 @@ namespace CcsSso.Core.JobScheduler
           BulkUploadTemplateFolderName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/BulkUploadTemplateFolderName"),
           BulkUploadFolderName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/BulkUploadFolderName"),
           FileAccessExpirationInHours = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/FileAccessExpirationInHours"),
+        };
+      }
+      else if (objType == typeof(OrgAutoValidationJobSettings))
+      {
+        returnParams = new OrgAutoValidationJobSettings()
+        {
+          Enable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidation/Enable"))
         };
       }
       return returnParams;
