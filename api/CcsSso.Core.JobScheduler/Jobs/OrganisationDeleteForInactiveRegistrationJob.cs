@@ -1,7 +1,9 @@
+using CcsSso.Core.DbModel.Constants;
+using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
 using CcsSso.Core.JobScheduler.Enum;
-using CcsSso.Core.JobScheduler.Services;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
@@ -14,8 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,6 +29,8 @@ namespace CcsSso.Core.JobScheduler
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ICacheInvalidateService _cacheInvalidateService;
     private readonly IIdamSupportService _idamSupportService;
+    private readonly IOrganisationAuditService _organisationAuditService;
+    private readonly IOrganisationAuditEventService _organisationAuditEventService;
 
     public OrganisationDeleteForInactiveRegistrationJob(IServiceScopeFactory factory, IDateTimeService dataTimeService,
       AppSettings appSettings, IHttpClientFactory httpClientFactory, ICacheInvalidateService cacheInvalidateService,
@@ -40,6 +42,8 @@ namespace CcsSso.Core.JobScheduler
       _httpClientFactory = httpClientFactory;
       _cacheInvalidateService = cacheInvalidateService;
       _idamSupportService = idamSupportService;
+      _organisationAuditService = factory.CreateScope().ServiceProvider.GetRequiredService<IOrganisationAuditService>();
+      _organisationAuditEventService = factory.CreateScope().ServiceProvider.GetRequiredService<IOrganisationAuditEventService>();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -57,6 +61,7 @@ namespace CcsSso.Core.JobScheduler
     private async Task PerformJobAsync()
     {
       var organisationIds = await GetExpiredOrganisationIdsAsync();
+      Guid groupId = Guid.NewGuid();
       //Console.WriteLine($"{organisationIds.Count()} organizations found");
       if (organisationIds != null)
       {
@@ -105,6 +110,30 @@ namespace CcsSso.Core.JobScheduler
 
               //Console.WriteLine($"*********Deleting from CII Organization id {orgDetail.Item1} ***********************");
               await DeleteCIIOrganisationEntryAsync(orgDetail.Item2);
+              if (_appSettings.OrgAutoValidationJobSettings.Enable)
+              {
+                var orgStatus = new OrganisationAuditInfo
+                {
+                  Status = OrgAutoValidationStatus.AutoOrgRemoval,
+                  OrganisationId = orgDetail.Item1,
+                  Actioned = OrganisationAuditActionType.Job.ToString(),
+                  ActionedBy = OrganisationAuditActionType.Job.ToString()
+                };
+
+                var eventLogs = new List<OrganisationAuditEventInfo>() {
+                                new OrganisationAuditEventInfo
+                                {
+                                  Actioned = OrganisationAuditActionType.Job.ToString(),
+                                  Event = OrganisationAuditEventType.InactiveOrganisationRemoved.ToString(),
+                                  GroupId = groupId,
+                                  OrganisationId = orgDetail.Item1,
+                                  ActionedBy = OrganisationAuditActionType.Job.ToString()
+                                }
+                              };
+
+                await _organisationAuditService.UpdateOrganisationAuditAsync(orgStatus);
+                await _organisationAuditEventService.CreateOrganisationAuditEventAsync(eventLogs);
+              }
             }
             else if (orgDeleteCandidateStatus == OrgDeleteCandidateStatus.Activate)
             {

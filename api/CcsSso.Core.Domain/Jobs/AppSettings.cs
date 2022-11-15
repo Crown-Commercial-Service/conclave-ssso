@@ -20,6 +20,8 @@ namespace CcsSso.Core.Domain.Jobs
     public List<UserDeleteJobSetting> UserDeleteJobSettings { get; set; }
 
     public BulkUploadSettings BulkUploadSettings { get; set; }
+    
+    public OrgAutoValidationJobSettings OrgAutoValidationJobSettings { get; set; }
   }
 
   public class CiiSettings
@@ -103,5 +105,11 @@ namespace CcsSso.Core.Domain.Jobs
   public class BulkUploadSettings
   {
     public string BulkUploadReportUrl { get; set; }
+  }
+
+  // #Auto validation
+  public class OrgAutoValidationJobSettings
+  {
+    public bool Enable { get; set; } = false;
   }
 }

@@ -47,7 +47,8 @@ namespace CcsSso.Core.DbModel.Constants
   {
     Autovalidation,
     OrganisationRegistration,
-    Admin
+    Admin,
+    Job
   }
 
   public enum OrganisationAuditEventType
@@ -79,7 +80,8 @@ namespace CcsSso.Core.DbModel.Constants
     AutoPending,
     ManuallyApproved,
     ManuallyDecliend,
-    ManualRemovalOfRightToBuy
+    ManualRemovalOfRightToBuy,
+    AutoOrgRemoval
   }
 
   public enum ManualValidateOrganisationStatus
