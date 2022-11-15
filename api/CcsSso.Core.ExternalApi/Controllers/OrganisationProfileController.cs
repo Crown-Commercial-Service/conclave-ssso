@@ -23,10 +23,12 @@ namespace CcsSso.ExternalApi.Controllers
     private readonly IUserProfileService _userProfileService;
     private readonly IOrganisationGroupService _organisationGroupService;
     private readonly IOrganisationAuditEventService _organisationAuditEventService;
+    private readonly IOrganisationAuditService _organisationAuditService;
 
     public OrganisationProfileController(IOrganisationProfileService organisationService, IOrganisationContactService contactService,
        IOrganisationSiteService siteService, IOrganisationSiteContactService siteContactService, IUserProfileService userProfileService,
-       IOrganisationGroupService organisationGroupService, IOrganisationAuditEventService organisationAuditEventService)
+       IOrganisationGroupService organisationGroupService, IOrganisationAuditEventService organisationAuditEventService,
+       IOrganisationAuditService organisationAuditService)
     {
       _organisationService = organisationService;
       _contactService = contactService;
@@ -35,6 +37,7 @@ namespace CcsSso.ExternalApi.Controllers
       _userProfileService = userProfileService;
       _organisationGroupService = organisationGroupService;
       _organisationAuditEventService = organisationAuditEventService;
+      _organisationAuditService = organisationAuditService;
     }
 
     #region Organisation profile
@@ -1113,45 +1116,42 @@ namespace CcsSso.ExternalApi.Controllers
 
     #endregion
 
-    #region Organisation Audit Event
+    #region Organisation Audit
+
     /// <summary>
-    /// To create organisation audit event log
+    /// Allows a user to retrieve organisation audits
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
     /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
-    /// <response  code="400">Bad request.
-    /// Error Codes: ERROR_ORGANISATION_ID_REQUIRED
-    /// </response>
     /// <remarks>
+    /// NOTE:- query params page-size, current-page
     /// Sample request:
     ///
-    ///     POST /organisations/auditevent
-    ///     [
-    ///       {
-    ///         "organisationId": 1,
-    ///         "schemeIdentifier": "08236144",
-    ///         "firstName": "",
-    ///         "lastName": "",
-    ///         "groupId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    ///         "actioned": "",
-    ///         "actionedBy": "",
-    ///         "event": "",
-    ///         "roles": ""
-    ///       }
-    ///     ]
+    ///     GET /organisations/audits?page-size=10,current-page=1
     ///     
-    ///
     /// </remarks>
-    [HttpPost("auditevent")]
-    [SwaggerOperation(Tags = new[] { "Organisation Audit Event" })]
-    [ProducesResponseType(typeof(int), 200)]
-    public async Task CreateOrganisationAuditEvent(List<OrganisationAuditEventInfo> organisationAuditEventInfoList)
+    [HttpGet("audits")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
+    [SwaggerOperation(Tags = new[] { "Organisation Audit" })]
+    [ProducesResponseType(typeof(OrganisationAuditInfoListResponse), 200)]
+    public async Task<OrganisationAuditInfoListResponse> GetOrganisationAuditList([FromQuery] ResultSetCriteria resultSetCriteria, [FromQuery] OrganisationAuditFilterCriteria organisationAuditFilterCriteria)
     {
-      await _organisationAuditEventService.CreateOrganisationAuditEventAsync(organisationAuditEventInfoList);
-    }
+      resultSetCriteria ??= new ResultSetCriteria
+      {
+        CurrentPage = 1,
+        PageSize = 10
+      };
+      resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
+      resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
+      return await _organisationAuditService.GetAllAsync(resultSetCriteria, organisationAuditFilterCriteria);
+    } 
 
+    #endregion
+
+    #region Organisation Audit Event
+   
     /// <summary>
     /// To get organisation audit event log
     /// </summary>
@@ -1167,6 +1167,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     /// </remarks>
     [HttpGet("{organisationId}/auditevents")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
     [SwaggerOperation(Tags = new[] { "Organisation Audit Event" })]
     [ProducesResponseType(typeof(OrganisationAuditEventInfoListResponse), 200)]
     public async Task<OrganisationAuditEventInfoListResponse> GetOrganisationAuditEventsList(int organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)

@@ -6,7 +6,9 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Contracts;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
@@ -20,6 +22,39 @@ namespace CcsSso.Core.Service.External
     {
       _dataContext = dataContext;
       _dateTimeService = dateTimeService;
+    }
+
+    /// <summary>
+    /// To get list of organisation audits with pagination
+    /// </summary>
+    /// <param name="resultSetCriteria"></param>
+    /// <param name="organisationAuditFilterCriteria"></param>
+    /// <returns></returns>
+    public async Task<OrganisationAuditInfoListResponse> GetAllAsync(ResultSetCriteria resultSetCriteria, OrganisationAuditFilterCriteria organisationAuditFilterCriteria)
+    {
+      var organisations = await _dataContext.GetPagedResultAsync(_dataContext.OrganisationAudit
+        .Include(o => o.Organisation)
+        .Where(x => x.Organisation.IsDeleted == false
+        && (string.IsNullOrEmpty(organisationAuditFilterCriteria.searchString) || x.Organisation.LegalName.ToLower().Contains(organisationAuditFilterCriteria.searchString.ToLower()))
+        && (organisationAuditFilterCriteria.isPendingOnly || x.Status == OrgAutoValidationStatus.AutoPending)
+        && (organisationAuditFilterCriteria.isPendingOnly == false || x.Status != OrgAutoValidationStatus.AutoPending))
+        .OrderByDescending(x => x.Organisation.CreatedOnUtc)
+        .Select(organisationAudit => new OrganisationAuditResponseInfo
+        {
+          OrganisationName = organisationAudit.Organisation.LegalName,
+          OrganisationType = organisationAudit.Organisation.SupplierBuyerType != null ? (int)organisationAudit.Organisation.SupplierBuyerType : 0,
+          DateOfRegistration = organisationAudit.Organisation.CreatedOnUtc.ToString(DateTimeFormat.DateFormat)
+        }), resultSetCriteria);
+
+      var orgListResponse = new OrganisationAuditInfoListResponse
+      {
+        CurrentPage = organisations.CurrentPage,
+        PageCount = organisations.PageCount,
+        RowCount = organisations.RowCount,
+        OrganisationAuditList = organisations.Results ?? new List<OrganisationAuditResponseInfo>()
+      };
+
+      return orgListResponse;
     }
 
     /// <summary>
@@ -73,6 +108,24 @@ namespace CcsSso.Core.Service.External
       };
 
       _dataContext.OrganisationAudit.Add(organisationAudit);
+
+      await _dataContext.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// To update organisation audit
+    /// </summary>
+    /// <param name="organisationAuditInfo"></param>
+    /// <returns></returns>
+    public async Task UpdateOrganisationAuditAsync(OrganisationAuditInfo organisationAuditInfo)
+    {
+      Validate(organisationAuditInfo);
+
+      var organisationAudit = _dataContext.OrganisationAudit.FirstOrDefault(x => x.OrganisationId == organisationAuditInfo.OrganisationId);
+
+      organisationAudit.Status = organisationAuditInfo.Status;
+      organisationAudit.Actioned = organisationAuditInfo.Actioned;
+      organisationAudit.ActionedBy = organisationAuditInfo.ActionedBy;
 
       await _dataContext.SaveChangesAsync();
     }
