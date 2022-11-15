@@ -1,4 +1,6 @@
 ﻿using CcsSso.Core.DbModel.Constants;
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace CcsSso.Core.Domain.Dtos.External
 {
@@ -13,5 +15,30 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string Actioned { get; set; }
 
     public string ActionedBy { get; set; }
+  }
+
+  public class OrganisationAuditResponseInfo
+  {
+    public string OrganisationName { get; set; }
+
+    public int OrganisationType { get; set; }
+
+    public string DateOfRegistration { get; set; }
+  }
+
+  public class OrganisationAuditInfoListResponse : PaginationInfo
+  {
+    public List<OrganisationAuditResponseInfo> OrganisationAuditList { get; set; }
+  }
+
+
+  public class OrganisationAuditFilterCriteria
+  {
+    [FromQuery(Name = "search-string")]
+    public string searchString { get; set; } = null;
+
+    [FromQuery(Name = "pending-only")]
+    public bool isPendingOnly { get; set; } = false;
+
   }
 }
