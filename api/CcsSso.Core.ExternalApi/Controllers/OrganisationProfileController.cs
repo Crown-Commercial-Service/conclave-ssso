@@ -1146,12 +1146,12 @@ namespace CcsSso.ExternalApi.Controllers
       resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
       resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
       return await _organisationAuditService.GetAllAsync(resultSetCriteria, organisationAuditFilterCriteria);
-    } 
+    }
 
     #endregion
 
     #region Organisation Audit Event
-   
+
     /// <summary>
     /// To get organisation audit event log
     /// </summary>
@@ -1209,7 +1209,7 @@ namespace CcsSso.ExternalApi.Controllers
     [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
     public async Task<object> GetOrganisationAutoVlidateDetails(string organisationId)
     {
-      var validationResult = await _organisationService.AutoValidateOrganisationDetails(organisationId, isReportingMode: true);
+      var validationResult = await _organisationService.AutoValidateOrganisationDetails(organisationId);
       return new { AutoValidationSuccess = validationResult.Item1, OrgAdminUserName = validationResult.Item2 };
     }
 
