@@ -122,12 +122,14 @@ namespace CcsSso.Core.Service.External
       Validate(organisationAuditInfo);
 
       var organisationAudit = _dataContext.OrganisationAudit.FirstOrDefault(x => x.OrganisationId == organisationAuditInfo.OrganisationId);
+      if (organisationAudit != null)
+      {
+        organisationAudit.Status = organisationAuditInfo.Status;
+        organisationAudit.Actioned = organisationAuditInfo.Actioned;
+        organisationAudit.ActionedBy = organisationAuditInfo.ActionedBy;
 
-      organisationAudit.Status = organisationAuditInfo.Status;
-      organisationAudit.Actioned = organisationAuditInfo.Actioned;
-      organisationAudit.ActionedBy = organisationAuditInfo.ActionedBy;
-
-      await _dataContext.SaveChangesAsync();
+        await _dataContext.SaveChangesAsync();
+      }
     }
 
     private void Validate(OrganisationAuditInfo organisationAuditInfo)

@@ -51,10 +51,10 @@ namespace CcsSso.Core.JobScheduler
 
       while (!stoppingToken.IsCancellationRequested)
       {
-        Console.WriteLine($" ****************Organization batch processing job started ***********");
+        Console.WriteLine($" ****************Organization delete for inactive registration batch processing job started ***********");
         await PerformJobAsync();
         await Task.Delay(_appSettings.ScheduleJobSettings.InactiveOrganisationDeletionJobExecutionFrequencyInMinutes * 60000, stoppingToken);
-        Console.WriteLine($"******************Organization batch processing job ended ***********");
+        Console.WriteLine($"******************Organization delete for inactive registration batch processing job ended ***********");
       }
     }
 
@@ -328,7 +328,7 @@ namespace CcsSso.Core.JobScheduler
     {
       var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
        .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisationId &&
-       or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+       or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))?.Id;
 
       var orgAdmins = await _dataContext.User.Where(u => !u.IsDeleted
        && u.Party.Person.OrganisationId == organisationId
