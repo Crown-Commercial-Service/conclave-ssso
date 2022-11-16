@@ -239,7 +239,9 @@ namespace CcsSso.Core.JobScheduler
           services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
           services.AddHostedService<UnverifiedUserDeleteJob>();
           services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
-          services.AddHostedService<OrganisationAutovalidationJob>();
+          // Development in progress once ready need to uncomment
+          //services.AddHostedService<OrganisationAutovalidationJob>();
+
 
         });
 
