@@ -1045,7 +1045,7 @@ namespace CcsSso.Core.Service.External
 
         if (isOrgTypeSwitched && orgStatus != null)
         {
-          await _organisationAuditService.CreateOrganisationAuditAsync(orgStatus);
+          await _organisationAuditService.UpdateOrganisationAuditAsync(orgStatus);
         }
 
         await _organisationAuditEventService.CreateOrganisationAuditEventAsync(auditEventLogs);
@@ -1178,9 +1178,6 @@ namespace CcsSso.Core.Service.External
       auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Buyer ?
         OrganisationAuditEventType.OrganisationRegistrationTypeBuyer : OrganisationAuditEventType.OrganisationRegistrationTypeBoth,
         groupId, organisation.Id, schemeIdentifier, actionedBy: actionedBy));
-
-      // TODO: AC23 change org type as buyer need to confirm
-      organisation.SupplierBuyerType = (int)RoleEligibleTradeType.Buyer;
 
       try
       {

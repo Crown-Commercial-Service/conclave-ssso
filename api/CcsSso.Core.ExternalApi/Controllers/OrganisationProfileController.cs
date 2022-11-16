@@ -1256,12 +1256,16 @@ namespace CcsSso.ExternalApi.Controllers
     ///       orgType: 1,
     ///       rolesToAdd: [
     ///         {
-    ///           id: 1
+    ///           "roleId": 1,
+    ///           "roleKey": "ROLE_KEY",
+    ///           "roleName": "role name"
     ///         }
     ///       ],
     ///       rolesToDelete: [
     ///         {
-    ///           id: 1
+    ///           "roleId": 2,
+    ///           "roleKey": "ROLE_KEY",
+    ///           "roleName": "role name"
     ///         }
     ///       ]
     ///      }
