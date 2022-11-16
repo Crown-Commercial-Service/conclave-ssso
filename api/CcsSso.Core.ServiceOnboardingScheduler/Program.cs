@@ -62,7 +62,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler
             services.AddSingleton(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
             services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(appSettings.DbConnection));
 
-            //services.AddHostedService<CASOnboardingJob>();
+            services.AddHostedService<CASOnboardingJob>();
             services.AddHostedService<OneTimeCASOnboardingJob>();
 
           });
