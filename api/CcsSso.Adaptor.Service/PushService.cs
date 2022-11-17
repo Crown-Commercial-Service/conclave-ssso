@@ -88,7 +88,7 @@ namespace CcsSso.Adaptor.Service
                 //{ "Status", "Deleted" }
               };
             }
-            await NotifyPushDataToQueueAsync(result, ConclaveEntityNames.UserProfile);
+            await NotifyPushDataToQueueAsync(result, ConclaveEntityNames.OrgProfile);
             break;
           }
         case ConclaveEntityNames.Contact:
@@ -130,7 +130,7 @@ namespace CcsSso.Adaptor.Service
     /// <returns></returns>
     private async Task NotifyPushDataToQueueAsync(Dictionary<string, object> pushData, string conclaveEntityName)
     {
-      var pushSubscriptionData = await _consumerService.GetSubscriptionDetail(_requestContext.ConsumerId, conclaveEntityName);
+      var pushSubscriptionData = await _consumerService.GetSubscriptionDetail(_requestContext.ConsumerId, conclaveEntityName);   
       if (pushSubscriptionData == null)
       {
         throw new CcsSsoException(ErrorConstant.NoSubscriptionFound);

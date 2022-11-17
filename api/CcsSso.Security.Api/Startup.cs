@@ -177,7 +177,7 @@ namespace CcsSso.Security.Api
             ApiKeyValidationExcludedRoutes = Configuration.GetSection("SecurityApiKeySettings:ApiKeyValidationExcludedRoutes").Get<List<string>>(),
             BearerTokenValidationIncludedRoutes = Configuration.GetSection("SecurityApiKeySettings:BearerTokenValidationIncludedRoutes").Get<List<string>>()
           },
-          RedisCacheSettings = new RedisCacheSettings()
+          RedisCacheSettings = new Domain.Dtos.RedisCacheSettings()
           {
             ConnectionString = Configuration["RedisCacheSettings:ConnectionString"],
             IsEnabled = isRedisEnabled
@@ -216,6 +216,11 @@ namespace CcsSso.Security.Api
           MockProvider = new MockProvider()
           {
             LoginUrl = Configuration["MockProvider:LoginUrl"]
+          },
+          ResetPasswordSettings = new ResetPasswordSettings() 
+          {
+            MaxAllowedAttempts = Configuration["ResetPasswordSettings:MaxAllowedAttempts"],
+            MaxAllowedAttemptsThresholdInMinutes = Configuration["ResetPasswordSettings:MaxAllowedAttemptsThresholdInMinutes"],
           }
         };
         return appConfigInfo;
