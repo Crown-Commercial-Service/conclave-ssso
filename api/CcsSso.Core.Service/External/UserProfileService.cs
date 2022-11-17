@@ -85,8 +85,8 @@ namespace CcsSso.Core.Service.External
 
       var eligibleIdentityProviders = await _dataContext.OrganisationEligibleIdentityProvider
         .Include(x => x.IdentityProvider)
-        .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id) && 
-        i.Organisation.Id == organisation.Id).ToListAsync();
+        .Where(i => !i.IsDeleted && userProfileRequestInfo.Detail.IdentityProviderIds.Contains(i.Id) &&
+                    i.Organisation.Id == organisation.Id).ToListAsync();
 
       var isConclaveConnectionIncluded = eligibleIdentityProviders.Any(idp => idp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
       var isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => eligibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
@@ -393,10 +393,41 @@ namespace CcsSso.Core.Service.External
       throw new ResourceNotFoundException();
     }
     // #Delegated
-    public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, string searchString = null, bool includeSelf = false, bool isDelegatedOnly = false, bool isDelegatedExpiredOnly = false)
+    public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, UserFilterCriteria userFilterCriteria)
     {
 
-      if (!await _dataContext.Organisation.AnyAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId))
+      var apiKey = _appConfigInfo.ApiKey;
+      var apiKeyInRequest = _requestContext.apiKey;
+
+      if(apiKeyInRequest != null)
+      {
+        if (apiKey != apiKeyInRequest)
+        {
+          throw new ForbiddenException();
+        }
+      }
+     else if (_requestContext.Roles != null)
+      {
+        if ((_requestContext.Roles.Count == 1 && _requestContext.Roles.Contains("ORG_DEFAULT_USER")) && !userFilterCriteria.isAdmin)
+        {
+          throw new ForbiddenException();
+        }
+      }
+      else
+      {
+        throw new ForbiddenException();
+      }
+
+      string searchString = userFilterCriteria.searchString;
+      bool includeSelf = userFilterCriteria.includeSelf;
+      bool isDelegatedOnly = userFilterCriteria.isDelegatedOnly;
+      bool isDelegatedExpiredOnly = userFilterCriteria.isDelegatedExpiredOnly;
+      bool isAdmin = userFilterCriteria.isAdmin;
+
+      var organisation = await _dataContext.Organisation.FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId);
+
+
+      if (organisation==null)
       {
         throw new ResourceNotFoundException();
       }
@@ -418,20 +449,37 @@ namespace CcsSso.Core.Service.External
         }
       }
 
+      var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
+      .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisation.Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+
+
       var userTypeSearch = isDelegatedOnly ? DbModel.Constants.UserType.Delegation : DbModel.Constants.UserType.Primary;
 
-      var userPagedInfo = await _dataContext.GetPagedResultAsync(_dataContext.User
+      var userQuery = _dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
         .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
         .Include(o => o.OriginOrganization)
         // Include deleted for delegated expired
-        .Where(u => (isDelegatedExpiredOnly || !u.IsDeleted) && (includeSelf || u.Id != _requestContext.UserId) &&
-        u.UserType == userTypeSearch &&
-        // Delegated and delegated expired conditions
-        (!isDelegatedOnly || (isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date <= DateTime.UtcNow.Date :
-                              u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date)) &&
-        u.Party.Person.Organisation.CiiOrganisationId == organisationId &&
-        (string.IsNullOrWhiteSpace(searchString) || u.UserName.ToLower().Contains(searchString)
+        .Where(u=>u.Party.Person.Organisation.CiiOrganisationId == organisationId && u.UserType == userTypeSearch);
+
+      if (!isDelegatedExpiredOnly)
+        userQuery = userQuery.Where(u => !u.IsDeleted);
+
+      if (!includeSelf)
+        userQuery = userQuery.Where(u => u.Id != _requestContext.UserId);
+
+      if (isAdmin)
+        userQuery = userQuery.Where(u => u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && u.AccountVerified && !u.IsDeleted);
+
+      // Delegated and delegated expired conditions
+      if (isDelegatedOnly)
+        userQuery = userQuery.Where(u => isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date <= DateTime.UtcNow.Date :
+                              u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date);
+
+
+      if (!string.IsNullOrWhiteSpace(searchString))
+      {
+        userQuery = userQuery.Where(u => u.UserName.ToLower().Contains(searchString)
         ||
             // Delegation search and delegation not accepted then don't search in last name
             (havingMultipleWords && u.Party.Person.FirstName.ToLower().Contains(searchFirstNameLowerCase) &&
@@ -449,8 +497,13 @@ namespace CcsSso.Core.Service.External
             (isDelegatedOnly && u.OriginOrganization.LegalName.ToLower().Contains(searchString))
             )
            )
-        ))
-        .OrderBy(u => u.Party.Person.FirstName).ThenBy(u => u.Party.Person.LastName), resultSetCriteria);
+        );
+      }
+
+      userQuery = userQuery.OrderBy(u => u.Party.Person.FirstName).ThenBy(u => u.Party.Person.LastName);
+
+
+      var userPagedInfo = await _dataContext.GetPagedResultAsync(userQuery, resultSetCriteria);
 
       var userListResponse = new UserListResponse
       {
@@ -482,6 +535,7 @@ namespace CcsSso.Core.Service.External
       return userListResponse;
     }
 
+  
     public async Task<AdminUserListResponse> GetAdminUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria)
     {
       if (!await _dataContext.Organisation.AnyAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId))
@@ -741,6 +795,7 @@ namespace CcsSso.Core.Service.External
                                         .Include(x => x.IdentityProvider)
                                         .Where(o => o.Organisation.Id == organisation.Id)
                                         .ToListAsync();
+
           isUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName));
           // isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
         }
