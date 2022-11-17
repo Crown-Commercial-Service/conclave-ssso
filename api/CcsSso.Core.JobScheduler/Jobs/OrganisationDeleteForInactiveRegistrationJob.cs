@@ -75,7 +75,7 @@ namespace CcsSso.Core.JobScheduler
           {
             OrgDeleteCandidateStatus orgDeleteCandidateStatus = OrgDeleteCandidateStatus.None;
             //Get admin users to check their statuses in idam
-            var adminUsers = await GetOrganisationAdmins(orgDetail.Item1);
+            var adminUsers = await GetOrganisationAdmins(orgDetail.Id);
             //Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.Item2}");
             foreach (var adminUser in adminUsers)
             {
@@ -105,40 +105,44 @@ namespace CcsSso.Core.JobScheduler
             if (orgDeleteCandidateStatus == OrgDeleteCandidateStatus.Delete)
             {
               //Console.WriteLine($"*********Deleting from Conclave Organization id {orgDetail.Item1}***********************");
-              await DeleteOrganisationAsync(orgDetail.Item1);
+              await DeleteOrganisationAsync(orgDetail.Id);
               //Console.WriteLine($"*********Deleted from Conclave Organization id {orgDetail.Item1}***********************");
 
               //Console.WriteLine($"*********Deleting from CII Organization id {orgDetail.Item1} ***********************");
-              await DeleteCIIOrganisationEntryAsync(orgDetail.Item2);
-              if (_appSettings.OrgAutoValidationJobSettings.Enable)
+              await DeleteCIIOrganisationEntryAsync(orgDetail.CiiOrganisationId);
+              if (_appSettings.OrgAutoValidationJobSettings.Enable && orgDetail.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier)
               {
-                var orgStatus = new OrganisationAuditInfo
+                var organisationAudit = _dataContext.OrganisationAudit.FirstOrDefault(x => x.OrganisationId == orgDetail.Id);
+                if (organisationAudit != null)
                 {
-                  Status = OrgAutoValidationStatus.AutoOrgRemoval,
-                  OrganisationId = orgDetail.Item1,
-                  Actioned = OrganisationAuditActionType.Job.ToString(),
-                  ActionedBy = OrganisationAuditActionType.Job.ToString()
-                };
+                  var orgStatus = new OrganisationAuditInfo
+                  {
+                    Status = OrgAutoValidationStatus.AutoOrgRemoval,
+                    OrganisationId = orgDetail.Id,
+                    Actioned = OrganisationAuditActionType.Job.ToString(),
+                    ActionedBy = OrganisationAuditActionType.Job.ToString()
+                  };
 
-                var eventLogs = new List<OrganisationAuditEventInfo>() {
+                  var eventLogs = new List<OrganisationAuditEventInfo>() {
                                 new OrganisationAuditEventInfo
                                 {
                                   Actioned = OrganisationAuditActionType.Job.ToString(),
                                   Event = OrganisationAuditEventType.InactiveOrganisationRemoved.ToString(),
                                   GroupId = groupId,
-                                  OrganisationId = orgDetail.Item1,
+                                  OrganisationId = orgDetail.Id,
                                   ActionedBy = OrganisationAuditActionType.Job.ToString()
                                 }
                               };
 
-                await _organisationAuditService.UpdateOrganisationAuditAsync(orgStatus);
-                await _organisationAuditEventService.CreateOrganisationAuditEventAsync(eventLogs);
+                  await _organisationAuditService.UpdateOrganisationAuditAsync(orgStatus);
+                  await _organisationAuditEventService.CreateOrganisationAuditEventAsync(eventLogs);
+                }
               }
             }
             else if (orgDeleteCandidateStatus == OrgDeleteCandidateStatus.Activate)
             {
               //Console.WriteLine($"*********Activating CII Organization id {orgDetail.Item1} ***********************");
-              await ActivateOrganisationAsync(orgDetail.Item1);
+              await ActivateOrganisationAsync(orgDetail.Id);
               //Console.WriteLine($"*********Activated CII Organization id {orgDetail.Item1} ***********************");
             }
           }
@@ -297,12 +301,12 @@ namespace CcsSso.Core.JobScheduler
       }
     }
 
-    public async Task<List<Tuple<int, string>>> GetExpiredOrganisationIdsAsync()
+    public async Task<List<Organisation>> GetExpiredOrganisationIdsAsync()
     {
       var organisationIds = await _dataContext.Organisation.Where(
                           org => !org.IsActivated && !org.IsDeleted
                           && org.CreatedOnUtc < _dataTimeService.GetUTCNow().AddMinutes(-(_appSettings.ScheduleJobSettings.OrganizationRegistrationExpiredThresholdInMinutes)))
-                          .Select(o => new Tuple<int, string>(o.Id, o.CiiOrganisationId)).ToListAsync();
+                          .ToListAsync();
 
       return organisationIds;
     }
