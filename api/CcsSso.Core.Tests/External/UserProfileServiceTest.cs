@@ -17,7 +17,6 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -305,25 +304,25 @@ namespace CcsSso.Core.Tests.External
       public async Task ReturnsCorrectUserInfo_WhenUserExsists(string userName, UserProfileResponseInfo expectedUserInfo)
       {
         await DataContextHelper.ScopeAsync(async dataContext =>
-        {
-          await SetupTestDataAsync(dataContext);
-          var userService = UserService(dataContext);
+{
+  await SetupTestDataAsync(dataContext);
+  var userService = UserService(dataContext);
 
-          var result = await userService.GetUserAsync(userName);
+  var result = await userService.GetUserAsync(userName);
 
-          Assert.NotNull(result);
-          Assert.Equal(expectedUserInfo.FirstName, result.FirstName);
-          Assert.Equal(expectedUserInfo.LastName, result.LastName);
-          Assert.Equal(expectedUserInfo.UserName, result.UserName);
-          Assert.Equal(expectedUserInfo.OrganisationId, result.OrganisationId);
-          Assert.Equal(expectedUserInfo.Detail.UserGroups.Count, result.Detail.UserGroups.Count);
+  Assert.NotNull(result);
+  Assert.Equal(expectedUserInfo.FirstName, result.FirstName);
+  Assert.Equal(expectedUserInfo.LastName, result.LastName);
+  Assert.Equal(expectedUserInfo.UserName, result.UserName);
+  Assert.Equal(expectedUserInfo.OrganisationId, result.OrganisationId);
+  Assert.Equal(expectedUserInfo.Detail.UserGroups.Count, result.Detail.UserGroups.Count);
 
-          foreach (var expectedGroupRole in expectedUserInfo.Detail.UserGroups)
-          {
-            Assert.Contains(result.Detail.UserGroups, gar => gar.Group == expectedGroupRole.Group && gar.AccessRoleName == expectedGroupRole.AccessRoleName);
-          }
+  foreach (var expectedGroupRole in expectedUserInfo.Detail.UserGroups)
+  {
+    Assert.Contains(result.Detail.UserGroups, gar => gar.Group == expectedGroupRole.Group && gar.AccessRoleName == expectedGroupRole.AccessRoleName);
+  }
 
-        });
+});
       }
 
       [Theory]
@@ -506,31 +505,33 @@ namespace CcsSso.Core.Tests.External
 
       [Theory]
       [MemberData(nameof(ExpectedUserData))]
-      public async Task ReturnsCorrectUserListInfo_WhenExsists(string organisationId, ResultSetCriteria resultSetCriteria,
-        string userName, UserListResponse expectedUserInfo)
+      public async Task ReturnsCorrectUserListInfo_WhenExsists(string organisationId, ResultSetCriteria resultSetCriteria, UserFilterCriteria userFilterCriteria,
+        UserListResponse expectedUserInfo)
       {
+        // todo: userFilterCriteria has been added to avoid build error. But it looks like most of the unit test has been broken. 
+        // Need to create new tickets to update it 
         await DataContextHelper.ScopeAsync(async dataContext =>
-        {
-          await SetupTestDataAsync(dataContext);
-          var userService = UserService(dataContext);
+                {
+                  await SetupTestDataAsync(dataContext);
+                  var userService = UserService(dataContext);
 
-          var result = await userService.GetUsersAsync(organisationId, resultSetCriteria, userName);
+                  var result = await userService.GetUsersAsync(organisationId, resultSetCriteria, userFilterCriteria);
 
-          Assert.NotNull(result);
-          Assert.Equal(expectedUserInfo.OrganisationId, result.OrganisationId);
-          Assert.Equal(resultSetCriteria.CurrentPage, result.CurrentPage);
-          Assert.Equal(expectedUserInfo.RowCount, result.RowCount);
-          Assert.Equal(expectedUserInfo.PageCount, result.PageCount);
-          Assert.Equal(expectedUserInfo.UserList.Count, result.UserList.Count);
+                  Assert.NotNull(result);
+                  Assert.Equal(expectedUserInfo.OrganisationId, result.OrganisationId);
+                  Assert.Equal(resultSetCriteria.CurrentPage, result.CurrentPage);
+                  Assert.Equal(expectedUserInfo.RowCount, result.RowCount);
+                  Assert.Equal(expectedUserInfo.PageCount, result.PageCount);
+                  Assert.Equal(expectedUserInfo.UserList.Count, result.UserList.Count);
 
-          foreach (var expectedUser in expectedUserInfo.UserList)
-          {
-            var resultUser = result.UserList.FirstOrDefault(u => u.UserName == expectedUser.UserName);
-            Assert.NotNull(resultUser);
-            Assert.Equal(expectedUser.Name, resultUser.Name);
-            Assert.Equal(expectedUser.UserName, resultUser.UserName);
-          }
-        });
+                  foreach (var expectedUser in expectedUserInfo.UserList)
+                  {
+                    var resultUser = result.UserList.FirstOrDefault(u => u.UserName == expectedUser.UserName);
+                    Assert.NotNull(resultUser);
+                    Assert.Equal(expectedUser.Name, resultUser.Name);
+                    Assert.Equal(expectedUser.UserName, resultUser.UserName);
+                  }
+                });
       }
     }
 
@@ -851,10 +852,12 @@ namespace CcsSso.Core.Tests.External
       var mockAuditLoginService = new Mock<IAuditLoginService>();
       var mockRemoteCacheService = new Mock<IRemoteCacheService>();
       var mockCacheInvalidateService = new Mock<ICacheInvalidateService>();
+      var mockCryptographyService = new Mock<ICryptographyService>();
+      var mockApplicationConfigurationInfo = new Mock<ApplicationConfigurationInfo>();
 
       var service = new UserProfileService(dataContext, userProfileHelperService, requestContext, mockIdamService.Object,
-       mockEmailService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object, mockAuditLoginService.Object, mockRemoteCacheService.Object,
-       mockCacheInvalidateService.Object);
+ mockEmailService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object, mockAuditLoginService.Object, mockRemoteCacheService.Object,
+ mockCacheInvalidateService.Object, mockCryptographyService.Object, mockApplicationConfigurationInfo.Object);
       return service;
     }
 

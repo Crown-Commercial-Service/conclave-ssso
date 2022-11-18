@@ -22,19 +22,42 @@ namespace CcsSso.Core.ExternalApi.Middleware
     {
       var path = context.Request.Path.Value.TrimStart('/').TrimEnd('/');
       var requestType = path.Contains("organisations") ? RequestType.HavingOrgId : path.Contains("users") ? RequestType.NotHavingOrgId : RequestType.Other;
+
+      // #Delegated
+      if (!string.IsNullOrWhiteSpace(context.Request.Query["delegated-organisation-id"]))
+      {
+        requestType = RequestType.HavingOrgId;
+      }
+
       if (requestType == RequestType.HavingOrgId)
       {
         requestContext.RequestIntendedOrganisationId = context.Request.RouteValues["organisationId"]?.ToString();
+        // #Delegated
+        if (!string.IsNullOrWhiteSpace(context.Request.Query["delegated-organisation-id"]))
+        {
+          requestContext.RequestIntendedOrganisationId = context.Request.Query["delegated-organisation-id"];
+        }
       }
       else if (requestType == RequestType.NotHavingOrgId)
       {
-        if (context.Request.Method == "POST")// POST request includes the org id in the body
+        // #Delegated
+        if (context.Request.Method == "POST" || (context.Request.Method == "PUT" && path.Contains("delegate-user")))// POST request includes the org id in the body
         {
           using (var reader = new StreamReader(context.Request.Body, encoding: Encoding.UTF8, detectEncodingFromByteOrderMarks: false, leaveOpen: true))
           {
             var body = await reader.ReadToEndAsync();
-            var userRequestBody = JsonConvert.DeserializeObject<UserProfileEditRequestInfo>(body);
-            requestContext.RequestIntendedOrganisationId = userRequestBody.OrganisationId;
+
+            // #Delegated
+            if (path.Contains("delegate-user"))
+            {
+              var userRequestBody = JsonConvert.DeserializeObject<DelegatedUserProfileRequestInfo>(body);
+              requestContext.RequestIntendedOrganisationId = userRequestBody.Detail?.DelegatedOrgId;
+            }
+            else
+            {
+              var userRequestBody = JsonConvert.DeserializeObject<UserProfileEditRequestInfo>(body);
+              requestContext.RequestIntendedOrganisationId = userRequestBody.OrganisationId;
+            }
             requestType = RequestType.HavingOrgId;
 
             // Reset the request body stream position so the next middleware can read it

@@ -7,7 +7,7 @@ namespace CcsSso.Domain.Contracts
 {
   public interface IUserService
   {
-    Task<List<ServicePermissionDto>> GetPermissions(string userName, string serviceClientId);
+    Task<List<ServicePermissionDto>> GetPermissions(string userName, string serviceClientId, string organisationId);
 
     Task SendUserActivationEmailAsync(string email, bool isExpired = false);
 

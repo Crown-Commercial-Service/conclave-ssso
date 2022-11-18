@@ -91,7 +91,7 @@ namespace CcsSso.ExternalApi.Controllers
     ///     
     /// </remarks>
     [HttpGet("{organisationId}")]
-    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "MANAGE_SUBSCRIPTIONS")]
     [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation" })]
     [ProducesResponseType(typeof(OrganisationProfileResponseInfo), 200)]
@@ -780,6 +780,7 @@ namespace CcsSso.ExternalApi.Controllers
 
     /// <summary>
     /// Allows a user to retrieve users for a given organisation
+    /// #Delegated
     /// </summary>
     /// <response  code="200">Ok</response>
     /// <response  code="401">Unauthorised</response>
@@ -794,11 +795,11 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     /// </remarks>
     [HttpGet("{organisationId}/users")]
-    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
     [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation User" })]
     [ProducesResponseType(typeof(UserListResponse), 200)]
-    public async Task<UserListResponse> GetUsers(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria, [FromQuery(Name ="search-string")]string searchString, [FromQuery(Name = "include-self")] bool includeSelf = false)
+    public async Task<UserListResponse> GetUsers(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria, [FromQuery] UserFilterCriteria userFilterCriteria)
     {
       resultSetCriteria ??= new ResultSetCriteria
       {
@@ -807,39 +808,7 @@ namespace CcsSso.ExternalApi.Controllers
       };
       resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
       resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
-      return await _userProfileService.GetUsersAsync(organisationId, resultSetCriteria, searchString, includeSelf);
-    }
-
-    /// <summary>
-    /// Allows a user to retrieve admin users for a given organisation
-    /// </summary>
-    /// <response  code="200">Ok</response>
-    /// <response  code="401">Unauthorised</response>
-    /// <response  code="403">Forbidden</response>
-    /// <response  code="404">Not found</response>
-    /// <remarks>
-    /// NOTE:- query params page-size, current-page
-    /// Sample request:
-    ///
-    ///     GET /organisations/1/adminusers?page-size=10,current-page=1
-    ///     
-    ///
-    /// </remarks>
-    [HttpGet("{organisationId}/adminusers")]
-    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
-    [OrganisationAuthorise("ORGANISATION")]
-    [SwaggerOperation(Tags = new[] { "Organisation Adminusers" })]
-    [ProducesResponseType(typeof(AdminUserListResponse), 200)]
-    public async Task<AdminUserListResponse> GetAdminUsers(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
-    {
-      resultSetCriteria ??= new ResultSetCriteria
-      {
-        CurrentPage = 1,
-        PageSize = 10
-      };
-      resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
-      resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
-      return await _userProfileService.GetAdminUsersAsync(organisationId, resultSetCriteria);
+      return await _userProfileService.GetUsersAsync(organisationId, resultSetCriteria, userFilterCriteria);
     }
     #endregion
 
