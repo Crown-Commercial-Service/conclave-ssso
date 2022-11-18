@@ -191,6 +191,13 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("LookUpApiSettings:LookUpApiKey", wrapperApiKeySettings.LookUpApiKey);
         Data.Add("LookUpApiSettings:LookUpApiUrl", wrapperApiKeySettings.LookUpApiUrl);
       }
+      if (_secrets.Data.ContainsKey("OrgAutoValidationEmail"))
+      {
+        var orgAutoValidationEmailInfo = JsonConvert.DeserializeObject<OrgAutoValidationEmailInfo>(_secrets.Data["OrgAutoValidationEmail"].ToString());
+        Data.Add("OrgAutoValidationEmail:DeclineRightToBuyStatusEmailTemplateId", orgAutoValidationEmailInfo.DeclineRightToBuyStatusEmailTemplateId);
+        Data.Add("OrgAutoValidationEmail:ApproveRightToBuyStatusEmailTemplateId", orgAutoValidationEmailInfo.ApproveRightToBuyStatusEmailTemplateId);
+        Data.Add("OrgAutoValidationEmail:RemoveRightToBuyStatusEmailTemplateId", orgAutoValidationEmailInfo.RemoveRightToBuyStatusEmailTemplateId);
+      }
     }
   }
 

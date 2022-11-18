@@ -174,6 +174,39 @@ namespace CcsSso.Core.Service
       await SendEmailAsync(emailInfo);
     }
 
+    public async Task SendOrgApproveRightToBuyStatusToAllAdminsAsync(string email)
+    {
+
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.OrgAutoValidationEmailInfo.ApproveRightToBuyStatusEmailTemplateId
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
+    public async Task SendOrgDeclineRightToBuyStatusToAllAdminsAsync(string email)
+    {
+
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.OrgAutoValidationEmailInfo.DeclineRightToBuyStatusEmailTemplateId
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
+    public async Task SendOrgRemoveRightToBuyStatusToAllAdminsAsync(string email)
+    {
+
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.OrgAutoValidationEmailInfo.RemoveRightToBuyStatusEmailTemplateId
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
     private async Task SendEmailAsync(EmailInfo emailInfo)
     {
       try

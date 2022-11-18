@@ -34,13 +34,13 @@ namespace CcsSso.Core.Service.External
     {
       var organisations = await _dataContext.GetPagedResultAsync(_dataContext.OrganisationAudit
         .Include(o => o.Organisation)
-        .Where(x => x.Organisation.IsDeleted == false
-        && (string.IsNullOrEmpty(organisationAuditFilterCriteria.searchString) || x.Organisation.LegalName.ToLower().Contains(organisationAuditFilterCriteria.searchString.ToLower()))
-        && (organisationAuditFilterCriteria.isPendingOnly || x.Status == OrgAutoValidationStatus.AutoPending)
-        && (organisationAuditFilterCriteria.isPendingOnly == false || x.Status != OrgAutoValidationStatus.AutoPending))
+        .Where(x => (string.IsNullOrEmpty(organisationAuditFilterCriteria.searchString) || x.Organisation.LegalName.ToLower().Contains(organisationAuditFilterCriteria.searchString.ToLower()))
+        && (organisationAuditFilterCriteria.isPendingOnly || x.Status != OrgAutoValidationStatus.AutoPending)
+        && (!organisationAuditFilterCriteria.isPendingOnly || x.Status == OrgAutoValidationStatus.AutoPending))
         .OrderByDescending(x => x.Organisation.CreatedOnUtc)
         .Select(organisationAudit => new OrganisationAuditResponseInfo
         {
+          OrganisationId = organisationAudit.Organisation.CiiOrganisationId,
           OrganisationName = organisationAudit.Organisation.LegalName,
           OrganisationType = organisationAudit.Organisation.SupplierBuyerType != null ? (int)organisationAudit.Organisation.SupplierBuyerType : 0,
           DateOfRegistration = organisationAudit.Organisation.CreatedOnUtc.ToString(DateTimeFormat.DateFormat)
