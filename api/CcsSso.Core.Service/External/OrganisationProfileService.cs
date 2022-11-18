@@ -862,7 +862,7 @@ namespace CcsSso.Core.Service.External
     // #Auto validation
     #region auto validation
 
-    public async Task<bool> ManualValidateOrganisation(string ciiOrganisationId, ManualValidateOrganisationStatus status)
+    public async Task ManualValidateOrganisation(string ciiOrganisationId, ManualValidateOrganisationStatus status)
     {
       if (!_applicationConfigurationInfo.OrgAutoValidation.Enable)
       {
@@ -883,23 +883,21 @@ namespace CcsSso.Core.Service.External
       {
         if (status == ManualValidateOrganisationStatus.Decline)
         {
-          return await ManualValidateDecline(organisation, actionedBy);
+          await ManualValidateDecline(organisation, actionedBy);
         }
         else if (status == ManualValidateOrganisationStatus.Approve)
         {
-          return await ManualValidateApprove(organisation, actionedBy);
+          await ManualValidateApprove(organisation, actionedBy);
         }
-        //else if (status == ManualValidateOrganisationStatus.Remove)
-        //{
-        //  return await AutoValidateForInValidDomain(organisation, actionedBy, autoValidationDetails.CompanyHouseId, autoValidationDetails.IsFromBackgroundJob);
-        //}
+        else if (status == ManualValidateOrganisationStatus.Remove)
+        {
+          await ManualValidateRemove(organisation, actionedBy);
+        }
       }
       else
       {
         throw new InvalidOperationException();
       }
-
-      return true;
     }
 
     public async Task<bool> AutoValidateOrganisationJob(string ciiOrganisationId)
@@ -1414,18 +1412,14 @@ namespace CcsSso.Core.Service.External
 
     private async Task<string> RemoveOrgRoles(List<OrganisationRole> rolesToDelete, Organisation organisation)
     {
-      var userAccessRolesForOrgUsers = await _dataContext.UserAccessRole.Where(uar => !uar.IsDeleted &&
-                                         uar.OrganisationEligibleRole.OrganisationId == organisation.Id).ToListAsync();
       StringBuilder rolesAssigned = new();
 
       if (rolesToDelete != null && rolesToDelete.Any())
       {
         var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
 
-        if (!deletingRoleIds.All(dr => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == dr)))
-        {
-          throw new CcsSsoException("INVALID_ROLES_TO_DELETE");
-        }
+        var userAccessRolesForOrgUsers = await _dataContext.UserAccessRole.Where(uar => !uar.IsDeleted &&
+                                           uar.OrganisationEligibleRole.OrganisationId == organisation.Id).ToListAsync();
 
         var deletingOrgEligibleRoles = organisation.OrganisationEligibleRoles.Where(oer => deletingRoleIds.Contains(oer.CcsAccessRoleId)).ToList();
 
@@ -1474,7 +1468,7 @@ namespace CcsSso.Core.Service.External
 
     private async Task NotifyAllOrgAdmins(Organisation organisation)
     {
-      List<User> allActiveAdminsOfOrg = await GetAdminUsers(organisation);
+      List<User> allActiveAdminsOfOrg = await GetAdminUsers(organisation, true);
 
       foreach (var admin in allActiveAdminsOfOrg)
       {
@@ -1483,23 +1477,25 @@ namespace CcsSso.Core.Service.External
       }
     }
 
-    private async Task<List<User>> GetAdminUsers(Organisation organisation)
+    private async Task<List<User>> GetAdminUsers(Organisation organisation, bool isVerifiedOnly)
     {
       // TODO: find better way to get all admin
       // get all admins
       var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
       .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisation.Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
 
-      var allActiveAdminsOfOrg = await _dataContext.User
+      var allAdminsOfOrg = await _dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
         .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
         .Where(u => u.Party.Person.Organisation.CiiOrganisationId == organisation.CiiOrganisationId && u.UserType == UserType.Primary &&
-        u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && u.AccountVerified && !u.IsDeleted)
+          u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId)
+          && (!isVerifiedOnly || u.AccountVerified)
+          && !u.IsDeleted)
         .ToListAsync();
-      return allActiveAdminsOfOrg;
+      return allAdminsOfOrg;
     }
 
-    private async Task<bool> ManualValidateDecline(Organisation organisation, User actionedBy)
+    private async Task ManualValidateDecline(Organisation organisation, User actionedBy)
     {
       Guid groupId = Guid.NewGuid();
 
@@ -1524,7 +1520,7 @@ namespace CcsSso.Core.Service.External
         Status = OrgAutoValidationStatus.ManuallyDecliend,
         OrganisationId = organisation.Id,
         Actioned = OrganisationAuditActionType.Admin.ToString(),
-        ActionedBy = actionedBy.UserName
+        ActionedBy = actionedBy?.UserName
       };
 
       await _organisationAuditService.UpdateOrganisationAuditAsync(organisationAuditInfo);
@@ -1535,11 +1531,11 @@ namespace CcsSso.Core.Service.External
       {
         await _dataContext.SaveChangesAsync();
 
-        List<User> allActiveAdminsOfOrg = await GetAdminUsers(organisation);
+        List<User> allAdminsOfOrg = await GetAdminUsers(organisation, false);
 
-        foreach (var admin in allActiveAdminsOfOrg)
+        foreach (var admin in allAdminsOfOrg)
         {
-          //TODO: Send email
+          await _ccsSsoEmailService.SendOrgDeclineRightToBuyStatusToAllAdminsAsync(admin.UserName);
         }
       }
       catch (Exception ex)
@@ -1547,23 +1543,21 @@ namespace CcsSso.Core.Service.External
         Console.WriteLine(ex.Message);
         throw;
       }
-
-      return true;
     }
 
-    private async Task<bool> ManualValidateApprove(Organisation organisation, User actionedBy)
+    private async Task ManualValidateApprove(Organisation organisation, User actionedBy)
     {
       Guid groupId = Guid.NewGuid();
 
       List<OrganisationAuditEventInfo> auditEventLogs = new();
 
-      List<User> allActiveAdminsOfOrg = await GetAdminUsers(organisation);
+      List<User> allAdminsOfOrg = await GetAdminUsers(organisation, false);
 
       string rolesAsssignToOrg = await ManualValidateOrgRoleAssignmentAsync(organisation);
       auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, "", rolesAsssignToOrg, actionedBy: actionedBy));
       auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.ManualAcceptationRightToBuy, groupId, organisation.Id, "", null, actionedBy: actionedBy));
 
-      await ManualValidateAdminRoleAssignmentAsync(organisation, allActiveAdminsOfOrg);
+      await ManualValidateAdminRoleAssignmentAsync(organisation, allAdminsOfOrg);
 
       organisation.RightToBuy = true;
 
@@ -1572,7 +1566,7 @@ namespace CcsSso.Core.Service.External
         Status = OrgAutoValidationStatus.ManuallyApproved,
         OrganisationId = organisation.Id,
         Actioned = OrganisationAuditActionType.Admin.ToString(),
-        ActionedBy = actionedBy.UserName
+        ActionedBy = actionedBy?.UserName
       };
 
       await _organisationAuditService.UpdateOrganisationAuditAsync(organisationAuditInfo);
@@ -1583,9 +1577,9 @@ namespace CcsSso.Core.Service.External
       {
         await _dataContext.SaveChangesAsync();
 
-        foreach (var admin in allActiveAdminsOfOrg)
+        foreach (var admin in allAdminsOfOrg)
         {
-          //TODO: Send email
+          await _ccsSsoEmailService.SendOrgApproveRightToBuyStatusToAllAdminsAsync(admin.UserName);
         }
       }
       catch (Exception ex)
@@ -1594,7 +1588,70 @@ namespace CcsSso.Core.Service.External
         throw;
       }
 
-      return true;
+    }
+
+    private async Task ManualValidateRemove(Organisation organisation, User actionedBy)
+    {
+      Guid groupId = Guid.NewGuid();
+
+      List<OrganisationAuditEventInfo> auditEventLogs = new();
+
+      List<User> allAdminsOfOrg = await GetAdminUsers(organisation, false);
+
+      string rolesUnassignedToOrg = await ManualValidateOrgAndUsersRoleUnassignmentAsync(organisation);
+
+      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrgRoleUnassigned, groupId, organisation.Id, "", rolesUnassignedToOrg, actionedBy: actionedBy));
+      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.ManualRemoveRightToBuy, groupId, organisation.Id, "", null, actionedBy: actionedBy));
+
+      organisation.RightToBuy = false;
+      organisation.SupplierBuyerType = (int)RoleEligibleTradeType.Supplier;
+
+      var organisationAuditInfo = new OrganisationAuditInfo
+      {
+        Status = OrgAutoValidationStatus.ManuallyDecliend,
+        OrganisationId = organisation.Id,
+        Actioned = OrganisationAuditActionType.Admin.ToString(),
+        ActionedBy = actionedBy?.UserName
+      };
+
+      await _organisationAuditService.UpdateOrganisationAuditAsync(organisationAuditInfo);
+
+      await _organisationAuditEventService.CreateOrganisationAuditEventAsync(auditEventLogs);
+
+      try
+      {
+        await _dataContext.SaveChangesAsync();
+
+        foreach (var admin in allAdminsOfOrg)
+        {
+          await _ccsSsoEmailService.SendOrgRemoveRightToBuyStatusToAllAdminsAsync(admin.UserName);
+        }
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine(ex.Message);
+        throw;
+      }
+
+    }
+
+    private async Task<string> ManualValidateOrgAndUsersRoleUnassignmentAsync(Organisation organisation)
+    {
+      var defaultOrgRoles = await _dataContext.AutoValidationRole.Include(x => x.CcsAccessRole)
+        .Where(ar => !ar.CcsAccessRole.IsDeleted && !ar.IsSupplier).ToListAsync();
+
+      List<OrganisationRole> rolesToDelete = new List<OrganisationRole>();
+
+      foreach (var defaultOrgRole in defaultOrgRoles)
+      {
+        rolesToDelete.Add(new OrganisationRole
+        {
+          RoleId = defaultOrgRole.CcsAccessRoleId,
+        });
+      }
+
+      string rolesUnassigned = await RemoveOrgRoles(rolesToDelete, organisation);
+      return rolesUnassigned;
     }
 
     private async Task<string> ManualValidateOrgRoleAssignmentAsync(Organisation organisation)
@@ -1631,7 +1688,7 @@ namespace CcsSso.Core.Service.External
       return rolesAssigned.ToString();
     }
 
-    private async Task ManualValidateAdminRoleAssignmentAsync(Organisation organisation, List<User> allActiveAdminsOfOrg)
+    private async Task ManualValidateAdminRoleAssignmentAsync(Organisation organisation, List<User> allAdminsOfOrg)
     {
       var defaultAdminRoles = await _dataContext.AutoValidationRole.Where(ar => ar.AssignToAdmin).ToListAsync();
 
@@ -1651,7 +1708,7 @@ namespace CcsSso.Core.Service.External
 
       foreach (var role in defaultRoles)
       {
-        foreach (var adminDetails in allActiveAdminsOfOrg)
+        foreach (var adminDetails in allAdminsOfOrg)
         {
           if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id))
           {

@@ -139,6 +139,12 @@ namespace CcsSso.ExternalApi
             Enable = Convert.ToBoolean(Configuration["OrgAutoValidation:Enable"]),
             CCSAdminEmailId = Configuration["OrgAutoValidation:CCSAdminEmailId"],
           },
+          OrgAutoValidationEmailInfo = new OrgAutoValidationEmailInfo()
+          {
+            DeclineRightToBuyStatusEmailTemplateId = Configuration["OrgAutoValidationEmail:DeclineRightToBuyStatusEmailTemplateId"],
+            ApproveRightToBuyStatusEmailTemplateId = Configuration["OrgAutoValidationEmail:ApproveRightToBuyStatusEmailTemplateId"],
+            RemoveRightToBuyStatusEmailTemplateId = Configuration["OrgAutoValidationEmail:RemoveRightToBuyStatusEmailTemplateId"],
+          },
         };
         return appConfigInfo;
       });

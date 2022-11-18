@@ -36,5 +36,8 @@ namespace CcsSso.Core.Domain.Contracts
     Task SendOrgPendingVerificationEmailToCCSAdminAsync(string email, string orgName);
 
     Task SendOrgBuyerStatusChangeUpdateToAllAdminsAsync(string email);
+    Task SendOrgApproveRightToBuyStatusToAllAdminsAsync(string email);
+    Task SendOrgDeclineRightToBuyStatusToAllAdminsAsync(string email);
+    Task SendOrgRemoveRightToBuyStatusToAllAdminsAsync(string email);
   }
 }
