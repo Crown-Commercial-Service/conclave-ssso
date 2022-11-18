@@ -40,6 +40,7 @@ namespace CcsSso.Domain.Dtos
 
     // #Auto validation
     public OrgAutoValidation OrgAutoValidation { get; set; }
+    public OrgAutoValidationEmailInfo OrgAutoValidationEmailInfo { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -136,7 +137,7 @@ namespace CcsSso.Domain.Dtos
   }
 
   // #Auto validation
-  public class OrgAutoValidation 
+  public class OrgAutoValidation
   {
     public bool Enable { get; set; } = false;
     public string CCSAdminEmailId { get; set; }
@@ -154,5 +155,12 @@ namespace CcsSso.Domain.Dtos
     public string LookUpApiKey { get; set; }
 
     public string LookUpApiUrl { get; set; }
+  }
+
+  public class OrgAutoValidationEmailInfo
+  {
+    public string DeclineRightToBuyStatusEmailTemplateId { get; set; }
+    public string ApproveRightToBuyStatusEmailTemplateId { get; set; }
+    public string RemoveRightToBuyStatusEmailTemplateId { get; set; }
   }
 }

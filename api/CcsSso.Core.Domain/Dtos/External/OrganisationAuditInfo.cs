@@ -19,6 +19,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class OrganisationAuditResponseInfo
   {
+    public string OrganisationId { get; set; }
     public string OrganisationName { get; set; }
 
     public int OrganisationType { get; set; }

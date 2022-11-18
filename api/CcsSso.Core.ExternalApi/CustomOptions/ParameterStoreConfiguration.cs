@@ -139,6 +139,9 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "LookUpApiSettings/LookUpApiKey", "LookUpApiSettings:LookUpApiKey"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "LookUpApiSettings/LookUpApiUrl", "LookUpApiSettings:LookUpApiUrl"));
 
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/DeclineRightToBuyStatusEmailTemplateId", "OrgAutoValidationEmail:DeclineRightToBuyStatusEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/ApproveRightToBuyStatusEmailTemplateId", "OrgAutoValidationEmail:ApproveRightToBuyStatusEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/RemoveRightToBuyStatusEmailTemplateId", "OrgAutoValidationEmail:RemoveRightToBuyStatusEmailTemplateId"));
 
       foreach (var configuration in configurations)
       {
