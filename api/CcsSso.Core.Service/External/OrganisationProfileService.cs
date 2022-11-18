@@ -941,7 +941,7 @@ namespace CcsSso.Core.Service.External
       }
 
       // call lookup api
-      bool isDomainValid = AutoValidateOrganisationDetails(ciiOrganisationId, autoValidationDetails.AdminEmailId, true).Result.Item1;
+      bool isDomainValid = AutoValidateOrganisationDetails(ciiOrganisationId, autoValidationDetails.AdminEmailId).Result.Item1;
       User actionedBy = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == autoValidationDetails.AdminEmailId && x.UserType == UserType.Primary);
 
       // buyer and both only auto validated
@@ -990,7 +990,7 @@ namespace CcsSso.Core.Service.External
 
         if (newOrgType != RoleEligibleTradeType.Supplier)
         {
-          var autoValidationOrgDetails = await AutoValidateOrganisationDetails(organisation.CiiOrganisationId, verifiedAdminOnly: true);
+          var autoValidationOrgDetails = await AutoValidateOrganisationDetails(organisation.CiiOrganisationId);
           autoValidationSuccess = autoValidationOrgDetails != null ? autoValidationOrgDetails.Item1 : false;
         }
 
@@ -1043,7 +1043,7 @@ namespace CcsSso.Core.Service.External
 
         if (isOrgTypeSwitched && orgStatus != null)
         {
-          await _organisationAuditService.CreateOrganisationAuditAsync(orgStatus);
+          await _organisationAuditService.UpdateOrganisationAuditAsync(orgStatus);
         }
 
         await _organisationAuditEventService.CreateOrganisationAuditEventAsync(auditEventLogs);
@@ -1058,7 +1058,7 @@ namespace CcsSso.Core.Service.External
     }
 
     // Auto validate org details
-    public async Task<Tuple<bool, string>> AutoValidateOrganisationDetails(string ciiOrganisationId, string adminEmailId = "", bool verifiedAdminOnly = false, bool isReportingMode = false)
+    public async Task<Tuple<bool, string>> AutoValidateOrganisationDetails(string ciiOrganisationId, string adminEmailId = "")
     {
       if (string.IsNullOrWhiteSpace(adminEmailId))
       {
@@ -1069,11 +1069,6 @@ namespace CcsSso.Core.Service.External
         {
           throw new ResourceNotFoundException();
         }
-        // Not allowed in reporting mode
-        if (isReportingMode && organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Supplier)
-        {
-          throw new CcsSsoException("AUTO_VALIDATION_NOT_ALLOWED");
-        }
 
         var orgAdminAccessRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => !x.IsDeleted && x.CcsAccessRole?.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey).Id;
 
@@ -1082,7 +1077,7 @@ namespace CcsSso.Core.Service.External
           .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
           .OrderBy(u => u.CreatedOnUtc)
           .FirstOrDefaultAsync(u => u.Party.Person.OrganisationId == organisation.Id && u.UserType == UserType.Primary &&
-          u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && !u.IsDeleted && (verifiedAdminOnly || u.AccountVerified));
+          u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && !u.IsDeleted);
 
         adminEmailId = olderAdmin?.UserName;
       }
@@ -1181,9 +1176,6 @@ namespace CcsSso.Core.Service.External
       auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Buyer ?
         OrganisationAuditEventType.OrganisationRegistrationTypeBuyer : OrganisationAuditEventType.OrganisationRegistrationTypeBoth,
         groupId, organisation.Id, schemeIdentifier, actionedBy: actionedBy));
-
-      // TODO: AC23 change org type as buyer need to confirm
-      organisation.SupplierBuyerType = (int)RoleEligibleTradeType.Buyer;
 
       try
       {

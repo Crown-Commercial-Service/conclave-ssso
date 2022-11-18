@@ -1158,6 +1158,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="403">Forbidden</response>
     /// <response  code="404">Resource not found</response>
     /// <remarks>
+    /// NOTE:- query params page-size, current-page
     /// Sample request:
     ///
     ///     PUT /organisations/1/manualvalidate?status=0
@@ -1235,7 +1236,7 @@ namespace CcsSso.ExternalApi.Controllers
     [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
     public async Task<object> GetOrganisationAutoVlidateDetails(string organisationId)
     {
-      var validationResult = await _organisationService.AutoValidateOrganisationDetails(organisationId, isReportingMode: true);
+      var validationResult = await _organisationService.AutoValidateOrganisationDetails(organisationId);
       return new { AutoValidationSuccess = validationResult.Item1, OrgAdminUserName = validationResult.Item2 };
     }
 
@@ -1282,12 +1283,16 @@ namespace CcsSso.ExternalApi.Controllers
     ///       orgType: 1,
     ///       rolesToAdd: [
     ///         {
-    ///           id: 1
+    ///           "roleId": 1,
+    ///           "roleKey": "ROLE_KEY",
+    ///           "roleName": "role name"
     ///         }
     ///       ],
     ///       rolesToDelete: [
     ///         {
-    ///           id: 1
+    ///           "roleId": 2,
+    ///           "roleKey": "ROLE_KEY",
+    ///           "roleName": "role name"
     ///         }
     ///       ]
     ///      }
