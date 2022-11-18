@@ -175,7 +175,10 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 
             if (eachOrgs.SupplierBuyerType > 0)
             {
-              isValid = await IsValidBuyer(domainName);
+              if (eachOrgs.RightToBuy == false)
+                isValid = await IsValidBuyer(domainName);
+              else
+                isValid = true;
             }
             else
             {
@@ -299,7 +302,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
         }
         else
         {
-
+          _logger.LogInformation($"Org role {role.CcsAccessRoleNameKey} already exists. org Id  {orgId}");
         }
       });
 
@@ -343,7 +346,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 
       var orgRoles = await _dataContext.OrganisationEligibleRole.Where(x => x.OrganisationId == orgId).ToListAsync();
 
-      defaultRoles.ForEach(async (defaultRole) =>
+      defaultRoles.ForEach((defaultRole) =>
       {
         var alreadyExist = orgRoles.FirstOrDefault(x => x.OrganisationId == orgId && x.CcsAccessRoleId == defaultRole.Id);
         if (alreadyExist == null)

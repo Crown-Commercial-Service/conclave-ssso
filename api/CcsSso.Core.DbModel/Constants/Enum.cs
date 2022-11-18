@@ -70,7 +70,8 @@ namespace CcsSso.Core.DbModel.Constants
     NotRecognizedAsVerifiedBuyer,
     OrganisationRegistrationTypeBuyer,
     OrganisationRegistrationTypeBoth,
-    InactiveOrganisationRemoved
+    InactiveOrganisationRemoved,
+    ManualRemoveRightToBuy
   }
 
   // #Auto validation
