@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.ExternalApi.Authorisation;
@@ -1146,6 +1147,32 @@ namespace CcsSso.ExternalApi.Controllers
       resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
       resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
       return await _organisationAuditService.GetAllAsync(resultSetCriteria, organisationAuditFilterCriteria);
+    }
+
+
+    /// <summary>
+    /// To approve/decline/remove organisation buyer request
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// NOTE:- query params page-size, current-page
+    /// Sample request:
+    ///
+    ///     PUT /organisations/1/manualvalidate?status=0
+    ///
+    ///     status --> 0 = Approve, 1 = Decline, 2 = Remove
+    ///     
+    /// </remarks>
+    [HttpPut("{organisationId}/manualvalidate")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
+    [SwaggerOperation(Tags = new[] { "Organisation Audit" })]
+    [ProducesResponseType(typeof(string), 200)]
+    public async Task ManualValidateOrganisation(string organisationId, ManualValidateOrganisationStatus status)
+    {
+      await _organisationService.ManualValidateOrganisation(organisationId, status);
     }
 
     #endregion
