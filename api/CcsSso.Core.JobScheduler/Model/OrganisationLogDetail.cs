@@ -11,6 +11,7 @@ namespace CcsSso.Core.JobScheduler.Model
       public string AdminEmail { get; set; }
       public string AutovalidationStatus { get; set; }
       public string DateTime { get; set; }
+    public string  Information { get; set; }
 
   }
   

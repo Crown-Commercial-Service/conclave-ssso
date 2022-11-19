@@ -64,35 +64,16 @@ namespace CcsSso.Core.JobScheduler
         reportingMode = _appSettings.OrgAutoValidationOneTimeJob.ReportingMode;
         int interval = _appSettings.ScheduleJobSettings.OrganisationAutovalidationJobExecutionFrequencyInMinutes * 60000;
 
-        var startDateString = _appSettings.OrgAutoValidationOneTimeJob.StartDate;
-        var endDateString = _appSettings.OrgAutoValidationOneTimeJob.EndDate;
+        var dates =await ReadDateRange(interval, stoppingToken);
 
-        if (startDateString == null || endDateString == null)
+        if (dates == null)
         {
-          _logger.LogError("One time validation needs start and end date. Skipping this iteration.");
           await Task.Delay(interval, stoppingToken);
           continue;
         }
 
-        try
-        {
-          startDate = DateTime.ParseExact(startDateString, "yyyy-MM-dd hh:mm", CultureInfo.InvariantCulture);
-          endDate = DateTime.ParseExact(endDateString, "yyyy-MM-dd hh:mm", CultureInfo.InvariantCulture);
-
-        }
-        catch (FormatException)
-        {
-          _logger.LogError("{0} or {1} is not in the correct format. Date format should be as follows 'yyyy-MM-dd' Skipping this iteration.", startDateString, endDateString);
-          await Task.Delay(interval, stoppingToken);
-          continue;
-        }
-        catch (Exception)
-        {
-          _logger.LogError("Error while reading the start or end date {0}, {1}. Skipping this iteration.", startDateString, endDateString);
-          await Task.Delay(interval, stoppingToken);
-          continue;
-        }
-
+        startDate = dates.Item1;
+        endDate = dates.Item2;
 
         Console.WriteLine($" ****************Organization autovalidation batch processing job started ***********");
         await PerformJobAsync();
@@ -109,7 +90,44 @@ namespace CcsSso.Core.JobScheduler
       Console.WriteLine($"Autovalidation Total Number of organisation found : {organisations.Count()}");
       await _autoValidationService.PerformJobAsync(organisations);
 
+      await _autoValidationService.PerformJobAsync(organisations);
 
+
+    }
+
+    private async Task<Tuple<DateTime, DateTime>> ReadDateRange(int interval,CancellationToken stoppingToken)
+    {
+      var startDateString = _appSettings.OrgAutoValidationOneTimeJob.StartDate;
+      var endDateString = _appSettings.OrgAutoValidationOneTimeJob.EndDate;
+
+      if (startDateString == null || endDateString == null)
+      {
+        _logger.LogError("One time validation needs start and end date. Skipping this iteration.");
+        // await Task.Delay(interval, stoppingToken);
+        return null;
+      }
+
+      try
+      {
+        startDate = DateTime.ParseExact(startDateString, "yyyy-MM-dd hh:mm", CultureInfo.InvariantCulture);
+        endDate = DateTime.ParseExact(endDateString, "yyyy-MM-dd hh:mm", CultureInfo.InvariantCulture);
+
+      }
+      catch (FormatException)
+      {
+        _logger.LogError("{0} or {1} is not in the correct format. Date format should be as follows 'yyyy-MM-dd' Skipping this iteration.", startDateString, endDateString);
+        // await Task.Delay(interval, stoppingToken);
+        return null;
+
+      }
+      catch (Exception)
+      {
+        _logger.LogError("Error while reading the start or end date {0}, {1}. Skipping this iteration.", startDateString, endDateString);
+        //await Task.Delay(interval, stoppingToken);
+        return null;
+        
+      }
+      return new Tuple<DateTime,DateTime>(startDate,endDate);
     }
 
     public async Task<List<OrganisationDetail>> GetOrganisationsAsync()
@@ -117,7 +135,7 @@ namespace CcsSso.Core.JobScheduler
       //TODO: Add condition to exclude orgs where autovalidation already performed 
 
       var organisations = await _dataContext.Organisation.Where(
-                          org => !org.IsActivated && !org.IsDeleted && org.SupplierBuyerType > 0)
+                          org => !org.IsActivated && !org.IsDeleted && org.CreatedOnUtc >= TimeZoneInfo.ConvertTimeToUtc(startDate) && org.CreatedOnUtc <= TimeZoneInfo.ConvertTimeToUtc(endDate))
                           .Select(o => new OrganisationDetail()
                           {
                             Id = o.Id,

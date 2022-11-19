@@ -210,7 +210,8 @@ namespace CcsSso.Core.JobScheduler
           // #Auto validation
           services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
           services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();
-          services.AddScoped<IAutoValidationService, AutoValidationService>();
+          services.AddSingleton<IAutoValidationService, AutoValidationService>();
+          services.AddSingleton<IAutoValidationOneTimeService, AutoValidationOneTimeService>();
 
           //services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
           //services.AddHostedService<UnverifiedUserDeleteJob>();
