@@ -33,6 +33,8 @@ namespace CcsSso.Core.JobScheduler
     private readonly ICacheInvalidateService _cacheInvalidateService;
     private readonly IIdamSupportService _idamSupportService;
     private readonly IAutoValidationService _autoValidationService;
+    private readonly IAutoValidationOneTimeService _autoValidationOneTimeService;
+
     private readonly ILogger<OrganisationAutovalidationJob> _logger;
     private bool enable;
     private bool ranOnce;
@@ -42,7 +44,7 @@ namespace CcsSso.Core.JobScheduler
 
     public OrganisationAutovalidationJob(ILogger<OrganisationAutovalidationJob> logger, IServiceScopeFactory factory, IDateTimeService dataTimeService,
       AppSettings appSettings, IHttpClientFactory httpClientFactory, ICacheInvalidateService cacheInvalidateService,
-      IIdamSupportService idamSupportService,IAutoValidationService autoValidationService)
+      IIdamSupportService idamSupportService, IAutoValidationService autoValidationService, IAutoValidationOneTimeService autoValidationOneTimeService)
     {
       _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
       _dataTimeService = dataTimeService;
@@ -54,6 +56,7 @@ namespace CcsSso.Core.JobScheduler
       _logger = logger;
       ranOnce = false;
       enable = false;
+      _autoValidationOneTimeService = autoValidationOneTimeService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -64,7 +67,7 @@ namespace CcsSso.Core.JobScheduler
         reportingMode = _appSettings.OrgAutoValidationOneTimeJob.ReportingMode;
         int interval = _appSettings.ScheduleJobSettings.OrganisationAutovalidationJobExecutionFrequencyInMinutes * 60000;
 
-        var dates =await ReadDateRange(interval, stoppingToken);
+        var dates = await ReadDateRange(interval, stoppingToken);
 
         if (dates == null)
         {
@@ -75,8 +78,16 @@ namespace CcsSso.Core.JobScheduler
         startDate = dates.Item1;
         endDate = dates.Item2;
 
+        if (ranOnce)
+        {
+          _logger.LogInformation("One time validation ran already. Skipping this iteration.");
+          await Task.Delay(interval, stoppingToken);
+          continue;
+        }
+
         Console.WriteLine($" ****************Organization autovalidation batch processing job started ***********");
         await PerformJobAsync();
+        ranOnce = true;
         //TODO: Need to run this only once
         await Task.Delay(interval, stoppingToken);
         Console.WriteLine($"******************Organization autovalidation batch processing job ended ***********");
@@ -88,14 +99,14 @@ namespace CcsSso.Core.JobScheduler
       var organisations = await GetOrganisationsAsync();
 
       Console.WriteLine($"Autovalidation Total Number of organisation found : {organisations.Count()}");
-      await _autoValidationService.PerformJobAsync(organisations);
+      // await _autoValidationService.PerformJobAsync(organisations);
 
-      await _autoValidationService.PerformJobAsync(organisations);
+      await _autoValidationOneTimeService.PerformJobAsync(organisations);
 
 
     }
 
-    private async Task<Tuple<DateTime, DateTime>> ReadDateRange(int interval,CancellationToken stoppingToken)
+    private async Task<Tuple<DateTime, DateTime>> ReadDateRange(int interval, CancellationToken stoppingToken)
     {
       var startDateString = _appSettings.OrgAutoValidationOneTimeJob.StartDate;
       var endDateString = _appSettings.OrgAutoValidationOneTimeJob.EndDate;
@@ -125,9 +136,9 @@ namespace CcsSso.Core.JobScheduler
         _logger.LogError("Error while reading the start or end date {0}, {1}. Skipping this iteration.", startDateString, endDateString);
         //await Task.Delay(interval, stoppingToken);
         return null;
-        
+
       }
-      return new Tuple<DateTime,DateTime>(startDate,endDate);
+      return new Tuple<DateTime, DateTime>(startDate, endDate);
     }
 
     public async Task<List<OrganisationDetail>> GetOrganisationsAsync()
@@ -140,9 +151,9 @@ namespace CcsSso.Core.JobScheduler
                           {
                             Id = o.Id,
                             CiiOrganisationId = o.CiiOrganisationId,
-                            SupplierBuyerType= o.SupplierBuyerType.Value,
-                            LegalName =o.LegalName,
-                            RightToBuy=o.RightToBuy,
+                            SupplierBuyerType = o.SupplierBuyerType.Value,
+                            LegalName = o.LegalName,
+                            RightToBuy = o.RightToBuy,
                             CreatedOnUtc = o.CreatedOnUtc
                           }).ToListAsync();
 

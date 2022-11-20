@@ -12,6 +12,7 @@ using CcsSso.Core.JobScheduler.Contracts;
 using CcsSso.Core.JobScheduler.Model;
 using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Domain.Dto;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -94,16 +95,30 @@ namespace CcsSso.Core.JobScheduler.Services
 
     private async Task RemoveRoles(HttpClient client, string[] roles, OrganisationDetail orgDetail, List<OrganisationLogDetail> logMessage)
     {
+      var eligibleRolesToDelete = new List<int>();
       try
       {
         _logger.LogInformation($"Removing roles from Org. LegalName: {orgDetail.LegalName}, CiiOrgId={orgDetail.CiiOrganisationId}, Id={orgDetail.Id}");
 
+        var organisation = await _dataContext.Organisation
+        .Include(er => er.OrganisationEligibleRoles)
+       .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == orgDetail.CiiOrganisationId);
 
         var rolesToDeleteIds = _dataContext.CcsAccessRole.Where(oer => roles.Contains(oer.CcsAccessRoleNameKey)).Select(x => x.Id).ToList();
 
+        eligibleRolesToDelete = rolesToDeleteIds.Intersect(organisation.OrganisationEligibleRoles.Where(oer => !oer.IsDeleted).Select(y => y.CcsAccessRoleId)).ToList();
+
+        if (!eligibleRolesToDelete.Any())
+        {
+          _logger.LogWarning($"No roles are deleted. Roles {string.Join(',', eligibleRolesToDelete)} doesn't exist.");
+          AddLogMessage(logMessage, orgDetail, $"No roles are deleted. Roles {string.Join(',', eligibleRolesToDelete)} doesn't exist.");
+          return;
+        }
+
+
         var RolesToDelete = new List<OrganisationRole>();
 
-        foreach (var id in rolesToDeleteIds)
+        foreach (var id in eligibleRolesToDelete)
         {
           RolesToDelete.Add(new OrganisationRole() { RoleId = id });
         }
@@ -114,41 +129,55 @@ namespace CcsSso.Core.JobScheduler.Services
         HttpContent data = new StringContent(JsonConvert.SerializeObject(updateRoles, new JsonSerializerSettings
         { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
 
-        var response = await client.PostAsync(url, data);
+        var response = await client.PutAsync(url, data);
 
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
           _logger.LogInformation($"Role removed successfully for the org CiiId =" + orgDetail.CiiOrganisationId);
-          AddLogMessage(logMessage, orgDetail, $"Successfully removed roles {string.Join(',', roles)}");
+          AddLogMessage(logMessage, orgDetail, $"Successfully removed roles {string.Join(',', eligibleRolesToDelete)}");
         }
         else
         {
-          _logger.LogWarning($"Failed to remove role {string.Join(',', roles)}. Org CiiId =" + orgDetail.CiiOrganisationId);
-          _logger.LogWarning($"Failed to remove role {string.Join(',', roles)}. Response =" + response.Content);
-          AddLogMessage(logMessage, orgDetail, $"Failed to remove roles {string.Join(',', roles)}");
+          _logger.LogWarning($"Failed to add roles {string.Join(',', eligibleRolesToDelete)}. Response StatusCode =" + response.StatusCode);
+          _logger.LogWarning($"Failed to remove role {string.Join(',', eligibleRolesToDelete)}. Org CiiId =" + orgDetail.CiiOrganisationId);
+          _logger.LogWarning($"Failed to remove role {string.Join(',', eligibleRolesToDelete)}. Response =" + response.Content);
+          AddLogMessage(logMessage, orgDetail, $"Failed to remove roles {string.Join(',', eligibleRolesToDelete)}");
         }
       }
       catch (Exception)
       {
-        _logger.LogError($"Exception while removing role {string.Join(',', roles)} from org. LegalName: {orgDetail.LegalName}, CiiOrgId={orgDetail.CiiOrganisationId}, Id={orgDetail.Id}");
+        _logger.LogError($"Exception while removing role {string.Join(',', eligibleRolesToDelete)} from org. LegalName: {orgDetail.LegalName}, CiiOrgId={orgDetail.CiiOrganisationId}, Id={orgDetail.Id}");
 
-        AddLogMessage(logMessage, orgDetail, $"Failed to remove roles {string.Join(',', roles)}");
+        AddLogMessage(logMessage, orgDetail, $"Failed to remove roles {string.Join(',', eligibleRolesToDelete)}");
 
       }
     }
 
     private async Task AddRoles(HttpClient client, string[] roles, OrganisationDetail orgDetail, List<OrganisationLogDetail> logMessage)
     {
+      var eligibleRolesToAdd = new List<int>();
       try
       {
         _logger.LogInformation($"Add roles to Org. LegalName: {orgDetail.LegalName}, CiiOrgId={orgDetail.CiiOrganisationId}, Id={orgDetail.Id}");
 
+        var organisation = await _dataContext.Organisation
+       .Include(er => er.OrganisationEligibleRoles)
+      .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == orgDetail.CiiOrganisationId);
 
         var rolesToAddIds = _dataContext.CcsAccessRole.Where(oer => roles.Contains(oer.CcsAccessRoleNameKey)).Select(x => x.Id).ToList();
 
+        eligibleRolesToAdd = rolesToAddIds.Except(organisation.OrganisationEligibleRoles.Where(oer => !oer.IsDeleted).Select(y => y.CcsAccessRoleId)).ToList();
+
+        if (!eligibleRolesToAdd.Any())
+        {
+          _logger.LogWarning($"No Roles are added. Roles {string.Join(',', eligibleRolesToAdd)} are already exists.");
+          AddLogMessage(logMessage, orgDetail, $"No Roles are added. Roles {string.Join(',', eligibleRolesToAdd)} are already exists.");
+          return;
+        }
+
         var RolesToAdd = new List<OrganisationRole>();
 
-        foreach (var id in rolesToAddIds)
+        foreach (var id in eligibleRolesToAdd)
         {
           RolesToAdd.Add(new OrganisationRole() { RoleId = id });
         }
@@ -159,24 +188,26 @@ namespace CcsSso.Core.JobScheduler.Services
         HttpContent data = new StringContent(JsonConvert.SerializeObject(updateRoles, new JsonSerializerSettings
         { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
 
-        var response = await client.PostAsync(url, data);
+        var response = await client.PutAsync(url, data);
 
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
         {
-          _logger.LogInformation($"Role {string.Join(',', roles)} added successfully for the org CiiId =" + orgDetail.CiiOrganisationId);
+          _logger.LogInformation($"Role {string.Join(',', eligibleRolesToAdd)} added successfully for the org CiiId =" + orgDetail.CiiOrganisationId);
           AddLogMessage(logMessage, orgDetail, $"Successfully added roles {string.Join(',', roles)}");
         }
         else
         {
-          _logger.LogWarning($"Failed to add roles {string.Join(',', roles)}. Org CiiId =" + orgDetail.CiiOrganisationId);
-          _logger.LogWarning($"Failed to add roles {string.Join(',', roles)}. Response =" + response.Content);
-          AddLogMessage(logMessage, orgDetail, $"Failed to add roles {string.Join(',', roles)}");
+
+          _logger.LogWarning($"Failed to add roles {string.Join(',', eligibleRolesToAdd)}. Response StatusCode =" + response.StatusCode);
+          _logger.LogWarning($"Failed to add roles {string.Join(',', eligibleRolesToAdd)}. Org CiiId =" + orgDetail.CiiOrganisationId);
+          _logger.LogWarning($"Failed to add roles {string.Join(',', eligibleRolesToAdd)}. Response =" + response.Content);
+          AddLogMessage(logMessage, orgDetail, $"Failed to add roles {string.Join(',', eligibleRolesToAdd)}");
         }
       }
       catch (Exception)
       {
-        _logger.LogError($"Exception while adding roles {string.Join(',', roles)} to org. LegalName: {orgDetail.LegalName}, CiiOrgId={orgDetail.CiiOrganisationId}, Id={orgDetail.Id}");
-        AddLogMessage(logMessage, orgDetail, $"Failed to add roles {string.Join(',', roles)}");
+        _logger.LogError($"Exception while adding roles {string.Join(',', eligibleRolesToAdd)} to org. LegalName: {orgDetail.LegalName}, CiiOrgId={orgDetail.CiiOrganisationId}, Id={orgDetail.Id}");
+        AddLogMessage(logMessage, orgDetail, $"Failed to add roles {string.Join(',', eligibleRolesToAdd)}");
 
       }
     }
