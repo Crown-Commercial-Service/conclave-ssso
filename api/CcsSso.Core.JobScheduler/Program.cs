@@ -213,9 +213,9 @@ namespace CcsSso.Core.JobScheduler
           services.AddSingleton<IAutoValidationService, AutoValidationService>();
           services.AddSingleton<IAutoValidationOneTimeService, AutoValidationOneTimeService>();
 
-          //services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
-          //services.AddHostedService<UnverifiedUserDeleteJob>();
-          //services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
+          services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
+          services.AddHostedService<UnverifiedUserDeleteJob>();
+          services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
           // Development in progress once ready need to uncomment
           services.AddHostedService<OrganisationAutovalidationJob>();
 
