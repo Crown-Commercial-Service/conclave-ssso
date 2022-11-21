@@ -1197,7 +1197,7 @@ namespace CcsSso.ExternalApi.Controllers
     [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
     [SwaggerOperation(Tags = new[] { "Organisation Audit Event" })]
     [ProducesResponseType(typeof(OrganisationAuditEventInfoListResponse), 200)]
-    public async Task<OrganisationAuditEventInfoListResponse> GetOrganisationAuditEventsList(int organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
+    public async Task<OrganisationAuditEventInfoListResponse> GetOrganisationAuditEventsList(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
     {
       resultSetCriteria ??= new ResultSetCriteria
       {
