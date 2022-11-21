@@ -182,7 +182,14 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
             }
             else
             {
-              await AddSupplierRole(eachOrgs.Id, adminList.Select(t => t.Item3).ToList());
+              if (!reportingMode)
+              {
+                await AddSupplierRole(eachOrgs.Id, adminList.Select(t => t.Item3).ToList());
+              }
+              else
+              {
+                _logger.LogInformation($"Reporting Mode is On. So no default roles are assigned");
+              }
             }
 
             jobReport.Add(new LogJobDetail()
