@@ -30,14 +30,23 @@ namespace CcsSso.Core.Service.External
     /// <summary>
     /// Get organisation audit events
     /// </summary>
-    /// <param name="organisationId"></param>
+    /// <param name="ciiOrganisationId"></param>
+    /// <param name="resultSetCriteria"></param>
     /// <returns></returns>
-    public async Task<OrganisationAuditEventInfoListResponse> GetOrganisationAuditEventsListAsync(int organisationId, ResultSetCriteria resultSetCriteria)
+    public async Task<OrganisationAuditEventInfoListResponse> GetOrganisationAuditEventsListAsync(string ciiOrganisationId, ResultSetCriteria resultSetCriteria)
     {
       List<OrganisationAuditEventResponseInfo> auditEventInfos = new List<OrganisationAuditEventResponseInfo>();
 
+      var organisation = await _dataContext.Organisation
+                              .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
+
+      if (organisation == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+
       var auditEvents = await _dataContext.OrganisationAuditEvent
-        .Where(c => c.OrganisationId == organisationId)
+        .Where(c => c.OrganisationId == organisation.Id)
         .ToListAsync();
 
       foreach (var auditEvent in auditEvents)
