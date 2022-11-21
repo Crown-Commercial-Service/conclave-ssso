@@ -77,7 +77,7 @@ namespace CcsSso.Core.Service.External
       return new OrganisationAuditEventInfoListResponse
       {
         CurrentPage = resultSetCriteria.CurrentPage,
-        PageCount = resultSetCriteria.PageSize,
+        PageCount = pageCount,
         RowCount = auditEventInfos.Count,
         OrganisationAuditEventList = result ?? new List<OrganisationAuditEventResponseInfo>()
       };
