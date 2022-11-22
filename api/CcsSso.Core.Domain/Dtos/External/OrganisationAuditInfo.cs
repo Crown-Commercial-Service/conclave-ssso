@@ -1,5 +1,6 @@
 ﻿using CcsSso.Core.DbModel.Constants;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 
 namespace CcsSso.Core.Domain.Dtos.External
@@ -20,11 +21,14 @@ namespace CcsSso.Core.Domain.Dtos.External
   public class OrganisationAuditResponseInfo
   {
     public string OrganisationId { get; set; }
+
     public string OrganisationName { get; set; }
 
     public int OrganisationType { get; set; }
 
-    public string DateOfRegistration { get; set; }
+    public DateTime DateOfRegistration { get; set; }
+
+    public bool? RightToBuy { get; set; }
   }
 
   public class OrganisationAuditInfoListResponse : PaginationInfo
