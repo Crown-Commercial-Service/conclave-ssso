@@ -17,6 +17,9 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public bool isAdmin { get; set; } = false;
 
+    [FromQuery(Name = "include-unverified-admin")]
+    public bool includeUnverifiedAdmin { get; set; } = false;
+
     [FromQuery(Name = "include-self")]
     public bool includeSelf { get; set; } = false;
 
