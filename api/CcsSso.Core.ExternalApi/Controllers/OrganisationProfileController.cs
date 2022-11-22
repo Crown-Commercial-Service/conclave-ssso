@@ -1294,7 +1294,8 @@ namespace CcsSso.ExternalApi.Controllers
     ///           "roleKey": "ROLE_KEY",
     ///           "roleName": "role name"
     ///         }
-    ///       ]
+    ///       ],
+    ///       companyHouseId: "123" 
     ///      }
     ///     
     /// </remarks>

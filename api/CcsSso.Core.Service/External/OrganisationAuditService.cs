@@ -43,7 +43,8 @@ namespace CcsSso.Core.Service.External
           OrganisationId = organisationAudit.Organisation.CiiOrganisationId,
           OrganisationName = organisationAudit.Organisation.LegalName,
           OrganisationType = organisationAudit.Organisation.SupplierBuyerType != null ? (int)organisationAudit.Organisation.SupplierBuyerType : 0,
-          DateOfRegistration = organisationAudit.Organisation.CreatedOnUtc.ToString(DateTimeFormat.DateFormat)
+          DateOfRegistration = organisationAudit.Organisation.CreatedOnUtc,
+          RightToBuy = organisationAudit.Organisation.RightToBuy
         }), resultSetCriteria);
 
       var orgListResponse = new OrganisationAuditInfoListResponse

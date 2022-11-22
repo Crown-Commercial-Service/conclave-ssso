@@ -506,9 +506,12 @@ namespace CcsSso.Core.Service.External
 
       if (!includeSelf)
         userQuery = userQuery.Where(u => u.Id != _requestContext.UserId);
-
-      if (isAdmin)
+      // #Autovalidation
+      if (isAdmin && userFilterCriteria.includeUnverifiedAdmin)
+        userQuery = userQuery.Where(u => u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && !u.IsDeleted);
+      else if (isAdmin)
         userQuery = userQuery.Where(u => u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && u.AccountVerified && !u.IsDeleted);
+
 
       // Delegated and delegated expired conditions
       if (isDelegatedOnly)
