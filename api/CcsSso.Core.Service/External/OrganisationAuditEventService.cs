@@ -46,6 +46,7 @@ namespace CcsSso.Core.Service.External
       }
 
       var auditEvents = await _dataContext.OrganisationAuditEvent
+        .Include(x => x.Organisation)
         .Where(c => c.OrganisationId == organisation.Id)
         .ToListAsync();
 
@@ -87,7 +88,7 @@ namespace CcsSso.Core.Service.External
     {
       return new OrganisationAuditEventResponseInfo
       {
-        OrganisationId = auditEvent.OrganisationId,
+        OrganisationId = auditEvent.Organisation.CiiOrganisationId,
         FirstName = auditEvent.FirstName,
         LastName = auditEvent.LastName,
         GroupId = auditEvent.GroupId,

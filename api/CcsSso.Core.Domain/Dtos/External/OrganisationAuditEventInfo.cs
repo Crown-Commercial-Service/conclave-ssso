@@ -29,7 +29,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class OrganisationAuditEventResponseInfo
   {
-    public int OrganisationId { get; set; }
+    public string OrganisationId { get; set; }
 
     public string FirstName { get; set; }
 

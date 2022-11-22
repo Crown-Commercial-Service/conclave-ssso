@@ -115,9 +115,6 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("Email:UserRegistrationEmailUserIdPwdTemplateId", emailsettings.UserRegistrationEmailUserIdPwdTemplateId);
         // #Delegated
         Data.Add("Email:UserDelegatedAccessEmailTemplateId", emailsettings.UserDelegatedAccessEmailTemplateId);
-        // #Auto validation
-        Data.Add("Email:OrgPendingVerificationEmailTemplateId", emailsettings.OrgPendingVerificationEmailTemplateId);
-        Data.Add("Email:OrgBuyerStatusChangeUpdateToAllAdmins", emailsettings.OrgBuyerStatusChangeUpdateToAllAdmins);
 
         Data.Add("Email:SendNotificationsEnabled", emailsettings.SendNotificationsEnabled);
       }
@@ -197,6 +194,9 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("OrgAutoValidationEmail:DeclineRightToBuyStatusEmailTemplateId", orgAutoValidationEmailInfo.DeclineRightToBuyStatusEmailTemplateId);
         Data.Add("OrgAutoValidationEmail:ApproveRightToBuyStatusEmailTemplateId", orgAutoValidationEmailInfo.ApproveRightToBuyStatusEmailTemplateId);
         Data.Add("OrgAutoValidationEmail:RemoveRightToBuyStatusEmailTemplateId", orgAutoValidationEmailInfo.RemoveRightToBuyStatusEmailTemplateId);
+        Data.Add("OrgAutoValidationEmail:OrgPendingVerificationEmailTemplateId", orgAutoValidationEmailInfo.OrgPendingVerificationEmailTemplateId);
+        Data.Add("OrgAutoValidationEmail:OrgBuyerStatusChangeUpdateToAllAdmins", orgAutoValidationEmailInfo.OrgBuyerStatusChangeUpdateToAllAdmins);
+
       }
     }
   }
@@ -260,9 +260,6 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
     public string UserRegistrationEmailUserIdPwdTemplateId { get; set; }
     // #Delegated
     public string UserDelegatedAccessEmailTemplateId { get; set; }
-    // #Auto validation
-    public string OrgPendingVerificationEmailTemplateId { get; set; }
-    public string OrgBuyerStatusChangeUpdateToAllAdmins { get; set; }
     public string SendNotificationsEnabled { get; set; }
   }
 
