@@ -102,11 +102,6 @@ namespace CcsSso.Domain.Dtos
     // #Delegated
     public string UserDelegatedAccessEmailTemplateId { get; set; }
 
-    // #Auto validation
-    public string OrgPendingVerificationEmailTemplateId { get; set; }
-
-    public string OrgBuyerStatusChangeUpdateToAllAdmins { get; set; }
-
     public bool SendNotificationsEnabled { get; set; }
 
   }
@@ -162,5 +157,7 @@ namespace CcsSso.Domain.Dtos
     public string DeclineRightToBuyStatusEmailTemplateId { get; set; }
     public string ApproveRightToBuyStatusEmailTemplateId { get; set; }
     public string RemoveRightToBuyStatusEmailTemplateId { get; set; }
+    public string OrgPendingVerificationEmailTemplateId { get; set; }
+    public string OrgBuyerStatusChangeUpdateToAllAdmins { get; set; }
   }
 }

@@ -78,7 +78,7 @@ namespace CcsSso.Core.Service.External
           Status = OrgAutoValidationStatus.AutoApproved,
           Actioned = organisationAuditInfo.Actioned,
           ActionedBy = organisationAuditInfo.ActionedBy,
-          CreatedOnUtc = _dateTimeService.GetUTCNow(),
+          ActionedOnUtc = _dateTimeService.GetUTCNow(),
         };
 
         organisationAudits.Add(organisationAudit);
@@ -105,7 +105,7 @@ namespace CcsSso.Core.Service.External
         Status = organisationAuditInfo.Status,
         Actioned = organisationAuditInfo.Actioned,
         ActionedBy = organisationAuditInfo.ActionedBy,
-        CreatedOnUtc = _dateTimeService.GetUTCNow(),
+        ActionedOnUtc = _dateTimeService.GetUTCNow(),
       };
 
       _dataContext.OrganisationAudit.Add(organisationAudit);
@@ -128,7 +128,7 @@ namespace CcsSso.Core.Service.External
         organisationAudit.Status = organisationAuditInfo.Status;
         organisationAudit.Actioned = organisationAuditInfo.Actioned;
         organisationAudit.ActionedBy = organisationAuditInfo.ActionedBy;
-        organisationAudit.CreatedOnUtc = _dateTimeService.GetUTCNow();
+        organisationAudit.ActionedOnUtc = _dateTimeService.GetUTCNow();
 
         await _dataContext.SaveChangesAsync();
       }

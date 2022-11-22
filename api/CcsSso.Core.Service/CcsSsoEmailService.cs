@@ -157,7 +157,7 @@ namespace CcsSso.Core.Service
       var emailInfo = new EmailInfo()
       {
         To = email,
-        TemplateId = _appConfigInfo.EmailInfo.OrgPendingVerificationEmailTemplateId,
+        TemplateId = _appConfigInfo.OrgAutoValidationEmailInfo.OrgPendingVerificationEmailTemplateId,
         BodyContent = data
       };
       await SendEmailAsync(emailInfo);
@@ -169,7 +169,7 @@ namespace CcsSso.Core.Service
       var emailInfo = new EmailInfo()
       {
         To = email,
-        TemplateId = _appConfigInfo.EmailInfo.OrgBuyerStatusChangeUpdateToAllAdmins
+        TemplateId = _appConfigInfo.OrgAutoValidationEmailInfo.OrgBuyerStatusChangeUpdateToAllAdmins
       };
       await SendEmailAsync(emailInfo);
     }

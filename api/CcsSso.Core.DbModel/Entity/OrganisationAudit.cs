@@ -22,7 +22,7 @@ namespace CcsSso.Core.DbModel.Entity
 
     public string ActionedBy { get; set; }
 
-    public DateTime CreatedOnUtc { get; set; }
+    public DateTime ActionedOnUtc { get; set; }
 
     public Organisation Organisation { get; set; }
   }
