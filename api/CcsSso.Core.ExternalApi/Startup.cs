@@ -112,10 +112,7 @@ namespace CcsSso.ExternalApi
             UserConfirmEmailOnlyFederatedIdpTemplateId = Configuration["Email:UserConfirmEmailOnlyFederatedIdpTemplateId"],
             UserConfirmEmailOnlyUserIdPwdTemplateId = Configuration["Email:UserConfirmEmailOnlyUserIdPwdTemplateId"],
             UserConfirmEmailBothIdpTemplateId = Configuration["Email:UserConfirmEmailBothIdpTemplateId"],
-            UserRegistrationEmailUserIdPwdTemplateId= Configuration["Email:UserRegistrationEmailUserIdPwdTemplateId"],
-            // #Auto validation
-            OrgPendingVerificationEmailTemplateId = Configuration["Email:OrgPendingVerificationEmailTemplateId"],
-            OrgBuyerStatusChangeUpdateToAllAdmins = Configuration["Email:OrgBuyerStatusChangeUpdateToAllAdmins"],
+            UserRegistrationEmailUserIdPwdTemplateId= Configuration["Email:UserRegistrationEmailUserIdPwdTemplateId"],           
             SendNotificationsEnabled = sendNotificationsEnabled,
           },
           QueueUrlInfo = new QueueUrlInfo
@@ -144,6 +141,8 @@ namespace CcsSso.ExternalApi
             DeclineRightToBuyStatusEmailTemplateId = Configuration["OrgAutoValidationEmail:DeclineRightToBuyStatusEmailTemplateId"],
             ApproveRightToBuyStatusEmailTemplateId = Configuration["OrgAutoValidationEmail:ApproveRightToBuyStatusEmailTemplateId"],
             RemoveRightToBuyStatusEmailTemplateId = Configuration["OrgAutoValidationEmail:RemoveRightToBuyStatusEmailTemplateId"],
+            OrgPendingVerificationEmailTemplateId = Configuration["OrgAutoValidationEmail:OrgPendingVerificationEmailTemplateId"],
+            OrgBuyerStatusChangeUpdateToAllAdmins = Configuration["OrgAutoValidationEmail:OrgBuyerStatusChangeUpdateToAllAdmins"],
           },
         };
         return appConfigInfo;
