@@ -127,6 +127,7 @@ namespace CcsSso.Core.Service.External
         organisationAudit.Status = organisationAuditInfo.Status;
         organisationAudit.Actioned = organisationAuditInfo.Actioned;
         organisationAudit.ActionedBy = organisationAuditInfo.ActionedBy;
+        organisationAudit.CreatedOnUtc = _dateTimeService.GetUTCNow();
 
         await _dataContext.SaveChangesAsync();
       }
