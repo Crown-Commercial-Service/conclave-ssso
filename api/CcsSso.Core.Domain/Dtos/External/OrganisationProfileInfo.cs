@@ -136,6 +136,12 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string? CompanyHouseId { get; set; }
   }
 
+  public class AutoValidationOneTimeJobDetails : AutoValidationDetails
+  {
+    public bool isDomainValid { get; set; } = false;
+  }
+
+
   public class OrganisationAutoValidationRoleUpdate
   {
     public RoleEligibleTradeType OrgType { get; set; }
