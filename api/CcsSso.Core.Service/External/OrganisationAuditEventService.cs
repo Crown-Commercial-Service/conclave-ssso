@@ -37,17 +37,9 @@ namespace CcsSso.Core.Service.External
     {
       List<OrganisationAuditEventResponseInfo> auditEventInfos = new List<OrganisationAuditEventResponseInfo>();
 
-      var organisation = await _dataContext.Organisation
-                              .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
-
-      if (organisation == null)
-      {
-        throw new ResourceNotFoundException();
-      }
-
       var auditEvents = await _dataContext.OrganisationAuditEvent
         .Include(x => x.Organisation)
-        .Where(c => c.OrganisationId == organisation.Id)
+        .Where(c => c.Organisation.CiiOrganisationId == ciiOrganisationId)
         .ToListAsync();
 
       foreach (var auditEvent in auditEvents)
