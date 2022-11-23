@@ -43,7 +43,8 @@ namespace CcsSso.Core.Service.External
           OrganisationId = organisationAudit.Organisation.CiiOrganisationId,
           OrganisationName = organisationAudit.Organisation.LegalName,
           OrganisationType = organisationAudit.Organisation.SupplierBuyerType != null ? (int)organisationAudit.Organisation.SupplierBuyerType : 0,
-          DateOfRegistration = organisationAudit.Organisation.CreatedOnUtc.ToString(DateTimeFormat.DateFormat)
+          DateOfRegistration = organisationAudit.Organisation.CreatedOnUtc,
+          RightToBuy = organisationAudit.Organisation.RightToBuy
         }), resultSetCriteria);
 
       var orgListResponse = new OrganisationAuditInfoListResponse
@@ -77,7 +78,7 @@ namespace CcsSso.Core.Service.External
           Status = OrgAutoValidationStatus.AutoApproved,
           Actioned = organisationAuditInfo.Actioned,
           ActionedBy = organisationAuditInfo.ActionedBy,
-          CreatedOnUtc = _dateTimeService.GetUTCNow(),
+          ActionedOnUtc = _dateTimeService.GetUTCNow(),
         };
 
         organisationAudits.Add(organisationAudit);
@@ -104,7 +105,7 @@ namespace CcsSso.Core.Service.External
         Status = organisationAuditInfo.Status,
         Actioned = organisationAuditInfo.Actioned,
         ActionedBy = organisationAuditInfo.ActionedBy,
-        CreatedOnUtc = _dateTimeService.GetUTCNow(),
+        ActionedOnUtc = _dateTimeService.GetUTCNow(),
       };
 
       _dataContext.OrganisationAudit.Add(organisationAudit);
@@ -127,7 +128,7 @@ namespace CcsSso.Core.Service.External
         organisationAudit.Status = organisationAuditInfo.Status;
         organisationAudit.Actioned = organisationAuditInfo.Actioned;
         organisationAudit.ActionedBy = organisationAuditInfo.ActionedBy;
-        organisationAudit.CreatedOnUtc = _dateTimeService.GetUTCNow();
+        organisationAudit.ActionedOnUtc = _dateTimeService.GetUTCNow();
 
         await _dataContext.SaveChangesAsync();
       }

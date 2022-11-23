@@ -81,10 +81,7 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/UserRegistrationEmailUserIdPwdTemplateId", "Email:UserRegistrationEmailUserIdPwdTemplateId"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/UserDelegatedAccessEmailTemplateId", "Email:UserDelegatedAccessEmailTemplateId"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/SendNotificationsEnabled", "Email:SendNotificationsEnabled"));
-      // #Auto validation
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/OrgPendingVerificationEmailTemplateId", "Email:OrgPendingVerificationEmailTemplateId"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Email/OrgBuyerStatusChangeUpdateToAllAdmins", "Email:OrgBuyerStatusChangeUpdateToAllAdmins"));
-
+      
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Cii/Url", "Cii:Url"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Cii/Token", "Cii:Token"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "Cii/Delete_Token", "Cii:Delete_Token"));
@@ -142,6 +139,9 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/DeclineRightToBuyStatusEmailTemplateId", "OrgAutoValidationEmail:DeclineRightToBuyStatusEmailTemplateId"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/ApproveRightToBuyStatusEmailTemplateId", "OrgAutoValidationEmail:ApproveRightToBuyStatusEmailTemplateId"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/RemoveRightToBuyStatusEmailTemplateId", "OrgAutoValidationEmail:RemoveRightToBuyStatusEmailTemplateId"));
+
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/OrgPendingVerificationEmailTemplateId", "OrgAutoValidationEmail:OrgPendingVerificationEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/OrgBuyerStatusChangeUpdateToAllAdmins", "OrgAutoValidationEmail:OrgBuyerStatusChangeUpdateToAllAdmins"));
 
       foreach (var configuration in configurations)
       {
