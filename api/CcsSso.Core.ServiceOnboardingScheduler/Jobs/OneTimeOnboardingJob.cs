@@ -78,8 +78,8 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
           }
           try
           {
-            startDate = DateTime.ParseExact(startDateString, "yyyy-MM-dd hh:mm", CultureInfo.InvariantCulture);
-            endDate = DateTime.ParseExact(endDateString, "yyyy-MM-dd hh:mm", CultureInfo.InvariantCulture);
+            startDate = DateTime.ParseExact(startDateString, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+            endDate = DateTime.ParseExact(endDateString, "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
           }
           catch (FormatException)
