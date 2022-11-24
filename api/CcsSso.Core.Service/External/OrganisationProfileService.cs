@@ -1149,11 +1149,17 @@ namespace CcsSso.Core.Service.External
 
       //for org roles
       string rolesAsssignToOrg = await AutoValidationOrgRoleAssignmentAsync(organisation, isAutoValidationSuccess: false);
-      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToOrg));
-
+      if (!string.IsNullOrWhiteSpace(rolesAsssignToOrg))
+      {
+        auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToOrg));
+      }
+      
       //for admin roles
       string rolesAsssignToAdmin = await AutoValidationAdminRoleAssignmentAsync(adminUserDetails, organisation.SupplierBuyerType, organisation.CiiOrganisationId, isAutoValidationSuccess: false);
-      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.AdminRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToAdmin));
+      if (!string.IsNullOrWhiteSpace(rolesAsssignToAdmin))
+      {
+        auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.AdminRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToAdmin));
+      }
 
       // invalid
       // Send email to CCS admin to notify
