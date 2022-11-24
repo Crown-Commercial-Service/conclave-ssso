@@ -1324,10 +1324,20 @@ namespace CcsSso.ExternalApi.Controllers
     [HttpPost("{ciiOrganisationId}/autovalidationjob")]
     [SwaggerOperation(Tags = new[] { "AutoValidation" })]
     [ProducesResponseType(typeof(string), 200)]
-    public async Task<bool> AutovalidationJob(string ciiOrganisationId)
+    public async Task<Tuple<bool,string>> AutovalidationJob(string ciiOrganisationId)
     {
       return await _organisationService.AutoValidateOrganisationJob(ciiOrganisationId);
     }
+
+    [HttpPost("{ciiOrganisationId}/autovalidationjob/roles")]
+    [SwaggerOperation(Tags = new[] { "AutovalidationJobRoles" })]
+    [ProducesResponseType(typeof(string), 200)]
+    public async Task<bool> AutovalidationJobRoles(string ciiOrganisationId, AutoValidationOneTimeJobDetails autoValidationOneTimeJobDetails)
+    {
+      // bool isDomainValid = true;
+      return await _organisationService.AutoValidateOrganisationRoleFromJob(ciiOrganisationId, autoValidationOneTimeJobDetails);
+    }
+
     #endregion
   }
 }

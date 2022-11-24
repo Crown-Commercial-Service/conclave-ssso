@@ -13,7 +13,7 @@ namespace CcsSso.Core.JobScheduler.Model
     public string LegalName { get; set; }
     public bool? RightToBuy { get; set; }
 
-    public DateTime CreatedOnUtc { get; set; }
+    public DateTime? CreatedOnUtc { get; set; }
 
     public int? SupplierBuyerType { get; set; }
 
