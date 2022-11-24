@@ -900,29 +900,7 @@ namespace CcsSso.Core.Service.External
       }
     }
 
-    public async Task<bool> AutoValidateOrganisationJob(string ciiOrganisationId)
-    {
-      if (!_applicationConfigurationInfo.OrgAutoValidation.Enable)
-      {
-        throw new InvalidOperationException();
-      }
-
-      var organisation = await _dataContext.Organisation.Include(er => er.OrganisationEligibleRoles)
-                              .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
-
-      if (organisation == null)
-      {
-        throw new ResourceNotFoundException();
-      }
-
-      //call lookup api
-      bool isDomainValid = AutoValidateOrganisationDetails(ciiOrganisationId, "").Result.Item1;
-
-      return isDomainValid;
-
-      //TODO: Assing role to buyer or both type of org
-
-    }
+   
 
     // Registration
     public async Task<bool> AutoValidateOrganisationRegistration(string ciiOrganisationId, AutoValidationDetails autoValidationDetails)
@@ -1104,7 +1082,8 @@ namespace CcsSso.Core.Service.External
       return Tuple.Create(isDomainValid, adminEmailId);
     }
 
-    private async Task<bool> AutoValidateForValidDomain(Organisation organisation, User actionedBy, string schemeIdentifier)
+
+      private async Task<bool> AutoValidateForValidDomain(Organisation organisation, User actionedBy, string schemeIdentifier, bool isFromBackgroundJob = false)
     {
       Guid groupId = Guid.NewGuid();
       List<OrganisationAuditEventInfo> auditEventLogs = new();
@@ -1170,11 +1149,17 @@ namespace CcsSso.Core.Service.External
 
       //for org roles
       string rolesAsssignToOrg = await AutoValidationOrgRoleAssignmentAsync(organisation, isAutoValidationSuccess: false);
-      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToOrg));
-
+      if (!string.IsNullOrWhiteSpace(rolesAsssignToOrg))
+      {
+        auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToOrg));
+      }
+      
       //for admin roles
       string rolesAsssignToAdmin = await AutoValidationAdminRoleAssignmentAsync(adminUserDetails, organisation.SupplierBuyerType, organisation.CiiOrganisationId, isAutoValidationSuccess: false);
-      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.AdminRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToAdmin));
+      if (!string.IsNullOrWhiteSpace(rolesAsssignToAdmin))
+      {
+        auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.AdminRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToAdmin));
+      }
 
       // invalid
       // Send email to CCS admin to notify
