@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.Exceptions;
@@ -147,6 +148,13 @@ namespace CcsSso.Service
         .FirstOrDefaultAsync();
       if (organisation != null)
       {
+        bool? isAutovalidationPending = null;
+        var organisationAudit = _dataContext.OrganisationAudit.FirstOrDefault(x => x.OrganisationId == organisation.Id);
+        if (organisationAudit != null)
+        {
+          isAutovalidationPending = organisationAudit.Status == OrgAutoValidationStatus.AutoPending;
+        }
+
         var dto = new OrganisationDto
         {
           OrganisationId = organisation.Id,
@@ -155,7 +163,8 @@ namespace CcsSso.Service
           RightToBuy = organisation.RightToBuy,
           PartyId = organisation.PartyId,
           LegalName = organisation.LegalName,
-          SupplierBuyerType = organisation.SupplierBuyerType ?? 0
+          SupplierBuyerType = organisation.SupplierBuyerType ?? 0,
+          IsAutovalidationPending = isAutovalidationPending,
         };
         var contactPoint = await _dataContext.ContactPoint
           .Include(c => c.ContactDetail)
@@ -276,7 +285,7 @@ namespace CcsSso.Service
         .ThenInclude(o => o.Organisation)
         .Where(u => u.IsDeleted == false
         // #Delegated only return primary users
-        && u.UserType == Core.DbModel.Constants.UserType.Primary 
+        && u.UserType == Core.DbModel.Constants.UserType.Primary
         && (_requestContext.UserId != 0 && u.Party.Person.Organisation.CiiOrganisationId != _requestContext.CiiOrganisationId) &&
         (string.IsNullOrEmpty(name) || u.UserName.Contains(name) || (u.Party.Person.FirstName + " " + u.Party.Person.LastName).ToLower().Contains(name) || u.Party.Person.Organisation.LegalName.ToLower().Contains(name)) &&
         u.Party.Person.Organisation.IsDeleted == false).Select(user => new OrganisationUserDto
@@ -363,7 +372,7 @@ namespace CcsSso.Service
           .FirstOrDefaultAsync(r => r.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && r.Organisation.CiiOrganisationId == ciiOrgId);
 
         var roleIds = new List<int> { adminRole.Id };
-        
+
         if (!_appConfigInfo.OrgAutoValidation.Enable)
         {
           if (organisationRegistrationDto.SupplierBuyerType == 0) //Supplier
@@ -410,7 +419,7 @@ namespace CcsSso.Service
           }
         };
         // #Auto validation
-          await _userProfileService.CreateUserAsync(userProfileEditRequestInfo, isNewOrgAdmin: true);
+        await _userProfileService.CreateUserAsync(userProfileEditRequestInfo, isNewOrgAdmin: true);
       }
       catch (ResourceAlreadyExistsException)
       {
