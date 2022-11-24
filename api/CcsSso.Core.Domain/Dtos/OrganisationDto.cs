@@ -26,7 +26,7 @@ namespace CcsSso.Dtos.Domain.Models
 
     public Address Address { get; set; }
 
-    public bool? IsAutovalidationPending { get; set; }
+    public bool IsAutovalidationPending { get; set; }
   }
 
   public class OrganisationRegistrationDto

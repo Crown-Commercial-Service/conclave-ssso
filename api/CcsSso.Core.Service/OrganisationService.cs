@@ -148,7 +148,7 @@ namespace CcsSso.Service
         .FirstOrDefaultAsync();
       if (organisation != null)
       {
-        bool? isAutovalidationPending = null;
+        bool isAutovalidationPending = false;
         var organisationAudit = _dataContext.OrganisationAudit.FirstOrDefault(x => x.OrganisationId == organisation.Id);
         if (organisationAudit != null)
         {
