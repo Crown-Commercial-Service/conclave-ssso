@@ -132,6 +132,9 @@ namespace CcsSso.Core.Service.External
 
         await _dataContext.SaveChangesAsync();
       }
+      else {
+        await CreateOrganisationAuditAsync(organisationAuditInfo);
+      }
     }
 
     private void Validate(OrganisationAuditInfo organisationAuditInfo)
