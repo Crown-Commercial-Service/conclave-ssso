@@ -74,6 +74,7 @@ namespace CcsSso.Core.JobScheduler
           OrgAutoValidationJobSettings orgAutoValidationJobSettings;
           OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles;
           OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob;
+          OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail;
 
 
           if (vaultEnabled)
@@ -96,13 +97,13 @@ namespace CcsSso.Core.JobScheduler
 
               ReadFromAWS(out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings, out bulkUploadSettings,
                 out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
-                 out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, parameters);
+                 out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles,out orgAutoValidationOneTimeJobEmail, parameters);
             }
             else
             {
               ReadFromHashicorp(out dbConnection, out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings,
                 out bulkUploadSettings, out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
-                out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles);
+                out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail);
 
             }
           }
@@ -110,7 +111,7 @@ namespace CcsSso.Core.JobScheduler
           {
             ReadFromAppSecret(hostContext, out dbConnection, out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings,
               out bulkUploadSettings, out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
-              out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles);
+              out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail);
           }
 
           services.AddSingleton(s =>
@@ -138,7 +139,8 @@ namespace CcsSso.Core.JobScheduler
               },
               OrgAutoValidationJobSettings = orgAutoValidationJobSettings,
               OrgAutoValidationOneTimeJob=orgAutoValidationOneTimeJob,
-              OrgAutoValidationOneTimeJobRoles = orgAutoValidationOneTimeJobRoles
+              OrgAutoValidationOneTimeJobRoles = orgAutoValidationOneTimeJobRoles,
+              OrgAutoValidationOneTimeJobEmail =orgAutoValidationOneTimeJobEmail
             };
           });
 
@@ -227,7 +229,8 @@ namespace CcsSso.Core.JobScheduler
       out ScheduleJobSettings scheduleJobSettings, out BulkUploadSettings bulkUploadSettings, out RedisCacheSettingsVault redisCacheSettingsVault,
       out EmailConfigurationInfo emailConfigurationInfo, out DocUploadInfoVault docUploadConfig, out S3ConfigurationInfoVault s3ConfigurationInfo,
       out OrgAutoValidationJobSettings orgAutoValidationJobSettings,
-      out OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob, out OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles)
+      out OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob, out OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles,
+      out OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail)
     {
       var config = hostContext.Configuration;
       dbConnection = config["DbConnection"];
@@ -245,13 +248,15 @@ namespace CcsSso.Core.JobScheduler
       orgAutoValidationJobSettings = config.GetSection("OrgAutoValidation").Get<OrgAutoValidationJobSettings>();
       orgAutoValidationOneTimeJob = config.GetSection("OrgAutoValidationOneTimeJob").Get<OrgAutoValidationOneTimeJob>();
       orgAutoValidationOneTimeJobRoles = config.GetSection("OrgAutoValidationOneTimeJobRoles").Get<OrgAutoValidationOneTimeJobRoles>();
+      orgAutoValidationOneTimeJobEmail = config.GetSection("OrgAutoValidationOneTimeJobEmail").Get<OrgAutoValidationOneTimeJobEmail>();
     }
 
     private static void ReadFromHashicorp(out string dbConnection, out CiiSettings ciiSettings, out List<UserDeleteJobSetting> userDeleteJobSettings,
       out SecurityApiSettings securityApiSettings, out WrapperApiSettings wrapperApiSettings, out ScheduleJobSettings scheduleJobSettings,
       out BulkUploadSettings bulkUploadSettings, out RedisCacheSettingsVault redisCacheSettingsVault, out EmailConfigurationInfo emailConfigurationInfo,
       out DocUploadInfoVault docUploadConfig, out S3ConfigurationInfoVault s3ConfigurationInfo, out OrgAutoValidationJobSettings orgAutoValidationJobSettings,
-      out OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob, out OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles)
+      out OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob, out OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles,
+      out OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail)
     {
       var secrets = ProgramHelpers.LoadSecretsAsync().Result;
       dbConnection = secrets["DbConnection"].ToString();
@@ -269,6 +274,7 @@ namespace CcsSso.Core.JobScheduler
       orgAutoValidationJobSettings = JsonConvert.DeserializeObject<OrgAutoValidationJobSettings>(secrets["OrgAutoValidation"].ToString());
       orgAutoValidationOneTimeJob = JsonConvert.DeserializeObject<OrgAutoValidationOneTimeJob>(secrets["OrgAutoValidationOneTimeJob"].ToString());
       orgAutoValidationOneTimeJobRoles = JsonConvert.DeserializeObject<OrgAutoValidationOneTimeJobRoles>(secrets["OrgAutoValidationOneTimeJobRoles"].ToString());
+      orgAutoValidationOneTimeJobEmail = JsonConvert.DeserializeObject<OrgAutoValidationOneTimeJobEmail>(secrets["OrgAutoValidationOneTimeJobEmail"].ToString());
 
 
     }
@@ -277,7 +283,8 @@ namespace CcsSso.Core.JobScheduler
       out WrapperApiSettings wrapperApiSettings, out ScheduleJobSettings scheduleJobSettings, out BulkUploadSettings bulkUploadSettings,
       out RedisCacheSettingsVault redisCacheSettingsVault, out EmailConfigurationInfo emailConfigurationInfo, out DocUploadInfoVault docUploadConfig,
       out S3ConfigurationInfoVault s3ConfigurationInfo, out OrgAutoValidationJobSettings orgAutoValidationJobSettings,
-      out OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob, out OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles, List<Parameter> parameters)
+      out OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob, out OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles,
+      out OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail,List<Parameter> parameters)
     {
       ciiSettings = (CiiSettings)ProgramHelpers.FillAwsParamsValue(typeof(CiiSettings), parameters);
       userDeleteJobSettings = (List<UserDeleteJobSetting>)ProgramHelpers.FillAwsParamsValue(typeof(List<UserDeleteJobSetting>), parameters);
@@ -293,6 +300,7 @@ namespace CcsSso.Core.JobScheduler
       orgAutoValidationJobSettings = (OrgAutoValidationJobSettings)ProgramHelpers.FillAwsParamsValue(typeof(OrgAutoValidationJobSettings), parameters);
       orgAutoValidationOneTimeJob = (OrgAutoValidationOneTimeJob)ProgramHelpers.FillAwsParamsValue(typeof(OrgAutoValidationOneTimeJob), parameters);
       orgAutoValidationOneTimeJobRoles = (OrgAutoValidationOneTimeJobRoles)ProgramHelpers.FillAwsParamsValue(typeof(OrgAutoValidationOneTimeJobRoles), parameters);
+      orgAutoValidationOneTimeJobEmail = (OrgAutoValidationOneTimeJobEmail)ProgramHelpers.FillAwsParamsValue(typeof(OrgAutoValidationOneTimeJobEmail), parameters);
 
     }
 

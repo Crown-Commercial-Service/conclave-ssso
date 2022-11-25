@@ -29,7 +29,8 @@ namespace CcsSso.Core.Domain.Contracts.External
     Task UpdateOrganisationEligibleRolesAsync(string ciiOrganisationId, bool isBuyer, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete);
 
     // #Auto validation
-    Task<bool> AutoValidateOrganisationJob(string ciiOrganisationId);
+    Task<Tuple<bool, string>> AutoValidateOrganisationJob(string ciiOrganisationId);
+    Task<bool> AutoValidateOrganisationRoleFromJob(string ciiOrganisationId,  AutoValidationOneTimeJobDetails autoValidationOneTimeJobDetails);
 
     Task<bool> AutoValidateOrganisationRegistration(string organisationId, AutoValidationDetails autoValidationDetails);
 

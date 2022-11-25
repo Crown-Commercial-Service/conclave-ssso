@@ -23,6 +23,8 @@ namespace CcsSso.Core.Domain.Jobs
 
     public OrgAutoValidationJobSettings OrgAutoValidationJobSettings { get; set; }
     public OrgAutoValidationOneTimeJob? OrgAutoValidationOneTimeJob { get; set; }
+    public OrgAutoValidationOneTimeJobEmail? OrgAutoValidationOneTimeJobEmail { get; set; }
+
     public OrgAutoValidationOneTimeJobRoles? OrgAutoValidationOneTimeJobRoles { get; set; }
   }
 
@@ -134,6 +136,12 @@ namespace CcsSso.Core.Domain.Jobs
     public string[] RemoveRoleFromBuyerOrg { get; set; }
     public string[] AddRolesToSupplierOrg { get; set; }
     public string[] AddRolesToBothOrgOnly { get; set; }
+
+  }
+
+  public class OrgAutoValidationOneTimeJobEmail
+  {
+    public string FailedAutoValidationNotificationTemplateId { get; set; }
 
   }
 }
