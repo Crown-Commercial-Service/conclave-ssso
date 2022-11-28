@@ -48,4 +48,5 @@ RETURN 1;
 END;
 
 $$ LANGUAGE plpgsql;
+SELECT Update_AutoValidationRoleAssignment();
 DROP FUNCTION Update_AutoValidationRoleAssignment;
