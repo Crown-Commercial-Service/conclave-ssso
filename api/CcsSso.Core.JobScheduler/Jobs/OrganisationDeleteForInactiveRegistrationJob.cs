@@ -129,8 +129,7 @@ namespace CcsSso.Core.JobScheduler
                                   Actioned = OrganisationAuditActionType.Job.ToString(),
                                   Event = OrganisationAuditEventType.InactiveOrganisationRemoved.ToString(),
                                   GroupId = groupId,
-                                  OrganisationId = orgDetail.Id,
-                                  ActionedBy = OrganisationAuditActionType.Job.ToString()
+                                  OrganisationId = orgDetail.Id
                                 }
                               };
 
