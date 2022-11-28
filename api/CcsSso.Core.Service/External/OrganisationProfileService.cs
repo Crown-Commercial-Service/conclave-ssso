@@ -1604,10 +1604,10 @@ namespace CcsSso.Core.Service.External
       List<User> allAdminsOfOrg = await GetAdminUsers(organisation, false);
 
       string rolesAsssignToOrg = await ManualValidateOrgRoleAssignmentAsync(organisation);
+      await ManualValidateAdminRoleAssignmentAsync(organisation, allAdminsOfOrg);
+
       auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.ManualAcceptationRightToBuy, groupId, organisation.Id, "", null, actionedBy: actionedBy));
       auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, "", rolesAsssignToOrg, actionedBy: actionedBy));
-
-      await ManualValidateAdminRoleAssignmentAsync(organisation, allAdminsOfOrg);
 
       organisation.RightToBuy = true;
 
@@ -1664,6 +1664,11 @@ namespace CcsSso.Core.Service.External
 
       organisation.RightToBuy = false;
       organisation.SupplierBuyerType = (int)RoleEligibleTradeType.Supplier;
+
+      string rolesAsssignToOrg = await ManualValidateOrgRoleAssignmentAsync(organisation);
+      await ManualValidateAdminRoleAssignmentAsync(organisation, allAdminsOfOrg);
+
+      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, "", rolesAsssignToOrg, actionedBy: actionedBy));
 
       var organisationAuditInfo = new OrganisationAuditInfo
       {
@@ -1726,6 +1731,10 @@ namespace CcsSso.Core.Service.External
       {
         defaultOrgRoles = defaultOrgRoles.Where(o => o.IsBothSuccess == true).ToList();
       }
+      else if (organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Supplier)
+      {
+        defaultOrgRoles = defaultOrgRoles.Where(o => o.IsSupplier == true).ToList();
+      }
 
       StringBuilder rolesAssigned = new();
       foreach (var role in defaultOrgRoles.Select(x => x.CcsAccessRole))
@@ -1758,6 +1767,10 @@ namespace CcsSso.Core.Service.External
       else if (organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Both)
       {
         defaultAdminRoles = defaultAdminRoles.Where(o => o.IsBothSuccess == true).ToList();
+      }
+      else if (organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Supplier)
+      {
+        defaultAdminRoles = defaultAdminRoles.Where(o => o.IsSupplier == true).ToList();
       }
 
       var defaultRoles = await _dataContext.OrganisationEligibleRole
