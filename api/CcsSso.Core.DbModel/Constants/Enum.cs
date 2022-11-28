@@ -60,7 +60,7 @@ namespace CcsSso.Core.DbModel.Constants
     ManualAcceptationRightToBuy,
     ManualDeclineRightToBuy,
     AutomaticAcceptationRightToBuy,
-    AutomaticDeclineRightToBuy,
+    //AutomaticDeclineRightToBuy,
     OrganisationTypeBuyerToSupplier,
     OrganisationTypeBuyerToBoth,
     OrganisationTypeBothToSupplier,
