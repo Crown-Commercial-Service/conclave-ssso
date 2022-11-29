@@ -1612,7 +1612,10 @@ namespace CcsSso.Core.Service.External
       await ManualValidateAdminRoleAssignmentAsync(organisation, allAdminsOfOrg);
 
       auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.ManualAcceptationRightToBuy, groupId, organisation.Id, "", null, actionedBy: actionedBy));
-      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, "", rolesAsssignToOrg, actionedBy: actionedBy));
+      if (!string.IsNullOrWhiteSpace(rolesAsssignToOrg))
+      {
+        auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, "", rolesAsssignToOrg, actionedBy: actionedBy));
+      }
 
       organisation.RightToBuy = true;
 
@@ -1665,7 +1668,10 @@ namespace CcsSso.Core.Service.External
         auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrganisationTypeBothToSupplier, groupId, organisation.Id, "", null, actionedBy: actionedBy));
       }
 
-      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrgRoleUnassigned, groupId, organisation.Id, "", rolesUnassignedToOrg, actionedBy: actionedBy));
+      if (!string.IsNullOrWhiteSpace(rolesUnassignedToOrg))
+      {
+        auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrgRoleUnassigned, groupId, organisation.Id, "", rolesUnassignedToOrg, actionedBy: actionedBy));
+      }
 
       organisation.RightToBuy = false;
       organisation.SupplierBuyerType = (int)RoleEligibleTradeType.Supplier;
@@ -1673,7 +1679,10 @@ namespace CcsSso.Core.Service.External
       string rolesAsssignToOrg = await ManualValidateOrgRoleAssignmentAsync(organisation);
       await ManualValidateAdminRoleAssignmentAsync(organisation, allAdminsOfOrg);
 
-      auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, "", rolesAsssignToOrg, actionedBy: actionedBy));
+      if (!string.IsNullOrWhiteSpace(rolesAsssignToOrg))
+      {
+        auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, "", rolesAsssignToOrg, actionedBy: actionedBy));
+      }
 
       var organisationAuditInfo = new OrganisationAuditInfo
       {
