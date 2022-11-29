@@ -900,7 +900,7 @@ namespace CcsSso.Core.Service.External
       }
     }
 
-   
+
 
     // Registration
     public async Task<bool> AutoValidateOrganisationRegistration(string ciiOrganisationId, AutoValidationDetails autoValidationDetails)
@@ -962,15 +962,19 @@ namespace CcsSso.Core.Service.External
       {
         int? oldOrgSupplierBuyerType = organisation.SupplierBuyerType;
         bool isOrgTypeSwitched = organisation.SupplierBuyerType != (int)newOrgType;
-        organisation.RightToBuy = false;
+        organisation.RightToBuy = isOrgTypeSwitched ? false: organisation.RightToBuy;
         bool autoValidationSuccess = false;
         User actionedBy = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
 
-        if (newOrgType != RoleEligibleTradeType.Supplier)
+        if (isOrgTypeSwitched && newOrgType != RoleEligibleTradeType.Supplier)
         {
           var autoValidationOrgDetails = await AutoValidateOrganisationDetails(organisation.CiiOrganisationId);
           autoValidationSuccess = autoValidationOrgDetails != null ? autoValidationOrgDetails.Item1 : false;
           organisation.RightToBuy = autoValidationSuccess;
+        }
+        else 
+        {
+          autoValidationSuccess = organisation.RightToBuy ?? false;
         }
 
         // Switched from supplier to buyer or both
@@ -997,15 +1001,15 @@ namespace CcsSso.Core.Service.External
           auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, GetOrgEventTypeChange((int)oldOrgSupplierBuyerType, (int)newOrgType), groupId, organisation.Id, companyHouseId, actionedBy: actionedBy));
         }
 
-        if (newOrgType != RoleEligibleTradeType.Supplier)
+        if (isOrgTypeSwitched && newOrgType != RoleEligibleTradeType.Supplier)
         {
-          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, autoValidationSuccess ? OrganisationAuditEventType.AutomaticAcceptationRightToBuy : OrganisationAuditEventType.NotRecognizedAsVerifiedBuyer, groupId, organisation.Id, companyHouseId));
+          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, autoValidationSuccess ? OrganisationAuditEventType.AutomaticAcceptationRightToBuy : OrganisationAuditEventType.NotRecognizedAsVerifiedBuyer, groupId, organisation.Id, companyHouseId));
         }
 
         // Verified buyer only (Auto validated) roles only assigned
         if (!string.IsNullOrWhiteSpace(rolesAssigned.Item1) && (newOrgType != RoleEligibleTradeType.Supplier || (isOrgTypeSwitched && newOrgType == RoleEligibleTradeType.Supplier)))
         {
-          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, companyHouseId, roles: rolesAssigned.Item1));
+          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, companyHouseId, roles: rolesAssigned.Item1));
         }
         // Normal roles assigned
         if (!string.IsNullOrWhiteSpace(rolesAssigned.Item2) && (newOrgType != RoleEligibleTradeType.Supplier || (isOrgTypeSwitched && newOrgType == RoleEligibleTradeType.Supplier)))
@@ -1091,7 +1095,7 @@ namespace CcsSso.Core.Service.External
     }
 
 
-      private async Task<bool> AutoValidateForValidDomain(Organisation organisation, User actionedBy, string schemeIdentifier, bool isFromBackgroundJob = false)
+    private async Task<bool> AutoValidateForValidDomain(Organisation organisation, User actionedBy, string schemeIdentifier, bool isFromBackgroundJob = false)
     {
       Guid groupId = Guid.NewGuid();
       List<OrganisationAuditEventInfo> auditEventLogs = new();
@@ -1170,7 +1174,7 @@ namespace CcsSso.Core.Service.External
       {
         auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToOrg));
       }
-      
+
       //for admin roles
       string rolesAsssignToAdmin = await AutoValidationAdminRoleAssignmentAsync(adminUserDetails, organisation.SupplierBuyerType, organisation.CiiOrganisationId, isAutoValidationSuccess: false);
       if (!string.IsNullOrWhiteSpace(rolesAsssignToAdmin))
@@ -1210,6 +1214,7 @@ namespace CcsSso.Core.Service.External
       return false;
     }
 
+    // Registration auto validation role assignment
     private async Task<string> AutoValidationOrgRoleAssignmentAsync(Organisation organisation, bool isAutoValidationSuccess)
     {
       var defaultOrgRoles = await _dataContext.AutoValidationRole.Include(x => x.CcsAccessRole)
@@ -1354,7 +1359,7 @@ namespace CcsSso.Core.Service.External
 
       // list of roles to remove for non verified buyer
       List<AutoValidationRole> autoValidationFailedRolesForOrg = new();
-      var autoValidationRoles = await _dataContext.AutoValidationRole.Where(x => x.AssignToOrg == true).ToListAsync();
+      var autoValidationRoles = await _dataContext.AutoValidationRole.ToListAsync();
       var verifiedBuyerOnlyRolesForOrg = autoValidationRoles.Where(x => x.IsBuyerSuccess).ToList();
 
       if (newOrgType == RoleEligibleTradeType.Supplier)
@@ -1739,7 +1744,7 @@ namespace CcsSso.Core.Service.External
       StringBuilder rolesAssigned = new();
       foreach (var role in defaultOrgRoles.Select(x => x.CcsAccessRole))
       {
-        if (!organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == role.Id))
+        if (!organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == role.Id && !x.IsDeleted))
         {
           var defaultOrgRole = new OrganisationEligibleRole
           {
