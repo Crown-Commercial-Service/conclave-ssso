@@ -962,7 +962,7 @@ namespace CcsSso.Core.Service.External
       {
         int? oldOrgSupplierBuyerType = organisation.SupplierBuyerType;
         bool isOrgTypeSwitched = organisation.SupplierBuyerType != (int)newOrgType;
-        organisation.RightToBuy = isOrgTypeSwitched ? false: organisation.RightToBuy;
+        organisation.RightToBuy = isOrgTypeSwitched ? false : organisation.RightToBuy;
         bool autoValidationSuccess = false;
         User actionedBy = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
 
@@ -972,7 +972,7 @@ namespace CcsSso.Core.Service.External
           autoValidationSuccess = autoValidationOrgDetails != null ? autoValidationOrgDetails.Item1 : false;
           organisation.RightToBuy = autoValidationSuccess;
         }
-        else 
+        else
         {
           autoValidationSuccess = organisation.RightToBuy ?? false;
         }
@@ -1037,7 +1037,7 @@ namespace CcsSso.Core.Service.External
 
         await _dataContext.SaveChangesAsync();
 
-        if (isOrgTypeSwitched && orgStatus != null)
+        if (isOrgTypeSwitched && newOrgType != RoleEligibleTradeType.Supplier && orgStatus != null)
         {
           await _organisationAuditService.UpdateOrganisationAuditAsync(orgStatus);
         }
