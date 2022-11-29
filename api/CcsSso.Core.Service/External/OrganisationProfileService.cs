@@ -1360,7 +1360,7 @@ namespace CcsSso.Core.Service.External
       // list of roles to remove for non verified buyer
       List<AutoValidationRole> autoValidationFailedRolesForOrg = new();
       var autoValidationRoles = await _dataContext.AutoValidationRole.ToListAsync();
-      var verifiedBuyerOnlyRolesForOrg = autoValidationRoles.Where(x => x.IsBuyerSuccess).ToList();
+      var verifiedBuyerOnlyRolesForOrg = autoValidationRoles.Where(x => x.IsBuyerSuccess && x.AssignToOrg).ToList();
 
       if (newOrgType == RoleEligibleTradeType.Supplier)
       {
