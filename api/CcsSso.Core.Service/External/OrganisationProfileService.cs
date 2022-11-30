@@ -1260,9 +1260,18 @@ namespace CcsSso.Core.Service.External
         defaultAdminRoles = isAutoValidationSuccess ? defaultAdminRoles.Where(o => o.IsBuyerSuccess == true).ToList() : defaultAdminRoles.Where(o => o.IsBuyerFailed == true).ToList();
       }
 
+      var roleIds = defaultAdminRoles.Select(x => x.CcsAccessRoleId);
+
+      if (isAutoValidationSuccess)
+      {
+        var successAdminRoleKeys = orgType == (int)RoleEligibleTradeType.Both ? _applicationConfigurationInfo.OrgAutoValidation.BothSuccessAdminRoles : _applicationConfigurationInfo.OrgAutoValidation.BuyerSuccessAdminRoles;
+        var successAdminRoleIds = await _dataContext.CcsAccessRole.Where(x => successAdminRoleKeys.Contains(x.CcsAccessRoleNameKey)).Select(r => r.Id).ToListAsync();
+        roleIds = roleIds.Union(successAdminRoleIds);
+      }
+
       var defaultRoles = await _dataContext.OrganisationEligibleRole
             .Where(r => r.Organisation.CiiOrganisationId == ciiOrganisation && !r.IsDeleted &&
-            defaultAdminRoles.Select(x => x.CcsAccessRoleId).Contains(r.CcsAccessRoleId))
+            roleIds.Contains(r.CcsAccessRoleId))
             .ToListAsync();
 
       // if (organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Buyer)
@@ -1477,16 +1486,37 @@ namespace CcsSso.Core.Service.External
       return rolesRemoved.ToString();
     }
 
+    private async Task RemoveUserRoles(List<OrganisationRole> rolesToDelete, Organisation organisation)
+    {
+      if (rolesToDelete != null && rolesToDelete.Any())
+      {
+        var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
+
+        var userAccessRolesForOrgUsers = await _dataContext.UserAccessRole.Where(uar => !uar.IsDeleted &&
+                                           uar.OrganisationEligibleRole.OrganisationId == organisation.Id).ToListAsync();
+
+        var userAccessRolesWithDeletedRoles = userAccessRolesForOrgUsers
+          .Where(uar => deletingRoleIds.Contains(uar.OrganisationEligibleRole.CcsAccessRoleId)).ToList();
+
+        userAccessRolesWithDeletedRoles.ForEach((userAccessRolesWithDeletedRole) =>
+        {
+          userAccessRolesWithDeletedRole.IsDeleted = true;
+        });
+      }
+    }
+
     private async Task AdminRoleAssignment(Organisation organisation, List<OrganisationRole> rolesToAdd)
     {
       List<User> allAdminsOfOrg = await GetAdminUsers(organisation, false);
-      var autoValidationRoles = await _dataContext.AutoValidationRole.Where(x => x.AssignToAdmin == true).ToListAsync();
-      //var allOrgEligibleRoles = await _dataContext.OrganisationEligibleRole
-      //      .Where(r => r.Organisation.CiiOrganisationId == organisation.CiiOrganisationId)
-      //      .ToListAsync();
+
+      var successAdminRoleKeys = _applicationConfigurationInfo.OrgAutoValidation.BothSuccessAdminRoles.Union(_applicationConfigurationInfo.OrgAutoValidation.BuyerSuccessAdminRoles);
+      var successAdminRoleIds = await _dataContext.CcsAccessRole.Where(x => successAdminRoleKeys.Contains(x.CcsAccessRoleNameKey)).Select(r => r.Id).ToListAsync();
+
+      var autoValidationRoles = await _dataContext.AutoValidationRole.Where(x => x.AssignToAdmin == true || successAdminRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
+
       rolesToAdd.ForEach((addedRole) =>
       {
-        if (autoValidationRoles.Any(x => x.CcsAccessRoleId == addedRole.RoleId && x.AssignToAdmin) &&
+        if (autoValidationRoles.Any(x => x.CcsAccessRoleId == addedRole.RoleId) &&
             organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == addedRole.RoleId))
         {
           // assign roles to all admins
@@ -1658,6 +1688,8 @@ namespace CcsSso.Core.Service.External
 
       string rolesUnassignedToOrg = await ManualValidateOrgAndUsersRoleUnassignmentAsync(organisation);
 
+      await ManualValidateUsersRoleUnassignmentAsync(organisation);
+
       auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.ManualRemoveRightToBuy, groupId, organisation.Id, "", null, actionedBy: actionedBy));
       if (organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Buyer)
       {
@@ -1732,6 +1764,24 @@ namespace CcsSso.Core.Service.External
       return rolesUnassigned;
     }
 
+    private async Task ManualValidateUsersRoleUnassignmentAsync(Organisation organisation)
+    {
+      var defaultOrgRoles = await _dataContext.AutoValidationRole.Include(x => x.CcsAccessRole)
+        .Where(ar => !ar.CcsAccessRole.IsDeleted && ar.IsSupplier && !ar.AssignToAdmin).ToListAsync();
+
+      List<OrganisationRole> rolesToDelete = new List<OrganisationRole>();
+
+      foreach (var defaultOrgRole in defaultOrgRoles)
+      {
+        rolesToDelete.Add(new OrganisationRole
+        {
+          RoleId = defaultOrgRole.CcsAccessRoleId,
+        });
+      }
+
+      await RemoveUserRoles(rolesToDelete, organisation);
+    }
+
     private async Task<string> ManualValidateOrgRoleAssignmentAsync(Organisation organisation)
     {
       var defaultOrgRoles = await _dataContext.AutoValidationRole.Include(x => x.CcsAccessRole)
@@ -1787,9 +1837,18 @@ namespace CcsSso.Core.Service.External
         defaultAdminRoles = defaultAdminRoles.Where(o => o.IsSupplier == true).ToList();
       }
 
+      var roleIds = defaultAdminRoles.Select(x => x.CcsAccessRoleId);
+
+      if (organisation.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier)
+      {
+        var successAdminRoleKeys = organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Both ? _applicationConfigurationInfo.OrgAutoValidation.BothSuccessAdminRoles : _applicationConfigurationInfo.OrgAutoValidation.BuyerSuccessAdminRoles;
+        var successAdminRoleIds = await _dataContext.CcsAccessRole.Where(x => successAdminRoleKeys.Contains(x.CcsAccessRoleNameKey)).Select(r => r.Id).ToListAsync();
+        roleIds = roleIds.Union(successAdminRoleIds);
+      }
+
       var defaultRoles = await _dataContext.OrganisationEligibleRole
             .Where(r => r.Organisation.CiiOrganisationId == organisation.CiiOrganisationId && !r.IsDeleted &&
-            defaultAdminRoles.Select(x => x.CcsAccessRoleId).Contains(r.CcsAccessRoleId))
+            roleIds.Contains(r.CcsAccessRoleId))
             .ToListAsync();
 
       foreach (var role in defaultRoles)

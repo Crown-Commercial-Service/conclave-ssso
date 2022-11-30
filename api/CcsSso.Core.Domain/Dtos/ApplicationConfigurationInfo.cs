@@ -136,6 +136,8 @@ namespace CcsSso.Domain.Dtos
   {
     public bool Enable { get; set; } = false;
     public string CCSAdminEmailId { get; set; }
+    public string[] BuyerSuccessAdminRoles { get; set; }
+    public string[] BothSuccessAdminRoles { get; set; }
   }
 
   public class ExternalApiDetails
