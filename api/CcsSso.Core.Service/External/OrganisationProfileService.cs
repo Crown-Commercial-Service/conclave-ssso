@@ -1232,7 +1232,7 @@ namespace CcsSso.Core.Service.External
       StringBuilder rolesAssigned = new();
       foreach (var role in defaultOrgRoles.Select(x => x.CcsAccessRole))
       {
-        if (!organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == role.Id))
+        if (!organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == role.Id && !x.IsDeleted))
         {
           var defaultOrgRole = new OrganisationEligibleRole
           {
@@ -1270,7 +1270,7 @@ namespace CcsSso.Core.Service.External
       }
 
       var defaultRoles = await _dataContext.OrganisationEligibleRole
-            .Where(r => r.Organisation.CiiOrganisationId == ciiOrganisation &&
+            .Where(r => r.Organisation.CiiOrganisationId == ciiOrganisation && !r.IsDeleted &&
             roleIds.Contains(r.CcsAccessRoleId))
             .ToListAsync();
 
@@ -1279,7 +1279,7 @@ namespace CcsSso.Core.Service.External
       foreach (var role in defaultRoles)
       {
         // additional roles for admin user added if not exist
-        if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id))
+        if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id && !x.IsDeleted))
         {
           var defaultUserRole = new UserAccessRole
           {
@@ -1306,7 +1306,7 @@ namespace CcsSso.Core.Service.External
       StringBuilder rolesAssigned = new();
       foreach (var role in defaultOrgRoles.Select(x => x.CcsAccessRole))
       {
-        if (!organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == role.Id))
+        if (!organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == role.Id && !x.IsDeleted))
         {
           var defaultOrgRole = new OrganisationEligibleRole
           {
@@ -1324,12 +1324,12 @@ namespace CcsSso.Core.Service.External
       var defaultAdminRoles = await _dataContext.AutoValidationRole.Where(ar => ar.AssignToAdmin && ar.IsSupplier).ToListAsync();
 
       var defaultRoles = await _dataContext.OrganisationEligibleRole.Where(r => r.Organisation.CiiOrganisationId == organisation.CiiOrganisationId &&
-                          defaultAdminRoles.Select(x => x.CcsAccessRoleId).Contains(r.CcsAccessRoleId)).ToListAsync();
+                          !r.IsDeleted && defaultAdminRoles.Select(x => x.CcsAccessRoleId).Contains(r.CcsAccessRoleId)).ToListAsync();
 
       foreach (var role in defaultRoles)
       {
         // additional roles for admin user added if not exist
-        if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id))
+        if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id && !x.IsDeleted))
         {
           var defaultUserRole = new UserAccessRole
           {
@@ -1369,7 +1369,7 @@ namespace CcsSso.Core.Service.External
       // list of roles to remove for non verified buyer
       List<AutoValidationRole> autoValidationFailedRolesForOrg = new();
       var autoValidationRoles = await _dataContext.AutoValidationRole.ToListAsync();
-      var verifiedBuyerOnlyRolesForOrg = autoValidationRoles.Where(x => x.IsBuyerSuccess).ToList();
+      var verifiedBuyerOnlyRolesForOrg = autoValidationRoles.Where(x => x.IsBuyerSuccess && x.AssignToOrg).ToList();
 
       if (newOrgType == RoleEligibleTradeType.Supplier)
       {
@@ -1448,16 +1448,16 @@ namespace CcsSso.Core.Service.External
 
     private async Task<string> RemoveOrgRoles(List<OrganisationRole> rolesToDelete, Organisation organisation)
     {
-      StringBuilder rolesAssigned = new();
+      StringBuilder rolesRemoved = new();
 
       if (rolesToDelete != null && rolesToDelete.Any())
       {
         var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
 
-        var userAccessRolesForOrgUsers = await _dataContext.UserAccessRole.Where(uar => !uar.IsDeleted &&
+        var userAccessRolesForOrgUsers = await _dataContext.UserAccessRole.Include(gr => gr.OrganisationEligibleRole).Where(uar => !uar.IsDeleted &&
                                            uar.OrganisationEligibleRole.OrganisationId == organisation.Id).ToListAsync();
 
-        var deletingOrgEligibleRoles = organisation.OrganisationEligibleRoles.Where(oer => deletingRoleIds.Contains(oer.CcsAccessRoleId)).ToList();
+        var deletingOrgEligibleRoles = organisation.OrganisationEligibleRoles.Where(oer => deletingRoleIds.Contains(oer.CcsAccessRoleId) && !oer.IsDeleted).ToList();
 
         var orgGroupRolesWithDeletedRoles = await _dataContext.OrganisationGroupEligibleRole
           .Where(oger => !oger.IsDeleted && oger.OrganisationEligibleRole.OrganisationId == organisation.Id && deletingRoleIds.Contains(oger.OrganisationEligibleRole.CcsAccessRoleId))
@@ -1469,7 +1469,7 @@ namespace CcsSso.Core.Service.External
         deletingOrgEligibleRoles.ForEach((deletingOrgEligibleRole) =>
         {
           deletingOrgEligibleRole.IsDeleted = true;
-          rolesAssigned.Append(rolesAssigned.Length > 0 ? "," + deletingOrgEligibleRole.CcsAccessRole.CcsAccessRoleName : deletingOrgEligibleRole.CcsAccessRole.CcsAccessRoleName);
+          rolesRemoved.Append(rolesRemoved.Length > 0 ? "," + deletingOrgEligibleRole.CcsAccessRole.CcsAccessRoleName : deletingOrgEligibleRole.CcsAccessRole.CcsAccessRoleName);
         });
 
         orgGroupRolesWithDeletedRoles.ForEach((orgGroupRolesWithDeletedRole) =>
@@ -1483,7 +1483,7 @@ namespace CcsSso.Core.Service.External
         });
       }
 
-      return rolesAssigned.ToString();
+      return rolesRemoved.ToString();
     }
 
     private async Task RemoveUserRoles(List<OrganisationRole> rolesToDelete, Organisation organisation)
@@ -1522,11 +1522,11 @@ namespace CcsSso.Core.Service.External
           // assign roles to all admins
           foreach (var adminDetails in allAdminsOfOrg)
           {
-            if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == addedRole.RoleId))
+            if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == addedRole.RoleId && !x.IsDeleted))
             {
               var defaultUserRole = new UserAccessRole
               {
-                OrganisationEligibleRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.CcsAccessRoleId == addedRole.RoleId).Id
+                OrganisationEligibleRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.CcsAccessRoleId == addedRole.RoleId && !x.IsDeleted).Id
               };
               adminDetails.UserAccessRoles.Add(defaultUserRole);
             }
@@ -1847,7 +1847,7 @@ namespace CcsSso.Core.Service.External
       }
 
       var defaultRoles = await _dataContext.OrganisationEligibleRole
-            .Where(r => r.Organisation.CiiOrganisationId == organisation.CiiOrganisationId &&
+            .Where(r => r.Organisation.CiiOrganisationId == organisation.CiiOrganisationId && !r.IsDeleted &&
             roleIds.Contains(r.CcsAccessRoleId))
             .ToListAsync();
 
@@ -1855,7 +1855,7 @@ namespace CcsSso.Core.Service.External
       {
         foreach (var adminDetails in allAdminsOfOrg)
         {
-          if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id))
+          if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id && !x.IsDeleted))
           {
             var defaultUserRole = new UserAccessRole
             {
