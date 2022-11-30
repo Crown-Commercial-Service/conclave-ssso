@@ -1037,7 +1037,7 @@ namespace CcsSso.Core.Service.External
 
         await _dataContext.SaveChangesAsync();
 
-        if (isOrgTypeSwitched && newOrgType != RoleEligibleTradeType.Supplier && orgStatus != null)
+        if (isOrgTypeSwitched && orgStatus != null)
         {
           await _organisationAuditService.UpdateOrganisationAuditAsync(orgStatus);
         }
