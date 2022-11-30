@@ -962,7 +962,7 @@ namespace CcsSso.Core.Service.External
       {
         int? oldOrgSupplierBuyerType = organisation.SupplierBuyerType;
         bool isOrgTypeSwitched = organisation.SupplierBuyerType != (int)newOrgType;
-        organisation.RightToBuy = isOrgTypeSwitched ? false: organisation.RightToBuy;
+        organisation.RightToBuy = isOrgTypeSwitched ? false : organisation.RightToBuy;
         bool autoValidationSuccess = false;
         User actionedBy = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
 
@@ -1508,13 +1508,15 @@ namespace CcsSso.Core.Service.External
     private async Task AdminRoleAssignment(Organisation organisation, List<OrganisationRole> rolesToAdd)
     {
       List<User> allAdminsOfOrg = await GetAdminUsers(organisation, false);
-      var autoValidationRoles = await _dataContext.AutoValidationRole.Where(x => x.AssignToAdmin == true).ToListAsync();
-      //var allOrgEligibleRoles = await _dataContext.OrganisationEligibleRole
-      //      .Where(r => r.Organisation.CiiOrganisationId == organisation.CiiOrganisationId)
-      //      .ToListAsync();
+
+      var successAdminRoleKeys = _applicationConfigurationInfo.OrgAutoValidation.BothSuccessAdminRoles.Union(_applicationConfigurationInfo.OrgAutoValidation.BuyerSuccessAdminRoles);
+      var successAdminRoleIds = await _dataContext.CcsAccessRole.Where(x => successAdminRoleKeys.Contains(x.CcsAccessRoleNameKey)).Select(r => r.Id).ToListAsync();
+
+      var autoValidationRoles = await _dataContext.AutoValidationRole.Where(x => x.AssignToAdmin == true || successAdminRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
+
       rolesToAdd.ForEach((addedRole) =>
       {
-        if (autoValidationRoles.Any(x => x.CcsAccessRoleId == addedRole.RoleId && x.AssignToAdmin) &&
+        if (autoValidationRoles.Any(x => x.CcsAccessRoleId == addedRole.RoleId) &&
             organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == addedRole.RoleId))
         {
           // assign roles to all admins
