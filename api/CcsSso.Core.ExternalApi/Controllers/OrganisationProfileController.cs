@@ -1275,6 +1275,9 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="401">Unauthorised</response>
     /// <response  code="403">Forbidden</response>
     /// <response  code="404">Resource not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes:  INVALID_CII_ORGANISATION_ID, INVALID_DETAILS
+    /// </response>
     /// <remarks>
     /// Sample request:
     ///
