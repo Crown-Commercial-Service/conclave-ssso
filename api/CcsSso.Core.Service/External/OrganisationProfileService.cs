@@ -993,7 +993,7 @@ namespace CcsSso.Core.Service.External
 
         var rolesAssigned = await AddNewOrgRoles(rolesToAdd, rolesToDelete, organisation, newOrgType, autoValidationSuccess);
         var rolesUnassigned = await RemoveOrgRoles(rolesToDelete, organisation);
-        await AdminRoleAssignment(organisation, rolesToAdd);
+        await AdminRoleAssignment(organisation);
 
         // No event log if org was supplier and changes in role only.
         if (isOrgTypeSwitched)
@@ -1505,7 +1505,7 @@ namespace CcsSso.Core.Service.External
       }
     }
 
-    private async Task AdminRoleAssignment(Organisation organisation, List<OrganisationRole> rolesToAdd)
+    private async Task AdminRoleAssignment(Organisation organisation)
     {
       List<User> allAdminsOfOrg = await GetAdminUsers(organisation, false);
 
@@ -1514,19 +1514,21 @@ namespace CcsSso.Core.Service.External
 
       var autoValidationRoles = await _dataContext.AutoValidationRole.Where(x => x.AssignToAdmin == true || successAdminRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
 
-      rolesToAdd.ForEach((addedRole) =>
+      autoValidationRoles.ForEach((role) =>
       {
-        if (autoValidationRoles.Any(x => x.CcsAccessRoleId == addedRole.RoleId) &&
-            organisation.OrganisationEligibleRoles.Any(x => x.CcsAccessRoleId == addedRole.RoleId))
+        var organisationEligibleRole = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.CcsAccessRoleId == role.CcsAccessRoleId && !x.IsDeleted);
+        var organisationEligibleRoleId = organisationEligibleRole != null ? organisationEligibleRole.Id : 0;
+
+        if (organisationEligibleRoleId > 0)
         {
           // assign roles to all admins
           foreach (var adminDetails in allAdminsOfOrg)
           {
-            if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == addedRole.RoleId && !x.IsDeleted))
+            if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == organisationEligibleRoleId && !x.IsDeleted))
             {
               var defaultUserRole = new UserAccessRole
               {
-                OrganisationEligibleRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.CcsAccessRoleId == addedRole.RoleId && !x.IsDeleted).Id
+                OrganisationEligibleRoleId = organisationEligibleRoleId
               };
               adminDetails.UserAccessRoles.Add(defaultUserRole);
             }
