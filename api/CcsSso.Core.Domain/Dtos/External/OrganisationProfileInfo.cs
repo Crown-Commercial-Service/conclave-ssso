@@ -144,7 +144,8 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class OrganisationAutoValidationRoleUpdate
   {
-    public RoleEligibleTradeType OrgType { get; set; }
+    // -1 set if not passed to make invalid org type
+    public RoleEligibleTradeType OrgType { get; set; } = (RoleEligibleTradeType)(-1);
     public List<OrganisationRole> RolesToAdd { get; set; }
     public List<OrganisationRole> RolesToDelete { get; set; }
     public string? CompanyHouseId { get; set; }
