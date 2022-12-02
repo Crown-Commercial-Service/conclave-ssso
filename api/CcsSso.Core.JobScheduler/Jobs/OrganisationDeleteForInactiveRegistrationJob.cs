@@ -62,7 +62,8 @@ namespace CcsSso.Core.JobScheduler
     {
       var organisationIds = await GetExpiredOrganisationIdsAsync();
       Guid groupId = Guid.NewGuid();
-      //Console.WriteLine($"{organisationIds.Count()} organizations found");
+      Console.WriteLine($"{organisationIds.Count()} organizations found");
+
       if (organisationIds != null)
       {
         var client = _httpClientFactory.CreateClient();
@@ -76,7 +77,8 @@ namespace CcsSso.Core.JobScheduler
             OrgDeleteCandidateStatus orgDeleteCandidateStatus = OrgDeleteCandidateStatus.None;
             //Get admin users to check their statuses in idam
             var adminUsers = await GetOrganisationAdmins(orgDetail.Id);
-            //Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.Item2}");
+            Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.Id}");
+
             foreach (var adminUser in adminUsers)
             {
               var url = "/security/users?email=" + adminUser.UserName;
