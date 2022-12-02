@@ -951,6 +951,10 @@ namespace CcsSso.Core.Service.External
       {
         throw new InvalidOperationException();
       }
+      if (!Enum.IsDefined(typeof(RoleEligibleTradeType), newOrgType)) 
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
+      }
       Guid groupId = Guid.NewGuid();
       List<OrganisationAuditEventInfo> auditEventLogs = new();
       OrganisationAuditInfo orgStatus = default;
@@ -1049,7 +1053,7 @@ namespace CcsSso.Core.Service.External
       }
       else
       {
-        throw new ResourceNotFoundException();
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidCiiOrganisationId);
       }
     }
 
