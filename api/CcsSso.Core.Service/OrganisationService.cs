@@ -152,7 +152,7 @@ namespace CcsSso.Service
         var organisationAudit = _dataContext.OrganisationAudit.FirstOrDefault(x => x.OrganisationId == organisation.Id);
         if (organisationAudit != null)
         {
-          isAutovalidationPending = organisationAudit.Status == OrgAutoValidationStatus.AutoPending;
+          isAutovalidationPending = organisationAudit.Status == OrgAutoValidationStatus.AutoPending || organisationAudit.Status == OrgAutoValidationStatus.ManualPending;
         }
 
         var dto = new OrganisationDto

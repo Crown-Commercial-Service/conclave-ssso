@@ -89,12 +89,15 @@ namespace CcsSso.Domain.Contracts
 
         DbSet<CountryDetails> CountryDetails { get; set; }
         
-        DbSet<OrganisationAuditEvent> OrganisationAuditEvent { get; set; }
 
         // #Auto validation
         DbSet<OrganisationAudit> OrganisationAudit { get; set; }
 
+        DbSet<OrganisationAuditEvent> OrganisationAuditEvent { get; set; }
+
         DbSet<AutoValidationRole> AutoValidationRole { get; set; }
+
+        DbSet<OrganisationEligibleRolePending> OrganisationEligibleRolePending { get; set; }
 
         Task<PagedResultSet<T>> GetPagedResultAsync<T>(IQueryable<T> query, ResultSetCriteria resultSetCriteria);
 
