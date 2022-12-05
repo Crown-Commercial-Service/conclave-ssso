@@ -192,12 +192,14 @@ namespace CcsSso.DbPersistence
 
         public DbSet<CountryDetails> CountryDetails { get; set; }
 
-        public DbSet<OrganisationAuditEvent> OrganisationAuditEvent { get; set; }
-        
         // #Auto validation
         public DbSet<OrganisationAudit> OrganisationAudit { get; set; }
 
+        public DbSet<OrganisationAuditEvent> OrganisationAuditEvent { get; set; }
+
         public DbSet<AutoValidationRole> AutoValidationRole { get; set; }
+
+        public DbSet<OrganisationEligibleRolePending> OrganisationEligibleRolePending { get; set; }
 
         public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {

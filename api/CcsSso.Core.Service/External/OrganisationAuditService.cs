@@ -35,8 +35,8 @@ namespace CcsSso.Core.Service.External
       var organisations = await _dataContext.GetPagedResultAsync(_dataContext.OrganisationAudit
         .Include(o => o.Organisation)
         .Where(x => (string.IsNullOrEmpty(organisationAuditFilterCriteria.searchString) || x.Organisation.LegalName.ToLower().Contains(organisationAuditFilterCriteria.searchString.ToLower()))
-        && (organisationAuditFilterCriteria.isPendingOnly || x.Status != OrgAutoValidationStatus.AutoPending)
-        && (!organisationAuditFilterCriteria.isPendingOnly || x.Status == OrgAutoValidationStatus.AutoPending))
+        && (organisationAuditFilterCriteria.isPendingOnly || (x.Status != OrgAutoValidationStatus.AutoPending && x.Status != OrgAutoValidationStatus.ManualPending))
+        && (!organisationAuditFilterCriteria.isPendingOnly || x.Status == OrgAutoValidationStatus.AutoPending || x.Status == OrgAutoValidationStatus.ManualPending))
         .OrderByDescending(x => x.Organisation.CreatedOnUtc)
         .Select(organisationAudit => new OrganisationAuditResponseInfo
         {

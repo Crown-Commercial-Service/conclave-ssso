@@ -1308,7 +1308,7 @@ namespace CcsSso.ExternalApi.Controllers
     [ProducesResponseType(typeof(string), 200)]
     public async Task AutoValidateOrganisationTypeswitch(string organisationId, OrganisationAutoValidationRoleUpdate orgUpdateDetails)
     {
-      await _organisationService.UpdateOrgAutoValidationEligibleRolesAsync(organisationId, orgUpdateDetails.OrgType, orgUpdateDetails.RolesToAdd, orgUpdateDetails.RolesToDelete, orgUpdateDetails.CompanyHouseId);
+      await _organisationService.UpdateOrgAutoValidationEligibleRolesAsync(organisationId, orgUpdateDetails.OrgType, orgUpdateDetails.RolesToAdd, orgUpdateDetails.RolesToDelete, orgUpdateDetails.RolesToAutoValid, orgUpdateDetails.CompanyHouseId);
     }
 
     /// <summary>

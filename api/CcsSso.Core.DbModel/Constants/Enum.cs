@@ -82,7 +82,8 @@ namespace CcsSso.Core.DbModel.Constants
     ManuallyApproved,
     ManuallyDecliend,
     ManualRemovalOfRightToBuy,
-    AutoOrgRemoval
+    AutoOrgRemoval,
+    ManualPending,
   }
 
   public enum ManualValidateOrganisationStatus

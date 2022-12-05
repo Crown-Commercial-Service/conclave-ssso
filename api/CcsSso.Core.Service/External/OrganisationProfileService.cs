@@ -945,13 +945,13 @@ namespace CcsSso.Core.Service.External
     }
 
     // Org eligiblity 
-    public async Task UpdateOrgAutoValidationEligibleRolesAsync(string ciiOrganisationId, RoleEligibleTradeType newOrgType, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete, string? companyHouseId)
+    public async Task UpdateOrgAutoValidationEligibleRolesAsync(string ciiOrganisationId, RoleEligibleTradeType newOrgType, List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete, List<OrganisationRole> rolesToAutoValid, string? companyHouseId)
     {
       if (!_applicationConfigurationInfo.OrgAutoValidation.Enable)
       {
         throw new InvalidOperationException();
       }
-      if (!Enum.IsDefined(typeof(RoleEligibleTradeType), newOrgType)) 
+      if (!Enum.IsDefined(typeof(RoleEligibleTradeType), newOrgType))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
       }
@@ -987,7 +987,7 @@ namespace CcsSso.Core.Service.External
           orgStatus = new OrganisationAuditInfo
           {
             Status = newOrgType == RoleEligibleTradeType.Supplier ? OrgAutoValidationStatus.ManualRemovalOfRightToBuy :
-                                   (autoValidationSuccess ? OrgAutoValidationStatus.AutoApproved : OrgAutoValidationStatus.AutoPending),
+                                   (autoValidationSuccess ? OrgAutoValidationStatus.AutoApproved : OrgAutoValidationStatus.ManualPending),
             OrganisationId = organisation.Id,
             Actioned = OrganisationAuditActionType.Admin.ToString(),
             SchemeIdentifier = companyHouseId,
@@ -995,7 +995,7 @@ namespace CcsSso.Core.Service.External
           };
         }
 
-        var rolesAssigned = await AddNewOrgRoles(rolesToAdd, rolesToDelete, organisation, newOrgType, autoValidationSuccess);
+        var rolesAssigned = await AddNewOrgRoles(rolesToAdd, rolesToDelete, rolesToAutoValid, organisation, newOrgType, autoValidationSuccess);
         var rolesUnassigned = await RemoveOrgRoles(rolesToDelete, organisation);
         await AdminRoleAssignment(organisation);
 
@@ -1343,7 +1343,6 @@ namespace CcsSso.Core.Service.External
           rolesAssigned.Append(rolesAssigned.Length > 0 ? "," + role.CcsAccessRole.CcsAccessRoleName : role.CcsAccessRole.CcsAccessRoleName);
         }
       }
-
       await _dataContext.SaveChangesAsync();
     }
 
@@ -1364,7 +1363,7 @@ namespace CcsSso.Core.Service.External
     }
 
     // Service elegiblity 
-    private async Task<Tuple<string, string>> AddNewOrgRoles(List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete, Organisation organisation, RoleEligibleTradeType newOrgType, bool autoValidationPassed = false)
+    private async Task<Tuple<string, string>> AddNewOrgRoles(List<OrganisationRole> rolesToAdd, List<OrganisationRole> rolesToDelete, List<OrganisationRole> rolesToAutoValid, Organisation organisation, RoleEligibleTradeType newOrgType, bool autoValidationPassed = false)
     {
       var ccsAccessRoles = await _dataContext.CcsAccessRole.ToListAsync();
       StringBuilder verifiedBuyerOnlyRolesAssigned = new();
@@ -1374,6 +1373,7 @@ namespace CcsSso.Core.Service.External
       List<AutoValidationRole> autoValidationFailedRolesForOrg = new();
       var autoValidationRoles = await _dataContext.AutoValidationRole.ToListAsync();
       var verifiedBuyerOnlyRolesForOrg = autoValidationRoles.Where(x => x.IsBuyerSuccess && x.AssignToOrg).ToList();
+      var autoValidationRoleIds = new List<int>();
 
       if (newOrgType == RoleEligibleTradeType.Supplier)
       {
@@ -1382,10 +1382,37 @@ namespace CcsSso.Core.Service.External
       else if (newOrgType == RoleEligibleTradeType.Buyer)
       {
         autoValidationFailedRolesForOrg = autoValidationRoles.Where(x => autoValidationPassed ? !x.IsBuyerSuccess : !x.IsBuyerFailed).ToList();
+        autoValidationRoleIds = autoValidationRoles.Where(x => x.IsBuyerSuccess).Select(x => x.CcsAccessRoleId).ToList();
       }
       else if (newOrgType == RoleEligibleTradeType.Both)
       {
         autoValidationFailedRolesForOrg = autoValidationRoles.Where(x => autoValidationPassed ? !x.IsBothSuccess : !x.IsBothFailed).ToList();
+        autoValidationRoleIds = autoValidationRoles.Where(x => x.IsBothSuccess).Select(x => x.CcsAccessRoleId).ToList();
+      }
+
+      if (!autoValidationPassed && rolesToAutoValid != null && rolesToAutoValid.Count > 0)
+      {
+        var rolesRequiredManualVerification = rolesToAutoValid.Where(r => autoValidationRoleIds.Contains(r.RoleId)).ToList();
+        if (rolesRequiredManualVerification != null && rolesRequiredManualVerification.Count > 0)
+        {
+          List<OrganisationEligibleRolePending> addedEligibleRolesPending = new List<OrganisationEligibleRolePending>();
+
+          var organisationEligibleRolePending = await _dataContext.OrganisationEligibleRolePending.Where(x => x.OrganisationId == organisation.Id).ToListAsync();
+          
+          rolesRequiredManualVerification.ForEach((addedRole) =>
+          {
+            if (!organisationEligibleRolePending.Any(x => !x.IsDeleted && x.CcsAccessRoleId == addedRole.RoleId))
+            {
+              addedEligibleRolesPending.Add(new OrganisationEligibleRolePending
+              {
+                OrganisationId = organisation.Id,
+                CcsAccessRoleId = addedRole.RoleId
+              });
+            }
+          });
+
+          _dataContext.OrganisationEligibleRolePending.AddRange(addedEligibleRolesPending);
+        }
       }
 
       var roleToAddWithOutRemovingVerfiedBuyer = rolesToAdd.ToList();
@@ -1804,6 +1831,25 @@ namespace CcsSso.Core.Service.External
       else if (organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Supplier)
       {
         defaultOrgRoles = defaultOrgRoles.Where(o => o.IsSupplier == true).ToList();
+      }
+
+      var organisationAudit = _dataContext.OrganisationAudit.FirstOrDefault(x => x.OrganisationId == organisation.Id);
+      var isManualPending = organisationAudit != null && organisationAudit.Status == OrgAutoValidationStatus.ManualPending ? true : false;
+
+      if (isManualPending)
+      {
+        var organisationEligiblePendingRoles = _dataContext.OrganisationEligibleRolePending.Where(x => !x.IsDeleted && x.OrganisationId == organisation.Id).ToList();
+        if (organisationEligiblePendingRoles != null)
+        {
+          var organisationEligiblePendingRoleIds = organisationEligiblePendingRoles.Select(x => x.CcsAccessRoleId).ToList();
+
+          defaultOrgRoles = defaultOrgRoles.Where(x => organisationEligiblePendingRoleIds.Contains(x.CcsAccessRoleId)).ToList();
+
+          organisationEligiblePendingRoles.ForEach((organisationEligiblePendingRole) =>
+          {
+            organisationEligiblePendingRole.IsDeleted = true;
+          });
+        }
       }
 
       StringBuilder rolesAssigned = new();
