@@ -351,7 +351,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
 
       List<OrganisationEligibleRole> addedEligibleRoles = new List<OrganisationEligibleRole>();
 
-      var orgRoles = await _dataContext.OrganisationEligibleRole.Where(x => x.OrganisationId == orgId).ToListAsync();
+      var orgRoles = await _dataContext.OrganisationEligibleRole.Where(x => x.OrganisationId == orgId && !x.IsDeleted).ToListAsync();
 
       defaultRoles.ForEach((defaultRole) =>
       {
@@ -406,7 +406,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
             continue;
           }
 
-          var alreadyExist = await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.UserId == user.Id && x.OrganisationEligibleRoleId == organisationAdminAccessRole.Id);
+          var alreadyExist = await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.UserId == user.Id && x.OrganisationEligibleRoleId == organisationAdminAccessRole.Id && !x.IsDeleted);
 
           if (alreadyExist == null)
           {

@@ -314,7 +314,7 @@ namespace CcsSso.Core.ServiceOnboardingScheduler.Jobs
             continue;
           }
 
-          var alreadyExist = await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.UserId == user.Id && x.OrganisationEligibleRoleId == organisationAdminAccessRole.Id);
+          var alreadyExist = await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.UserId == user.Id && x.OrganisationEligibleRoleId == organisationAdminAccessRole.Id && !x.IsDeleted);
 
           if (alreadyExist == null)
           {
