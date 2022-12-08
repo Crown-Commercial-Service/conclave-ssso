@@ -997,7 +997,7 @@ namespace CcsSso.Core.Service.External
 
         var rolesAssigned = await AddNewOrgRoles(rolesToAdd, rolesToDelete, rolesToAutoValid, organisation, newOrgType, autoValidationSuccess);
         var rolesUnassigned = await RemoveOrgRoles(rolesToDelete, organisation);
-        await AdminRoleAssignment(organisation);
+        await AdminRoleAssignment(organisation, newOrgType, autoValidationSuccess);
 
         // No event log if org was supplier and changes in role only.
         if (isOrgTypeSwitched)
@@ -1398,7 +1398,7 @@ namespace CcsSso.Core.Service.External
           List<OrganisationEligibleRolePending> addedEligibleRolesPending = new List<OrganisationEligibleRolePending>();
 
           var organisationEligibleRolePending = await _dataContext.OrganisationEligibleRolePending.Where(x => x.OrganisationId == organisation.Id).ToListAsync();
-          
+
           rolesRequiredManualVerification.ForEach((addedRole) =>
           {
             if (!organisationEligibleRolePending.Any(x => !x.IsDeleted && x.CcsAccessRoleId == addedRole.RoleId))
@@ -1536,14 +1536,32 @@ namespace CcsSso.Core.Service.External
       }
     }
 
-    private async Task AdminRoleAssignment(Organisation organisation)
+    private async Task AdminRoleAssignment(Organisation organisation, RoleEligibleTradeType newOrgType, bool autoValidationPassed = false)
     {
       List<User> allAdminsOfOrg = await GetAdminUsers(organisation, false);
 
-      var successAdminRoleKeys = _applicationConfigurationInfo.OrgAutoValidation.BothSuccessAdminRoles.Union(_applicationConfigurationInfo.OrgAutoValidation.BuyerSuccessAdminRoles);
-      var successAdminRoleIds = await _dataContext.CcsAccessRole.Where(x => successAdminRoleKeys.Contains(x.CcsAccessRoleNameKey)).Select(r => r.Id).ToListAsync();
+      var autoValidationRoles = await _dataContext.AutoValidationRole.ToListAsync();
+      
+      if (autoValidationPassed)
+      {
+        string[] successAdminRoleKeys = null;
 
-      var autoValidationRoles = await _dataContext.AutoValidationRole.Where(x => x.AssignToAdmin == true || successAdminRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
+        if (newOrgType == RoleEligibleTradeType.Buyer)
+        {
+          successAdminRoleKeys = _applicationConfigurationInfo.OrgAutoValidation.BuyerSuccessAdminRoles;
+        }
+        else if (newOrgType == RoleEligibleTradeType.Both)
+        {
+          successAdminRoleKeys = _applicationConfigurationInfo.OrgAutoValidation.BothSuccessAdminRoles;
+        }
+
+        var successAdminRoleIds = await _dataContext.CcsAccessRole.Where(x => successAdminRoleKeys.Contains(x.CcsAccessRoleNameKey)).Select(r => r.Id).ToListAsync();
+        autoValidationRoles = autoValidationRoles.Where(x => x.AssignToAdmin == true || successAdminRoleIds.Contains(x.CcsAccessRoleId)).ToList();
+      }
+      else
+      {
+        autoValidationRoles = autoValidationRoles.Where(x => x.AssignToAdmin == true).ToList();
+      }
 
       autoValidationRoles.ForEach((role) =>
       {
