@@ -238,8 +238,7 @@ namespace CcsSso.Security.Api
 
       if (!string.IsNullOrEmpty(Configuration["RollBarLogger:Token"]) && !string.IsNullOrEmpty(Configuration["RollBarLogger:Environment"]))
       {
-        RollbarLoggerExtensions.ConfigureRollbarSingleton(Configuration["RollBarLogger:Token"], Configuration["RollBarLogger:Environment"]);
-        services.AddRollbarLoggerServices();
+        services.AddRollbarLoggerServices(Configuration["RollBarLogger:Token"], Configuration["RollBarLogger:Environment"]);
       }
 
       services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
