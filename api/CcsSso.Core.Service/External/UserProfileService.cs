@@ -1214,6 +1214,14 @@ namespace CcsSso.Core.Service.External
       }
     }
 
+    public async Task<bool> IsUserExist(string userName)
+    {
+      _userHelper.ValidateUserName(userName);
+      var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName && u.UserType == UserType.Primary);
+
+      return user != null;
+    }
+
     private async Task<bool> IsOrganisationOnlyAdminAsync(User user, string userName)
     {
       int organisationId = user.Party.Person.OrganisationId;
@@ -1303,7 +1311,6 @@ namespace CcsSso.Core.Service.External
         }
       }
     }
-
 
     #region Delegated user
 
