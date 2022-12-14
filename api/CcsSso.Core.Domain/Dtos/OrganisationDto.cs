@@ -25,6 +25,8 @@ namespace CcsSso.Dtos.Domain.Models
     public int PartyId { get; set; }
 
     public Address Address { get; set; }
+
+    public bool IsAutovalidationPending { get; set; }
   }
 
   public class OrganisationRegistrationDto

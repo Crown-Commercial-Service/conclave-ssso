@@ -55,5 +55,7 @@ namespace CcsSso.DbModel.Entity
     public bool IsSme { get; set; }
 
     public bool IsVcse { get; set; }
+
+    public List<OrganisationAudit> OrganisationAudits { get; set; }
   }
 }
