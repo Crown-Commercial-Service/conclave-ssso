@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.Exceptions;
@@ -5,6 +6,7 @@ using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
+using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Dtos.External;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Dtos.Domain.Models;
@@ -32,11 +34,13 @@ namespace CcsSso.Service
     private readonly ILogger<OrganisationService> _logger;
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
     private readonly IUserProfileHelperService _userProfileHelperService;
+    private readonly ApplicationConfigurationInfo _appConfigInfo;
 
     public OrganisationService(IDataContext dataContext, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ICiiService ciiService, IOrganisationProfileService organisationProfileService,
       IUserProfileService userProfileService, IOrganisationContactService organisationContactService,
-      RequestContext requestContext, ILogger<OrganisationService> logger, ICcsSsoEmailService ccsSsoEmailService, IUserProfileHelperService userProfileHelperService)
+      RequestContext requestContext, ILogger<OrganisationService> logger, ICcsSsoEmailService ccsSsoEmailService, IUserProfileHelperService userProfileHelperService,
+      ApplicationConfigurationInfo appConfigInfo)
     {
       _dataContext = dataContext;
       _adapterNotificationService = adapterNotificationService;
@@ -49,6 +53,7 @@ namespace CcsSso.Service
       _logger = logger;
       _ccsSsoEmailService = ccsSsoEmailService;
       _userProfileHelperService = userProfileHelperService;
+      _appConfigInfo = appConfigInfo;
     }
 
     /// <summary>
@@ -143,6 +148,13 @@ namespace CcsSso.Service
         .FirstOrDefaultAsync();
       if (organisation != null)
       {
+        bool isAutovalidationPending = false;
+        var organisationAudit = _dataContext.OrganisationAudit.FirstOrDefault(x => x.OrganisationId == organisation.Id);
+        if (organisationAudit != null)
+        {
+          isAutovalidationPending = organisationAudit.Status == OrgAutoValidationStatus.AutoPending || organisationAudit.Status == OrgAutoValidationStatus.ManualPending;
+        }
+
         var dto = new OrganisationDto
         {
           OrganisationId = organisation.Id,
@@ -151,7 +163,8 @@ namespace CcsSso.Service
           RightToBuy = organisation.RightToBuy,
           PartyId = organisation.PartyId,
           LegalName = organisation.LegalName,
-          SupplierBuyerType = organisation.SupplierBuyerType ?? 0
+          SupplierBuyerType = organisation.SupplierBuyerType ?? 0,
+          IsAutovalidationPending = isAutovalidationPending,
         };
         var contactPoint = await _dataContext.ContactPoint
           .Include(c => c.ContactDetail)
@@ -272,7 +285,7 @@ namespace CcsSso.Service
         .ThenInclude(o => o.Organisation)
         .Where(u => u.IsDeleted == false
         // #Delegated only return primary users
-        && u.UserType == Core.DbModel.Constants.UserType.Primary 
+        && u.UserType == Core.DbModel.Constants.UserType.Primary
         && (_requestContext.UserId != 0 && u.Party.Person.Organisation.CiiOrganisationId != _requestContext.CiiOrganisationId) &&
         (string.IsNullOrEmpty(name) || u.UserName.Contains(name) || (u.Party.Person.FirstName + " " + u.Party.Person.LastName).ToLower().Contains(name) || u.Party.Person.Organisation.LegalName.ToLower().Contains(name)) &&
         u.Party.Person.Organisation.IsDeleted == false).Select(user => new OrganisationUserDto
@@ -360,37 +373,41 @@ namespace CcsSso.Service
 
         var roleIds = new List<int> { adminRole.Id };
 
-        if (organisationRegistrationDto.SupplierBuyerType == 0) //Supplier
+        if (!_appConfigInfo.OrgAutoValidation.Enable)
         {
-          var defaultRoles = await _dataContext.OrganisationEligibleRole
-          .Where(r => r.Id != adminRole.Id && r.Organisation.CiiOrganisationId == ciiOrgId && 
-            !string.IsNullOrEmpty(r.CcsAccessRole.DefaultEligibility) && r.CcsAccessRole.DefaultEligibility.StartsWith("1"))
-          .ToListAsync();
+          if (organisationRegistrationDto.SupplierBuyerType == 0) //Supplier
+          {
+            var defaultRoles = await _dataContext.OrganisationEligibleRole
+            .Where(r => r.Id != adminRole.Id && r.Organisation.CiiOrganisationId == ciiOrgId &&
+              !string.IsNullOrEmpty(r.CcsAccessRole.DefaultEligibility) && r.CcsAccessRole.DefaultEligibility.StartsWith("1"))
+            .ToListAsync();
 
-          roleIds.AddRange(defaultRoles.Select(r => r.Id));
-        }
-        else if (organisationRegistrationDto.SupplierBuyerType == 1) //Buyer
-        {
-          var defaultRoles = await _dataContext.OrganisationEligibleRole
-          .Where(r => r.Id != adminRole.Id && r.Organisation.CiiOrganisationId == ciiOrgId &&
-            !string.IsNullOrEmpty(r.CcsAccessRole.DefaultEligibility) && r.CcsAccessRole.DefaultEligibility.Substring(1, 1) == "1")
-          .ToListAsync();
+            roleIds.AddRange(defaultRoles.Select(r => r.Id));
+          }
+          else if (organisationRegistrationDto.SupplierBuyerType == 1) //Buyer
+          {
+            var defaultRoles = await _dataContext.OrganisationEligibleRole
+            .Where(r => r.Id != adminRole.Id && r.Organisation.CiiOrganisationId == ciiOrgId &&
+              !string.IsNullOrEmpty(r.CcsAccessRole.DefaultEligibility) && r.CcsAccessRole.DefaultEligibility.Substring(1, 1) == "1")
+            .ToListAsync();
 
-          roleIds.AddRange(defaultRoles.Select(r => r.Id));
-        }
-        else //Supplier & Buyer
-        {
-          var defaultRoles = await _dataContext.OrganisationEligibleRole
-          .Where(r => r.Id != adminRole.Id && r.Organisation.CiiOrganisationId == ciiOrgId &&
-            !string.IsNullOrEmpty(r.CcsAccessRole.DefaultEligibility) && r.CcsAccessRole.DefaultEligibility.EndsWith("1"))
-          .ToListAsync();
+            roleIds.AddRange(defaultRoles.Select(r => r.Id));
+          }
+          else //Supplier & Buyer
+          {
+            var defaultRoles = await _dataContext.OrganisationEligibleRole
+            .Where(r => r.Id != adminRole.Id && r.Organisation.CiiOrganisationId == ciiOrgId &&
+              !string.IsNullOrEmpty(r.CcsAccessRole.DefaultEligibility) && r.CcsAccessRole.DefaultEligibility.EndsWith("1"))
+            .ToListAsync();
 
-          roleIds.AddRange(defaultRoles.Select(r => r.Id));
+            roleIds.AddRange(defaultRoles.Select(r => r.Id));
+          }
         }
 
         UserProfileEditRequestInfo userProfileEditRequestInfo = new UserProfileEditRequestInfo
         {
           OrganisationId = ciiOrgId,
+          CompanyHouseId = organisationRegistrationDto?.CiiDetails?.Identifier?.Id,
           FirstName = organisationRegistrationDto.AdminUserFirstName,
           LastName = organisationRegistrationDto.AdminUserLastName,
           UserName = organisationRegistrationDto.AdminUserName,
@@ -401,8 +418,8 @@ namespace CcsSso.Service
             RoleIds = roleIds,
           }
         };
-
-        await _userProfileService.CreateUserAsync(userProfileEditRequestInfo);
+        // #Auto validation
+        await _userProfileService.CreateUserAsync(userProfileEditRequestInfo, isNewOrgAdmin: true);
       }
       catch (ResourceAlreadyExistsException)
       {

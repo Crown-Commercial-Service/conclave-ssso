@@ -10,9 +10,9 @@ then
     CF_SPACE="uat"
 fi
 
-if [ "$TRAVIS_BRANCH" = "training" ]
+if [ "$TRAVIS_BRANCH" = "nft" ]
 then
-    CF_SPACE="training"
+    CF_SPACE="nft"
 fi
 
 if [ "$TRAVIS_BRANCH" = "testing" ]

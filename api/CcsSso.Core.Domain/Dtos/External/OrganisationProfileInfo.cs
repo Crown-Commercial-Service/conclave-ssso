@@ -118,6 +118,7 @@ namespace CcsSso.Core.Domain.Dtos.External
     public RoleEligibleSubscriptionType SubscriptionTypeEligibility { get; set; }
 
     public RoleEligibleTradeType TradeEligibility { get; set; }
+    public int[] AutoValidationRoleTypeEligibility { get; set; }
   }
 
   public class OrganisationRoleUpdate
@@ -127,6 +128,28 @@ namespace CcsSso.Core.Domain.Dtos.External
     public List<OrganisationRole> RolesToDelete { get; set; }
   }
 
+  // #Auto validation
+  public class AutoValidationDetails 
+  {
+    public string AdminEmailId { get; set; }
+    public bool IsFromBackgroundJob { get; set; } = false;
+    public string? CompanyHouseId { get; set; }
+  }
 
+  public class AutoValidationOneTimeJobDetails : AutoValidationDetails
+  {
+    public bool isDomainValid { get; set; } = false;
+  }
+
+
+  public class OrganisationAutoValidationRoleUpdate
+  {
+    // -1 set if not passed to make invalid org type
+    public RoleEligibleTradeType OrgType { get; set; } = (RoleEligibleTradeType)(-1);
+    public List<OrganisationRole> RolesToAdd { get; set; }
+    public List<OrganisationRole> RolesToDelete { get; set; }
+    public List<OrganisationRole> RolesToAutoValid { get; set; }
+    public string? CompanyHouseId { get; set; }
+  }
 
 }

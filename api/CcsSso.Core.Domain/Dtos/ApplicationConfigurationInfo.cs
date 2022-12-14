@@ -37,6 +37,10 @@ namespace CcsSso.Domain.Dtos
     public string DelegationEmailTokenEncryptionKey { get; set; }
 
     public string[] DelegationExcludeRoles { get; set; }
+
+    // #Auto validation
+    public OrgAutoValidation OrgAutoValidation { get; set; }
+    public OrgAutoValidationEmailInfo OrgAutoValidationEmailInfo { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -125,5 +129,37 @@ namespace CcsSso.Domain.Dtos
     public int DefaultSizeValidationValue { get; set; }
 
     public string DefaultTypeValidationValue { get; set; }
+  }
+
+  // #Auto validation
+  public class OrgAutoValidation
+  {
+    public bool Enable { get; set; } = false;
+    public string CCSAdminEmailId { get; set; }
+    public string[] BuyerSuccessAdminRoles { get; set; }
+    public string[] BothSuccessAdminRoles { get; set; }
+  }
+
+  public class ExternalApiDetails
+  {
+    public string Url { get; set; }
+
+    public string ApiKey { get; set; }
+  }
+
+  public class LookUpApiSettings
+  {
+    public string LookUpApiKey { get; set; }
+
+    public string LookUpApiUrl { get; set; }
+  }
+
+  public class OrgAutoValidationEmailInfo
+  {
+    public string DeclineRightToBuyStatusEmailTemplateId { get; set; }
+    public string ApproveRightToBuyStatusEmailTemplateId { get; set; }
+    public string RemoveRightToBuyStatusEmailTemplateId { get; set; }
+    public string OrgPendingVerificationEmailTemplateId { get; set; }
+    public string OrgBuyerStatusChangeUpdateToAllAdmins { get; set; }
   }
 }

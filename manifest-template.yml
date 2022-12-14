@@ -88,17 +88,3 @@ applications:
     - CF_SPACE-s3-service
   env:
     CACHE_NUGET_PACKAGES: false
-- name: CF_SPACE-reporting-job
-  instances: 1
-  memory: 512M
-  path: api/CcsSso.Core.ReportingScheduler/bin/Release/net6.0
-  buildpack: https://github.com/cloudfoundry/dotnet-core-buildpack.git
-  no-route: true
-  health-check-type: none
-  services:
-    - CF_SPACE-sso-pg-service
-    - CF_SPACE-vault 
-    - CF_SPACE-ssm-service
-    - CF_SPACE-s3-service
-  env:
-    CACHE_NUGET_PACKAGES: false
