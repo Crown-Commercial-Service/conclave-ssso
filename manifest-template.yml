@@ -86,4 +86,3 @@ applications:
     - CF_SPACE-ssm-service
   env:
     CACHE_NUGET_PACKAGES: false
-
