@@ -235,7 +235,7 @@ namespace CcsSso.Core.Service.External
 
           // If auto validation on and user is buyer or both
            var autoValidationDetails = new AutoValidationDetails { 
-                AdminEmailId = userProfileRequestInfo.UserName,
+                AdminEmailId = userProfileRequestInfo.UserName.ToLower(),
               CompanyHouseId = userProfileRequestInfo.CompanyHouseId
             };
 
@@ -1216,7 +1216,7 @@ namespace CcsSso.Core.Service.External
 
     public async Task<bool> IsUserExist(string userName)
     {
-      var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName && u.UserType == UserType.Primary);
+      var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName.ToLower() == userName.ToLower() && u.UserType == UserType.Primary);
 
       return user != null;
     }
