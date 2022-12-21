@@ -428,6 +428,10 @@ namespace CcsSso.Service
       }
       catch (Exception e)
       {
+        if (await _userProfileService.IsUserExist(organisationRegistrationDto.AdminUserName))
+        {
+          await _userProfileService.DeleteUserAsync(organisationRegistrationDto.AdminUserName.ToLower(), false);
+        }
         await DeleteAsync(ciiOrgId);
         throw;
       }
