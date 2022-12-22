@@ -79,7 +79,8 @@ namespace CcsSso.Core.JobScheduler
           BulkUploadJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/BulkUploadJobExecutionFrequencyInMinutes")),
           InactiveOrganisationDeletionJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/InactiveOrganisationDeletionJobExecutionFrequencyInMinutes")),
           OrganizationRegistrationExpiredThresholdInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/OrganizationRegistrationExpiredThresholdInMinutes")),
-          UnverifiedUserDeletionJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/UnverifiedUserDeletionJobExecutionFrequencyInMinutes"))
+          UnverifiedUserDeletionJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/UnverifiedUserDeletionJobExecutionFrequencyInMinutes")),
+          OrganisationAutovalidationJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/OrganisationAutovalidationJobExecutionFrequencyInMinutes"))
         };
       }
       else if (objType == typeof(BulkUploadSettings))
