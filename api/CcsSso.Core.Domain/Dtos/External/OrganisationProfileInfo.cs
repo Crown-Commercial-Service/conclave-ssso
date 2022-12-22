@@ -101,6 +101,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public bool RightToBuy { get; set; }
 
     public bool IsActive { get; set; }
+
+    public string DomainName { get; set; }
   }
 
   public class OrganisationRole
