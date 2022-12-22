@@ -3,6 +3,7 @@ using CcsSso.Adaptor.Domain.SqsListener;
 using CcsSso.Adaptor.SqsListener.Listners;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
+using CcsSso.Shared.Domain.Helpers;
 using CcsSso.Shared.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -81,7 +82,8 @@ namespace CcsSso.Adaptor.SqsListener
                 queueInfoVault = config.GetSection("QueueInfo").Get<QueueInfoVault>();
               }
 
-              services.AddSingleton( s => {
+              services.AddSingleton(s =>
+              {
                 int.TryParse(sqsJobSettingsVault.JobSchedulerExecutionFrequencyInMinutes, out int jobSchedulerExecutionFrequencyInMinutes);
                 int.TryParse(sqsJobSettingsVault.MessageReadThreshold, out int messageReadThreshold);
 
@@ -165,7 +167,7 @@ namespace CcsSso.Adaptor.SqsListener
     private static dynamic FillAwsParamsValue(Type objType, List<Parameter> parameters)
     {
       dynamic? returnParams = null;
-      if (objType  == typeof(AdaptorApiSetting))
+      if (objType == typeof(AdaptorApiSetting))
       {
         returnParams = new AdaptorApiSetting()
         {
@@ -174,7 +176,7 @@ namespace CcsSso.Adaptor.SqsListener
           ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "AdaptorApiSettings/ApiKey"),
         };
       }
-      else if (objType  == typeof(SqsListnerJobSettingVault))
+      else if (objType == typeof(SqsListnerJobSettingVault))
       {
         returnParams = new SqsListnerJobSettingVault()
         {
@@ -182,21 +184,72 @@ namespace CcsSso.Adaptor.SqsListener
           MessageReadThreshold = _awsParameterStoreService.FindParameterByName(parameters, path + "SqsListnerJobSettings/MessageReadThreshold")
         };
       }
-      else if (objType  == typeof(QueueInfoVault))
+      else if (objType == typeof(QueueInfoVault))
       {
+        string AdaptorNotificationAccessKeyId;
+        string AdaptorNotificationAccessSecretKey;
+        string AdaptorNotificationQueueUrl;
+
+        string PushDataQueueUrl;
+        string PushDataAccessKeyId;
+        string PushDataAccessSecretKey;
+
+        string AccessKeyId;
+        string AccessSecretKey;
+
+        var queueInfoAdaptorNotificationName = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AdaptorNotificationName"); // AdaptorNotification
+
+        if (!string.IsNullOrEmpty(queueInfoAdaptorNotificationName))
+        {
+          var queueInfo = UtilityHelper.GetSqsSetting(queueInfoAdaptorNotificationName);
+          AdaptorNotificationAccessKeyId = queueInfo.credentials.aws_access_key_id;
+          AdaptorNotificationAccessSecretKey = queueInfo.credentials.aws_secret_access_key;
+          AdaptorNotificationQueueUrl = queueInfo.credentials.primary_queue_url;
+          AccessKeyId = queueInfo.credentials.aws_access_key_id; // this is not used in sqs listener. todo: Need to refactor
+          AccessSecretKey = queueInfo.credentials.aws_secret_access_key; // this is not used in sqs listener. todo: Need to refactor
+        }
+        else
+        {
+          AdaptorNotificationAccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AdaptorNotificationAccessKeyId");
+          AdaptorNotificationAccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AdaptorNotificationAccessSecretKey");
+          AdaptorNotificationQueueUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AdaptorNotificationQueueUrl");
+          AccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AccessKeyId"); // this is not used in sqs listener. todo: Need to refactor
+          AccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AccessSecretKey"); // this is not used in sqs listener. todo: Need to refactor
+        }
+
+        var queuePushDataNotificationName = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataName"); // PushNotification
+
+        if (!string.IsNullOrEmpty(queuePushDataNotificationName))
+        {
+          var queueInfo = UtilityHelper.GetSqsSetting(queuePushDataNotificationName);
+          PushDataAccessKeyId = queueInfo.credentials.aws_access_key_id;
+          PushDataAccessSecretKey = queueInfo.credentials.aws_secret_access_key;
+          PushDataQueueUrl = queueInfo.credentials.primary_queue_url;
+        }
+        else
+        {
+          PushDataAccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataAccessKeyId");
+          PushDataAccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataAccessSecretKey");
+          PushDataQueueUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataQueueUrl");
+
+        }
+
         returnParams = new QueueInfoVault()
         {
-          AccessKeyId   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AccessKeyId"),
-          AccessSecretKey   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AccessSecretKey"),
-          ServiceUrl   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/ServiceUrl"),
-          RecieveMessagesMaxCount   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/RecieveMessagesMaxCount"),
-          RecieveWaitTimeInSeconds   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/RecieveWaitTimeInSeconds"),
-          AdaptorNotificationQueueUrl   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AdaptorNotificationQueueUrl"),
-          PushDataQueueUrl   = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataQueueUrl"),
-          AdaptorNotificationAccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AdaptorNotificationAccessKeyId"),
-          AdaptorNotificationAccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AdaptorNotificationAccessSecretKey"),
-          PushDataAccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataAccessKeyId"),
-          PushDataAccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataAccessSecretKey")
+          AccessKeyId = AccessKeyId,
+          AccessSecretKey = AccessSecretKey,
+          ServiceUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/ServiceUrl"),
+
+          RecieveMessagesMaxCount = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/RecieveMessagesMaxCount"),
+          RecieveWaitTimeInSeconds = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/RecieveWaitTimeInSeconds"),
+
+          AdaptorNotificationQueueUrl = AdaptorNotificationQueueUrl,
+          AdaptorNotificationAccessKeyId = AdaptorNotificationAccessKeyId,
+          AdaptorNotificationAccessSecretKey = AdaptorNotificationAccessSecretKey,
+
+          PushDataQueueUrl = PushDataQueueUrl,
+          PushDataAccessKeyId = PushDataAccessKeyId,
+          PushDataAccessSecretKey = PushDataAccessSecretKey
         };
       }
       return returnParams;
