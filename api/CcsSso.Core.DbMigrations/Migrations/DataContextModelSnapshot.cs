@@ -1174,9 +1174,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("DomainName")
-                        .HasColumnType("text");
-
                     b.Property<bool>("IsActivated")
                         .HasColumnType("boolean");
 

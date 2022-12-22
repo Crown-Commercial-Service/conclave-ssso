@@ -84,8 +84,7 @@ namespace CcsSso.Core.Service.External
       {
         CiiOrganisationId = organisationProfileInfo.Detail.OrganisationId,
         LegalName = organisationProfileInfo.Identifier.LegalName.Trim(),
-        OrganisationUri = organisationProfileInfo.Identifier.Uri?.Trim(),
-        DomainName = organisationProfileInfo.Detail.DomainName
+        OrganisationUri = organisationProfileInfo.Identifier.Uri?.Trim()
       };
 
       organisation.IsSme = organisationProfileInfo.Detail.IsSme;
@@ -274,8 +273,7 @@ namespace CcsSso.Core.Service.External
             RightToBuy = organisation.RightToBuy ?? false,
             SupplierBuyerType = organisation.SupplierBuyerType != null ? (int)organisation.SupplierBuyerType : 0,
             BusinessType = organisation.BusinessType ?? string.Empty,
-            CreationDate = organisation.CreatedOnUtc.ToString(DateTimeFormat.DateFormat),
-            DomainName = organisation.DomainName
+            CreationDate = organisation.CreatedOnUtc.ToString(DateTimeFormat.DateFormat)
           },
           AdditionalIdentifiers = new List<OrganisationIdentifier>()
         };

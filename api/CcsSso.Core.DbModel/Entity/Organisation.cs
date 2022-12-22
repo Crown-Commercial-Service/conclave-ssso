@@ -57,7 +57,5 @@ namespace CcsSso.DbModel.Entity
     public bool IsVcse { get; set; }
 
     public List<OrganisationAudit> OrganisationAudits { get; set; }
-
-    public string DomainName { get; set; }
   }
 }

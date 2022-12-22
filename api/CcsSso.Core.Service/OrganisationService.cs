@@ -342,8 +342,7 @@ namespace CcsSso.Service
             OrganisationId = ciiOrgId,
             BusinessType = organisationRegistrationDto.BusinessType,
             RightToBuy = organisationRegistrationDto.RightToBuy,
-            SupplierBuyerType = organisationRegistrationDto.SupplierBuyerType,
-            DomainName = organisationRegistrationDto.AdminUserName?.Split('@')?[1]
+            SupplierBuyerType = organisationRegistrationDto.SupplierBuyerType
           }
         };
 
