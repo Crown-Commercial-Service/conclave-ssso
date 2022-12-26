@@ -268,6 +268,17 @@ namespace CcsSso.Security.Api.CustomOptions
       Data.Add("Email:ResetPasswordLinkTTLInMinutes", _email.ResetPasswordLinkTTLInMinutes);
       Data.Add("Email:SendNotificationsEnabled", _email.SendNotificationsEnabled);
 
+      if (_secrets.Data.ContainsKey("QueueInfo"))
+      {
+        var queueInfo = JsonConvert.DeserializeObject<QueueInfoVault>(_secrets.Data["QueueInfo"].ToString());
+        Data.Add("QueueInfo:AccessKeyId", queueInfo.AccessKeyId);
+        Data.Add("QueueInfo:AccessSecretKey", queueInfo.AccessSecretKey);
+        Data.Add("QueueInfo:ServiceUrl", queueInfo.ServiceUrl);
+        Data.Add("QueueInfo:RecieveMessagesMaxCount", queueInfo.RecieveMessagesMaxCount);
+        Data.Add("QueueInfo:RecieveWaitTimeInSeconds", queueInfo.RecieveWaitTimeInSeconds);
+        Data.Add("QueueInfo:EnableDataQueue", queueInfo.EnableDataQueue);
+        Data.Add("QueueInfo:DataQueueUrl", queueInfo.DataQueueUrl);
+      }
     }
   }
 
@@ -461,6 +472,23 @@ namespace CcsSso.Security.Api.CustomOptions
     public string[] ClaimsSupported { get; set; }
 
     public string RequestUriParameterSupported { get; set; }
+  }
+
+  public class QueueInfoVault
+  {
+    public string AccessKeyId { get; set; } 
+
+    public string AccessSecretKey { get; set; } 
+
+    public string ServiceUrl { get; set; } 
+
+    public string RecieveMessagesMaxCount { get; set; }
+
+    public string RecieveWaitTimeInSeconds { get; set; }
+
+    public string EnableDataQueue { get; set; }
+
+    public string DataQueueUrl { get; set; }
   }
 }
 

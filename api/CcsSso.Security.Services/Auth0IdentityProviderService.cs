@@ -4,11 +4,14 @@ using Auth0.Core.Exceptions;
 using Auth0.ManagementApi;
 using Auth0.ManagementApi.Models;
 using Auth0.ManagementApi.Paging;
+using CcsSso.Domain.Constants;
 using CcsSso.Security.Domain.Contracts;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Security.Domain.Exceptions;
 using CcsSso.Security.Services.Helpers;
 using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain.Dto;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -36,9 +39,11 @@ namespace CcsSso.Security.Services
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
     private readonly IRemoteCacheService _remoteCacheService;
 
+    private readonly IAwsSqsService _awsSqsService;
+
     public Auth0IdentityProviderService(ApplicationConfigurationInfo appConfigInfo, TokenHelper tokenHelper,
       IHttpClientFactory httpClientFactory, ICcsSsoEmailService ccsSsoEmailService, IJwtTokenHandler jwtTokenHandler,
-      ISecurityCacheService securityCacheService, IRemoteCacheService remoteCacheService)
+      ISecurityCacheService securityCacheService, IRemoteCacheService remoteCacheService, IAwsSqsService awsSqsService)
     {
       _appConfigInfo = appConfigInfo;
       _authenticationApiClient = new AuthenticationApiClient(_appConfigInfo.Auth0ConfigurationInfo.Domain);
@@ -48,6 +53,7 @@ namespace CcsSso.Security.Services
       _jwtTokenHandler = jwtTokenHandler;
       _securityCacheService = securityCacheService;
       _remoteCacheService = remoteCacheService;
+      _awsSqsService = awsSqsService;
     }
 
     /// <summary>
@@ -145,7 +151,17 @@ namespace CcsSso.Security.Services
       }
       catch (ErrorApiException e)
       {
-        if (e.ApiError.Error == "Conflict")
+        if (e.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+        {
+          await PushCreateUserMessageToDataQueueAsync(userInfo); 
+
+          return new UserRegisterResult()
+          {
+            UserName = userInfo.Email,
+            Id = userInfo.Id
+          };
+        }
+        else if (e.ApiError.Error == "Conflict")
         {
           throw new CcsSsoException("USERNAME_EXISTS");
         }
@@ -777,13 +793,13 @@ namespace CcsSso.Security.Services
             }
             catch (Exception ex)
             {
-              Console.WriteLine($"Exception while resetting mfa before deleting the user from Auth0. Error Message - {ex.Message}");              
+              Console.WriteLine($"Exception while resetting mfa before deleting the user from Auth0. Error Message - {ex.Message}");
             }
-            
+
 
             foreach (var user in users)
             {
-             await _managementApiClient.Users.DeleteAsync(user.UserId);
+              await _managementApiClient.Users.DeleteAsync(user.UserId);
             }
           }
           else
@@ -793,7 +809,11 @@ namespace CcsSso.Security.Services
         }
         catch (ErrorApiException e)
         {
-          if (e.ApiError.ErrorCode == "invalid_query_string")
+          if (e.StatusCode == System.Net.HttpStatusCode.TooManyRequests) 
+          {
+            await PushDeleteUserMessageToDataQueueAsync(email);
+          }
+          else if (e.ApiError.ErrorCode == "invalid_query_string")
           {
             throw new CcsSsoException("INVALID_EMAIL");
           }
@@ -1201,5 +1221,55 @@ namespace CcsSso.Security.Services
         }
       }
     }
+
+    private async Task PushCreateUserMessageToDataQueueAsync(Domain.Dtos.UserInfo userInfo)
+    {
+      if (_appConfigInfo.QueueInfo.EnableDataQueue)
+      {
+        try
+        {
+          SqsMessageDto sqsMessageDto = new()
+          {
+            MessageBody = JsonConvert.SerializeObject(userInfo),
+            StringCustomAttributes = new Dictionary<string, string>
+              {
+                { "Destination", "Security" },
+                { "Action", "POST" },
+              }
+          };
+
+          await _awsSqsService.SendMessageAsync(_appConfigInfo.QueueInfo.DataQueueUrl, $"User-{userInfo.Email}", sqsMessageDto);
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine($"Error sending message to queue. User: {userInfo.Email}, Error: {ex.Message}");
+        }
+      }
+    }
+
+    private async Task PushDeleteUserMessageToDataQueueAsync(string email)
+    {
+      if (_appConfigInfo.QueueInfo.EnableDataQueue)
+      {
+        try
+        {
+          SqsMessageDto sqsMessageDto = new()
+          {
+            MessageBody = email,
+            StringCustomAttributes = new Dictionary<string, string>
+              {
+                { "Destination", "Security" },
+                { "Action", "DELETE" }
+              }
+          };
+
+          await _awsSqsService.SendMessageAsync(_appConfigInfo.QueueInfo.DataQueueUrl, $"User-{email}", sqsMessageDto);
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine($"Error sending message to queue. User: {email}, Error: {ex.Message}");
+        }
+      }
+    }    
   }
 }

@@ -11,6 +11,12 @@ namespace CcsSso.Adaptor.Domain.SqsListener
     public SqsListnerJobSetting SqsListnerJobSetting { get; set; }
 
     public QueueUrlInfo QueueUrlInfo { get; set; }
+
+    public DataQueueSettings DataQueueSettings { get; set; }
+
+    public SecurityApiSettings SecurityApiSettings { get; set; }
+
+    public EmailSettings EmailSettings { get; set; }
   }
 
   public class SqsListnerJobSetting
@@ -34,6 +40,8 @@ namespace CcsSso.Adaptor.Domain.SqsListener
     public string AdaptorNotificationQueueUrl { get; set; }
 
     public string PushDataQueueUrl { get; set; }
+
+    public string DataQueueUrl { get; set; }
   }
 
   public class SqsListnerJobSettingVault
@@ -62,6 +70,8 @@ namespace CcsSso.Adaptor.Domain.SqsListener
     public string AdaptorNotificationQueueUrl { get; set; }
 
     public string PushDataQueueUrl { get; set; }
+
+    public string DataQueueUrl { get; set; }
   }
 
   public class RedisCacheSettingVault
@@ -69,5 +79,58 @@ namespace CcsSso.Adaptor.Domain.SqsListener
     public string ConnectionString { get; set; }
 
     public string IsEnabled { get; set; }
+  }
+  public class SecurityApiSettingsVault
+  {
+    public string ApiKey { get; set; }
+
+    public string Url { get; set; }
+  }
+
+  public class SecurityApiSettings
+  {
+    public string ApiKey { get; set; }
+
+    public string Url { get; set; }
+  }
+
+  public class DataQueueSettingsVault
+  {
+    public string DelayInSeconds { get; set; }
+
+    public string RetryMaxCount { get; set; }
+  }
+
+  public class DataQueueSettings
+  {
+    public int DelayInSeconds { get; set; }
+
+    public int RetryMaxCount { get; set; }
+  }
+
+  public class EmailSettingsVault
+  {
+    public string ApiKey { get; set; }
+
+    public string SendNotificationsEnabled { get; set; }
+
+    public string Auth0CreateUserErrorNotificationTemplateId { get; set; }
+
+    public string Auth0DeleteUserErrorNotificationTemplateId { get; set; }
+
+    public string[] SendDataQueueErrorNotificationToEmailIds { get; set; }
+  }
+
+  public class EmailSettings
+  {
+    public string ApiKey { get; set; }
+
+    public bool SendNotificationsEnabled { get; set; }
+
+    public string Auth0CreateUserErrorNotificationTemplateId { get; set; }
+
+    public string Auth0DeleteUserErrorNotificationTemplateId { get; set; }
+
+    public string[] SendDataQueueErrorNotificationToEmailIds { get; set; }
   }
 }
