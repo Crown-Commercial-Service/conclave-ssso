@@ -118,10 +118,22 @@ namespace CcsSso.Core.JobScheduler
       }
       else if (objType == typeof(S3ConfigurationInfoVault))
       {
+        var s3ConfigurationInfoName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/Name");
+
+        var AccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/AccessKeyId");
+        var AccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/AccessSecretKey");
+
+        if (!string.IsNullOrEmpty(s3ConfigurationInfoName))
+        {
+          var s3ConfigurationInfo = UtilityHelper.GetS3Settings(s3ConfigurationInfoName);
+          AccessKeyId= s3ConfigurationInfo.credentials.aws_access_key_id;
+          AccessSecretKey =s3ConfigurationInfo.credentials.aws_secret_access_key;
+        }
+
         returnParams = new S3ConfigurationInfoVault()
         {
-          AccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/AccessKeyId"),
-          AccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/AccessSecretKey"),
+          AccessKeyId = AccessKeyId,
+          AccessSecretKey = AccessSecretKey,
           ServiceUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/ServiceUrl"),
           BulkUploadBucketName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/BulkUploadBucketName"),
           BulkUploadTemplateFolderName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/BulkUploadTemplateFolderName"),
