@@ -51,13 +51,11 @@ namespace CcsSso.Adaptor.SqsListener.Listners
     {
       var msgs = await _awsDataSqsService.ReceiveMessagesAsync(_appSetting.QueueUrlInfo.DataQueueUrl);
       Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: {msgs.Count} messages received at {DateTime.UtcNow}");
-      List<Task> taskList = new List<Task>();
-      msgs.ForEach((msg) =>
+      foreach (var msg in msgs)
       {
         Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: Message with id {msg.MessageId} received at {DateTime.UtcNow}");
-        taskList.Add(ProcessMessageAsync(msg));
-      });
-      await Task.WhenAll(taskList);
+        await ProcessMessageAsync(msg);
+      }
     }
 
     private async Task ProcessMessageAsync(SqsMessageResponseDto sqsMessageResponseDto)
@@ -95,8 +93,8 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
       var client = _httpClientFactory.CreateClient("SecurityApi");
 
-      HttpContent data = new StringContent(sqsMessageResponseDto.MessageBody);
-      var response = await client.PostAsync(new Uri(url), data);
+      HttpContent data = new StringContent(sqsMessageResponseDto.MessageBody, System.Text.Encoding.UTF8, "application/json");
+      var response = await client.PostAsync(url, data);
 
       if (response.IsSuccessStatusCode)
       {
@@ -112,13 +110,15 @@ namespace CcsSso.Adaptor.SqsListener.Listners
         if (retryCount <= _appSetting.DataQueueSettings.RetryMaxCount)
         {
           Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_NAME} :: Message processing retry: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
-          await CreateUser(sqsMessageResponseDto, retryCount++);
+          retryCount = retryCount + 1;
+          await CreateUser(sqsMessageResponseDto, retryCount);
         }
         else
         {
           var user = JsonConvert.DeserializeObject<UserInfo>(sqsMessageResponseDto.MessageBody);
           await SendCreateUserErrorNotification(user.Email);
           Console.WriteLine($"WorkerError: {LISTNER_JOB_NAME} :: Message processing retry failed for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
+          await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
         }
       }
     }
@@ -133,7 +133,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
       var url = "/security/users?email=" + email;
 
-      var response = await client.GetAsync(new Uri(url));
+      var response = await client.DeleteAsync(url);
 
       if (response.IsSuccessStatusCode)
       {
@@ -149,12 +149,14 @@ namespace CcsSso.Adaptor.SqsListener.Listners
         if (retryCount <= _appSetting.DataQueueSettings.RetryMaxCount)
         {
           Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_NAME} :: Message processing retry: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
-          await DeleteUser(sqsMessageResponseDto, retryCount++);
+          retryCount = retryCount + 1; 
+          await DeleteUser(sqsMessageResponseDto, retryCount);
         }
         else
         {
           await SendDeleteUserErrorNotification(email);
           Console.WriteLine($"WorkerError: {LISTNER_JOB_NAME} :: Message processing retry failed for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
+          await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
         }
       }
     }
