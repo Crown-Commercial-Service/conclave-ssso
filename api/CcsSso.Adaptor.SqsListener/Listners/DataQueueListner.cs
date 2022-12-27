@@ -21,16 +21,16 @@ namespace CcsSso.Adaptor.SqsListener.Listners
     private const string LISTNER_JOB_NAME = "DataQueueListner";
     private readonly ILogger<DataQueueListner> _logger;
     private readonly SqsListnerAppSetting _appSetting;
-    private readonly IAwsPushDataSqsService _awsPushDataSqsService;
+    private readonly IAwsDataSqsService _awsDataSqsService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IEmailProviderService _emaillProviderService;
 
-    public DataQueueListner(ILogger<DataQueueListner> logger, SqsListnerAppSetting appSetting, IAwsPushDataSqsService AwsPushDataSqsService,
+    public DataQueueListner(ILogger<DataQueueListner> logger, SqsListnerAppSetting appSetting, IAwsDataSqsService AwsDataSqsService,
       IHttpClientFactory httpClientFactory, IEmailProviderService emaillProviderService)
     {
       _logger = logger;
       _appSetting = appSetting;
-      _awsPushDataSqsService = AwsPushDataSqsService;
+      _awsDataSqsService = AwsDataSqsService;
       _httpClientFactory = httpClientFactory;
       _emaillProviderService = emaillProviderService;
     }
@@ -49,7 +49,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
     private async Task PerformJobAsync()
     {
-      var msgs = await _awsPushDataSqsService.ReceiveMessagesAsync(_appSetting.QueueUrlInfo.DataQueueUrl);
+      var msgs = await _awsDataSqsService.ReceiveMessagesAsync(_appSetting.QueueUrlInfo.DataQueueUrl);
       Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: {msgs.Count} messages received at {DateTime.UtcNow}");
       List<Task> taskList = new List<Task>();
       msgs.ForEach((msg) =>
@@ -64,8 +64,6 @@ namespace CcsSso.Adaptor.SqsListener.Listners
     {
       try
       {
-        await Task.Delay(_appSetting.DataQueueSettings.DelayInSeconds * 1000);
-
         var destination = sqsMessageResponseDto.StringCustomAttributes["Destination"];
         var action = sqsMessageResponseDto.StringCustomAttributes["Action"];
 
@@ -91,6 +89,8 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
     private async Task CreateUser(SqsMessageResponseDto sqsMessageResponseDto, int retryCount = 0)
     {
+      await Task.Delay(_appSetting.DataQueueSettings.DelayInSeconds * 1000);
+
       var url = "security/users";
 
       var client = _httpClientFactory.CreateClient("SecurityApi");
@@ -125,6 +125,8 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
     private async Task DeleteUser(SqsMessageResponseDto sqsMessageResponseDto, int retryCount = 0)
     {
+      await Task.Delay(_appSetting.DataQueueSettings.DelayInSeconds * 1000);
+
       var client = _httpClientFactory.CreateClient("SecurityApi");
 
       var email = sqsMessageResponseDto.MessageBody;
@@ -162,7 +164,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
       try
       {
         Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: Deleteing message from queue. MessageId: {sqsMessageResponseDto.MessageId}");
-        await _awsPushDataSqsService.DeleteMessageAsync(_appSetting.QueueUrlInfo.DataQueueUrl, sqsMessageResponseDto.ReceiptHandle);
+        await _awsDataSqsService.DeleteMessageAsync(_appSetting.QueueUrlInfo.DataQueueUrl, sqsMessageResponseDto.ReceiptHandle);
       }
       catch (Exception ex)
       {

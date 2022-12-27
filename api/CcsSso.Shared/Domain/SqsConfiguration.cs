@@ -17,6 +17,9 @@ namespace CcsSso.Shared.Domain
     public string PushDataAccessKeyId { get; set; }
     public string PushDataAccessSecretKey { get; set; }
 
+    public string DataAccessKeyId { get; set; }
+    public string DataAccessSecretKey { get; set; }
+
     public int RecieveMessagesMaxCount { get; set; }
 
     public int RecieveWaitTimeInSeconds { get; set; }

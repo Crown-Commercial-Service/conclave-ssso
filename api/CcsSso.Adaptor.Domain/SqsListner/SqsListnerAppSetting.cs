@@ -72,6 +72,10 @@ namespace CcsSso.Adaptor.Domain.SqsListener
     public string PushDataQueueUrl { get; set; }
 
     public string DataQueueUrl { get; set; }
+
+    public string DataAccessKeyId { get; set; }
+
+    public string DataAccessSecretKey { get; set; }
   }
 
   public class RedisCacheSettingVault

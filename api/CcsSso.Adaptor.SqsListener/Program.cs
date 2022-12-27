@@ -166,6 +166,8 @@ namespace CcsSso.Adaptor.SqsListener
                   AccessSecretKey = queueInfoVault.AdaptorNotificationAccessSecretKey,
                   PushDataAccessKeyId = queueInfoVault.PushDataAccessKeyId,
                   PushDataAccessSecretKey = queueInfoVault.PushDataAccessSecretKey,
+                  DataAccessKeyId = queueInfoVault.DataAccessKeyId,
+                  DataAccessSecretKey = queueInfoVault.DataAccessSecretKey,
                   RecieveMessagesMaxCount = recieveMessagesMaxCount,
                   RecieveWaitTimeInSeconds = recieveWaitTimeInSeconds
                 };
@@ -185,6 +187,7 @@ namespace CcsSso.Adaptor.SqsListener
 
               services.AddSingleton<IAwsSqsService, AwsSqsService>();
               services.AddSingleton<IAwsPushDataSqsService, AwsPushDataSqsService>();
+              services.AddSingleton<IAwsDataSqsService, AwsDataSqsService>();
               services.AddSingleton<IEmailProviderService, EmailProviderService>();
 
               services.AddHttpClient("AdaptorApi", c =>
@@ -201,8 +204,10 @@ namespace CcsSso.Adaptor.SqsListener
               });
 
               services.AddHttpClient("ConsumerClient");
+
               services.AddHostedService<WrapperNotificationListner>();
               services.AddHostedService<AdapterPushDataListner>();
+              services.AddHostedService<DataQueueListner>();
             });
 
     private static async Task<Dictionary<string, object>> LoadSecretsAsync()
@@ -261,6 +266,10 @@ namespace CcsSso.Adaptor.SqsListener
         string AccessKeyId;
         string AccessSecretKey;
 
+        string DataQueueUrl;
+        string DataAccessKeyId;
+        string DataAccessSecretKey;
+
         var queueInfoAdaptorNotificationName = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AdaptorNotificationName"); // AdaptorNotification
 
         if (!string.IsNullOrEmpty(queueInfoAdaptorNotificationName))
@@ -295,7 +304,22 @@ namespace CcsSso.Adaptor.SqsListener
           PushDataAccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataAccessKeyId");
           PushDataAccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataAccessSecretKey");
           PushDataQueueUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataQueueUrl");
+        }
 
+        var queueDataName = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataName"); // Data Queue
+
+        if (!string.IsNullOrEmpty(queueDataName))
+        {
+          var queueInfo = UtilityHelper.GetSqsSetting(queueDataName);
+          DataAccessKeyId = queueInfo.credentials.aws_access_key_id;
+          DataAccessSecretKey = queueInfo.credentials.aws_secret_access_key;
+          DataQueueUrl = queueInfo.credentials.primary_queue_url;
+        }
+        else
+        {
+          DataAccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataAccessKeyId");
+          DataAccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataAccessSecretKey");
+          DataQueueUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataQueueUrl");
         }
 
         returnParams = new QueueInfoVault()
@@ -315,7 +339,28 @@ namespace CcsSso.Adaptor.SqsListener
           PushDataAccessKeyId = PushDataAccessKeyId,
           PushDataAccessSecretKey = PushDataAccessSecretKey,
 
-          DataQueueUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataQueueUrl")
+          DataQueueUrl = DataQueueUrl,
+          DataAccessKeyId = DataAccessKeyId,
+          DataAccessSecretKey = DataAccessSecretKey,
+        };
+      }
+      else if (objType == typeof(SecurityApiSettingsVault))
+      {
+        returnParams = new SecurityApiSettingsVault()
+        {
+          ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "SecurityApiSettings/ApiKey"),
+          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "SecurityApiSettings/Url")
+        };
+      }
+      else if (objType == typeof(EmailSettingsVault))
+      {
+        returnParams = new EmailSettingsVault()
+        {
+          ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "Email/ApiKey"),
+          SendNotificationsEnabled = _awsParameterStoreService.FindParameterByName(parameters, path + "Email/SendNotificationsEnabled"),
+          Auth0CreateUserErrorNotificationTemplateId = _awsParameterStoreService.FindParameterByName(parameters, path + "Email/Auth0CreateUserErrorNotificationTemplateId"),
+          Auth0DeleteUserErrorNotificationTemplateId = _awsParameterStoreService.FindParameterByName(parameters, path + "Email/Auth0DeleteUserErrorNotificationTemplateId"),
+          SendDataQueueErrorNotificationToEmailIds = getStringToArray(_awsParameterStoreService.FindParameterByName(parameters, path + "Email/SendDataQueueErrorNotificationToEmailIds"))
         };
       }
       return returnParams;
