@@ -271,12 +271,12 @@ namespace CcsSso.Security.Api.CustomOptions
       if (_secrets.Data.ContainsKey("QueueInfo"))
       {
         var queueInfo = JsonConvert.DeserializeObject<QueueInfoVault>(_secrets.Data["QueueInfo"].ToString());
-        Data.Add("QueueInfo:AccessKeyId", queueInfo.AccessKeyId);
-        Data.Add("QueueInfo:AccessSecretKey", queueInfo.AccessSecretKey);
         Data.Add("QueueInfo:ServiceUrl", queueInfo.ServiceUrl);
         Data.Add("QueueInfo:RecieveMessagesMaxCount", queueInfo.RecieveMessagesMaxCount);
         Data.Add("QueueInfo:RecieveWaitTimeInSeconds", queueInfo.RecieveWaitTimeInSeconds);
         Data.Add("QueueInfo:EnableDataQueue", queueInfo.EnableDataQueue);
+        Data.Add("QueueInfo:DataAccessKeyId", queueInfo.DataAccessKeyId);
+        Data.Add("QueueInfo:DataAccessSecretKey", queueInfo.DataAccessSecretKey);
         Data.Add("QueueInfo:DataQueueUrl", queueInfo.DataQueueUrl);
       }
     }
@@ -476,9 +476,6 @@ namespace CcsSso.Security.Api.CustomOptions
 
   public class QueueInfoVault
   {
-    public string AccessKeyId { get; set; } 
-
-    public string AccessSecretKey { get; set; } 
 
     public string ServiceUrl { get; set; } 
 
@@ -487,6 +484,10 @@ namespace CcsSso.Security.Api.CustomOptions
     public string RecieveWaitTimeInSeconds { get; set; }
 
     public string EnableDataQueue { get; set; }
+
+    public string DataAccessKeyId { get; set; }
+
+    public string DataAccessSecretKey { get; set; }
 
     public string DataQueueUrl { get; set; }
   }

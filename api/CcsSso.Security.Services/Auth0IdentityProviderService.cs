@@ -39,11 +39,11 @@ namespace CcsSso.Security.Services
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
     private readonly IRemoteCacheService _remoteCacheService;
 
-    private readonly IAwsSqsService _awsSqsService;
+    private readonly IAwsDataSqsService _awsDataSqsService;
 
     public Auth0IdentityProviderService(ApplicationConfigurationInfo appConfigInfo, TokenHelper tokenHelper,
       IHttpClientFactory httpClientFactory, ICcsSsoEmailService ccsSsoEmailService, IJwtTokenHandler jwtTokenHandler,
-      ISecurityCacheService securityCacheService, IRemoteCacheService remoteCacheService, IAwsSqsService awsSqsService)
+      ISecurityCacheService securityCacheService, IRemoteCacheService remoteCacheService, IAwsDataSqsService awsDataSqsService)
     {
       _appConfigInfo = appConfigInfo;
       _authenticationApiClient = new AuthenticationApiClient(_appConfigInfo.Auth0ConfigurationInfo.Domain);
@@ -53,7 +53,7 @@ namespace CcsSso.Security.Services
       _jwtTokenHandler = jwtTokenHandler;
       _securityCacheService = securityCacheService;
       _remoteCacheService = remoteCacheService;
-      _awsSqsService = awsSqsService;
+      _awsDataSqsService = awsDataSqsService;
     }
 
     /// <summary>
@@ -1238,7 +1238,7 @@ namespace CcsSso.Security.Services
               }
           };
 
-          await _awsSqsService.SendMessageAsync(_appConfigInfo.QueueInfo.DataQueueUrl, $"User-{userInfo.Email}", sqsMessageDto);
+          await _awsDataSqsService.SendMessageAsync(_appConfigInfo.QueueInfo.DataQueueUrl, $"User-{userInfo.Email}", sqsMessageDto);
         }
         catch (Exception ex)
         {
@@ -1263,7 +1263,7 @@ namespace CcsSso.Security.Services
               }
           };
 
-          await _awsSqsService.SendMessageAsync(_appConfigInfo.QueueInfo.DataQueueUrl, $"User-{email}", sqsMessageDto);
+          await _awsDataSqsService.SendMessageAsync(_appConfigInfo.QueueInfo.DataQueueUrl, $"User-{email}", sqsMessageDto);
         }
         catch (Exception ex)
         {

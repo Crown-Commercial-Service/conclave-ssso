@@ -252,8 +252,8 @@ namespace CcsSso.Security.Api
         var sqsConfiguration = new SqsConfiguration
         {
           ServiceUrl = Configuration["QueueInfo:ServiceUrl"],
-          AccessKeyId = Configuration["QueueInfo:AccessKeyId"],
-          AccessSecretKey = Configuration["QueueInfo:AccessSecretKey"],
+          DataAccessKeyId = Configuration["QueueInfo:DataAccessKeyId"],
+          DataAccessSecretKey = Configuration["QueueInfo:DataAccessSecretKey"],
           RecieveMessagesMaxCount = recieveMessagesMaxCount,
           RecieveWaitTimeInSeconds = recieveWaitTimeInSeconds
         };
@@ -286,7 +286,7 @@ namespace CcsSso.Security.Api
       services.AddMemoryCache();
       services.AddSingleton<IRemoteCacheService, RedisCacheService>();
       services.AddSingleton<ICryptographyService, CryptographyService>();
-      services.AddSingleton<IAwsSqsService, AwsSqsService>();
+      services.AddSingleton<IAwsDataSqsService, AwsDataSqsService>();
       services.AddSingleton<RedisConnectionPoolService>(_ =>
         new RedisConnectionPoolService(Configuration["RedisCacheSettings:ConnectionString"])
       );

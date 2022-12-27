@@ -166,25 +166,26 @@ namespace CcsSso.Security.Api.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ResetPasswordSettings/MaxAllowedAttempts", "ResetPasswordSettings:MaxAllowedAttempts"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ResetPasswordSettings/MaxAllowedAttemptsThresholdInMinutes", "ResetPasswordSettings:MaxAllowedAttemptsThresholdInMinutes"));
 
-      var queueInfoName = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/Name");
+      var queueDataName = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataName"); // Data Queue
 
-      if (!string.IsNullOrEmpty(queueInfoName))
+      if (!string.IsNullOrEmpty(queueDataName))
       {
-        var queueInfo = UtilityHelper.GetSqsSetting(queueInfoName);
-        Data.Add("QueueInfo:AccessKeyId", queueInfo.credentials.aws_access_key_id);
-        Data.Add("QueueInfo:AccessSecretKey", queueInfo.credentials.aws_secret_access_key);
+        var queueInfo = UtilityHelper.GetSqsSetting(queueDataName);
+        Data.Add("QueueInfo:DataAccessKeyId", queueInfo.credentials.aws_access_key_id);
+        Data.Add("QueueInfo:DataAccessSecretKey", queueInfo.credentials.aws_secret_access_key);
+        Data.Add("QueueInfo:DataQueueUrl", queueInfo.credentials.primary_queue_url);
       }
       else
       {
-        Data.Add("QueueInfo:AccessKeyId", _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AccessKeyId"));
-        Data.Add("QueueInfo:AccessSecretKey", _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AccessSecretKey"));
+        Data.Add("QueueInfo:DataAccessKeyId", _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataAccessKeyId"));
+        Data.Add("QueueInfo:DataAccessSecretKey", _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataAccessSecretKey"));
+        Data.Add("QueueInfo:DataQueueUrl", _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataQueueUrl"));
       }
 
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "QueueInfo/ServiceUrl", "QueueInfo:ServiceUrl"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "QueueInfo/RecieveMessagesMaxCount", "QueueInfo:RecieveMessagesMaxCount"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "QueueInfo/RecieveWaitTimeInSeconds", "QueueInfo:RecieveWaitTimeInSeconds"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "QueueInfo/EnableDataQueue", "QueueInfo:EnableDataQueue"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "QueueInfo/DataQueueUrl", "QueueInfo:DataQueueUrl"));
 
       foreach (var configuration in configurations)
       {
