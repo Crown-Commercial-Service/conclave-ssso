@@ -151,17 +151,7 @@ namespace CcsSso.Security.Services
       }
       catch (ErrorApiException e)
       {
-        if (e.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-        {
-          await PushCreateUserMessageToDataQueueAsync(userInfo); 
-
-          return new UserRegisterResult()
-          {
-            UserName = userInfo.Email,
-            Id = userInfo.Id
-          };
-        }
-        else if (e.ApiError.Error == "Conflict")
+        if (e.ApiError.Error == "Conflict")
         {
           throw new CcsSsoException("USERNAME_EXISTS");
         }
@@ -179,6 +169,16 @@ namespace CcsSso.Security.Services
         {
           throw new CcsSsoException("USER_REGISTRATION_FAILED");
         }
+      }
+      catch (RateLimitApiException)
+      {
+        await PushCreateUserMessageToDataQueueAsync(userInfo);
+
+        return new UserRegisterResult()
+        {
+          UserName = userInfo.Email,
+          Id = userInfo.Id
+        };
       }
     }
 
@@ -809,14 +809,14 @@ namespace CcsSso.Security.Services
         }
         catch (ErrorApiException e)
         {
-          if (e.StatusCode == System.Net.HttpStatusCode.TooManyRequests) 
-          {
-            await PushDeleteUserMessageToDataQueueAsync(email);
-          }
-          else if (e.ApiError.ErrorCode == "invalid_query_string")
+          if (e.ApiError.ErrorCode == "invalid_query_string")
           {
             throw new CcsSsoException("INVALID_EMAIL");
           }
+        }
+        catch (RateLimitApiException)
+        {
+          await PushDeleteUserMessageToDataQueueAsync(email);
         }
       }
     }
@@ -1270,6 +1270,6 @@ namespace CcsSso.Security.Services
           Console.WriteLine($"Error sending message to queue. User: {email}, Error: {ex.Message}");
         }
       }
-    }    
+    }
   }
 }
