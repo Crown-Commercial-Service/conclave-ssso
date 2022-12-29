@@ -104,6 +104,15 @@ namespace CcsSso.Adaptor.SqsListener
                   jobSchedulerExecutionFrequencyInMinutes = 10;
                 }
 
+                int.TryParse(sqsJobSettingsVault.DataQueueJobSchedulerExecutionFrequencyInMinutes, out int dataQueueJobSchedulerExecutionFrequencyInMinutes);
+                int.TryParse(sqsJobSettingsVault.DataQueueMessageReadThreshold, out int dataQueueMessageReadThreshold);
+
+                if (jobSchedulerExecutionFrequencyInMinutes == 0)
+                {
+                  jobSchedulerExecutionFrequencyInMinutes = 10;
+                }
+
+
                 int.TryParse(dataQueueSettingsVault.DelayInSeconds, out int dataQueueSettingsDelayInSeconds);
                 if (dataQueueSettingsDelayInSeconds == 0)
                 {
@@ -123,7 +132,9 @@ namespace CcsSso.Adaptor.SqsListener
                   SqsListnerJobSetting = new SqsListnerJobSetting
                   {
                     JobSchedulerExecutionFrequencyInMinutes = jobSchedulerExecutionFrequencyInMinutes,
-                    MessageReadThreshold = messageReadThreshold
+                    MessageReadThreshold = messageReadThreshold,
+                    DataQueueJobSchedulerExecutionFrequencyInMinutes = dataQueueJobSchedulerExecutionFrequencyInMinutes,
+                    DataQueueMessageReadThreshold = dataQueueMessageReadThreshold
                   },
                   QueueUrlInfo = new Domain.SqsListener.QueueUrlInfo
                   {
@@ -159,6 +170,11 @@ namespace CcsSso.Adaptor.SqsListener
 
                 int.TryParse(queueInfoVault.RecieveWaitTimeInSeconds, out int recieveWaitTimeInSeconds); // Default value 0
 
+                int.TryParse(queueInfoVault.DataQueueRecieveMessagesMaxCount, out int dataQueueRecieveMessagesMaxCount);
+                dataQueueRecieveMessagesMaxCount = dataQueueRecieveMessagesMaxCount == 0 ? 10 : dataQueueRecieveMessagesMaxCount;
+
+                int.TryParse(queueInfoVault.DataQueueRecieveWaitTimeInSeconds, out int dataQueueRecieveWaitTimeInSeconds); // Default value 0
+
                 var sqsConfiguration = new SqsConfiguration
                 {
                   ServiceUrl = queueInfoVault.ServiceUrl,
@@ -166,8 +182,10 @@ namespace CcsSso.Adaptor.SqsListener
                   AccessSecretKey = queueInfoVault.AdaptorNotificationAccessSecretKey,
                   PushDataAccessKeyId = queueInfoVault.PushDataAccessKeyId,
                   PushDataAccessSecretKey = queueInfoVault.PushDataAccessSecretKey,
-                  DataAccessKeyId = queueInfoVault.DataAccessKeyId,
-                  DataAccessSecretKey = queueInfoVault.DataAccessSecretKey,
+                  DataQueueAccessKeyId = queueInfoVault.DataQueueAccessKeyId,
+                  DataQueueAccessSecretKey = queueInfoVault.DataQueueAccessSecretKey,
+                  DataQueueRecieveMessagesMaxCount = dataQueueRecieveMessagesMaxCount,
+                  DataQueueRecieveWaitTimeInSeconds = dataQueueRecieveWaitTimeInSeconds,
                   RecieveMessagesMaxCount = recieveMessagesMaxCount,
                   RecieveWaitTimeInSeconds = recieveWaitTimeInSeconds
                 };
@@ -250,7 +268,9 @@ namespace CcsSso.Adaptor.SqsListener
         returnParams = new SqsListnerJobSettingVault()
         {
           JobSchedulerExecutionFrequencyInMinutes = _awsParameterStoreService.FindParameterByName(parameters, path + "SqsListnerJobSettings/JobSchedulerExecutionFrequencyInMinutes"),
-          MessageReadThreshold = _awsParameterStoreService.FindParameterByName(parameters, path + "SqsListnerJobSettings/MessageReadThreshold")
+          MessageReadThreshold = _awsParameterStoreService.FindParameterByName(parameters, path + "SqsListnerJobSettings/MessageReadThreshold"),
+          DataQueueJobSchedulerExecutionFrequencyInMinutes = _awsParameterStoreService.FindParameterByName(parameters, path + "SqsListnerJobSettings/DataQueueJobSchedulerExecutionFrequencyInMinutes"),
+          DataQueueMessageReadThreshold = _awsParameterStoreService.FindParameterByName(parameters, path + "SqsListnerJobSettings/DataQueueMessageReadThreshold")
         };
       }
       else if (objType == typeof(QueueInfoVault))
@@ -267,8 +287,8 @@ namespace CcsSso.Adaptor.SqsListener
         string AccessSecretKey;
 
         string DataQueueUrl;
-        string DataAccessKeyId;
-        string DataAccessSecretKey;
+        string DataQueueAccessKeyId;
+        string DataQueueAccessSecretKey;
 
         var queueInfoAdaptorNotificationName = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/AdaptorNotificationName"); // AdaptorNotification
 
@@ -311,14 +331,14 @@ namespace CcsSso.Adaptor.SqsListener
         if (!string.IsNullOrEmpty(queueDataName))
         {
           var queueInfo = UtilityHelper.GetSqsSetting(queueDataName);
-          DataAccessKeyId = queueInfo.credentials.aws_access_key_id;
-          DataAccessSecretKey = queueInfo.credentials.aws_secret_access_key;
+          DataQueueAccessKeyId = queueInfo.credentials.aws_access_key_id;
+          DataQueueAccessSecretKey = queueInfo.credentials.aws_secret_access_key;
           DataQueueUrl = queueInfo.credentials.primary_queue_url;
         }
         else
         {
-          DataAccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataAccessKeyId");
-          DataAccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataAccessSecretKey");
+          DataQueueAccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataQueueAccessKeyId");
+          DataQueueAccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataQueueAccessSecretKey");
           DataQueueUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataQueueUrl");
         }
 
@@ -340,8 +360,11 @@ namespace CcsSso.Adaptor.SqsListener
           PushDataAccessSecretKey = PushDataAccessSecretKey,
 
           DataQueueUrl = DataQueueUrl,
-          DataAccessKeyId = DataAccessKeyId,
-          DataAccessSecretKey = DataAccessSecretKey,
+          DataQueueAccessKeyId = DataQueueAccessKeyId,
+          DataQueueAccessSecretKey = DataQueueAccessSecretKey,
+          DataQueueRecieveMessagesMaxCount = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataQueueRecieveMessagesMaxCount"),
+          DataQueueRecieveWaitTimeInSeconds = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataQueueRecieveWaitTimeInSeconds"),
+
         };
       }
       else if (objType == typeof(SecurityApiSettingsVault))

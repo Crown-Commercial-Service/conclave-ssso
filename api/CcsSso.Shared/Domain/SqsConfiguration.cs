@@ -13,12 +13,20 @@ namespace CcsSso.Shared.Domain
     public string AccessSecretKey { get; set; }
 
     public string AdaptorNotificationAccessKeyId { get; set; }
+
     public string AdaptorNotificationAccessSecretKey { get; set; }
+
     public string PushDataAccessKeyId { get; set; }
+
     public string PushDataAccessSecretKey { get; set; }
 
-    public string DataAccessKeyId { get; set; }
-    public string DataAccessSecretKey { get; set; }
+    public string DataQueueAccessKeyId { get; set; }
+
+    public string DataQueueAccessSecretKey { get; set; }
+
+    public int DataQueueRecieveMessagesMaxCount { get; set; }
+
+    public int DataQueueRecieveWaitTimeInSeconds { get; set; }
 
     public int RecieveMessagesMaxCount { get; set; }
 

@@ -244,18 +244,18 @@ namespace CcsSso.Security.Api
 
       services.AddSingleton(s =>
       {
-        int.TryParse(Configuration["QueueInfo:RecieveMessagesMaxCount"], out int recieveMessagesMaxCount);
-        recieveMessagesMaxCount = recieveMessagesMaxCount == 0 ? 10 : recieveMessagesMaxCount;
+        int.TryParse(Configuration["QueueInfo:DataQueueRecieveMessagesMaxCount"], out int dataQueueRecieveMessagesMaxCount);
+        dataQueueRecieveMessagesMaxCount = dataQueueRecieveMessagesMaxCount == 0 ? 10 : dataQueueRecieveMessagesMaxCount;
 
-        int.TryParse(Configuration["QueueInfo:RecieveWaitTimeInSeconds"], out int recieveWaitTimeInSeconds); // Default value 0
+        int.TryParse(Configuration["QueueInfo:DataQueueRecieveWaitTimeInSeconds"], out int dataQueueRecieveWaitTimeInSeconds); // Default value 0
 
         var sqsConfiguration = new SqsConfiguration
         {
           ServiceUrl = Configuration["QueueInfo:ServiceUrl"],
-          DataAccessKeyId = Configuration["QueueInfo:DataAccessKeyId"],
-          DataAccessSecretKey = Configuration["QueueInfo:DataAccessSecretKey"],
-          RecieveMessagesMaxCount = recieveMessagesMaxCount,
-          RecieveWaitTimeInSeconds = recieveWaitTimeInSeconds
+          DataQueueAccessKeyId = Configuration["QueueInfo:DataQueueAccessKeyId"],
+          DataQueueAccessSecretKey = Configuration["QueueInfo:DataQueueAccessSecretKey"],
+          DataQueueRecieveMessagesMaxCount = dataQueueRecieveMessagesMaxCount,
+          DataQueueRecieveWaitTimeInSeconds = dataQueueRecieveWaitTimeInSeconds
         };
 
         return sqsConfiguration;

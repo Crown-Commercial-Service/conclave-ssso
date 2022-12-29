@@ -24,6 +24,10 @@ namespace CcsSso.Adaptor.Domain.SqsListener
     public int JobSchedulerExecutionFrequencyInMinutes { get; set; }
 
     public int MessageReadThreshold { get; set; }
+
+    public int DataQueueJobSchedulerExecutionFrequencyInMinutes { get; set; }
+
+    public int DataQueueMessageReadThreshold { get; set; }
   }
 
   public class AdaptorApiSetting
@@ -49,6 +53,10 @@ namespace CcsSso.Adaptor.Domain.SqsListener
     public string JobSchedulerExecutionFrequencyInMinutes { get; set; }
 
     public string MessageReadThreshold { get; set; }
+
+    public string DataQueueJobSchedulerExecutionFrequencyInMinutes { get; set; }
+
+    public string DataQueueMessageReadThreshold { get; set; }
   }
 
   public class QueueInfoVault
@@ -71,11 +79,15 @@ namespace CcsSso.Adaptor.Domain.SqsListener
 
     public string PushDataQueueUrl { get; set; }
 
+    public string DataQueueRecieveMessagesMaxCount { get; set; }
+
+    public string DataQueueRecieveWaitTimeInSeconds { get; set; }
+
     public string DataQueueUrl { get; set; }
 
-    public string DataAccessKeyId { get; set; }
+    public string DataQueueAccessKeyId { get; set; }
 
-    public string DataAccessSecretKey { get; set; }
+    public string DataQueueAccessSecretKey { get; set; }
   }
 
   public class RedisCacheSettingVault

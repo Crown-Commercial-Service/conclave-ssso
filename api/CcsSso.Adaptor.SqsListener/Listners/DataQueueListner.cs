@@ -96,7 +96,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
       HttpContent data = new StringContent(sqsMessageResponseDto.MessageBody, System.Text.Encoding.UTF8, "application/json");
       var response = await client.PostAsync(url, data);
 
-      if (response.IsSuccessStatusCode)
+      if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.BadRequest)
       {
         Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_NAME} :: Message processing succeeded for url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
         await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
@@ -135,7 +135,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
       var response = await client.DeleteAsync(url);
 
-      if (response.IsSuccessStatusCode)
+      if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.BadRequest || response.StatusCode == System.Net.HttpStatusCode.NotFound)
       {
         Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_NAME} :: Message processing succeeded for url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
         await DeleteMessageFromQueueAsync(sqsMessageResponseDto);

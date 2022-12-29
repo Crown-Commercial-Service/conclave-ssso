@@ -12,7 +12,7 @@ namespace CcsSso.Shared.Services
 {
   public class AwsDataSqsService : IAwsDataSqsService
   {
-    // TODO This class and AwsSqsService are same except the constructor where DataAccessKeyId and DataAccessSecretKey
+    // TODO This class and AwsSqsService are same except the constructor where DataQueueAccessKeyId and DataQueueAccessSecretKey
     // are different from AwsSqsService. This needs to be updated to have same service but handles both configuration settings.
 
     private const string StringValueType = "String";
@@ -27,7 +27,7 @@ namespace CcsSso.Shared.Services
       {
         ServiceURL = sqsConfiguration.ServiceUrl
       };
-      _sqsClient = new AmazonSQSClient(sqsConfiguration.DataAccessKeyId, sqsConfiguration.DataAccessSecretKey, sqsConfig);
+      _sqsClient = new AmazonSQSClient(sqsConfiguration.DataQueueAccessKeyId, sqsConfiguration.DataQueueAccessSecretKey, sqsConfig);
     }
 
     /// <summary>
@@ -55,8 +55,8 @@ namespace CcsSso.Shared.Services
       var receiveMessageRequest = await _sqsClient.ReceiveMessageAsync(new ReceiveMessageRequest
       {
         QueueUrl = queueUrl,
-        MaxNumberOfMessages = maxMessages ?? _sqsConfiguration.RecieveMessagesMaxCount,
-        WaitTimeSeconds = waitTimeSeconds ?? _sqsConfiguration.RecieveWaitTimeInSeconds,
+        MaxNumberOfMessages = maxMessages ?? _sqsConfiguration.DataQueueRecieveMessagesMaxCount,
+        WaitTimeSeconds = waitTimeSeconds ?? _sqsConfiguration.DataQueueRecieveWaitTimeInSeconds,
         AttributeNames = new List<string> { "All" },
         MessageAttributeNames = new List<string> { "*" }
       });
