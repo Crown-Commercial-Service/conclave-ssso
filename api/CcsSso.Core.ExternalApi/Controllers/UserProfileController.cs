@@ -6,6 +6,7 @@ using CcsSso.Domain.Dtos.External;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CcsSso.ExternalApi.Controllers
@@ -217,7 +218,7 @@ namespace CcsSso.ExternalApi.Controllers
       await _userProfileService.AddAdminRoleAsync(userId);
     }
     // #Delegated
-    #region Delegated access
+#region Delegated access
     /// <summary>
     /// Allows admin to delegate other org user to represent org
     /// </summary>
@@ -369,6 +370,85 @@ namespace CcsSso.ExternalApi.Controllers
     {
       await _userProfileService.SendUserDelegatedAccessEmailAsync(userId, organisationId);
     }
+
+    #endregion
+
+    #region Roles require approval
+
+    /// <summary>
+    /// Retrieve user all roles which are in pending for approval
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="400">Bad request.</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET approval/roles/pending?user-id=user@mail.com
+    ///
+    /// </remarks>
+    [HttpGet("approve/roles")]
+    [ClaimAuthorise("ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("USER")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(UserAccessRolePendingDetails), 200)]
+    public async Task<List<UserAccessRolePendingDetails>> GetUserRolesPendingForApproval([FromQuery(Name = "user-id")] string userId)
+    {
+      return await _userProfileService.GetUserRolesPendingForApproval(userId);
+    }
+
+    /// <summary>
+    /// Delete user roles which are in pending for approval
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: 
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     DELETE /approve/role?user-id=user@mail.com&roles=1,2
+    ///     
+    ///
+    /// </remarks>
+    [HttpDelete("approve/roles")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("DELEGATION")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task DeleteUserRoles([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "roles")] string roleIds)
+    {
+      await _userProfileService.RemoveApprovalPendingRoles(userId, roleIds);
+    }
+
+    /// <summary>
+    /// Validate role approval token and return details
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="400">Bad request.</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET approve/verify?token=encryptedtoken
+    ///
+    /// </remarks>
+    [HttpGet("approve/verify")]
+    [ClaimAuthorise("ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("USER")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(UserAccessRolePendingTokenDetails), 200)]
+    public async Task<UserAccessRolePendingTokenDetails> VerifyRoleApprovalToken([FromQuery(Name = "token")] string token)
+    {
+      return await _userProfileService.VerifyAndReturnRoleApprovalTokenDetails(token);
+    }
+
+
     #endregion
 
     #endregion

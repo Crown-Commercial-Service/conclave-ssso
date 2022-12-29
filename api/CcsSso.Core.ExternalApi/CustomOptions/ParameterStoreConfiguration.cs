@@ -146,6 +146,9 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/OrgPendingVerificationEmailTemplateId", "OrgAutoValidationEmail:OrgPendingVerificationEmailTemplateId"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/OrgBuyerStatusChangeUpdateToAllAdmins", "OrgAutoValidationEmail:OrgBuyerStatusChangeUpdateToAllAdmins"));
 
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/Enable", "UserRoleApproval:Enable"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/RoleApprovalTokenEncryptionKey", "UserRoleApproval:RoleApprovalTokenEncryptionKey"));
+      
       foreach (var configuration in configurations)
       {
         Data.Add(configuration);

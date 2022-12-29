@@ -1,4 +1,5 @@
 using CcsSso.Core.Domain.Dtos.External;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Contracts.External
@@ -39,5 +40,11 @@ namespace CcsSso.Core.Domain.Contracts.External
     Task AcceptDelegationAsync(string acceptanceToken);
 
     Task SendUserDelegatedAccessEmailAsync(string userName, string orgId = "", string orgName = "");
+
+    Task<List<UserAccessRolePendingDetails>> GetUserRolesPendingForApproval(string userName);
+
+    Task<UserAccessRolePendingTokenDetails> VerifyAndReturnRoleApprovalTokenDetails(string token);
+
+    Task RemoveApprovalPendingRoles(string userName, string roles);
   }
 }

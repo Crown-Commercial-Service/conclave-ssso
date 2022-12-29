@@ -190,4 +190,19 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public DateTime EndDate { get; set; }
   }
+
+  public class UserAccessRolePendingDetails
+  {
+    public int Status { get; set; }
+   
+    public string RoleName { get; set; }
+    
+    public string RoleKey { get; set; }
+  }
+
+  public class UserAccessRolePendingTokenDetails : UserAccessRolePendingDetails
+  {
+    public string UserName { get; set; }
+  }
+
 }

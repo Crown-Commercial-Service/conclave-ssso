@@ -210,6 +210,13 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("OrgAutoValidationEmail:OrgBuyerStatusChangeUpdateToAllAdmins", orgAutoValidationEmailInfo.OrgBuyerStatusChangeUpdateToAllAdmins);
 
       }
+      if (_secrets.Data.ContainsKey("UserRoleApproval"))
+      {
+        var orgAutoValidation = JsonConvert.DeserializeObject<UserRoleApproval>(_secrets.Data["UserRoleApproval"].ToString());
+        Data.Add("UserRoleApproval:Enable", orgAutoValidation.Enable.ToString());
+        Data.Add("UserRoleApproval:RoleApprovalTokenEncryptionKey", orgAutoValidation.RoleApprovalTokenEncryptionKey);
+      }
+
     }
   }
 

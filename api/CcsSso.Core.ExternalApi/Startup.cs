@@ -146,6 +146,11 @@ namespace CcsSso.ExternalApi
             OrgPendingVerificationEmailTemplateId = Configuration["OrgAutoValidationEmail:OrgPendingVerificationEmailTemplateId"],
             OrgBuyerStatusChangeUpdateToAllAdmins = Configuration["OrgAutoValidationEmail:OrgBuyerStatusChangeUpdateToAllAdmins"],
           },
+          UserRoleApproval = new UserRoleApproval()
+          {
+            Enable = Convert.ToBoolean(Configuration["UserRoleApproval:Enable"]),
+            RoleApprovalTokenEncryptionKey = Configuration["UserRoleApproval:RoleApprovalTokenEncryptionKey"]
+          },
         };
         return appConfigInfo;
       });

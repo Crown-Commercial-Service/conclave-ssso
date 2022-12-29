@@ -1697,5 +1697,130 @@ namespace CcsSso.Core.Service.External
     }
     #endregion
 
+    #region role approval
+    public async Task<List<UserAccessRolePendingDetails>> GetUserRolesPendingForApproval(string userName)
+    {
+      if (!_appConfigInfo.UserRoleApproval.Enable) 
+      {
+        throw new InvalidOperationException();
+      }
+
+      _userHelper.ValidateUserName(userName);
+
+      var userId = await _dataContext.User.Where(u => u.UserName.ToLower() == userName.ToLower() && u.UserType == UserType.Primary && !u.IsDeleted)
+                   .Select(U => U.Id).FirstOrDefaultAsync();
+
+      if (userId == 0) 
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserId);
+      }
+
+      var userAccessRolePendingList = await _dataContext.UserAccessRolePending
+        .Include(u => u.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
+        .Where(u => !u.IsDeleted && u.Status == (int)UserPendingRoleStaus.Pending && u.UserId == userId)
+        .Select(u => new UserAccessRolePendingDetails() 
+        { 
+          Status = u.Status,
+          RoleKey = u.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
+          RoleName = u.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName
+        })
+        .ToListAsync();
+
+      return userAccessRolePendingList;
+    }
+
+    public async Task RemoveApprovalPendingRoles(string userName, string roleIds)
+    {
+      if (!_appConfigInfo.UserRoleApproval.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+      if (string.IsNullOrWhiteSpace(roleIds)) 
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
+      }
+
+      string[] roles = roleIds.Split(',');
+
+      _userHelper.ValidateUserName(userName);
+
+      var userId = await _dataContext.User.Where(u => u.UserName.ToLower() == userName.ToLower() && u.UserType == UserType.Primary)
+                         .Select(u => u.Id).FirstOrDefaultAsync();
+      
+      if (userId == 0)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserId);
+      }
+
+      var userAccessRolePendingList = await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted  && u.UserId == userId && 
+                                      roles.Contains(u.OrganisationEligibleRoleId.ToString())).ToListAsync();
+
+      if (userAccessRolePendingList.Any())
+      {
+        userAccessRolePendingList.ForEach(l => { l.IsDeleted = true; l.Status = (int)UserPendingRoleStaus.Removed; });
+        await _dataContext.SaveChangesAsync();
+      }
+      else 
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
+      }
+    }
+
+    public async Task<UserAccessRolePendingTokenDetails> VerifyAndReturnRoleApprovalTokenDetails(string token)
+    {
+      if (!_appConfigInfo.UserRoleApproval.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      token = token?.Replace(" ", "+");
+      // Decrypt token
+      string decryptedToken = _cryptographyService.DecryptString(token, _appConfigInfo.UserRoleApproval.RoleApprovalTokenEncryptionKey);
+
+#if DEBUG
+      decryptedToken = "pendingid=1&expdate=" + DateTime.UtcNow.AddHours(90);
+#endif
+
+      if (string.IsNullOrWhiteSpace(decryptedToken))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
+      }
+
+
+      //validate token expiration
+      Dictionary<string, string> tokenDetails = decryptedToken.Split('&').Select(value => value.Split('='))
+                                                  .ToDictionary(pair => pair[0], pair => pair[1]);
+      if (!tokenDetails.ContainsKey("pendingid") || !tokenDetails.ContainsKey("expdate")) 
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
+      }
+
+      int userAccessRolePendingId = Convert.ToInt32(tokenDetails["pendingid"]);
+      DateTime expirationTime = Convert.ToDateTime(tokenDetails["expdate"]);
+
+      if (expirationTime < DateTime.UtcNow)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorLinkExpired);
+      }
+
+      var userAccessRolePendingDetails = await _dataContext.UserAccessRolePending
+        .Include(u => u.User)
+        .Include(o => o.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
+        .FirstOrDefaultAsync(u => u.Id == userAccessRolePendingId && u.User.UserType == UserType.Primary && !u.OrganisationEligibleRole.IsDeleted);
+
+      if (userAccessRolePendingDetails == default)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
+      }
+
+      return new UserAccessRolePendingTokenDetails 
+      { 
+        UserName = userAccessRolePendingDetails.User.UserName,
+        RoleName = userAccessRolePendingDetails.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
+        RoleKey = userAccessRolePendingDetails.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
+        Status = userAccessRolePendingDetails.Status
+      };
+    }
+    #endregion
   }
 }
