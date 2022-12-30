@@ -1698,7 +1698,7 @@ namespace CcsSso.Core.Service.External
     #endregion
 
     #region role approval
-    public async Task<List<UserAccessRolePendingDetails>> GetUserRolesPendingForApproval(string userName)
+    public async Task<List<UserAccessRolePendingDetails>> GetUserRolesPendingForApprovalAsync(string userName)
     {
       if (!_appConfigInfo.UserRoleApproval.Enable) 
       {
@@ -1729,7 +1729,7 @@ namespace CcsSso.Core.Service.External
       return userAccessRolePendingList;
     }
 
-    public async Task RemoveApprovalPendingRoles(string userName, string roleIds)
+    public async Task RemoveApprovalPendingRolesAsync(string userName, string roleIds)
     {
       if (!_appConfigInfo.UserRoleApproval.Enable)
       {
@@ -1766,7 +1766,7 @@ namespace CcsSso.Core.Service.External
       }
     }
 
-    public async Task<UserAccessRolePendingTokenDetails> VerifyAndReturnRoleApprovalTokenDetails(string token)
+    public async Task<UserAccessRolePendingTokenDetails> VerifyAndReturnRoleApprovalTokenDetailsAsync(string token)
     {
       if (!_appConfigInfo.UserRoleApproval.Enable)
       {

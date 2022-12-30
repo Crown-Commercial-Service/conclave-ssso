@@ -41,10 +41,10 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task SendUserDelegatedAccessEmailAsync(string userName, string orgId = "", string orgName = "");
 
-    Task<List<UserAccessRolePendingDetails>> GetUserRolesPendingForApproval(string userName);
+    Task<List<UserAccessRolePendingDetails>> GetUserRolesPendingForApprovalAsync(string userName);
 
-    Task<UserAccessRolePendingTokenDetails> VerifyAndReturnRoleApprovalTokenDetails(string token);
+    Task<UserAccessRolePendingTokenDetails> VerifyAndReturnRoleApprovalTokenDetailsAsync(string token);
 
-    Task RemoveApprovalPendingRoles(string userName, string roles);
+    Task RemoveApprovalPendingRolesAsync(string userName, string roles);
   }
 }
