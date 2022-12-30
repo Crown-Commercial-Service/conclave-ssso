@@ -38,6 +38,8 @@ namespace CcsSso.Security.Domain.Dtos
     public OpenIdConfigurationSettings OpenIdConfigurationSettings { get; set; }
 
     public ResetPasswordSettings ResetPasswordSettings { get; set; }
+    
+    public QueueInfo QueueInfo { get; set; }
   }
 
   public class SecurityApiKeySettings
@@ -236,5 +238,11 @@ namespace CcsSso.Security.Domain.Dtos
   {
     public string MaxAllowedAttempts { get; set; }
     public string MaxAllowedAttemptsThresholdInMinutes { get; set; }
+  }
+
+  public class QueueInfo
+  {
+    public bool EnableDataQueue { get; set; }
+    public string DataQueueUrl { get; set; }
   }
 }
