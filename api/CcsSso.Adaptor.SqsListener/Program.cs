@@ -367,6 +367,14 @@ namespace CcsSso.Adaptor.SqsListener
 
         };
       }
+      else if (objType == typeof(DataQueueSettingsVault))
+      {
+        returnParams = new DataQueueSettingsVault()
+        {
+          DelayInSeconds = _awsParameterStoreService.FindParameterByName(parameters, path + "DataQueueSettings/DelayInSeconds"),
+          RetryMaxCount = _awsParameterStoreService.FindParameterByName(parameters, path + "DataQueueSettings/RetryMaxCount")
+        };
+      }
       else if (objType == typeof(SecurityApiSettingsVault))
       {
         returnParams = new SecurityApiSettingsVault()
