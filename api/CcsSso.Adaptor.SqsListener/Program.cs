@@ -325,9 +325,18 @@ namespace CcsSso.Adaptor.SqsListener
           PushDataAccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataAccessSecretKey");
           PushDataQueueUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/PushDataQueueUrl");
         }
+        }
 
         var queueDataName = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataName"); // Data Queue
 
+        var queueDataName = _awsParameterStoreService.FindParameterByName(parameters, path + "QueueInfo/DataName"); // Data Queue
+
+        if (!string.IsNullOrEmpty(queueDataName))
+        {
+          var queueInfo = UtilityHelper.GetSqsSetting(queueDataName);
+          DataQueueAccessKeyId = queueInfo.credentials.aws_access_key_id;
+          DataQueueAccessSecretKey = queueInfo.credentials.aws_secret_access_key;
+          DataQueueUrl = queueInfo.credentials.primary_queue_url;
         if (!string.IsNullOrEmpty(queueDataName))
         {
           var queueInfo = UtilityHelper.GetSqsSetting(queueDataName);
