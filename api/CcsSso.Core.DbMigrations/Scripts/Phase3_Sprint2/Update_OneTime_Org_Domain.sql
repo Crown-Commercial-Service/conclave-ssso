@@ -18,11 +18,13 @@ DECLARE organisationEligibleAdminRoleId int;
          LIMIT 1;
 
          SELECT substr(u."UserName",(strpos(u."UserName", '@') + 1)) INTO domainName 
-         FROM "Person"  p
-         INNER JOIN "User"  u ON p."PartyId" = u."PartyId"
-         INNER JOIN "Organisation" o ON p."OrganisationId" = o."Id"
-         INNER JOIN "UserAccessRole" ur ON ur."UserId" = u."Id"
-         WHERE u."IsDeleted" = false AND u."UserType" = 0 AND o."Id" = orgId AND ur."OrganisationEligibleRoleId" = organisationEligibleAdminRoleId
+         FROM "User" u
+         INNER JOIN "Person" p ON p."PartyId" = u."PartyId" AND p."IsDeleted" = false
+         INNER JOIN "Organisation" o ON p."OrganisationId" = o."Id"  AND o."IsDeleted" = false
+         INNER JOIN "UserAccessRole" ur ON ur."UserId" = u."Id"  AND ur."IsDeleted" = false
+         WHERE u."IsDeleted" = false AND u."UserType" = 0 
+         AND o."Id" = orgId
+         AND ur."OrganisationEligibleRoleId" = organisationEligibleAdminRoleId
          ORDER BY u."CreatedOnUtc" ASC 
          LIMIT 1;
 
