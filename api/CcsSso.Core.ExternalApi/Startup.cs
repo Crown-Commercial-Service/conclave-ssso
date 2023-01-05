@@ -149,7 +149,10 @@ namespace CcsSso.ExternalApi
           UserRoleApproval = new UserRoleApproval()
           {
             Enable = Convert.ToBoolean(Configuration["UserRoleApproval:Enable"]),
-            RoleApprovalTokenEncryptionKey = Configuration["UserRoleApproval:RoleApprovalTokenEncryptionKey"]
+            RoleApprovalTokenEncryptionKey = Configuration["UserRoleApproval:RoleApprovalTokenEncryptionKey"],
+            UserRoleApprovalEmailTemplateId = Configuration["UserRoleApproval:UserRoleApprovalEmailTemplateId"],
+            UserRoleApprovedEmailTemplateId = Configuration["UserRoleApproval:UserRoleApprovedEmailTemplateId"],
+            UserRoleRejectedEmailTemplateId = Configuration["UserRoleApproval:UserRoleRejectedEmailTemplateId"]
           },
         };
         return appConfigInfo;

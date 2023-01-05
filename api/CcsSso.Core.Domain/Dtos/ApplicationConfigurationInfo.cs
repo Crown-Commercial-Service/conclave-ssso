@@ -170,5 +170,11 @@ namespace CcsSso.Domain.Dtos
     public bool Enable { get; set; } = false;
 
     public string RoleApprovalTokenEncryptionKey { get; set; }
+
+    public string UserRoleApprovalEmailTemplateId { get; set; }
+
+    public string UserRoleApprovedEmailTemplateId { get; set; }
+
+    public string UserRoleRejectedEmailTemplateId { get; set; }
   }
 }

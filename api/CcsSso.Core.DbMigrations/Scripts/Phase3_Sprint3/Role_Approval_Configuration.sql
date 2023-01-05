@@ -45,3 +45,13 @@ VALUES ('20221227080442_Role_Approval', '5.0.10');
 
 COMMIT;
 
+
+START TRANSACTION;
+
+ALTER TABLE "RoleApprovalConfiguration" DROP COLUMN "EmailTemplate";
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20230105120311_Remove_RoleApprovalConfiguration_EmailTemplate', '5.0.10');
+
+COMMIT;
+

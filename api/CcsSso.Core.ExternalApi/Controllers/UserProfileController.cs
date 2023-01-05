@@ -417,10 +417,10 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpDelete("approve/roles")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
-    [OrganisationAuthorise("DELEGATION")]
+    [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task DeleteUserRoles([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "roles")] string roleIds)
+    public async Task RemoveApprovalPendingRoles([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "roles")] string roleIds)
     {
       await _userProfileService.RemoveApprovalPendingRolesAsync(userId, roleIds);
     }
@@ -448,6 +448,37 @@ namespace CcsSso.ExternalApi.Controllers
       return await _userProfileService.VerifyAndReturnRoleApprovalTokenDetailsAsync(token);
     }
 
+    /// <summary>
+    /// Allows a user to create user roles which required approval
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_USER_ID, INVALID_ROLE, INVALID_USER_DETAIL
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /users
+    ///     {
+    ///        "userName": "user@mail.com",
+    ///        "detail": {
+    ///           "roleIds": { 1, 2 }
+    ///        }
+    ///     }
+    ///
+    /// </remarks>
+    [HttpPost("approve/roles")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("USER_POST")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task CreateUserRolesPendingForApproval(UserProfileEditRequestInfo userProfileRequestInfo)
+    {
+      await _userProfileService.CreateUserRolesPendingForApprovalAsync(userProfileRequestInfo);
+    }
 
     #endregion
 

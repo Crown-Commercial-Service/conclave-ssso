@@ -46,5 +46,7 @@ namespace CcsSso.Core.Domain.Contracts.External
     Task<UserAccessRolePendingTokenDetails> VerifyAndReturnRoleApprovalTokenDetailsAsync(string token);
 
     Task RemoveApprovalPendingRolesAsync(string userName, string roles);
+
+    Task CreateUserRolesPendingForApprovalAsync(UserProfileEditRequestInfo userProfileRequestInfo);
   }
 }

@@ -16,7 +16,5 @@ namespace CcsSso.DbModel.Entity
     public int LinkExpiryDurationInMinute { get; set; }
 
     public string NotificationEmails { get; set; }
-
-    public string EmailTemplate { get; set; }
   }
 }
