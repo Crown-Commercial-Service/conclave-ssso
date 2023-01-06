@@ -571,6 +571,7 @@ namespace CcsSso.Core.Service.External
             RoleKey = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
             RoleName = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
           }).ToList(),
+          IsAdmin = up.UserAccessRoles.Any(x => !x.IsDeleted && x.OrganisationEligibleRoleId == orgAdminAccessRoleId && !x.OrganisationEligibleRole.IsDeleted),
         }).ToList() : new List<UserListInfo>()
       };
 
