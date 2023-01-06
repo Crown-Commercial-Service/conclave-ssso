@@ -71,6 +71,8 @@ namespace CcsSso.Dtos.Domain.Models
     public string CiiOrganisationId { get; set; }
 
     public string OrganisationLegalName { get; set; }
+
+    public bool IsAdmin { get; set; } = false;
   }
 
   public class OrganisationUserListResponse : PaginationInfo
