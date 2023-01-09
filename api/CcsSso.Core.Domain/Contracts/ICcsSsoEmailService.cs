@@ -41,5 +41,8 @@ namespace CcsSso.Core.Domain.Contracts
     Task SendOrgApproveRightToBuyStatusToAllAdminsAsync(string email);
     Task SendOrgDeclineRightToBuyStatusToAllAdminsAsync(string email);
     Task SendOrgRemoveRightToBuyStatusToAllAdminsAsync(string email);
+
+    Task SendRoleApprovedEmailAsync(string email, string link);
+    Task SendRoleRejectedEmailAsync(string email);
   }
 }
