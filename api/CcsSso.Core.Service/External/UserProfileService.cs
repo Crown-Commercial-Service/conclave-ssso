@@ -1811,6 +1811,7 @@ namespace CcsSso.Core.Service.External
 
       return new UserAccessRolePendingTokenDetails
       {
+        Id= userAccessRolePendingDetails.Id,
         UserName = userAccessRolePendingDetails.User.UserName,
         RoleName = userAccessRolePendingDetails.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
         RoleKey = userAccessRolePendingDetails.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,

@@ -203,6 +203,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class UserAccessRolePendingTokenDetails : UserAccessRolePendingDetails
   {
+    public int Id { get; set; }
     public string UserName { get; set; }
   }
 

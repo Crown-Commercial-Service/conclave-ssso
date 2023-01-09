@@ -20,7 +20,6 @@ namespace CcsSso.Core.ExternalApi.Controllers
 
     [HttpPut("approve/roles")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
-    [OrganisationAuthorise("DELEGATION")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task<bool> UpdateUserRoleDecision(UserRoleApprovalEditRequest userApprovalRequest)
