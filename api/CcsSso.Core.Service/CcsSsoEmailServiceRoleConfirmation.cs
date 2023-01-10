@@ -31,11 +31,10 @@ namespace CcsSso.Core.Service
       await SendEmailAsync(emailInfo);
     }
 
-    public async Task SendRoleRejectedEmailAsync(string email, string serviceName, string link)
+    public async Task SendRoleRejectedEmailAsync(string email, string serviceName)
     {
       var data = new Dictionary<string, dynamic>
-      {
-          { "dashboardlink", link },
+      {         
           { "serviceName", serviceName}
       };
 

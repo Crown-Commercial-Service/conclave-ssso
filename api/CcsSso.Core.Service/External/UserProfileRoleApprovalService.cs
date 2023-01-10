@@ -43,9 +43,8 @@ namespace CcsSso.Core.Service.External
       }
 
       var pendingRoleIds = userApprovalRequest.PendingRoleIds;
-      var status = userApprovalRequest.Status;
-      var linkForEmailTemplate = _appConfigInfo.ConclaveLoginUrl;
-      var serviceName = String.Empty; 
+      var status = userApprovalRequest.Status;       
+      var serviceName = String.Empty;
 
       if (status != UserPendingRoleStaus.Approved && status != UserPendingRoleStaus.Rejected)
       {
@@ -89,26 +88,25 @@ namespace CcsSso.Core.Service.External
           {
             UserId = user.Id,
             OrganisationEligibleRoleId = pendingUserRole.OrganisationEligibleRoleId
-          });
-
-
-          var orgEligibleRole = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
-                                          .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
-                                          .FirstOrDefaultAsync(u => u.Id == pendingUserRole.OrganisationEligibleRoleId! && u.IsDeleted);
-
-          if (orgEligibleRole != null)
-          {
-            serviceName = orgEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName;
-          }
+          });          
         }
 
         await _dataContext.SaveChangesAsync();
+
+        var orgEligibleRole = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
+                                          .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
+                                          .FirstOrDefaultAsync(u => u.Id == pendingUserRole.OrganisationEligibleRoleId! && !u.IsDeleted);
+
+        if (orgEligibleRole != null)
+        {
+          serviceName = orgEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName;
+        }
 
         var emailList = new List<string>() { user.UserName };
 
         if (pendingUserRole.UserId != pendingUserRole.CreatedUserId)
         {
-          var roleRequester =await _dataContext.User
+          var roleRequester = await _dataContext.User
                   .FirstOrDefaultAsync(x => x.Id == pendingUserRole.CreatedUserId && !x.IsDeleted && x.UserType == UserType.Primary);
 
           if (roleRequester != null)
@@ -120,9 +118,9 @@ namespace CcsSso.Core.Service.External
         foreach (var email in emailList)
         {
           if (status == UserPendingRoleStaus.Approved)
-            await _ccsSsoEmailService.SendRoleApprovedEmailAsync(email, serviceName, linkForEmailTemplate);
+            await _ccsSsoEmailService.SendRoleApprovedEmailAsync(email, serviceName, _appConfigInfo.ConclaveLoginUrl);
           else
-            await _ccsSsoEmailService.SendRoleRejectedEmailAsync(email, serviceName,linkForEmailTemplate);
+            await _ccsSsoEmailService.SendRoleRejectedEmailAsync(email, serviceName);
         }
 
       }
@@ -279,6 +277,13 @@ namespace CcsSso.Core.Service.External
       }
 
       var organisationId = user.Party.Person.OrganisationId;
+
+      var org = await _dataContext.Organisation.FirstOrDefaultAsync(o => !o.IsDeleted && o.Id == organisationId);
+
+      if (org == null || user.UserName?.Split('@')?[1] == org.DomainName)
+      {
+        throw new InvalidOperationException();
+      }
 
       var organisationEligibleRoles = await _dataContext.OrganisationEligibleRole
         .Where(oer => !oer.IsDeleted && oer.OrganisationId == organisationId)
