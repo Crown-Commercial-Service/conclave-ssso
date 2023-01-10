@@ -1,8 +1,5 @@
 ﻿using CcsSso.Core.Domain.Dtos.External;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Contracts.External
@@ -11,5 +8,12 @@ namespace CcsSso.Core.Domain.Contracts.External
   {
     Task<bool> UpdateUserRoleStatusAsync(UserRoleApprovalEditRequest userApprovalRequest);
 
+    Task<List<UserAccessRolePendingDetails>> GetUserRolesPendingForApprovalAsync(string userName);
+
+    Task<UserAccessRolePendingTokenDetails> VerifyAndReturnRoleApprovalTokenDetailsAsync(string token);
+
+    Task RemoveApprovalPendingRolesAsync(string userName, string roles);
+
+    Task CreateUserRolesPendingForApprovalAsync(UserProfileEditRequestInfo userProfileRequestInfo);
   }
 }

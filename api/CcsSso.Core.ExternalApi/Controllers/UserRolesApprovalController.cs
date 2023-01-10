@@ -13,11 +13,9 @@ namespace CcsSso.Core.ExternalApi.Controllers
   public class UserRolesApprovalController : ControllerBase
   {
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
-    private readonly IUserProfileService _userProfileService;
-    public UserRolesApprovalController(IUserProfileRoleApprovalService userProfileRoleApprovalService, IUserProfileService userProfileService)
+    public UserRolesApprovalController(IUserProfileRoleApprovalService userProfileRoleApprovalService)
     {
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
-      _userProfileService = userProfileService;
     }
 
 
@@ -50,7 +48,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
     [ProducesResponseType(typeof(UserAccessRolePendingDetails), 200)]
     public async Task<List<UserAccessRolePendingDetails>> GetUserRolesPendingForApproval([FromQuery(Name = "user-id")] string userId)
     {
-      return await _userProfileService.GetUserRolesPendingForApprovalAsync(userId);
+      return await _userProfileRoleApprovalService.GetUserRolesPendingForApprovalAsync(userId);
     }
 
     /// <summary>
@@ -61,7 +59,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
     /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: 
+    /// Error Codes: INVALID_USER_ID, INVALID_ROLE_INFO
     /// </response>
     /// <remarks>
     /// Sample request:
@@ -77,7 +75,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
     [ProducesResponseType(typeof(void), 200)]
     public async Task RemoveApprovalPendingRoles([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "roles")] string roleIds)
     {
-      await _userProfileService.RemoveApprovalPendingRolesAsync(userId, roleIds);
+      await _userProfileRoleApprovalService.RemoveApprovalPendingRolesAsync(userId, roleIds);
     }
 
     /// <summary>
@@ -100,7 +98,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
     [ProducesResponseType(typeof(UserAccessRolePendingTokenDetails), 200)]
     public async Task<UserAccessRolePendingTokenDetails> VerifyRoleApprovalToken([FromQuery(Name = "token")] string token)
     {
-      return await _userProfileService.VerifyAndReturnRoleApprovalTokenDetailsAsync(token);
+      return await _userProfileRoleApprovalService.VerifyAndReturnRoleApprovalTokenDetailsAsync(token);
     }
 
     /// <summary>
@@ -132,7 +130,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
     [ProducesResponseType(typeof(void), 200)]
     public async Task CreateUserRolesPendingForApproval(UserProfileEditRequestInfo userProfileRequestInfo)
     {
-      await _userProfileService.CreateUserRolesPendingForApprovalAsync(userProfileRequestInfo);
+      await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(userProfileRequestInfo);
     }
   }
 }

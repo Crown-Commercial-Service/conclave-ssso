@@ -40,13 +40,5 @@ namespace CcsSso.Core.Domain.Contracts.External
     Task AcceptDelegationAsync(string acceptanceToken);
 
     Task SendUserDelegatedAccessEmailAsync(string userName, string orgId = "", string orgName = "");
-
-    Task<List<UserAccessRolePendingDetails>> GetUserRolesPendingForApprovalAsync(string userName);
-
-    Task<UserAccessRolePendingTokenDetails> VerifyAndReturnRoleApprovalTokenDetailsAsync(string token);
-
-    Task RemoveApprovalPendingRolesAsync(string userName, string roles);
-
-    Task CreateUserRolesPendingForApprovalAsync(UserProfileEditRequestInfo userProfileRequestInfo);
   }
 }
