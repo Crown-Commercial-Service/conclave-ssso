@@ -1745,7 +1745,7 @@ namespace CcsSso.Core.Service.External
 
       _userHelper.ValidateUserName(userName);
 
-      var userId = await _dataContext.User.Where(u => u.UserName.ToLower() == userName.ToLower() && u.UserType == UserType.Primary)
+      var userId = await _dataContext.User.Where(u => u.UserName.ToLower() == userName.ToLower() && u.UserType == UserType.Primary && !u.IsDeleted)
                          .Select(u => u.Id).FirstOrDefaultAsync();
 
       if (userId == 0)
