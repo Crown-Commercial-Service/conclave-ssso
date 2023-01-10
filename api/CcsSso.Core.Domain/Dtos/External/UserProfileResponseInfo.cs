@@ -126,6 +126,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public bool? DelegationAccepted { get; set; }
 
     public List<RolePermissionInfo> RolePermissionInfo { get; set; }
+
+    public bool IsAdmin { get; set; } = false;
   }
 
   public class AdminUserListInfo
