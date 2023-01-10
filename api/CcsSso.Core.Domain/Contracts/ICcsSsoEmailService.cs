@@ -43,6 +43,6 @@ namespace CcsSso.Core.Domain.Contracts
     Task SendOrgRemoveRightToBuyStatusToAllAdminsAsync(string email);
 
     Task SendRoleApprovedEmailAsync(string email, string serviceName, string link);
-    Task SendRoleRejectedEmailAsync(string email);
+    Task SendRoleRejectedEmailAsync(string email, string serviceName, string link);
   }
 }
