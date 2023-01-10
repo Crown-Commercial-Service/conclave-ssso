@@ -171,6 +171,13 @@ namespace CcsSso.Core.JobScheduler
               });
             }
 
+            // Delete user roles pending for approval
+            var userPendingRoles = usersPendingRoleInfo.Where(x => x.UserId == user.Id).ToList();
+            if (userPendingRoles.Any())
+            {
+              await client.DeleteAsync($"/users/approve/roles?user-id={user.UserName}&roles=" + String.Join(",", userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList()));
+            }
+
             await _dataContext.SaveChangesAsync();
 
             Console.WriteLine($"Unverified User Deletion User: {user.UserName} reassigningContactPoint: {reassigningContactPoint?.Id}");
@@ -199,13 +206,6 @@ namespace CcsSso.Core.JobScheduler
               await _emailSupportService.SendUnVerifiedUserDeletionEmailToAdminAsync($"{user.Party.Person.FirstName} {user.Party.Person.LastName}",
               user.UserName, adminList[orgByUsers.Key]);
               Console.WriteLine($"Unverified User Notify Admin Success for: {user.UserName}");
-            }
-
-            // Delete user roles pending for approval
-            var userPendingRoles = usersPendingRoleInfo.Where(x => x.UserId == user.Id).ToList();
-            if (userPendingRoles.Any())
-            {
-              await client.DeleteAsync($"/users/approve/roles?user-id={user.UserName}&roles="+ String.Join(",", userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList()));
             }
           }
           catch (Exception ex)
