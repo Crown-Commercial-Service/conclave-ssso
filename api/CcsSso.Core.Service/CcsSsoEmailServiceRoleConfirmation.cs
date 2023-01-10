@@ -31,12 +31,19 @@ namespace CcsSso.Core.Service
       await SendEmailAsync(emailInfo);
     }
 
-    public async Task SendRoleRejectedEmailAsync(string email)
+    public async Task SendRoleRejectedEmailAsync(string email, string serviceName, string link)
     {
+      var data = new Dictionary<string, dynamic>
+      {
+          { "dashboardlink", link },
+          { "serviceName", serviceName}
+      };
+
       var emailInfo = new EmailInfo()
       {
         To = email,
-        TemplateId = _appConfigInfo.EmailInfo.UserUpdateEmailOnlyUserIdPwdTemplateId
+        TemplateId = _appConfigInfo.UserRoleApproval.UserRoleRejectedEmailTemplateId,
+        BodyContent = data
       };
 
       await SendEmailAsync(emailInfo);

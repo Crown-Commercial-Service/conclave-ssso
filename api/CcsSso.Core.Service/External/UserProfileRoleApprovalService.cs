@@ -52,15 +52,6 @@ namespace CcsSso.Core.Service.External
         throw new InvalidOperationException();
       }
 
-      // The following apporach works but need to fetch all the pending roles. It is for buddy check to find the best approach. 
-      //var pendingRole = _dataContext.UserAccessRolePending
-      //   .Where(x => !x.IsDeleted && x.Status == (int)UserPendingRoleStaus.Pending).ToList();
-
-      //if (!pendingRoleIds.All(pending => pendingRole.Any(y => y.Id == pending)))
-      //{
-      //  throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
-      //}
-
       var pendingRole = await _dataContext.UserAccessRolePending
          .Where(x => pendingRoleIds.Contains(x.Id) && !x.IsDeleted && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
 
@@ -107,7 +98,6 @@ namespace CcsSso.Core.Service.External
 
           if (orgEligibleRole != null)
           {
-            linkForEmailTemplate = orgEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceUrl;
             serviceName = orgEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName;
           }
         }
@@ -132,7 +122,7 @@ namespace CcsSso.Core.Service.External
           if (status == UserPendingRoleStaus.Approved)
             await _ccsSsoEmailService.SendRoleApprovedEmailAsync(email, serviceName, linkForEmailTemplate);
           else
-            await _ccsSsoEmailService.SendRoleRejectedEmailAsync(email);
+            await _ccsSsoEmailService.SendRoleRejectedEmailAsync(email, serviceName,linkForEmailTemplate);
         }
 
       }
