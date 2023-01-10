@@ -7,6 +7,7 @@ using CcsSso.Shared.Domain;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Security.Authentication.ExtendedProtection;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service
@@ -14,16 +15,17 @@ namespace CcsSso.Core.Service
   public partial class CcsSsoEmailService : ICcsSsoEmailService
   {
 
-    public async Task SendRoleApprovedEmailAsync(string email, string link)
+    public async Task SendRoleApprovedEmailAsync(string email, string serviceName, string link )
     {
       var data = new Dictionary<string, dynamic>
       {
-          { "dashboardlink", link }
+          { "dashboardlink", link },
+          { "serviceName", serviceName},
       };
       var emailInfo = new EmailInfo()
       {
         To = email,
-        TemplateId = _appConfigInfo.UserRoleApproval.UserRoleApprovedEmailTemplateId, 
+        TemplateId = _appConfigInfo.UserRoleApproval.UserRoleApprovedEmailTemplateId,
         BodyContent = data
       };
       await SendEmailAsync(emailInfo);
@@ -34,7 +36,7 @@ namespace CcsSso.Core.Service
       var emailInfo = new EmailInfo()
       {
         To = email,
-        TemplateId = _appConfigInfo.EmailInfo.UserUpdateEmailOnlyUserIdPwdTemplateId 
+        TemplateId = _appConfigInfo.EmailInfo.UserUpdateEmailOnlyUserIdPwdTemplateId
       };
 
       await SendEmailAsync(emailInfo);
