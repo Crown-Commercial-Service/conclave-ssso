@@ -74,9 +74,6 @@ namespace CcsSso.Domain.Constants
     public const string ErrorInvalidUserDelegationSameOrg = "INVALID_USER_DELEGATION_SAME_ORG";
     public const string ErrorActivationLinkExpired = "ERROR_ACTIVATION_LINK_EXPIRED";
     public const string ErrorSendingActivationLink = "ERROR_SENDING_ACTIVATION_LINK";
-
-    public const string ErrorLinkExpired = "ERROR_LINK_EXPIRED";
-    public const string ErrorRoleRemoved = "ERROR_ROLE_REMOVED";
   }
 
   public static class VirtualContactTypeName
