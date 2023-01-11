@@ -20,7 +20,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
 
 
     [HttpPut("approve/roles")]
-    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [ClaimAuthorise("ORG_DEFAULT_USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task<bool> UpdateUserRoleDecision(UserRoleApprovalEditRequest userApprovalRequest)
@@ -93,7 +93,6 @@ namespace CcsSso.Core.ExternalApi.Controllers
     /// </remarks>
     [HttpGet("approve/verify")]
     [ClaimAuthorise("ORG_DEFAULT_USER")]
-    [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(UserAccessRolePendingTokenDetails), 200)]
     public async Task<UserAccessRolePendingTokenDetails> VerifyRoleApprovalToken([FromQuery(Name = "token")] string token)
@@ -125,7 +124,6 @@ namespace CcsSso.Core.ExternalApi.Controllers
     /// </remarks>
     [HttpPost("approve/roles")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
-    [OrganisationAuthorise("USER_POST")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task CreateUserRolesPendingForApproval(UserProfileEditRequestInfo userProfileRequestInfo)

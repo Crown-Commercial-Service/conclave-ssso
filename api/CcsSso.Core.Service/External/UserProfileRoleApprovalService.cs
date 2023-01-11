@@ -222,10 +222,11 @@ namespace CcsSso.Core.Service.External
 
       int userAccessRolePendingId = Convert.ToInt32(tokenDetails["pendingid"]);
       DateTime expirationTime = Convert.ToDateTime(tokenDetails["exp"]);
+      bool isLinkExpired = false;
 
       if (expirationTime < DateTime.UtcNow)
       {
-        throw new CcsSsoException(ErrorConstant.ErrorLinkExpired);
+        isLinkExpired = true;
       }
 
       var userAccessRolePendingDetails = await _dataContext.UserAccessRolePending
@@ -244,7 +245,7 @@ namespace CcsSso.Core.Service.External
         UserName = userAccessRolePendingDetails.User.UserName,
         RoleName = userAccessRolePendingDetails.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
         RoleKey = userAccessRolePendingDetails.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
-        Status = userAccessRolePendingDetails.Status
+        Status = isLinkExpired ? (int)UserPendingRoleStaus.LinkExpired : userAccessRolePendingDetails.Status
       };
     }
 

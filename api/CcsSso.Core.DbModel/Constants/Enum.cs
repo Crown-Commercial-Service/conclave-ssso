@@ -104,6 +104,7 @@ namespace CcsSso.Core.DbModel.Constants
     Pending,
     Approved,
     Rejected,
-    Removed
+    Removed,
+    LinkExpired
   }
 }
