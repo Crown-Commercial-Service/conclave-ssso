@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -27,15 +28,17 @@ namespace CcsSso.Core.JobScheduler
     private readonly IIdamSupportService _idamSupportService;
     private readonly IServiceProvider _serviceProvider;
     private IContactSupportService _contactSupportService;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public UnverifiedUserDeleteJob(IServiceProvider serviceProvider, IDateTimeService dataTimeService,
-      AppSettings appSettings, IEmailSupportService emailSupportService, IIdamSupportService idamSupportService)
+      AppSettings appSettings, IEmailSupportService emailSupportService, IIdamSupportService idamSupportService, IHttpClientFactory httpClientFactory)
     {
       _dataTimeService = dataTimeService;
       _appSettings = appSettings;
       _emailSupportService = emailSupportService;
       _idamSupportService = idamSupportService;
       _serviceProvider = serviceProvider;
+      _httpClientFactory = httpClientFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -64,12 +67,18 @@ namespace CcsSso.Core.JobScheduler
     {
       Dictionary<int, List<string>> adminList = new Dictionary<int, List<string>>();
       Dictionary<int, bool> orgSiteContactAvailabilityStatus = new Dictionary<int, bool>();
+      var client = _httpClientFactory.CreateClient();
+      client.DefaultRequestHeaders.Add("X-API-Key", _appSettings.WrapperApiSettings.ApiKey);
+      client.BaseAddress = new Uri(_appSettings.WrapperApiSettings.Url);
+
       var users = await GetUsersToDeleteAsync();
 
       if (users != null)
         Console.WriteLine($"{users.Count()} user(s) found");
       else
         Console.WriteLine("No users found");
+
+      var usersPendingRoleInfo = await GetAllUserPendingRoleDetailsAsync(users.Select(x => x.Id).ToArray());
 
       var orgAdminList = new List<string>();
       foreach (var orgByUsers in users.GroupBy(u => u.Party.Person.OrganisationId))
@@ -162,6 +171,13 @@ namespace CcsSso.Core.JobScheduler
               });
             }
 
+            // Delete user roles pending for approval
+            var userPendingRoles = usersPendingRoleInfo.Where(x => x.UserId == user.Id).ToList();
+            if (userPendingRoles.Any())
+            {
+              await client.DeleteAsync($"/users/approve/roles?user-id={user.UserName}&roles=" + String.Join(",", userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList()));
+            }
+
             await _dataContext.SaveChangesAsync();
 
             Console.WriteLine($"Unverified User Deletion User: {user.UserName} reassigningContactPoint: {reassigningContactPoint?.Id}");
@@ -221,6 +237,11 @@ namespace CcsSso.Core.JobScheduler
                           .Select(u => u).ToListAsync();
 
       return users;
+    }
+
+    private async Task<List<UserAccessRolePending>> GetAllUserPendingRoleDetailsAsync(int[] users) 
+    {
+      return await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && users.Contains(u.UserId)).ToListAsync();
     }
   }
 }

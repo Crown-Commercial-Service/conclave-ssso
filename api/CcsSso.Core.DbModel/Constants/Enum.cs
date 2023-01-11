@@ -92,4 +92,19 @@ namespace CcsSso.Core.DbModel.Constants
     Decline,
     Remove
   }
+
+  public enum RoleApprovalRequiredStatus
+  {
+    ApprovalNotRequired,
+    ApprovalRequired
+  }
+
+  public enum UserPendingRoleStaus
+  {
+    Pending,
+    Approved,
+    Rejected,
+    Removed,
+    LinkExpired
+  }
 }

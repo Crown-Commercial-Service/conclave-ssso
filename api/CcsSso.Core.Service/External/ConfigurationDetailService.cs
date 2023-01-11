@@ -158,5 +158,28 @@ namespace CcsSso.Core.Service.External
       return eligibleTradeTypeArrayList.ToArray();
     }
 
+    public async Task<List<OrganisationRole>> GetRolesRequireApprovalAsync()
+    {
+      if (!_applicationConfigurationInfo.UserRoleApproval.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var roles = await _dataContext.CcsAccessRole
+                          .Where(r => !r.IsDeleted && r.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired)
+                          .Include(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
+                          .Select(i => new OrganisationRole
+                          {
+                            RoleId = i.Id,
+                            RoleName = i.CcsAccessRoleName,
+                            RoleKey = i.CcsAccessRoleNameKey,
+                            ServiceName = i.ServiceRolePermissions.FirstOrDefault().ServicePermission.CcsService.ServiceName,
+                            OrgTypeEligibility = i.OrgTypeEligibility,
+                            SubscriptionTypeEligibility = i.SubscriptionTypeEligibility,
+                            TradeEligibility = i.TradeEligibility,
+                          }).ToListAsync();
+
+      return roles;
+    }
   }
 }

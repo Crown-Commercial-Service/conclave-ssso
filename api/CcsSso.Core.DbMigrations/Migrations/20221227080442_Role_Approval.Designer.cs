@@ -3,15 +3,17 @@ using System;
 using CcsSso.DbPersistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace CcsSso.Core.DbMigrations.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20221227080442_Role_Approval")]
+    partial class Role_Approval
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1594,6 +1596,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("EmailTemplate")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
@@ -2498,7 +2503,7 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .IsRequired();
 
                     b.HasOne("CcsSso.DbModel.Entity.User", "User")
-                        .WithMany("UserAccessRolePending")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2683,8 +2688,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
             modelBuilder.Entity("CcsSso.DbModel.Entity.User", b =>
                 {
                     b.Navigation("IdamUserLogins");
-
-                    b.Navigation("UserAccessRolePending");
 
                     b.Navigation("UserAccessRoles");
 

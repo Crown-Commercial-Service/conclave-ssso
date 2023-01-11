@@ -67,5 +67,24 @@ namespace CcsSso.Core.ExternalApi.Controllers
     {
       return await _configurationDetailService.GetCountryDetailAsync();
     }
+
+    /// <summary>
+    /// Return list of roles that require approval before assignment
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="400">Bad request.</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET configurations/approval/roles
+    /// </remarks>
+    [HttpGet("approve/roles")]
+    [SwaggerOperation(Tags = new[] { "Configuration" })]
+    [ProducesResponseType(typeof(List<OrganisationRole>), 200)]
+    public async Task<List<OrganisationRole>> GetRolesRequireApproval()
+    {
+      return await _configurationDetailService.GetRolesRequireApprovalAsync();
+    }
   }
 }

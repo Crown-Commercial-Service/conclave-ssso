@@ -99,6 +99,10 @@ namespace CcsSso.Domain.Contracts
 
         DbSet<OrganisationEligibleRolePending> OrganisationEligibleRolePending { get; set; }
 
+        DbSet<RoleApprovalConfiguration> RoleApprovalConfiguration { get; set; }
+
+        DbSet<UserAccessRolePending> UserAccessRolePending { get; set; }
+
         Task<PagedResultSet<T>> GetPagedResultAsync<T>(IQueryable<T> query, ResultSetCriteria resultSetCriteria);
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
