@@ -1,6 +1,7 @@
 ﻿using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
@@ -84,11 +85,16 @@ namespace CcsSso.Core.Service.External
           pendingUserRole.Status = (int)UserPendingRoleStaus.Approved;
           pendingUserRole.IsDeleted = true;
 
-          user.UserAccessRoles.Add(new UserAccessRole
+          var roleAleadyExists =await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.Id == pendingUserRole.UserId && !x.IsDeleted && x.OrganisationEligibleRoleId==pendingUserRole.OrganisationEligibleRoleId);
+
+          if (roleAleadyExists == null)
           {
-            UserId = user.Id,
-            OrganisationEligibleRoleId = pendingUserRole.OrganisationEligibleRoleId
-          });          
+            user.UserAccessRoles.Add(new UserAccessRole
+            {
+              UserId = user.Id,
+              OrganisationEligibleRoleId = pendingUserRole.OrganisationEligibleRoleId
+            });
+          }
         }
 
         await _dataContext.SaveChangesAsync();
@@ -118,9 +124,9 @@ namespace CcsSso.Core.Service.External
         foreach (var email in emailList)
         {
           if (status == UserPendingRoleStaus.Approved)
-            await _ccsSsoEmailService.SendRoleApprovedEmailAsync(email, serviceName, _appConfigInfo.ConclaveLoginUrl);
+            await _ccsSsoEmailService.SendRoleApprovedEmailAsync(email,user.UserName, serviceName, _appConfigInfo.ConclaveLoginUrl);
           else
-            await _ccsSsoEmailService.SendRoleRejectedEmailAsync(email, serviceName);
+            await _ccsSsoEmailService.SendRoleRejectedEmailAsync(email, user.UserName, serviceName);
         }
 
       }
@@ -293,6 +299,14 @@ namespace CcsSso.Core.Service.External
       if (!roles.All(roleId => organisationEligibleRoles.Any(oer => oer.Id == Convert.ToInt32(roleId))))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
+      }
+
+      var userAccessRoles = await _dataContext.UserAccessRole
+       .FirstOrDefaultAsync(uar => !uar.IsDeleted && uar.UserId == user.Id && roles.Contains(uar.OrganisationEligibleRoleId));
+       
+      if(userAccessRoles != null)
+      {
+        throw new ResourceAlreadyExistsException("User Role already exists");
       }
 
       var roleRequiredApprovalIds = await _dataContext.CcsAccessRole
