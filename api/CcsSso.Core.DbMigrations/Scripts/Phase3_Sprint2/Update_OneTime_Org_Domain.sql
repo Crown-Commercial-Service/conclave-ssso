@@ -6,7 +6,7 @@ DECLARE updateFailedCount int = 0;
 DECLARE organisationEligibleAdminRoleId int;
 
    BEGIN
-    --ALTER TABLE "Organisation" ADD COLUMN "DomainName" TEXT NULL;
+    ALTER TABLE "Organisation" ADD COLUMN "DomainName" TEXT NULL;
 
     FOR orgId IN SELECT "Id" FROM "Organisation" WHERE "DomainName" IS NULL AND "IsDeleted" = false
     LOOP 
