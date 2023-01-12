@@ -69,7 +69,7 @@ namespace CcsSso.Core.JobScheduler
       Dictionary<int, bool> orgSiteContactAvailabilityStatus = new Dictionary<int, bool>();
       var client = _httpClientFactory.CreateClient();
       client.DefaultRequestHeaders.Add("X-API-Key", _appSettings.WrapperApiSettings.ApiKey);
-      client.BaseAddress = new Uri(_appSettings.WrapperApiSettings.Url);
+      client.BaseAddress = new Uri(_appSettings.IsApiGatewayEnabled ? _appSettings.WrapperApiSettings.ApiGatewayEnabledUserUrl : _appSettings.WrapperApiSettings.ApiGatewayDisabledUserUrl);
 
       var users = await GetUsersToDeleteAsync();
 
@@ -175,7 +175,7 @@ namespace CcsSso.Core.JobScheduler
             var userPendingRoles = usersPendingRoleInfo.Where(x => x.UserId == user.Id).ToList();
             if (userPendingRoles.Any())
             {
-              await client.DeleteAsync($"/users/approve/roles?user-id={user.UserName}&roles=" + String.Join(",", userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList()));
+              await client.DeleteAsync($"/approve/roles?user-id={user.UserName}&roles=" + String.Join(",", userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList()));
             }
 
             await _dataContext.SaveChangesAsync();
