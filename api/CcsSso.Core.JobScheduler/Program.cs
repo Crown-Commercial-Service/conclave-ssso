@@ -21,6 +21,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 
@@ -69,6 +70,7 @@ namespace CcsSso.Core.JobScheduler
           OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles;
           OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob;
           OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail;
+          bool isApiGatewayEnabled = false;
 
 
           if (vaultEnabled)
@@ -93,6 +95,8 @@ namespace CcsSso.Core.JobScheduler
                 dbConnection = dbConnectionEndPoint;
               }
 
+              isApiGatewayEnabled = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "IsApiGatewayEnabled"));
+
               ReadFromAWS(out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings, out bulkUploadSettings,
                 out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
                  out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles,out orgAutoValidationOneTimeJobEmail, parameters);
@@ -101,7 +105,7 @@ namespace CcsSso.Core.JobScheduler
             {
               ReadFromHashicorp(out dbConnection, out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings,
                 out bulkUploadSettings, out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
-                out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail);
+                out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail, out isApiGatewayEnabled);
 
             }
           }
@@ -109,7 +113,7 @@ namespace CcsSso.Core.JobScheduler
           {
             ReadFromAppSecret(hostContext, out dbConnection, out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings,
               out bulkUploadSettings, out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
-              out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail);
+              out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail, out isApiGatewayEnabled);
           }
 
           services.AddSingleton(s =>
@@ -140,7 +144,8 @@ namespace CcsSso.Core.JobScheduler
               OrgAutoValidationJobSettings = orgAutoValidationJobSettings,
               OrgAutoValidationOneTimeJob=orgAutoValidationOneTimeJob,
               OrgAutoValidationOneTimeJobRoles = orgAutoValidationOneTimeJobRoles,
-              OrgAutoValidationOneTimeJobEmail =orgAutoValidationOneTimeJobEmail
+              OrgAutoValidationOneTimeJobEmail =orgAutoValidationOneTimeJobEmail,
+              IsApiGatewayEnabled = isApiGatewayEnabled,
             };
           });
 
@@ -229,7 +234,7 @@ namespace CcsSso.Core.JobScheduler
       out EmailConfigurationInfo emailConfigurationInfo, out DocUploadInfoVault docUploadConfig, out S3ConfigurationInfoVault s3ConfigurationInfo,
       out OrgAutoValidationJobSettings orgAutoValidationJobSettings,
       out OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob, out OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles,
-      out OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail)
+      out OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail, out bool isApiGatewayEnabled)
     {
       var config = hostContext.Configuration;
       dbConnection = config["DbConnection"];
@@ -248,6 +253,7 @@ namespace CcsSso.Core.JobScheduler
       orgAutoValidationOneTimeJob = config.GetSection("OrgAutoValidationOneTimeJob").Get<OrgAutoValidationOneTimeJob>();
       orgAutoValidationOneTimeJobRoles = config.GetSection("OrgAutoValidationOneTimeJobRoles").Get<OrgAutoValidationOneTimeJobRoles>();
       orgAutoValidationOneTimeJobEmail = config.GetSection("OrgAutoValidationOneTimeJobEmail").Get<OrgAutoValidationOneTimeJobEmail>();
+      isApiGatewayEnabled = Convert.ToBoolean(config["IsApiGatewayEnabled"]);
     }
 
     private static void ReadFromHashicorp(out string dbConnection, out CiiSettings ciiSettings, out List<UserDeleteJobSetting> userDeleteJobSettings,
@@ -255,7 +261,7 @@ namespace CcsSso.Core.JobScheduler
       out BulkUploadSettings bulkUploadSettings, out RedisCacheSettingsVault redisCacheSettingsVault, out EmailConfigurationInfo emailConfigurationInfo,
       out DocUploadInfoVault docUploadConfig, out S3ConfigurationInfoVault s3ConfigurationInfo, out OrgAutoValidationJobSettings orgAutoValidationJobSettings,
       out OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob, out OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles,
-      out OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail)
+      out OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail, out bool isApiGatewayEnabled)
     {
       var secrets = _programHelpers.LoadSecretsAsync().Result;
       dbConnection = secrets["DbConnection"].ToString();
@@ -274,7 +280,7 @@ namespace CcsSso.Core.JobScheduler
       orgAutoValidationOneTimeJob = JsonConvert.DeserializeObject<OrgAutoValidationOneTimeJob>(secrets["OrgAutoValidationOneTimeJob"].ToString());
       orgAutoValidationOneTimeJobRoles = JsonConvert.DeserializeObject<OrgAutoValidationOneTimeJobRoles>(secrets["OrgAutoValidationOneTimeJobRoles"].ToString());
       orgAutoValidationOneTimeJobEmail = JsonConvert.DeserializeObject<OrgAutoValidationOneTimeJobEmail>(secrets["OrgAutoValidationOneTimeJobEmail"].ToString());
-
+      isApiGatewayEnabled = Convert.ToBoolean(secrets["IsApiGatewayEnabled"].ToString());
 
     }
 
