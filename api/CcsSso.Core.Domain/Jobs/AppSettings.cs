@@ -26,6 +26,8 @@ namespace CcsSso.Core.Domain.Jobs
     public OrgAutoValidationOneTimeJobEmail? OrgAutoValidationOneTimeJobEmail { get; set; }
 
     public OrgAutoValidationOneTimeJobRoles? OrgAutoValidationOneTimeJobRoles { get; set; }
+
+    public bool IsApiGatewayEnabled { get; set; }
   }
 
   public class CiiSettings
@@ -53,6 +55,10 @@ namespace CcsSso.Core.Domain.Jobs
     public string ApiKey { get; set; }
 
     public string Url { get; set; }
+
+    public string ApiGatewayEnabledUserUrl { get; set; }
+
+    public string ApiGatewayDisabledUserUrl   { get; set; }
   }
 
   public class SecurityApiSettings

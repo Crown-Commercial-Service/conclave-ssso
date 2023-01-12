@@ -121,7 +121,9 @@ namespace CcsSso.Core.JobScheduler
               WrapperApiSettings = new WrapperApiSettings()
               {
                 ApiKey = wrapperApiSettings.ApiKey,
-                Url = wrapperApiSettings.Url
+                Url = wrapperApiSettings.Url,
+                ApiGatewayEnabledUserUrl = wrapperApiSettings.ApiGatewayEnabledUserUrl,
+                ApiGatewayDisabledUserUrl = wrapperApiSettings.ApiGatewayDisabledUserUrl,
               },
               SecurityApiSettings = new SecurityApiSettings()
               {
@@ -216,7 +218,6 @@ namespace CcsSso.Core.JobScheduler
           services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
           services.AddHostedService<UnverifiedUserDeleteJob>();
           services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
-          //Development in progress once ready need to uncomment
           services.AddHostedService<OrganisationAutovalidationJob>();
 
 
