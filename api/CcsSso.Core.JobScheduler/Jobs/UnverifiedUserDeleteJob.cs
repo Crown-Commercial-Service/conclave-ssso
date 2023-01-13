@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,12 +48,13 @@ namespace CcsSso.Core.JobScheduler
       {
         while (!stoppingToken.IsCancellationRequested)
         {
-          Console.WriteLine("Unverified User Deletion Job");
+          Console.WriteLine($" **************** Unverified User Deletion job started ***********");
           _dataContext = scope.ServiceProvider.GetRequiredService<IDataContext>();
           _organisationSupportService = scope.ServiceProvider.GetRequiredService<IOrganisationSupportService>();
           _contactSupportService = scope.ServiceProvider.GetRequiredService<IContactSupportService>();
           await PerformJobAsync();
           await Task.Delay(_appSettings.ScheduleJobSettings.UnverifiedUserDeletionJobExecutionFrequencyInMinutes * 60000, stoppingToken);
+          Console.WriteLine($"****************** Unverified User Deletion job ended ***********");
         }
       }
     }
@@ -175,7 +177,15 @@ namespace CcsSso.Core.JobScheduler
             var userPendingRoles = usersPendingRoleInfo.Where(x => x.UserId == user.Id).ToList();
             if (userPendingRoles.Any())
             {
-              await client.DeleteAsync($"/approve/roles?user-id={user.UserName}&roles=" + String.Join(",", userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList()));
+              var deleteResult = await client.DeleteAsync($"approve/roles?user-id={user.UserName}&roles=" + String.Join(",", userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList()));
+              if (deleteResult.StatusCode != HttpStatusCode.OK)
+              {
+                Console.WriteLine($" **************** Unverified User pending role deletion failed for user:{user.UserName} **************** ");
+              }
+              else
+              {
+                Console.WriteLine($" **************** Unverified User pending role deletion success for user:{user.UserName} **************** ");
+              }
             }
 
             await _dataContext.SaveChangesAsync();
@@ -239,7 +249,7 @@ namespace CcsSso.Core.JobScheduler
       return users;
     }
 
-    private async Task<List<UserAccessRolePending>> GetAllUserPendingRoleDetailsAsync(int[] users) 
+    private async Task<List<UserAccessRolePending>> GetAllUserPendingRoleDetailsAsync(int[] users)
     {
       return await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && users.Contains(u.UserId)).ToListAsync();
     }
