@@ -15,11 +15,12 @@ namespace CcsSso.Core.Service
   public partial class CcsSsoEmailService : ICcsSsoEmailService
   {
 
-    public async Task SendRoleApprovedEmailAsync(string email, string serviceName, string link )
+    public async Task SendRoleApprovedEmailAsync(string email, string userName, string serviceName, string link )
     {
       var data = new Dictionary<string, dynamic>
       {
           { "dashboardlink", link },
+          { "email", userName},
           { "serviceName", serviceName},
       };
       var emailInfo = new EmailInfo()
@@ -31,10 +32,11 @@ namespace CcsSso.Core.Service
       await SendEmailAsync(emailInfo);
     }
 
-    public async Task SendRoleRejectedEmailAsync(string email, string serviceName)
+    public async Task SendRoleRejectedEmailAsync(string email, string userName,string serviceName)
     {
       var data = new Dictionary<string, dynamic>
-      {         
+      {
+          { "email", userName},
           { "serviceName", serviceName}
       };
 
