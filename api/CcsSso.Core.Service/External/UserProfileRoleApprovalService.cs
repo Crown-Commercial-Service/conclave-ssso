@@ -324,7 +324,7 @@ namespace CcsSso.Core.Service.External
 
       if (org == null || user.UserName?.Split('@')?[1] == org.DomainName)
       {
-        throw new InvalidOperationException();
+        throw new InvalidOperationException("User has valid domain");
       }
 
       var organisationEligibleRoles = await _dataContext.OrganisationEligibleRole
