@@ -60,8 +60,8 @@ namespace CcsSso.Core.JobScheduler
       {
         returnParams = new WrapperApiSettings()
         {
-          ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/Url"),
-          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiKey"),
+          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/Url"),
+          ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiKey"),
           ApiGatewayEnabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledUserUrl"),
           ApiGatewayDisabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledUserUrl")
         };
