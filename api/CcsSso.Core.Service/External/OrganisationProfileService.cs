@@ -1661,6 +1661,13 @@ namespace CcsSso.Core.Service.External
         ActionedBy = actionedBy?.UserName
       };
 
+      string rolesAsssignToOrg = await ManualValidateOrgRoleAssignmentAsync(organisation);
+
+      if (!string.IsNullOrWhiteSpace(rolesAsssignToOrg))
+      {
+        auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, "", rolesAsssignToOrg, actionedBy: actionedBy));
+      }
+
       await _organisationAuditService.UpdateOrganisationAuditAsync(organisationAuditInfo);
 
       await _organisationAuditEventService.CreateOrganisationAuditEventAsync(auditEventLogs);
@@ -1855,21 +1862,21 @@ namespace CcsSso.Core.Service.External
 
       var organisationAudit = _dataContext.OrganisationAudit.FirstOrDefault(x => x.OrganisationId == organisation.Id);
       var isManualPending = organisationAudit != null && organisationAudit.Status == OrgAutoValidationStatus.ManualPending ? true : false;
+      var organisationEligiblePendingRoles = _dataContext.OrganisationEligibleRolePending.Where(x => !x.IsDeleted && x.OrganisationId == organisation.Id).ToList();
 
-      if (isManualPending)
+      if (organisationEligiblePendingRoles != null && organisationEligiblePendingRoles.Count > 0)
       {
-        var organisationEligiblePendingRoles = _dataContext.OrganisationEligibleRolePending.Where(x => !x.IsDeleted && x.OrganisationId == organisation.Id).ToList();
-        if (organisationEligiblePendingRoles != null)
+        if (isManualPending && organisation.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier)
         {
           var organisationEligiblePendingRoleIds = organisationEligiblePendingRoles.Select(x => x.CcsAccessRoleId).ToList();
 
           defaultOrgRoles = defaultOrgRoles.Where(x => organisationEligiblePendingRoleIds.Contains(x.CcsAccessRoleId)).ToList();
-
-          organisationEligiblePendingRoles.ForEach((organisationEligiblePendingRole) =>
-          {
-            organisationEligiblePendingRole.IsDeleted = true;
-          });
         }
+
+        organisationEligiblePendingRoles.ForEach((organisationEligiblePendingRole) =>
+        {
+          organisationEligiblePendingRole.IsDeleted = true;
+        });
       }
 
       StringBuilder rolesAssigned = new();

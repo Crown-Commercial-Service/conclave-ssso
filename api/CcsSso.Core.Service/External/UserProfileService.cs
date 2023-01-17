@@ -695,6 +695,16 @@ namespace CcsSso.Core.Service.External
 
       await _dataContext.SaveChangesAsync();
 
+      if (_appConfigInfo.UserRoleApproval.Enable)
+      {
+        var userAccessRolePendingExpiredList = await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && u.UserId == primaryUser.Id).ToListAsync();
+        if (userAccessRolePendingExpiredList.Any())
+        {
+          userAccessRolePendingExpiredList.ForEach(l => { l.IsDeleted = true; l.Status = (int)UserPendingRoleStaus.Removed; });
+          await _dataContext.SaveChangesAsync();
+        }
+      }
+
       // Log
       await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelete, AuditLogApplication.ManageUserAccount, $"UserId:{primaryUser.Id}");
 
