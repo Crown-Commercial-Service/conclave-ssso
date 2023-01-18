@@ -968,11 +968,11 @@ namespace CcsSso.Core.Service.External
       {
         int? oldOrgSupplierBuyerType = organisation.SupplierBuyerType;
         bool isOrgTypeSwitched = organisation.SupplierBuyerType != (int)newOrgType;
-        organisation.RightToBuy = isOrgTypeSwitched ? false : organisation.RightToBuy;
         bool autoValidationSuccess = false;
+        bool alreadyVerifiedBuyer = false;
         User actionedBy = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
 
-        if (isOrgTypeSwitched && newOrgType != RoleEligibleTradeType.Supplier)
+        if (isOrgTypeSwitched && organisation.RightToBuy != true && newOrgType != RoleEligibleTradeType.Supplier)
         {
           var autoValidationOrgDetails = await AutoValidateOrganisationDetails(organisation.CiiOrganisationId);
           autoValidationSuccess = autoValidationOrgDetails != null ? autoValidationOrgDetails.Item1 : false;
@@ -980,6 +980,8 @@ namespace CcsSso.Core.Service.External
         }
         else
         {
+          organisation.RightToBuy = newOrgType != RoleEligibleTradeType.Supplier ? organisation.RightToBuy : false;
+          alreadyVerifiedBuyer = organisation.RightToBuy ?? false;
           autoValidationSuccess = organisation.RightToBuy ?? false;
         }
 
@@ -1007,7 +1009,7 @@ namespace CcsSso.Core.Service.External
           auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Admin, GetOrgEventTypeChange((int)oldOrgSupplierBuyerType, (int)newOrgType), groupId, organisation.Id, companyHouseId, actionedBy: actionedBy));
         }
 
-        if (isOrgTypeSwitched && newOrgType != RoleEligibleTradeType.Supplier)
+        if (isOrgTypeSwitched && !alreadyVerifiedBuyer && newOrgType != RoleEligibleTradeType.Supplier)
         {
           auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, autoValidationSuccess ? OrganisationAuditEventType.AutomaticAcceptationRightToBuy : OrganisationAuditEventType.NotRecognizedAsVerifiedBuyer, groupId, organisation.Id, companyHouseId));
         }
