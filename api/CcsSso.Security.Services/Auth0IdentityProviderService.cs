@@ -779,33 +779,7 @@ namespace CcsSso.Security.Services
       {
         try
         {
-          var users = (await _managementApiClient.Users.GetUsersByEmailAsync(email)).ToList();
-
-          if (users != null && users.Count > 0)
-          {
-            // While deleting user from auth0, the authenticators are not deleted from the user. 
-            // when the same user is registered again, the old authenticator appears for mfa validation
-            // So resetting MFA before deleting user is necessary.
-
-            try
-            {
-              await ResetMfaAsync(users[0].Email);
-            }
-            catch (Exception ex)
-            {
-              Console.WriteLine($"Exception while resetting mfa before deleting the user from Auth0. Error Message - {ex.Message}");
-            }
-
-
-            foreach (var user in users)
-            {
-              await _managementApiClient.Users.DeleteAsync(user.UserId);
-            }
-          }
-          else
-          {
-            throw new RecordNotFoundException();
-          }
+          await ResetMfaAndDeleteUserAsync(email, _managementApiClient);
         }
         catch (ErrorApiException e)
         {
@@ -1269,6 +1243,37 @@ namespace CcsSso.Security.Services
         {
           Console.WriteLine($"Error sending message to queue. User: {email}, Error: {ex.Message}");
         }
+      }
+    }
+
+    private async Task ResetMfaAndDeleteUserAsync(string email, ManagementApiClient managementApiClient) 
+    {
+      var users = (await managementApiClient.Users.GetUsersByEmailAsync(email)).ToList();
+
+      if (users != null && users.Count > 0)
+      {
+        // While deleting user from auth0, the authenticators are not deleted from the user. 
+        // when the same user is registered again, the old authenticator appears for mfa validation
+        // So resetting MFA before deleting user is necessary.
+
+        try
+        {
+          await ResetMfaAsync(users[0].Email);
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine($"Exception while resetting mfa before deleting the user from Auth0. Error Message - {ex.Message}");
+        }
+
+
+        foreach (var user in users)
+        {
+          await managementApiClient.Users.DeleteAsync(user.UserId);
+        }
+      }
+      else
+      {
+        throw new RecordNotFoundException();
       }
     }
   }

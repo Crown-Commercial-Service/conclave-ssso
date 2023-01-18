@@ -38,14 +38,7 @@ namespace CcsSso.Security.Services.Helpers
         HttpContent codeContent = new StringContent(JsonConvert.SerializeObject(requestData, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
         // HttpContent codeContent = new StringContent(JsonConvert.SerializeObject(requestData, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
 
-        try
-        {
-          await CallAuth0TokenApi(client, codeContent);
-        }
-        catch (HttpRequestException)
-        {
-          throw new CcsSsoException("ERROR_COMMUNICATING");
-        }
+        await CallAuth0TokenApiAsync(client, codeContent);
       }
       return token;
     }
@@ -62,20 +55,27 @@ namespace CcsSso.Security.Services.Helpers
       return true;
     }
 
-    private async Task CallAuth0TokenApi(HttpClient client, HttpContent codeContent)
+    private async Task CallAuth0TokenApiAsync(HttpClient client, HttpContent codeContent)
     {
-      var response = await client.PostAsync("oauth/token", codeContent);
-      if (response.StatusCode == System.Net.HttpStatusCode.OK)
+      try
       {
-        var responseContent = await response.Content.ReadAsStringAsync();
-        var resultPersonContent = JsonConvert.DeserializeObject<Auth0Tokencontent>(responseContent);
-        token = resultPersonContent.AccessToken;
+        var response = await client.PostAsync("oauth/token", codeContent);
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+          var responseContent = await response.Content.ReadAsStringAsync();
+          var resultPersonContent = JsonConvert.DeserializeObject<Auth0Tokencontent>(responseContent);
+          token = resultPersonContent.AccessToken;
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+          throw new UnauthorizedAccessException();
+        }
+        else
+        {
+          throw new CcsSsoException("ERROR_COMMUNICATING");
+        }
       }
-      else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-      {
-        throw new UnauthorizedAccessException();
-      }
-      else
+      catch (HttpRequestException)
       {
         throw new CcsSsoException("ERROR_COMMUNICATING");
       }
