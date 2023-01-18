@@ -25,11 +25,9 @@ namespace CcsSso.Security.Services.Helpers
     {
       if (string.IsNullOrEmpty(token) || IsExpired(token))
       {
-        using (var client = _httpClientFactory.CreateClient())
-        {
-          client.BaseAddress = new Uri(_appConfigInfo.Auth0ConfigurationInfo.ManagementApiBaseUrl);
-
-          Dictionary<string, string> requestData = new Dictionary<string, string>
+        using var client = _httpClientFactory.CreateClient();
+        client.BaseAddress = new Uri(_appConfigInfo.Auth0ConfigurationInfo.ManagementApiBaseUrl);
+        Dictionary<string, string> requestData = new Dictionary<string, string>
           {
             { "grant_type", "client_credentials"},
             { "client_id", _appConfigInfo.Auth0ConfigurationInfo.ClientId},
@@ -37,31 +35,16 @@ namespace CcsSso.Security.Services.Helpers
             { "audience", _appConfigInfo.Auth0ConfigurationInfo.ManagementApiIdentifier},
           };
 
-          HttpContent codeContent = new StringContent(JsonConvert.SerializeObject(requestData, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
-          // HttpContent codeContent = new StringContent(JsonConvert.SerializeObject(requestData, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
+        HttpContent codeContent = new StringContent(JsonConvert.SerializeObject(requestData, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
+        // HttpContent codeContent = new StringContent(JsonConvert.SerializeObject(requestData, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
 
-          try
-          {
-            var response = await client.PostAsync("oauth/token", codeContent);
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
-            {
-              var responseContent = await response.Content.ReadAsStringAsync();
-              var resultPersonContent = JsonConvert.DeserializeObject<Auth0Tokencontent>(responseContent);
-              token = resultPersonContent.AccessToken;
-            }
-            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
-              throw new UnauthorizedAccessException();
-            }
-            else 
-            {
-              throw new CcsSsoException("ERROR_COMMUNICATING");
-            }
-          }
-          catch (HttpRequestException)
-          {
-            throw new CcsSsoException("ERROR_COMMUNICATING");
-          }
+        try
+        {
+          await CallAuth0TokenApi(client, codeContent);
+        }
+        catch (HttpRequestException)
+        {
+          throw new CcsSsoException("ERROR_COMMUNICATING");
         }
       }
       return token;
@@ -77,6 +60,25 @@ namespace CcsSso.Security.Services.Helpers
         return false;
       }
       return true;
+    }
+
+    private async Task CallAuth0TokenApi(HttpClient client, HttpContent codeContent)
+    {
+      var response = await client.PostAsync("oauth/token", codeContent);
+      if (response.StatusCode == System.Net.HttpStatusCode.OK)
+      {
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var resultPersonContent = JsonConvert.DeserializeObject<Auth0Tokencontent>(responseContent);
+        token = resultPersonContent.AccessToken;
+      }
+      else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+      {
+        throw new UnauthorizedAccessException();
+      }
+      else
+      {
+        throw new CcsSsoException("ERROR_COMMUNICATING");
+      }
     }
   }
 }
