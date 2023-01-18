@@ -7,7 +7,7 @@ using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
-using CcsSso.Security.Domain.Exceptions;
+using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -57,7 +57,7 @@ namespace CcsSso.Core.Service.External
 
       if (pendingRole != null && pendingRole.Count() < pendingRoleIds.Length)
       {
-        throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
+        throw new ResourceNotFoundException();
       }
 
       foreach (var pendingRoleId in pendingRoleIds)
@@ -71,7 +71,7 @@ namespace CcsSso.Core.Service.External
 
         if (user == null)
         {
-          throw new RecordNotFoundException();
+          throw new ResourceNotFoundException();
         }
 
         if (status == UserPendingRoleStaus.Rejected)
