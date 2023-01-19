@@ -322,7 +322,7 @@ namespace CcsSso.Core.Service.External
 
       var org = await _dataContext.Organisation.FirstOrDefaultAsync(o => !o.IsDeleted && o.Id == organisationId);
 
-      if (org == null || user.UserName?.Split('@')?[1] == org.DomainName)
+      if (org == null || user.UserName?.ToLower().Split('@')?[1] == org.DomainName?.ToLower())
       {
         throw new InvalidOperationException("User has valid domain");
       }
