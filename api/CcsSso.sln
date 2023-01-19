@@ -76,7 +76,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CcsSso.Adaptor.SqsListener"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CcsSso.Core.ReportingScheduler", "CcsSso.Core.ReportingScheduler\CcsSso.Core.ReportingScheduler.csproj", "{334BDF91-AA22-4583-B7D4-560876ACDA36}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CcsSso.Core.ServiceOnboardingScheduler", "CcsSso.Core.ServiceOnboardingScheduler\CcsSso.Core.ServiceOnboardingScheduler.csproj", "{EBC3F606-77A2-4E94-AC2B-060C3A5CE1E7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CcsSso.Core.ServiceOnboardingScheduler", "CcsSso.Core.ServiceOnboardingScheduler\CcsSso.Core.ServiceOnboardingScheduler.csproj", "{EBC3F606-77A2-4E94-AC2B-060C3A5CE1E7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CcsSso.Core.BSIRolesRemovalOneTimeJob", "BSIRolesRemovalOneTimeJob\CcsSso.Core.BSIRolesRemovalOneTimeJob.csproj", "{219802C2-39AF-4890-964A-D9FE976FDD97}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -200,6 +202,10 @@ Global
 		{EBC3F606-77A2-4E94-AC2B-060C3A5CE1E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EBC3F606-77A2-4E94-AC2B-060C3A5CE1E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EBC3F606-77A2-4E94-AC2B-060C3A5CE1E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{219802C2-39AF-4890-964A-D9FE976FDD97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{219802C2-39AF-4890-964A-D9FE976FDD97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{219802C2-39AF-4890-964A-D9FE976FDD97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{219802C2-39AF-4890-964A-D9FE976FDD97}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -234,6 +240,7 @@ Global
 		{CC7F0319-FB69-499F-A991-8E8C4BFE80E0} = {194B07C8-F0A8-4EF8-B266-52755DB8639C}
 		{334BDF91-AA22-4583-B7D4-560876ACDA36} = {179F7A96-5DE5-47E9-BC61-F5E4276EF60C}
 		{EBC3F606-77A2-4E94-AC2B-060C3A5CE1E7} = {179F7A96-5DE5-47E9-BC61-F5E4276EF60C}
+		{219802C2-39AF-4890-964A-D9FE976FDD97} = {179F7A96-5DE5-47E9-BC61-F5E4276EF60C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {37B13717-0A0F-4D37-A3DA-BA346AE5D064}
