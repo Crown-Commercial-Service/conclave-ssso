@@ -218,7 +218,7 @@ namespace CcsSso.Security.Api
           {
             LoginUrl = Configuration["MockProvider:LoginUrl"]
           },
-          ResetPasswordSettings = new ResetPasswordSettings() 
+          ResetPasswordSettings = new ResetPasswordSettings()
           {
             MaxAllowedAttempts = Configuration["ResetPasswordSettings:MaxAllowedAttempts"],
             MaxAllowedAttemptsThresholdInMinutes = Configuration["ResetPasswordSettings:MaxAllowedAttemptsThresholdInMinutes"],
@@ -309,33 +309,8 @@ namespace CcsSso.Security.Api
       JwtSettings jwtSettings = new JwtSettings();
       jwtTokenInfo.Bind(jwtSettings);
 
-      services
-          .AddAuthentication(options =>
-          {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-          })
-          .AddJwtBearer(options =>
-          {
-            options.SaveToken = true;
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-              ValidateIssuerSigningKey = true,
-              IssuerSigningKeyResolver = (s, securityToken, identifier, parameters) =>
-              {
-                // Get JsonWebKeySet from AWS
-                var json = new WebClient().DownloadString(jwtSettings.JWTKeyEndpoint);
-                // Serialize the result
-                return JsonConvert.DeserializeObject<JsonWebKeySet>(json).Keys;
-              },
-              ValidateIssuer = jwtSettings.ValidateIssuer,
-              ValidIssuer = jwtSettings.Issuer,
-              ValidateLifetime = true,
-              LifetimeValidator = (before, expires, token, param) => expires > DateTime.UtcNow,
-              ValidateAudience = jwtSettings.ValidateAudience,
-              ValidAudience = jwtSettings.Audience,
-            };
-          });
+      // Moved to separate method to solve code climate issue
+      ConfigureJwt(services, jwtSettings);
 
       services.AddSwaggerGen(c =>
       {
@@ -345,6 +320,37 @@ namespace CcsSso.Security.Api
         c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
         c.EnableAnnotations();
       });
+    }
+
+    private static void ConfigureJwt(IServiceCollection services, JwtSettings jwtSettings)
+    {
+      services
+                .AddAuthentication(options =>
+                {
+                  options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                  options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                  options.SaveToken = true;
+                  options.TokenValidationParameters = new TokenValidationParameters
+                  {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKeyResolver = (s, securityToken, identifier, parameters) =>
+                    {
+                      // Get JsonWebKeySet from AWS
+                      var json = new WebClient().DownloadString(jwtSettings.JWTKeyEndpoint);
+                      // Serialize the result
+                      return JsonConvert.DeserializeObject<JsonWebKeySet>(json).Keys;
+                    },
+                    ValidateIssuer = jwtSettings.ValidateIssuer,
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidateLifetime = true,
+                    LifetimeValidator = (before, expires, token, param) => expires > DateTime.UtcNow,
+                    ValidateAudience = jwtSettings.ValidateAudience,
+                    ValidAudience = jwtSettings.Audience,
+                  };
+                });
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

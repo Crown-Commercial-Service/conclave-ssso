@@ -18,7 +18,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
   public class DataQueueListner : BackgroundService
   {
-    private const string LISTNER_JOB_NAME = "DataQueueListner";
+    private const string LISTNER_JOB_DATA_QUEUE = "DataQueueListner";
     private readonly ILogger<DataQueueListner> _logger;
     private readonly SqsListnerAppSetting _appSetting;
     private readonly IAwsDataSqsService _awsDataSqsService;
@@ -39,10 +39,10 @@ namespace CcsSso.Adaptor.SqsListener.Listners
     {
       while (!stoppingToken.IsCancellationRequested)
       {
-        _logger.LogInformation($"Worker: {LISTNER_JOB_NAME} running at: {DateTime.UtcNow}");
-        Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: job started at: {DateTime.UtcNow}");
+        _logger.LogInformation($"Worker: {LISTNER_JOB_DATA_QUEUE} running at: {DateTime.UtcNow}");
+        Console.WriteLine($"Worker: {LISTNER_JOB_DATA_QUEUE} :: job started at: {DateTime.UtcNow}");
         await PerformJobAsync();
-        Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: job ended at: {DateTime.UtcNow}");
+        Console.WriteLine($"Worker: {LISTNER_JOB_DATA_QUEUE} :: job ended at: {DateTime.UtcNow}");
         await Task.Delay(_appSetting.SqsListnerJobSetting.JobSchedulerExecutionFrequencyInMinutes * 60000, stoppingToken);
       }
     }
@@ -50,10 +50,10 @@ namespace CcsSso.Adaptor.SqsListener.Listners
     private async Task PerformJobAsync()
     {
       var msgs = await _awsDataSqsService.ReceiveMessagesAsync(_appSetting.QueueUrlInfo.DataQueueUrl);
-      Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: {msgs.Count} messages received at {DateTime.UtcNow}");
+      Console.WriteLine($"Worker: {LISTNER_JOB_DATA_QUEUE} :: {msgs.Count} messages received at {DateTime.UtcNow}");
       foreach (var msg in msgs)
       {
-        Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: Message with id {msg.MessageId} received at {DateTime.UtcNow}");
+        Console.WriteLine($"Worker: {LISTNER_JOB_DATA_QUEUE} :: Message with id {msg.MessageId} received at {DateTime.UtcNow}");
         await ProcessMessageAsync(msg);
       }
     }
@@ -76,10 +76,10 @@ namespace CcsSso.Adaptor.SqsListener.Listners
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, $"Worker: {LISTNER_JOB_NAME} :: Message processing error at: {DateTime.UtcNow} for message {sqsMessageResponseDto.MessageId}");
+        _logger.LogError(ex, $"Worker: {LISTNER_JOB_DATA_QUEUE} :: Message processing error at: {DateTime.UtcNow} for message {sqsMessageResponseDto.MessageId}");
         if (sqsMessageResponseDto.ReceiveCount > _appSetting.SqsListnerJobSetting.MessageReadThreshold)
         {
-          Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: MessageId {sqsMessageResponseDto.MessageId} receive count exceeded at {DateTime.UtcNow}");
+          Console.WriteLine($"Worker: {LISTNER_JOB_DATA_QUEUE} :: MessageId {sqsMessageResponseDto.MessageId} receive count exceeded at {DateTime.UtcNow}");
           await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
         }
       }
@@ -98,18 +98,18 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
       if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.BadRequest)
       {
-        Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_NAME} :: Message processing succeeded for url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
+        Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_DATA_QUEUE} :: Message processing succeeded for url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
         await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
       }
       else
       {
         var responseContent = await response.Content.ReadAsStringAsync();
-        Console.WriteLine($"WorkerError: {LISTNER_JOB_NAME} :: Message processing error for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
-        _logger.LogError($"Worker: {LISTNER_JOB_NAME} :: MessageId: {sqsMessageResponseDto.MessageId}, ErroreCode: {response.StatusCode}, Error: {responseContent}");
+        Console.WriteLine($"WorkerError: {LISTNER_JOB_DATA_QUEUE} :: Message processing error for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
+        _logger.LogError($"Worker: {LISTNER_JOB_DATA_QUEUE} :: MessageId: {sqsMessageResponseDto.MessageId}, ErroreCode: {response.StatusCode}, Error: {responseContent}");
 
         if (retryCount <= _appSetting.DataQueueSettings.RetryMaxCount)
         {
-          Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_NAME} :: Message processing retry: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
+          Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_DATA_QUEUE} :: Message processing retry: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
           retryCount = retryCount + 1;
           await CreateUser(sqsMessageResponseDto, retryCount);
         }
@@ -117,7 +117,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
         {
           var user = JsonConvert.DeserializeObject<UserInfo>(sqsMessageResponseDto.MessageBody);
           await SendCreateUserErrorNotification(user.Email);
-          Console.WriteLine($"WorkerError: {LISTNER_JOB_NAME} :: Message processing retry failed for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
+          Console.WriteLine($"WorkerError: {LISTNER_JOB_DATA_QUEUE} :: Message processing retry failed for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
           await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
         }
       }
@@ -137,25 +137,25 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
       if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.BadRequest || response.StatusCode == System.Net.HttpStatusCode.NotFound)
       {
-        Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_NAME} :: Message processing succeeded for url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
+        Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_DATA_QUEUE} :: Message processing succeeded for url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
         await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
       }
       else
       {
         var responseContent = await response.Content.ReadAsStringAsync();
-        Console.WriteLine($"WorkerError: {LISTNER_JOB_NAME} :: Message processing error for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
-        _logger.LogError($"Worker: {LISTNER_JOB_NAME} :: MessageId: {sqsMessageResponseDto.MessageId}, ErroreCode: {response.StatusCode}, Error: {responseContent}");
+        Console.WriteLine($"WorkerError: {LISTNER_JOB_DATA_QUEUE} :: Message processing error for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
+        _logger.LogError($"Worker: {LISTNER_JOB_DATA_QUEUE} :: MessageId: {sqsMessageResponseDto.MessageId}, ErroreCode: {response.StatusCode}, Error: {responseContent}");
 
         if (retryCount <= _appSetting.DataQueueSettings.RetryMaxCount)
         {
-          Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_NAME} :: Message processing retry: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
+          Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_DATA_QUEUE} :: Message processing retry: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
           retryCount = retryCount + 1; 
           await DeleteUser(sqsMessageResponseDto, retryCount);
         }
         else
         {
           await SendDeleteUserErrorNotification(email);
-          Console.WriteLine($"WorkerError: {LISTNER_JOB_NAME} :: Message processing retry failed for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
+          Console.WriteLine($"WorkerError: {LISTNER_JOB_DATA_QUEUE} :: Message processing retry failed for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
           await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
         }
       }
@@ -165,13 +165,13 @@ namespace CcsSso.Adaptor.SqsListener.Listners
     {
       try
       {
-        Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: Deleteing message from queue. MessageId: {sqsMessageResponseDto.MessageId}");
+        Console.WriteLine($"Worker: {LISTNER_JOB_DATA_QUEUE} :: Deleteing message from queue. MessageId: {sqsMessageResponseDto.MessageId}");
         await _awsDataSqsService.DeleteMessageAsync(_appSetting.QueueUrlInfo.DataQueueUrl, sqsMessageResponseDto.ReceiptHandle);
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, $"Worker: {LISTNER_JOB_NAME} :: Message deleting error at: {DateTime.UtcNow}");
-        _logger.LogError(ex, $"Worker: {LISTNER_JOB_NAME} :: SQS url: {_appSetting.QueueUrlInfo.DataQueueUrl}");
+        _logger.LogError(ex, $"Worker: {LISTNER_JOB_DATA_QUEUE} :: Message deleting error at: {DateTime.UtcNow}");
+        _logger.LogError(ex, $"Worker: {LISTNER_JOB_DATA_QUEUE} :: SQS url: {_appSetting.QueueUrlInfo.DataQueueUrl}");
       }
     }
 
