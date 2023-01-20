@@ -283,6 +283,7 @@ namespace CcsSso.Service
         .Include(c => c.Party)
         .ThenInclude(x => x.Person)
         .ThenInclude(o => o.Organisation)
+        .Include(ua => ua.UserAccessRoles).ThenInclude(oe => oe.OrganisationEligibleRole).ThenInclude(c => c.CcsAccessRole)
         .Where(u => u.IsDeleted == false
         // #Delegated only return primary users
         && u.UserType == Core.DbModel.Constants.UserType.Primary
@@ -295,7 +296,8 @@ namespace CcsSso.Service
           Name = user.Party.Person.FirstName + " " + user.Party.Person.LastName,
           OrganisationId = user.Party.Person.Organisation.Id,
           OrganisationLegalName = user.Party.Person.Organisation.LegalName,
-          CiiOrganisationId = user.Party.Person.Organisation.CiiOrganisationId
+          CiiOrganisationId = user.Party.Person.Organisation.CiiOrganisationId,
+          IsAdmin = user.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted)
         }).OrderBy(u => u.Name), resultSetCriteria);
 
       var orgUserListResponse = new OrganisationUserListResponse
@@ -342,7 +344,8 @@ namespace CcsSso.Service
             OrganisationId = ciiOrgId,
             BusinessType = organisationRegistrationDto.BusinessType,
             RightToBuy = organisationRegistrationDto.RightToBuy,
-            SupplierBuyerType = organisationRegistrationDto.SupplierBuyerType
+            SupplierBuyerType = organisationRegistrationDto.SupplierBuyerType,
+            DomainName = organisationRegistrationDto.AdminUserName?.Split('@')?[1]
           }
         };
 
@@ -428,6 +431,10 @@ namespace CcsSso.Service
       }
       catch (Exception e)
       {
+        if (await _userProfileService.IsUserExist(organisationRegistrationDto.AdminUserName))
+        {
+          await _userProfileService.DeleteUserAsync(organisationRegistrationDto.AdminUserName.ToLower(), false);
+        }
         await DeleteAsync(ciiOrgId);
         throw;
       }

@@ -15,7 +15,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 {
   public class WrapperNotificationListner : BackgroundService
   {
-    private const string LISTNER_JOB_NAME = "WrapperNotificationListener";
+    private const string LISTNER_JOB_WRAPPER_NOTIFY = "WrapperNotificationListener";
     private readonly ILogger<WrapperNotificationListner> _logger;
     private readonly SqsListnerAppSetting _appSetting;
     private readonly IAwsSqsService _awsSqsService;
@@ -33,10 +33,10 @@ namespace CcsSso.Adaptor.SqsListener.Listners
     {
       while (!stoppingToken.IsCancellationRequested)
       {
-        _logger.LogInformation($"Worker: {LISTNER_JOB_NAME} running at: {DateTime.UtcNow}");
-        Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: job started at: {DateTime.UtcNow}");
+        _logger.LogInformation($"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} running at: {DateTime.UtcNow}");
+        Console.WriteLine($"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} :: job started at: {DateTime.UtcNow}");
         await PerformJobAsync();
-        Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: job ended at: {DateTime.UtcNow}");
+        Console.WriteLine($"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} :: job ended at: {DateTime.UtcNow}");
         await Task.Delay(_appSetting.SqsListnerJobSetting.JobSchedulerExecutionFrequencyInMinutes * 60000, stoppingToken);
       }
     }
@@ -44,11 +44,11 @@ namespace CcsSso.Adaptor.SqsListener.Listners
     private async Task PerformJobAsync()
     {
       var msgs = await _awsSqsService.ReceiveMessagesAsync(_appSetting.QueueUrlInfo.AdaptorNotificationQueueUrl);
-      Console.WriteLine($"Worker: {LISTNER_JOB_NAME} ::{msgs.Count} messages received at {DateTime.UtcNow}");
+      Console.WriteLine($"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} ::{msgs.Count} messages received at {DateTime.UtcNow}");
       List<Task> taskList = new List<Task>();
       msgs.ForEach((msg) =>
       {
-        Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: Message with id {msg.MessageId} received at {DateTime.UtcNow}");
+        Console.WriteLine($"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} :: Message with id {msg.MessageId} received at {DateTime.UtcNow}");
         taskList.Add(PostNotificationToAdapterAsync(msg));
       });
       await Task.WhenAll(taskList);
@@ -67,17 +67,17 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
         if (response.IsSuccessStatusCode)
         {
-          Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: Message processing succeeded at: {DateTime.UtcNow}");
+          Console.WriteLine($"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} :: Message processing succeeded at: {DateTime.UtcNow}");
           await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
         }
         else
         {
           var responseContent = await response.Content.ReadAsStringAsync();
-          _logger.LogError($"Worker: {LISTNER_JOB_NAME} :: Message processing error at: {DateTime.UtcNow}");
-          _logger.LogError($"Worker: {LISTNER_JOB_NAME} :: MessageId: {sqsMessageResponseDto.MessageId}, ErroreCode: {response.StatusCode}, Error: {responseContent}");
+          _logger.LogError($"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} :: Message processing error at: {DateTime.UtcNow}");
+          _logger.LogError($"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} :: MessageId: {sqsMessageResponseDto.MessageId}, ErroreCode: {response.StatusCode}, Error: {responseContent}");
           if (sqsMessageResponseDto.ReceiveCount > _appSetting.SqsListnerJobSetting.MessageReadThreshold)
           {
-            Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: MessageId {sqsMessageResponseDto.MessageId} receive count exceeded at {DateTime.UtcNow}");
+            Console.WriteLine($"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} :: MessageId {sqsMessageResponseDto.MessageId} receive count exceeded at {DateTime.UtcNow}");
             // TODO delete and send to deadletter queue
             await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
           }
@@ -85,10 +85,10 @@ namespace CcsSso.Adaptor.SqsListener.Listners
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, $"Worker: {LISTNER_JOB_NAME} :: Message processing error at: {DateTime.UtcNow} for message {sqsMessageResponseDto.MessageId}");
+        _logger.LogError(ex, $"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} :: Message processing error at: {DateTime.UtcNow} for message {sqsMessageResponseDto.MessageId}");
         if (sqsMessageResponseDto.ReceiveCount > _appSetting.SqsListnerJobSetting.MessageReadThreshold)
         {
-          Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: MessageId {sqsMessageResponseDto.MessageId} receive count exceeded at {DateTime.UtcNow}");
+          Console.WriteLine($"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} :: MessageId {sqsMessageResponseDto.MessageId} receive count exceeded at {DateTime.UtcNow}");
           // TODO delete and send to deadletter queue
           await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
         }
@@ -99,13 +99,13 @@ namespace CcsSso.Adaptor.SqsListener.Listners
     {
       try
       {
-        Console.WriteLine($"Worker: {LISTNER_JOB_NAME} :: Deleteing message from queue. MessageId: {sqsMessageResponseDto.MessageId}");
+        Console.WriteLine($"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} :: Deleteing message from queue. MessageId: {sqsMessageResponseDto.MessageId}");
         await _awsSqsService.DeleteMessageAsync(_appSetting.QueueUrlInfo.AdaptorNotificationQueueUrl, sqsMessageResponseDto.ReceiptHandle);
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, $"Worker: {LISTNER_JOB_NAME} :: Message deleting error at: {DateTime.UtcNow}");
-        _logger.LogError(ex, $"Worker: {LISTNER_JOB_NAME} :: SQS url: {_appSetting.QueueUrlInfo.AdaptorNotificationQueueUrl}");
+        _logger.LogError(ex, $"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} :: Message deleting error at: {DateTime.UtcNow}");
+        _logger.LogError(ex, $"Worker: {LISTNER_JOB_WRAPPER_NOTIFY} :: SQS url: {_appSetting.QueueUrlInfo.AdaptorNotificationQueueUrl}");
 
       }
     }

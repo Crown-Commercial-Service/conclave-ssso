@@ -119,6 +119,7 @@ namespace CcsSso.Core.Service.External
     {
       var group = await _dataContext.OrganisationUserGroup
         .Include(g => g.GroupEligibleRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
+        .Include(g => g.UserGroupMemberships).ThenInclude(ugm => ugm.User).ThenInclude(u => u.UserAccessRoles).ThenInclude(oe => oe.OrganisationEligibleRole).ThenInclude(c => c.CcsAccessRole)
         .Include(g => g.UserGroupMemberships).ThenInclude(ugm => ugm.User).ThenInclude(u => u.Party).ThenInclude(p => p.Person)
         .FirstOrDefaultAsync(g => !g.IsDeleted && g.Id == groupId && !g.Organisation.IsDeleted && g.Organisation.CiiOrganisationId == ciiOrganisationId);
 
@@ -142,7 +143,8 @@ namespace CcsSso.Core.Service.External
         Users = group.UserGroupMemberships.Where(ugm => !ugm.IsDeleted).Select(ugm => new GroupUser
         {
           UserId = ugm.User.UserName,
-          Name = $"{ugm.User.Party.Person.FirstName} {ugm.User.Party.Person.LastName}"
+          Name = $"{ugm.User.Party.Person.FirstName} {ugm.User.Party.Person.LastName}",
+          IsAdmin = ugm.User.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted)
         }).ToList()
       };
 

@@ -6,6 +6,7 @@ using CcsSso.Domain.Dtos.External;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CcsSso.ExternalApi.Controllers
@@ -369,6 +370,7 @@ namespace CcsSso.ExternalApi.Controllers
     {
       await _userProfileService.SendUserDelegatedAccessEmailAsync(userId, organisationId);
     }
+
     #endregion
 
     #endregion

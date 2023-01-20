@@ -128,6 +128,25 @@ namespace CcsSso.Core.Service
       };
       await SendEmailAsync(emailInfo);
     }
+
+    public async Task SendUserRoleApprovalEmailAsync(string email, string userName, string orgName, string serviceName, string encryptedCode)
+    {
+      var data = new Dictionary<string, dynamic>
+                      {
+                        { "email", userName},
+                        { "orgName", orgName},
+                        { "serviceName", serviceName},
+                        { "link", _appConfigInfo.ConclaveLoginUrl + "/manage-users/role" + $"?token={encryptedCode}" }
+                      };
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.UserRoleApproval.UserRoleApprovalEmailTemplateId,
+        BodyContent = data
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
     // #Delegated
     public async Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string encryptedCode)
     {

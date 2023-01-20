@@ -41,6 +41,8 @@ namespace CcsSso.Domain.Dtos
     // #Auto validation
     public OrgAutoValidation OrgAutoValidation { get; set; }
     public OrgAutoValidationEmailInfo OrgAutoValidationEmailInfo { get; set; }
+
+    public UserRoleApproval UserRoleApproval { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -161,5 +163,18 @@ namespace CcsSso.Domain.Dtos
     public string RemoveRightToBuyStatusEmailTemplateId { get; set; }
     public string OrgPendingVerificationEmailTemplateId { get; set; }
     public string OrgBuyerStatusChangeUpdateToAllAdmins { get; set; }
+  }
+
+  public class UserRoleApproval
+  {
+    public bool Enable { get; set; } = false;
+
+    public string RoleApprovalTokenEncryptionKey { get; set; }
+
+    public string UserRoleApprovalEmailTemplateId { get; set; }
+
+    public string UserRoleApprovedEmailTemplateId { get; set; }
+
+    public string UserRoleRejectedEmailTemplateId { get; set; }
   }
 }

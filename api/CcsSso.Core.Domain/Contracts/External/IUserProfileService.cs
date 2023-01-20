@@ -1,4 +1,5 @@
 using CcsSso.Core.Domain.Dtos.External;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Contracts.External
@@ -26,6 +27,9 @@ namespace CcsSso.Core.Domain.Contracts.External
     Task RemoveAdminRolesAsync(string userName);
 
     Task AddAdminRoleAsync(string userName);
+
+    Task<bool> IsUserExist(string userName);
+
     // #Delegated
     Task CreateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo);
 
