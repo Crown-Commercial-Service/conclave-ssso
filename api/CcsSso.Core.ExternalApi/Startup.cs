@@ -146,6 +146,14 @@ namespace CcsSso.ExternalApi
             OrgPendingVerificationEmailTemplateId = Configuration["OrgAutoValidationEmail:OrgPendingVerificationEmailTemplateId"],
             OrgBuyerStatusChangeUpdateToAllAdmins = Configuration["OrgAutoValidationEmail:OrgBuyerStatusChangeUpdateToAllAdmins"],
           },
+          UserRoleApproval = new UserRoleApproval()
+          {
+            Enable = Convert.ToBoolean(Configuration["UserRoleApproval:Enable"]),
+            RoleApprovalTokenEncryptionKey = Configuration["UserRoleApproval:RoleApprovalTokenEncryptionKey"],
+            UserRoleApprovalEmailTemplateId = Configuration["UserRoleApproval:UserRoleApprovalEmailTemplateId"],
+            UserRoleApprovedEmailTemplateId = Configuration["UserRoleApproval:UserRoleApprovedEmailTemplateId"],
+            UserRoleRejectedEmailTemplateId = Configuration["UserRoleApproval:UserRoleRejectedEmailTemplateId"]
+          },
         };
         return appConfigInfo;
       });
@@ -228,6 +236,7 @@ namespace CcsSso.ExternalApi
       services.AddScoped<IDateTimeService, DateTimeService>();
       services.AddScoped<IUserService, UserService>();
       services.AddScoped<IAuthService, AuthService>();
+      services.AddScoped<IUserProfileRoleApprovalService, UserProfileRoleApprovalService>();
       services.AddHttpClient();
       services.AddHttpContextAccessor();
 

@@ -58,13 +58,16 @@ namespace CcsSso.Core.JobScheduler.Services
       {
         try
         {
-          var bothRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveRoleFromAllOrg;
-          await RemoveRoles(client, bothRoles, orgDetail, logMessage);
+          //var bothRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveRoleFromAllOrg;
+          //await RemoveRoles(client, bothRoles, orgDetail, logMessage);
 
           if (orgDetail.SupplierBuyerType == 0)
           {
-            var buyerRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveBuyerRoleFromSupplierOrg;
-            await RemoveRoles(client, buyerRoles, orgDetail, logMessage);
+            if ((bool)!orgDetail.RightToBuy)
+            {
+              var buyerRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveBuyerRoleFromSupplierOrg;
+              await RemoveRoles(client, buyerRoles, orgDetail, logMessage);
+            }
 
             var supplierRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.AddRolesToSupplierOrg;
             await AddRoles(client, supplierRoles, orgDetail, logMessage);
@@ -72,8 +75,8 @@ namespace CcsSso.Core.JobScheduler.Services
           }
           else if (orgDetail.SupplierBuyerType == 1)
           {
-            var supplierRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveRoleFromBuyerOrg;
-            await RemoveRoles(client, supplierRoles, orgDetail, logMessage);
+            //var supplierRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveRoleFromBuyerOrg;
+            //await RemoveRoles(client, supplierRoles, orgDetail, logMessage);
           }
           else if (orgDetail.SupplierBuyerType == 2)
           {

@@ -13,6 +13,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -116,6 +117,7 @@ namespace CcsSso.Core.Tests.Jobs
 
         var mockCacheInvalidateService = new Mock<ICacheInvalidateService>();
         var mockIdamSupportService = new Mock<IIdamSupportService>();
+        var mockHttpClientFactory = new Mock<IHttpClientFactory>();
         if (emailSupportServiceMock == null)
         {
           emailSupportServiceMock = new Mock<IEmailSupportService>();
@@ -125,7 +127,7 @@ namespace CcsSso.Core.Tests.Jobs
     .Setup(x => x.GetService(typeof(IServiceScopeFactory)))
     .Returns(serviceScopeFactory.Object);
         var jb = new UnverifiedUserDeleteJob(serviceProvider.Object, dateTimeService, appSettings,
-          emailSupportServiceMock.Object, mockIdamSupportService.Object);
+          emailSupportServiceMock.Object, mockIdamSupportService.Object, mockHttpClientFactory.Object);
         jb.InitiateScopedServices(dataContext, mockOrganisationSupportService.Object);
         return jb;
       }

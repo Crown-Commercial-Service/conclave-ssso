@@ -16,12 +16,18 @@ using VaultSharp.V1.AuthMethods.Token;
 
 namespace CcsSso.Core.JobScheduler
 {
-  public static class ProgramHelpers
+  public class ProgramHelpers
   {
-    private static IAwsParameterStoreService _awsParameterStoreService;
+    private readonly IAwsParameterStoreService _awsParameterStoreService;
     private static string path = "/conclave-sso/org-dereg-job/";
 
-    public static dynamic FillAwsParamsValue(Type objType, List<Parameter> parameters)
+    public ProgramHelpers()
+    {
+      _awsParameterStoreService =new AwsParameterStoreService();
+    }
+
+
+    public dynamic FillAwsParamsValue(Type objType, List<Parameter> parameters)
     {
       dynamic? returnParams = null;
       if (objType == typeof(CiiSettings))
@@ -50,6 +56,16 @@ namespace CcsSso.Core.JobScheduler
           UnverifiedUserDeletionNotificationTemplateId = _awsParameterStoreService.FindParameterByName(parameters, path + "Email/UnverifiedUserDeletionNotificationTemplateId"),
         };
       }
+      else if (objType == typeof(WrapperApiSettings))
+      {
+        returnParams = new WrapperApiSettings()
+        {
+          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/Url"),
+          ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiKey"),
+          ApiGatewayEnabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledUserUrl"),
+          ApiGatewayDisabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledUserUrl")
+        };
+      }
       else if (objType == typeof(SecurityApiSettings))
       {
         returnParams = new SecurityApiSettings()
@@ -65,7 +81,8 @@ namespace CcsSso.Core.JobScheduler
           BulkUploadJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/BulkUploadJobExecutionFrequencyInMinutes")),
           InactiveOrganisationDeletionJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/InactiveOrganisationDeletionJobExecutionFrequencyInMinutes")),
           OrganizationRegistrationExpiredThresholdInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/OrganizationRegistrationExpiredThresholdInMinutes")),
-          UnverifiedUserDeletionJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/UnverifiedUserDeletionJobExecutionFrequencyInMinutes"))
+          UnverifiedUserDeletionJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/UnverifiedUserDeletionJobExecutionFrequencyInMinutes")),
+          OrganisationAutovalidationJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/OrganisationAutovalidationJobExecutionFrequencyInMinutes"))
         };
       }
       else if (objType == typeof(BulkUploadSettings))
@@ -103,10 +120,22 @@ namespace CcsSso.Core.JobScheduler
       }
       else if (objType == typeof(S3ConfigurationInfoVault))
       {
+        var s3ConfigurationInfoName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/Name");
+
+        var AccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/AccessKeyId");
+        var AccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/AccessSecretKey");
+
+        if (!string.IsNullOrEmpty(s3ConfigurationInfoName))
+        {
+          var s3ConfigurationInfo = UtilityHelper.GetS3Settings(s3ConfigurationInfoName);
+          AccessKeyId= s3ConfigurationInfo.credentials.aws_access_key_id;
+          AccessSecretKey =s3ConfigurationInfo.credentials.aws_secret_access_key;
+        }
+
         returnParams = new S3ConfigurationInfoVault()
         {
-          AccessKeyId = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/AccessKeyId"),
-          AccessSecretKey = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/AccessSecretKey"),
+          AccessKeyId = AccessKeyId,
+          AccessSecretKey = AccessSecretKey,
           ServiceUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/ServiceUrl"),
           BulkUploadBucketName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/BulkUploadBucketName"),
           BulkUploadTemplateFolderName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/BulkUploadTemplateFolderName"),
@@ -136,17 +165,25 @@ namespace CcsSso.Core.JobScheduler
       {
         returnParams = new OrgAutoValidationOneTimeJobRoles()
         {
-          AddRolesToBothOrgOnly = ProgramHelpers.getStringToArray(_awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJobRoles/AddRolesToBothOrgOnly")),
-          AddRolesToSupplierOrg = ProgramHelpers.getStringToArray(_awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJobRoles/AddRolesToSupplierOrg")),
-          RemoveBuyerRoleFromSupplierOrg = ProgramHelpers.getStringToArray(_awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJobRoles/RemoveBuyerRoleFromSupplierOrg")),
-          RemoveRoleFromAllOrg = ProgramHelpers.getStringToArray(_awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJobRoles/RemoveRoleFromAllOrg")),
-          RemoveRoleFromBuyerOrg = ProgramHelpers.getStringToArray(_awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJobRoles/RemoveRoleFromBuyerOrg"))
+          AddRolesToBothOrgOnly = getStringToArray(_awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJobRoles/AddRolesToBothOrgOnly")),
+          AddRolesToSupplierOrg = getStringToArray(_awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJobRoles/AddRolesToSupplierOrg")),
+          RemoveBuyerRoleFromSupplierOrg = getStringToArray(_awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJobRoles/RemoveBuyerRoleFromSupplierOrg")),
+          RemoveRoleFromAllOrg = getStringToArray(_awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJobRoles/RemoveRoleFromAllOrg")),
+          RemoveRoleFromBuyerOrg = getStringToArray(_awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJobRoles/RemoveRoleFromBuyerOrg"))
         };
       }
+      else if (objType == typeof(OrgAutoValidationOneTimeJobEmail))
+      {
+        returnParams = new OrgAutoValidationOneTimeJobEmail()
+        {
+          FailedAutoValidationNotificationTemplateId = _awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJobEmail/FailedAutoValidationNotificationTemplateId"),
+        };
+      }
+
       return returnParams;
     }
 
-    private static List<UserDeleteJobSetting> FillUserDeleteJobSetting(string value)
+    private List<UserDeleteJobSetting> FillUserDeleteJobSetting(string value)
     {
       var settings = new List<UserDeleteJobSetting>();
       List<string> items = value.Split(',').ToList();
@@ -167,7 +204,7 @@ namespace CcsSso.Core.JobScheduler
       return settings;
     }
 
-    private static string[] getStringToArray(string param)
+    private string[] getStringToArray(string param)
     {
       if (param != null)
       {
@@ -176,13 +213,12 @@ namespace CcsSso.Core.JobScheduler
       return Array.Empty<string>();
     }
 
-    public static async Task<List<Parameter>> LoadAwsSecretsAsync()
+    public async Task<List<Parameter>> LoadAwsSecretsAsync(IAwsParameterStoreService _awsParameterStoreService )
     {
-      _awsParameterStoreService = new AwsParameterStoreService();
       return await _awsParameterStoreService.GetParameters(path);
     }
 
-    public static async Task<Dictionary<string, object>> LoadSecretsAsync()
+    public async Task<Dictionary<string, object>> LoadSecretsAsync()
     {
       var env = Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
       var vault = (JObject)JsonConvert.DeserializeObject<JObject>(env)["hashicorp-vault"][0];

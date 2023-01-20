@@ -220,7 +220,7 @@ namespace CcsSso.Core.Service.External
       {
         var isAutovalidationSuccess = false;
         // #Auto validation
-        if (isNewOrgAdmin && _appConfigInfo.OrgAutoValidation.Enable) 
+        if (isNewOrgAdmin && _appConfigInfo.OrgAutoValidation.Enable)
         {
           //bool isDomainValidForAutoValidation = false;
           //try
@@ -234,12 +234,13 @@ namespace CcsSso.Core.Service.External
           //}
 
           // If auto validation on and user is buyer or both
-           var autoValidationDetails = new AutoValidationDetails { 
-                AdminEmailId = userProfileRequestInfo.UserName.ToLower(),
-              CompanyHouseId = userProfileRequestInfo.CompanyHouseId
-            };
+          var autoValidationDetails = new AutoValidationDetails
+          {
+            AdminEmailId = userProfileRequestInfo.UserName.ToLower(),
+            CompanyHouseId = userProfileRequestInfo.CompanyHouseId
+          };
 
-            isAutovalidationSuccess = await _wrapperApiService.PostAsync<bool>($"{userProfileRequestInfo.OrganisationId}/registration", autoValidationDetails, "ERROR_ORGANISATION_AUTOVALIDATION");
+          isAutovalidationSuccess = await _wrapperApiService.PostAsync<bool>($"{userProfileRequestInfo.OrganisationId}/registration", autoValidationDetails, "ERROR_ORGANISATION_AUTOVALIDATION");
         }
 
         if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)
@@ -260,13 +261,13 @@ namespace CcsSso.Core.Service.External
         else if (isConclaveConnectionIncluded)
         {
           // #Auto validation
-          string ccsMsg = (isNewOrgAdmin && !isAutovalidationSuccess && organisation.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier) ? 
+          string ccsMsg = (isNewOrgAdmin && !isAutovalidationSuccess && organisation.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier) ?
                           "Please note that notification has been sent to CCS to verify the buyer status of your Organisation. " +
                           "You will be informed within the next 24 to 72 hours" : string.Empty;
           var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
           await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink), ccsMsg);
         }
-      }
+      }      
 
       // Log
       await _auditLoginService.CreateLogAsync(AuditLogEvent.UserCreate, AuditLogApplication.ManageUserAccount, $"UserId:{party.User.Id}, UserIdpId:{string.Join(",", party.User.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId))}," + " " +
@@ -438,14 +439,14 @@ namespace CcsSso.Core.Service.External
       var apiKey = _appConfigInfo.ApiKey;
       var apiKeyInRequest = _requestContext.apiKey;
 
-      if(apiKeyInRequest != null)
+      if (apiKeyInRequest != null)
       {
         if (apiKey != apiKeyInRequest)
         {
           throw new ForbiddenException();
         }
       }
-     else if (_requestContext.Roles != null)
+      else if (_requestContext.Roles != null)
       {
         if ((_requestContext.Roles.Count == 1 && _requestContext.Roles.Contains("ORG_DEFAULT_USER")) && !userFilterCriteria.isAdmin)
         {
@@ -466,7 +467,7 @@ namespace CcsSso.Core.Service.External
       var organisation = await _dataContext.Organisation.FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId);
 
 
-      if (organisation==null)
+      if (organisation == null)
       {
         throw new ResourceNotFoundException();
       }
@@ -499,7 +500,7 @@ namespace CcsSso.Core.Service.External
         .Include(u => u.UserAccessRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
         .Include(o => o.OriginOrganization)
         // Include deleted for delegated expired
-        .Where(u=>u.Party.Person.Organisation.CiiOrganisationId == organisationId && u.UserType == userTypeSearch);
+        .Where(u => u.Party.Person.Organisation.CiiOrganisationId == organisationId && u.UserType == userTypeSearch);
 
       if (!isDelegatedExpiredOnly)
         userQuery = userQuery.Where(u => !u.IsDeleted);
@@ -571,13 +572,14 @@ namespace CcsSso.Core.Service.External
             RoleKey = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
             RoleName = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
           }).ToList(),
+          IsAdmin = up.UserAccessRoles.Any(x => !x.IsDeleted && x.OrganisationEligibleRoleId == orgAdminAccessRoleId && !x.OrganisationEligibleRole.IsDeleted),
         }).ToList() : new List<UserListInfo>()
       };
 
       return userListResponse;
     }
 
-  
+
     public async Task<AdminUserListResponse> GetAdminUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria)
     {
       if (!await _dataContext.Organisation.AnyAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId))
@@ -693,6 +695,16 @@ namespace CcsSso.Core.Service.External
 
       await _dataContext.SaveChangesAsync();
 
+      if (_appConfigInfo.UserRoleApproval.Enable)
+      {
+        var userAccessRolePendingExpiredList = await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && u.UserId == primaryUser.Id).ToListAsync();
+        if (userAccessRolePendingExpiredList.Any())
+        {
+          userAccessRolePendingExpiredList.ForEach(l => { l.IsDeleted = true; l.Status = (int)UserPendingRoleStaus.Removed; });
+          await _dataContext.SaveChangesAsync();
+        }
+      }
+
       // Log
       await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelete, AuditLogApplication.ManageUserAccount, $"UserId:{primaryUser.Id}");
 
@@ -794,7 +806,7 @@ namespace CcsSso.Core.Service.External
       // #Delegated If first name or last name updated for primary account update in delegated as well.
       if (user.Party.Person.FirstName != userProfileRequestInfo.FirstName.Trim() || user.Party.Person.LastName != userProfileRequestInfo.LastName.Trim())
       {
-        var delegatedOrgDetails = await _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).Where(u => u.UserName == userName && 
+        var delegatedOrgDetails = await _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).Where(u => u.UserName == userName &&
                                   u.UserType == DbModel.Constants.UserType.Delegation && !u.IsDeleted && u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date).ToListAsync();
 
         foreach (var delegatedUserDetail in delegatedOrgDetails)
@@ -1651,7 +1663,7 @@ namespace CcsSso.Core.Service.External
       string activationInfo = "usr=" + userName + "&org=" + orgId + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegationEmailExpirationHours);
       var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
 
-      
+
       if (string.IsNullOrWhiteSpace(encryptedInfo))
       {
         throw new CcsSsoException(ErrorConstant.ErrorSendingActivationLink);
@@ -1696,6 +1708,5 @@ namespace CcsSso.Core.Service.External
       }
     }
     #endregion
-
   }
 }
