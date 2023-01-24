@@ -42,7 +42,15 @@ namespace CcsSso.Core.Service.External
         .Where(c => c.Organisation.CiiOrganisationId == ciiOrganisationId)
         .ToListAsync();
 
-      var allRoles = await _dataContext.CcsAccessRole.Where(ar => !ar.IsDeleted).ToListAsync();
+      var allRoles = await _dataContext.CcsAccessRole.Where(r => !r.IsDeleted)
+                          .Include(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
+                          .Select(i => new OrganisationRole
+                          {
+                            RoleId = i.Id,
+                            RoleName = i.CcsAccessRoleName,
+                            RoleKey = i.CcsAccessRoleNameKey,
+                            ServiceName = i.ServiceRolePermissions.FirstOrDefault().ServicePermission.CcsService.ServiceName,
+                          }).ToListAsync();
 
       foreach (var auditEvent in auditEvents)
       {
@@ -52,14 +60,14 @@ namespace CcsSso.Core.Service.External
 
           foreach (var role in roles)
           {
-            var roleKey = allRoles.FirstOrDefault(x => x.CcsAccessRoleName == role?.Trim())?.CcsAccessRoleNameKey;
+            var roleKey = allRoles.FirstOrDefault(x => x.RoleName == role?.Trim());
             OrganisationAuditEventResponseInfo auditEventInfo = GetAuditEventInfo(auditEvent, role, roleKey);
             auditEventInfos.Add(auditEventInfo);
           }
         }
         else if(auditEvent.Event != OrganisationAuditEventType.AdminRoleAssigned.ToString() && auditEvent.Event != OrganisationAuditEventType.AdminRoleUnassigned.ToString())
         {
-          OrganisationAuditEventResponseInfo auditEventInfo = GetAuditEventInfo(auditEvent, "", "");
+          OrganisationAuditEventResponseInfo auditEventInfo = GetAuditEventInfo(auditEvent, "", null);
           auditEventInfos.Add(auditEventInfo);
         }
       }
@@ -78,7 +86,7 @@ namespace CcsSso.Core.Service.External
       };
     }
 
-    private static OrganisationAuditEventResponseInfo GetAuditEventInfo(OrganisationAuditEvent auditEvent, string role, string roleKey)
+    private static OrganisationAuditEventResponseInfo GetAuditEventInfo(OrganisationAuditEvent auditEvent, string role, OrganisationRole roleInfo)
     {
       return new OrganisationAuditEventResponseInfo
       {
@@ -90,7 +98,8 @@ namespace CcsSso.Core.Service.External
         ActionedBy = auditEvent.ActionedBy,
         Event = auditEvent.Event,
         Role = role,
-        RoleKey = roleKey,
+        RoleKey = roleInfo?.RoleKey,
+        ServiceName = roleInfo?.ServiceName,
         Date = auditEvent.Date
       };
     }
