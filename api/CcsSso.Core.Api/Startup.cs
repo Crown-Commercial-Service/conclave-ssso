@@ -102,7 +102,12 @@ namespace CcsSso.Api
           {
             BaseUrl = Configuration["ConclaveSettings:BaseUrl"],
             OrgRegistrationRoute = Configuration["ConclaveSettings:OrgRegistrationRoute"]
-          }
+          },
+          // #Auto validation
+          OrgAutoValidation = new OrgAutoValidation()
+          {
+            Enable = Convert.ToBoolean(Configuration["OrgAutoValidation:Enable"])
+          },
         };
         return appConfigInfo;
       });
@@ -212,6 +217,10 @@ namespace CcsSso.Api
             services.AddSingleton<IAuthorizationPolicyProvider, ClaimAuthorisationPolicyProvider>();
             services.AddMemoryCache();
             services.AddSingleton<IWrapperCacheService, WrapperCacheService>();
+            // #Auto validation
+            services.AddSingleton<ILookUpService, LookUpService>();
+            services.AddSingleton<IWrapperApiService, WrapperApiService>();
+
             services.AddDbContext<DataContext>(options => options.UseNpgsql(Configuration["DbConnection"]), ServiceLifetime.Transient);
             services.AddScoped<IDataContext>(s => s.GetRequiredService<DataContext>());
             services.AddHttpClient("default");
@@ -226,6 +235,8 @@ namespace CcsSso.Api
             services.AddScoped<IOrganisationProfileService, OrganisationProfileService>();
             services.AddScoped<IUserProfileService, UserProfileService>();
             services.AddScoped<IOrganisationContactService, OrganisationContactService>();
+            services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
+            services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();
             services.AddScoped<IContactsHelperService, ContactsHelperService>();
             services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
             services.AddScoped<IIdamService, IdamService>();
@@ -246,6 +257,21 @@ namespace CcsSso.Api
             {
                 c.BaseAddress = new Uri(Configuration["DocUpload:Url"]);
                 c.DefaultRequestHeaders.Add("x-api-key", $"Basic {Configuration["DocUpload:Token"]}");
+            });
+
+            // #Auto validation
+            bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
+
+            services.AddHttpClient("OrgWrapperApi", c =>
+            {
+              c.BaseAddress = new Uri(isApiGatewayEnabled ? Configuration["WrapperApiSettings:ApiGatewayEnabledOrgUrl"] : Configuration["WrapperApiSettings:ApiGatewayDisabledOrgUrl"]);
+              c.DefaultRequestHeaders.Add("X-API-Key", Configuration["WrapperApiSettings:OrgApiKey"]);
+            });
+
+            services.AddHttpClient("LookupApi", c =>
+            {
+              c.BaseAddress = new Uri(Configuration["LookUpApiSettings:LookUpApiUrl"]);
+              c.DefaultRequestHeaders.Add("X-API-Key", Configuration["LookUpApiSettings:LookUpApiKey"]);
             });
 
             services.AddSwaggerGen(c =>

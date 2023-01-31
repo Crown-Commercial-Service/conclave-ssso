@@ -36,6 +36,8 @@ namespace CcsSso.DbModel.Entity
 
         public List<UserAccessRole> UserAccessRoles { get; set; }
 
+        public List<UserAccessRolePending> UserAccessRolePending { get; set; }
+
         public List<IdamUserLogin> IdamUserLogins { get; set; }
 
         public CcsService CcsService { get; set; }

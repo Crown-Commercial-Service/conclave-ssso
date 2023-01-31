@@ -283,5 +283,14 @@ namespace CcsSso.Shared.Domain.Helpers
       return settings;
     }
 
+    public static List<T> GetPagedResult<T>(List<T> list, int currentPage, int pageSize, out int pageCount)
+    {
+      var pCount = (double)list.Count / pageSize;
+      pageCount = (int)Math.Ceiling(pCount);
+
+      var skip = (currentPage - 1) * pageSize;
+      return list.Skip(skip).Take(pageSize).ToList();
+    }
+
   }
 }

@@ -129,7 +129,29 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserDelegation/DelegationEmailTokenEncryptionKey", "UserDelegation:DelegationEmailTokenEncryptionKey"));
       
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "UserDelegation/DelegationExcludeRoles", "UserDelegation:DelegationExcludeRoles"));
-    
+
+      // #Auto validation
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/Enable", "OrgAutoValidation:Enable"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/CCSAdminEmailId", "OrgAutoValidation:CCSAdminEmailId"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/BuyerSuccessAdminRoles", "OrgAutoValidation:BuyerSuccessAdminRoles"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/BothSuccessAdminRoles", "OrgAutoValidation:BothSuccessAdminRoles"));
+
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "LookUpApiSettings/LookUpApiKey", "LookUpApiSettings:LookUpApiKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "LookUpApiSettings/LookUpApiUrl", "LookUpApiSettings:LookUpApiUrl"));
+
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/DeclineRightToBuyStatusEmailTemplateId", "OrgAutoValidationEmail:DeclineRightToBuyStatusEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/ApproveRightToBuyStatusEmailTemplateId", "OrgAutoValidationEmail:ApproveRightToBuyStatusEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/RemoveRightToBuyStatusEmailTemplateId", "OrgAutoValidationEmail:RemoveRightToBuyStatusEmailTemplateId"));
+
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/OrgPendingVerificationEmailTemplateId", "OrgAutoValidationEmail:OrgPendingVerificationEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/OrgBuyerStatusChangeUpdateToAllAdmins", "OrgAutoValidationEmail:OrgBuyerStatusChangeUpdateToAllAdmins"));
+
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/Enable", "UserRoleApproval:Enable"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/RoleApprovalTokenEncryptionKey", "UserRoleApproval:RoleApprovalTokenEncryptionKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/UserRoleApprovalEmailTemplateId", "UserRoleApproval:UserRoleApprovalEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/UserRoleApprovedEmailTemplateId", "UserRoleApproval:UserRoleApprovedEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/UserRoleRejectedEmailTemplateId", "UserRoleApproval:UserRoleRejectedEmailTemplateId"));
+
       foreach (var configuration in configurations)
       {
         Data.Add(configuration);

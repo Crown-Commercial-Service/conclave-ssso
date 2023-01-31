@@ -20,5 +20,7 @@ namespace CcsSso.Core.Domain.Contracts.External
         Task<int> GetDashboardServiceIdAsync();
 
         Task<List<CountryDetail>> GetCountryDetailAsync();
-    }
+
+        Task<List<OrganisationRole>> GetRolesRequireApprovalAsync();
+  }
 }

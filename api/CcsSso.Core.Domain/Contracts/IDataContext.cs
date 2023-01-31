@@ -88,6 +88,20 @@ namespace CcsSso.Domain.Contracts
         DbSet<BulkUploadDetail> BulkUploadDetail { get; set; }
 
         DbSet<CountryDetails> CountryDetails { get; set; }
+        
+
+        // #Auto validation
+        DbSet<OrganisationAudit> OrganisationAudit { get; set; }
+
+        DbSet<OrganisationAuditEvent> OrganisationAuditEvent { get; set; }
+
+        DbSet<AutoValidationRole> AutoValidationRole { get; set; }
+
+        DbSet<OrganisationEligibleRolePending> OrganisationEligibleRolePending { get; set; }
+
+        DbSet<RoleApprovalConfiguration> RoleApprovalConfiguration { get; set; }
+
+        DbSet<UserAccessRolePending> UserAccessRolePending { get; set; }
 
         Task<PagedResultSet<T>> GetPagedResultAsync<T>(IQueryable<T> query, ResultSetCriteria resultSetCriteria);
 

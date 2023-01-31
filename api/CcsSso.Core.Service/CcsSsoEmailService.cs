@@ -128,6 +128,25 @@ namespace CcsSso.Core.Service
       };
       await SendEmailAsync(emailInfo);
     }
+
+    public async Task SendUserRoleApprovalEmailAsync(string email, string userName, string orgName, string serviceName, string encryptedCode)
+    {
+      var data = new Dictionary<string, dynamic>
+                      {
+                        { "email", userName},
+                        { "orgName", orgName},
+                        { "serviceName", serviceName},
+                        { "link", _appConfigInfo.ConclaveLoginUrl + "/manage-users/role" + $"?token={encryptedCode}" }
+                      };
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.UserRoleApproval.UserRoleApprovalEmailTemplateId,
+        BodyContent = data
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
     // #Delegated
     public async Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string encryptedCode)
     {
@@ -141,6 +160,68 @@ namespace CcsSso.Core.Service
         To = email,
         TemplateId = _appConfigInfo.EmailInfo.UserDelegatedAccessEmailTemplateId,
         BodyContent = data
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
+    // #Auto validation
+    public async Task SendOrgPendingVerificationEmailToCCSAdminAsync(string email, string orgName)
+    {
+      var data = new Dictionary<string, dynamic>
+                      {
+                        { "orgName", orgName},
+                        { "link", _appConfigInfo.ConclaveLoginUrl + "/manage-buyer-both" }
+                      };
+
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.OrgAutoValidationEmailInfo.OrgPendingVerificationEmailTemplateId,
+        BodyContent = data
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
+    public async Task SendOrgBuyerStatusChangeUpdateToAllAdminsAsync(string email)
+    {
+
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.OrgAutoValidationEmailInfo.OrgBuyerStatusChangeUpdateToAllAdmins
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
+    public async Task SendOrgApproveRightToBuyStatusToAllAdminsAsync(string email)
+    {
+
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.OrgAutoValidationEmailInfo.ApproveRightToBuyStatusEmailTemplateId
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
+    public async Task SendOrgDeclineRightToBuyStatusToAllAdminsAsync(string email)
+    {
+
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.OrgAutoValidationEmailInfo.DeclineRightToBuyStatusEmailTemplateId
+      };
+      await SendEmailAsync(emailInfo);
+    }
+
+    public async Task SendOrgRemoveRightToBuyStatusToAllAdminsAsync(string email)
+    {
+
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.OrgAutoValidationEmailInfo.RemoveRightToBuyStatusEmailTemplateId
       };
       await SendEmailAsync(emailInfo);
     }
