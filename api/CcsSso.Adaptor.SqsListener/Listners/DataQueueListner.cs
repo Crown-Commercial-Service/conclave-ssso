@@ -12,6 +12,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace CcsSso.Adaptor.SqsListener.Listners
 {
@@ -131,7 +132,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
       var email = sqsMessageResponseDto.MessageBody;
 
-      var url = "/security/users?email=" + email;
+      var url = "/security/users?email=" + HttpUtility.UrlEncode(email);
 
       var response = await client.DeleteAsync(url);
 
