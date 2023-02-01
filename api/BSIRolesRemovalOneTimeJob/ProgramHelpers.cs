@@ -30,8 +30,8 @@ namespace CcsSso.Core.BSIRolesRemovalOneTimeJob
       {
         returnParams = new WrapperApiSettings()
         {
-          ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/Url"),
-          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiKey"),
+          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/Url"),
+          ApiKey= _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiKey"),
         };
       }
 

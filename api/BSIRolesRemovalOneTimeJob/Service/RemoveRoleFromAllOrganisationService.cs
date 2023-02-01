@@ -76,7 +76,11 @@ namespace CcsSso.Core.BSIRolesRemovalOneTimeJob.Service
 
         var rolesToDeleteIds = _dataContext.CcsAccessRole.Where(oer => roles.Contains(oer.CcsAccessRoleNameKey)).Select(x => x.Id).ToList();
 
+        _logger.LogInformation($"List of roles to be deleted ${string.Join(',',rolesToDeleteIds)}");
+
         eligibleRolesToDelete = rolesToDeleteIds.Intersect(organisation.OrganisationEligibleRoles.Where(oer => !oer.IsDeleted).Select(y => y.CcsAccessRoleId)).ToList();
+        
+        _logger.LogInformation($"List of roles to be deleted ${string.Join(',', eligibleRolesToDelete)}");
 
         if (!eligibleRolesToDelete.Any())
         {
@@ -93,11 +97,14 @@ namespace CcsSso.Core.BSIRolesRemovalOneTimeJob.Service
           RolesToDelete.Add(new OrganisationRole() { RoleId = id });
         }
 
+       
         var updateRoles = new OrganisationRoleUpdate() { IsBuyer = (bool)orgDetail.RightToBuy, RolesToDelete = RolesToDelete };
 
         var url = "/organisations/" + orgDetail.CiiOrganisationId + "/roles";
         HttpContent data = new StringContent(JsonConvert.SerializeObject(updateRoles, new JsonSerializerSettings
         { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
+
+        _logger.LogInformation($"Pay load to roles API ${JsonConvert.SerializeObject(updateRoles)}");
 
         var response = await client.PutAsync(url, data);
 
