@@ -124,6 +124,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
     /// </remarks>
     [HttpPost("approve/roles")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("USER_POST")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
     public async Task CreateUserRolesPendingForApproval(UserProfileEditRequestInfo userProfileRequestInfo)

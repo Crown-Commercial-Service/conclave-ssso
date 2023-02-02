@@ -67,6 +67,7 @@ namespace CcsSso.Domain.Constants
     public const string ErrorDuplicateContactAssignment = "ERROR_DUPLICATE_CONTACT_ASSIGNMENT";
     public const string ErrorMfaFlagRequired = "MFA_DISABLED_USER";
     public const string ErrorMfaFlagForInvalidConnection = "MFA_ENABLED_INVALID_CONNECTION";
+    public const string ErrorInvalidStatusInfo = "INVALID_STATUS_INFO";
 
     // #Delegated
     public const string ErrorInvalidUserDelegationPrimaryDetails = "INVALID_USER_DELEGATION_PRIMARY_DETAILS";
@@ -74,6 +75,10 @@ namespace CcsSso.Domain.Constants
     public const string ErrorInvalidUserDelegationSameOrg = "INVALID_USER_DELEGATION_SAME_ORG";
     public const string ErrorActivationLinkExpired = "ERROR_ACTIVATION_LINK_EXPIRED";
     public const string ErrorSendingActivationLink = "ERROR_SENDING_ACTIVATION_LINK";
+
+    public const string ErrorUserHasValidDomain = "USER_HAS_VALID_DOMAIN";
+    public const string ErrorInvalidCiiOrganisationIdOrUserId = "INVALID_CII_ORGANISATION_ID_OR_USER_ID";
+
   }
 
   public static class VirtualContactTypeName
