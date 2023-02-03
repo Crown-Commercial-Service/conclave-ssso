@@ -53,6 +53,7 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ApiKey", "ApiKey"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "IsApiGatewayEnabled", "IsApiGatewayEnabled"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "EnableAdditionalLogs", "EnableAdditionalLogs"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "EnableUserAccessTokenFix", "EnableUserAccessTokenFix"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ConclaveLoginUrl", "ConclaveLoginUrl"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "InMemoryCacheExpirationInMinutes", "InMemoryCacheExpirationInMinutes"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "DashboardServiceClientId", "DashboardServiceClientId"));
