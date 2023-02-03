@@ -148,6 +148,8 @@ namespace CcsSso.Core.Api.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "LookUpApiSettings/LookUpApiKey", "LookUpApiSettings:LookUpApiKey"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "LookUpApiSettings/LookUpApiUrl", "LookUpApiSettings:LookUpApiUrl"));
 
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/Enable", "UserRoleApproval:Enable"));
+
       foreach (var configuration in configurations)
       {
         Data.Add(configuration);

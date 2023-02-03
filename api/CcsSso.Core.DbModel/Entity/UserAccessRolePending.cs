@@ -19,5 +19,7 @@ namespace CcsSso.DbModel.Entity
     public int OrganisationEligibleRoleId { get; set; }
 
     public int Status { get; set; }
+
+    public bool SendEmailNotification { get; set; } = true;
   }
 }

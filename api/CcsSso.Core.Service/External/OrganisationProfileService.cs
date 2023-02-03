@@ -40,12 +40,14 @@ namespace CcsSso.Core.Service.External
     private readonly ILookUpService _lookUpService;
     private readonly IOrganisationAuditService _organisationAuditService;
     private readonly IOrganisationAuditEventService _organisationAuditEventService;
+    private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
 
     public OrganisationProfileService(IDataContext dataContext, IContactsHelperService contactsHelper, ICcsSsoEmailService ccsSsoEmailService,
       ICiiService ciiService, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ILocalCacheService localCacheService,
       ApplicationConfigurationInfo applicationConfigurationInfo, RequestContext requestContext, IIdamService idamService, IRemoteCacheService remoteCacheService,
-      ILookUpService lookUpService, IOrganisationAuditService organisationAuditService, IOrganisationAuditEventService organisationAuditEventService)
+      ILookUpService lookUpService, IOrganisationAuditService organisationAuditService, IOrganisationAuditEventService organisationAuditEventService,
+      IUserProfileRoleApprovalService userProfileRoleApprovalService)
     {
       _dataContext = dataContext;
       _contactsHelper = contactsHelper;
@@ -61,6 +63,7 @@ namespace CcsSso.Core.Service.External
       _lookUpService = lookUpService;
       _organisationAuditService = organisationAuditService;
       _organisationAuditEventService = organisationAuditEventService;
+      _userProfileRoleApprovalService = userProfileRoleApprovalService;
     }
 
     /// <summary>
@@ -1938,12 +1941,30 @@ namespace CcsSso.Core.Service.External
         {
           if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id && !x.IsDeleted))
           {
-            var defaultUserRole = new UserAccessRole
+            if (!_applicationConfigurationInfo.UserRoleApproval.Enable ||
+                role.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalNotRequired ||
+                adminDetails.UserName.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower())
             {
-              OrganisationEligibleRoleId = role.Id
-            };
-            adminDetails.UserAccessRoles.Add(defaultUserRole);
+              var defaultUserRole = new UserAccessRole
+              {
+                OrganisationEligibleRoleId = role.Id
+              };
+              adminDetails.UserAccessRoles.Add(defaultUserRole);
+            }
+            else
+            {
+              await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(new UserProfileEditRequestInfo
+              {
+                UserName = adminDetails.UserName,
+                OrganisationId = organisation.CiiOrganisationId,
+                Detail = new UserRequestDetail
+                {
+                  RoleIds = new List<int> { role.Id }
+                }
+              }, sendEmailNotification: false);
+            }
           }
+
         }
       }
 

@@ -108,6 +108,10 @@ namespace CcsSso.Api
           {
             Enable = Convert.ToBoolean(Configuration["OrgAutoValidation:Enable"])
           },
+          UserRoleApproval = new UserRoleApproval()
+          {
+            Enable = Convert.ToBoolean(Configuration["UserRoleApproval:Enable"])
+          },
         };
         return appConfigInfo;
       });
@@ -244,6 +248,7 @@ namespace CcsSso.Api
             services.AddScoped<IDocUploadService, DocUploadService>();
             services.AddScoped<IBulkUploadService, BulkUploadService>();
             services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
+            services.AddScoped<IUserProfileRoleApprovalService, UserProfileRoleApprovalService>();
 
             services.AddHttpContextAccessor();
 

@@ -170,6 +170,12 @@ namespace CcsSso.Api.CustomOptions
         Data.Add("LookUpApiSettings:LookUpApiUrl", wrapperApiKeySettings.LookUpApiUrl);
       }
 
+      if (_secrets.Data.ContainsKey("UserRoleApproval"))
+      {
+        var userRoleApproval = JsonConvert.DeserializeObject<UserRoleApproval>(_secrets.Data["UserRoleApproval"].ToString());
+        Data.Add("UserRoleApproval:Enable", userRoleApproval.Enable.ToString());
+      }
+
     }
   }
 
@@ -325,6 +331,11 @@ namespace CcsSso.Api.CustomOptions
     public string LookUpApiKey { get; set; }
 
     public string LookUpApiUrl { get; set; }
+  }
+
+  public class UserRoleApproval
+  {
+    public bool Enable { get; set; } = false;
   }
 
 }
