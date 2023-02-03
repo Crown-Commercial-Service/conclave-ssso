@@ -126,14 +126,16 @@ namespace CcsSso.Core.Service.External
           }
         }
 
-        foreach (var email in emailList)
+        if (pendingUserRole.SendEmailNotification)
         {
-          if (status == UserPendingRoleStaus.Approved)
-            await _ccsSsoEmailService.SendRoleApprovedEmailAsync(email,user.UserName, serviceName, _appConfigInfo.ConclaveLoginUrl);
-          else
-            await _ccsSsoEmailService.SendRoleRejectedEmailAsync(email, user.UserName, serviceName);
+          foreach (var email in emailList)
+          {
+            if (status == UserPendingRoleStaus.Approved)
+              await _ccsSsoEmailService.SendRoleApprovedEmailAsync(email, user.UserName, serviceName, _appConfigInfo.ConclaveLoginUrl);
+            else
+              await _ccsSsoEmailService.SendRoleRejectedEmailAsync(email, user.UserName, serviceName);
+          }
         }
-
       }
       return await Task.FromResult(true);
 
@@ -296,7 +298,7 @@ namespace CcsSso.Core.Service.External
       }
     }
 
-    public async Task CreateUserRolesPendingForApprovalAsync(UserProfileEditRequestInfo userProfileRequestInfo)
+    public async Task CreateUserRolesPendingForApprovalAsync(UserProfileEditRequestInfo userProfileRequestInfo, bool sendEmailNotification = true)
     {
       if (!_appConfigInfo.UserRoleApproval.Enable)
       {
@@ -392,7 +394,8 @@ namespace CcsSso.Core.Service.External
           user.UserAccessRolePending.Add(new UserAccessRolePending
           {
             OrganisationEligibleRoleId = roleId,
-            Status = (int)UserPendingRoleStaus.Pending
+            Status = (int)UserPendingRoleStaus.Pending,
+            SendEmailNotification = sendEmailNotification
           });
           rolesToSendEmail.Add(roleId);
         }

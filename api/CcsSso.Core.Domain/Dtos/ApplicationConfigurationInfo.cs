@@ -43,6 +43,7 @@ namespace CcsSso.Domain.Dtos
     public OrgAutoValidationEmailInfo OrgAutoValidationEmailInfo { get; set; }
 
     public UserRoleApproval UserRoleApproval { get; set; }
+    public bool EnableUserAccessTokenFix { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
