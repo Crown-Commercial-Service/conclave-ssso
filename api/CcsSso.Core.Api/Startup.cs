@@ -234,6 +234,7 @@ namespace CcsSso.Api
             services.AddScoped<IDateTimeService, DateTimeService>();
             services.AddScoped<IOrganisationProfileService, OrganisationProfileService>();
             services.AddScoped<IUserProfileService, UserProfileService>();
+            services.AddScoped<IUserProfileRoleApprovalService, UserProfileRoleApprovalService>();
             services.AddScoped<IOrganisationContactService, OrganisationContactService>();
             services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
             services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();
