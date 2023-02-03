@@ -108,6 +108,10 @@ namespace CcsSso.Api
           {
             Enable = Convert.ToBoolean(Configuration["OrgAutoValidation:Enable"])
           },
+          UserRoleApproval = new UserRoleApproval()
+          {
+            Enable = Convert.ToBoolean(Configuration["UserRoleApproval:Enable"])
+          },
         };
         return appConfigInfo;
       });
