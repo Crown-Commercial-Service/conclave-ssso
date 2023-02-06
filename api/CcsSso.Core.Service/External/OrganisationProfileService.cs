@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -1570,27 +1571,52 @@ namespace CcsSso.Core.Service.External
         autoValidationRoles = autoValidationRoles.Where(x => x.AssignToAdmin == true).ToList();
       }
 
-      autoValidationRoles.ForEach((role) =>
+      foreach (var role in autoValidationRoles)
       {
         var organisationEligibleRole = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.CcsAccessRoleId == role.CcsAccessRoleId && !x.IsDeleted);
         var organisationEligibleRoleId = organisationEligibleRole != null ? organisationEligibleRole.Id : 0;
 
-        if (organisationEligibleRoleId > 0)
+        if (organisationEligibleRoleId <= 0)
         {
-          // assign roles to all admins
-          foreach (var adminDetails in allAdminsOfOrg)
+          return;
+        }
+        // assign roles to all admins
+        foreach (var adminDetails in allAdminsOfOrg)
+        {
+          if (adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == organisationEligibleRoleId && !x.IsDeleted))
           {
-            if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == organisationEligibleRoleId && !x.IsDeleted))
+            continue;
+          }
+          var IsRoleValid = RoleApprovalRequiredCheck(organisation, role, adminDetails);
+          if (IsRoleValid)
+          {
+            var defaultUserRole = new UserAccessRole
             {
-              var defaultUserRole = new UserAccessRole
+              OrganisationEligibleRoleId = organisationEligibleRoleId
+            };
+            adminDetails.UserAccessRoles.Add(defaultUserRole);
+          }
+          else
+          {
+            await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(new UserProfileEditRequestInfo
+            {
+              UserName = adminDetails.UserName,
+              OrganisationId = organisation.CiiOrganisationId,
+              Detail = new UserRequestDetail
               {
-                OrganisationEligibleRoleId = organisationEligibleRoleId
-              };
-              adminDetails.UserAccessRoles.Add(defaultUserRole);
-            }
+                RoleIds = new List<int> { organisationEligibleRoleId }
+              }
+            }, sendEmailNotification: false);
           }
         }
-      });
+      }
+    }
+
+    private bool RoleApprovalRequiredCheck(Organisation organisation, AutoValidationRole role, User adminDetails)
+    {
+      return (!_applicationConfigurationInfo.UserRoleApproval.Enable ||
+                  role.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalNotRequired ||
+                  adminDetails.UserName.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower());
     }
 
     private static OrganisationAuditEventType GetOrgEventTypeChange(int oldOrgSupplierBuyerType, int newOrgSupplierBuyerType)
