@@ -181,7 +181,12 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       {
         var orgAutoValidation = JsonConvert.DeserializeObject<OrgAutoValidation>(_secrets.Data["OrgAutoValidation"].ToString());
         Data.Add("OrgAutoValidation:Enable", orgAutoValidation.Enable.ToString());
-        Data.Add("OrgAutoValidation:CCSAdminEmailId", orgAutoValidation.CCSAdminEmailId.ToString());
+
+        int CCSAdminEmailIdIndex = 0;
+        foreach (var email in orgAutoValidation.CCSAdminEmailIds)
+        {
+          Data.Add($"OrgAutoValidation:CCSAdminEmailIds:{CCSAdminEmailIdIndex++}", email);
+        }
 
         int buyerSuccessAdminRoleIndex = 0;
         foreach (var role in orgAutoValidation.BuyerSuccessAdminRoles)

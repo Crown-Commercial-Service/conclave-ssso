@@ -136,7 +136,7 @@ namespace CcsSso.ExternalApi
           OrgAutoValidation = new OrgAutoValidation()
           {
             Enable = Convert.ToBoolean(Configuration["OrgAutoValidation:Enable"]),
-            CCSAdminEmailId = Configuration["OrgAutoValidation:CCSAdminEmailId"],
+            CCSAdminEmailIds = Configuration.GetSection("OrgAutoValidation:CCSAdminEmailIds").Get<string[]>(),
             BuyerSuccessAdminRoles = Configuration.GetSection("OrgAutoValidation:BuyerSuccessAdminRoles").Get<string[]>(),
             BothSuccessAdminRoles = Configuration.GetSection("OrgAutoValidation:BothSuccessAdminRoles").Get<string[]>(),
           },
