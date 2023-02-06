@@ -133,7 +133,7 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
 
       // #Auto validation
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/Enable", "OrgAutoValidation:Enable"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/CCSAdminEmailId", "OrgAutoValidation:CCSAdminEmailId"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/CCSAdminEmailIds", "OrgAutoValidation:CCSAdminEmailIds"));
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/BuyerSuccessAdminRoles", "OrgAutoValidation:BuyerSuccessAdminRoles"));
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/BothSuccessAdminRoles", "OrgAutoValidation:BothSuccessAdminRoles"));
 

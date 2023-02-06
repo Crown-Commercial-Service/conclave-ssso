@@ -1198,9 +1198,11 @@ namespace CcsSso.Core.Service.External
       // Send email to CCS admin to notify
       if (!isFromBackgroundJob)
       {
-        await _ccsSsoEmailService.SendOrgPendingVerificationEmailToCCSAdminAsync(_applicationConfigurationInfo.OrgAutoValidation.CCSAdminEmailId, organisation.LegalName);
+        foreach (var email in _applicationConfigurationInfo.OrgAutoValidation.CCSAdminEmailIds)
+        {
+          await _ccsSsoEmailService.SendOrgPendingVerificationEmailToCCSAdminAsync(email, organisation.LegalName);
+        }
       }
-
 
       try
       {
