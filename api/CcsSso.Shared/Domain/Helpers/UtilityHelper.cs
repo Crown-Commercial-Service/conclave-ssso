@@ -1,4 +1,6 @@
 ﻿using CcsSso.Shared.Domain.Constants;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -232,5 +234,63 @@ namespace CcsSso.Shared.Domain.Helpers
         return false;
       }
     }
+
+    public static string GetDatbaseConnectionString(string name, string connectionString)
+    {
+      string env = Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
+      var envData = (JObject)JsonConvert.DeserializeObject(env);
+      string setting = JsonConvert.SerializeObject(envData["postgres"].FirstOrDefault(obj => obj["name"].Value<string>() == name));
+      var postgresSettings = JsonConvert.DeserializeObject<PostgresSettings>(setting.ToString());
+
+      connectionString = connectionString.Replace("[Server]", postgresSettings.credentials.host);
+      connectionString = connectionString.Replace("[Port]", postgresSettings.credentials.port);
+      connectionString = connectionString.Replace("[Database]", postgresSettings.credentials.name);
+      connectionString = connectionString.Replace("[Username]", postgresSettings.credentials.username);
+      connectionString = connectionString.Replace("[Password]", postgresSettings.credentials.password);
+
+      return connectionString;
+    }
+
+    public static string GetRedisCacheConnectionString(string name, string connectionString)
+    {
+      string env = Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
+      var envData = (JObject)JsonConvert.DeserializeObject(env);
+      string setting = JsonConvert.SerializeObject(envData["redis"].FirstOrDefault(obj => obj["name"].Value<string>() == name));
+      var redisCacheSettings = JsonConvert.DeserializeObject<RedisCacheSettings>(setting.ToString());
+
+      connectionString = connectionString.Replace("[Host]", redisCacheSettings.credentials.host);
+      connectionString = connectionString.Replace("[Port]", redisCacheSettings.credentials.port);
+      connectionString = connectionString.Replace("[Password]", redisCacheSettings.credentials.password);
+
+      return connectionString;
+    }
+
+    public static S3Settings GetS3Settings(string name)
+    {
+      string env = Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
+      var envData = (JObject)JsonConvert.DeserializeObject(env);
+      string setting = JsonConvert.SerializeObject(envData["aws-s3-bucket"].FirstOrDefault(obj => obj["name"].Value<string>() == name));
+      var settings = JsonConvert.DeserializeObject<S3Settings>(setting.ToString());
+      return settings;
+    }
+
+    public static SqsSetting GetSqsSetting(string name)
+    {
+      string env = Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
+      var envData = (JObject)JsonConvert.DeserializeObject(env);
+      string setting = JsonConvert.SerializeObject(envData["aws-sqs-queue"].FirstOrDefault(obj => obj["name"].Value<string>() == name));
+      var settings = JsonConvert.DeserializeObject<SqsSetting>(setting.ToString());
+      return settings;
+    }
+
+    public static List<T> GetPagedResult<T>(List<T> list, int currentPage, int pageSize, out int pageCount)
+    {
+      var pCount = (double)list.Count / pageSize;
+      pageCount = (int)Math.Ceiling(pCount);
+
+      var skip = (currentPage - 1) * pageSize;
+      return list.Skip(skip).Take(pageSize).ToList();
+    }
+
   }
 }

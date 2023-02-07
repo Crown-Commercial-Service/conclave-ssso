@@ -52,6 +52,44 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.ToTable("AuditLog");
                 });
 
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.AutoValidationRole", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<bool>("AssignToAdmin")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("AssignToOrg")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("CcsAccessRoleId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsBothFailed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsBothSuccess")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsBuyerFailed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsBuyerSuccess")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsSupplier")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CcsAccessRoleId");
+
+                    b.ToTable("AutoValidationRole");
+                });
+
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.BulkUploadDetail", b =>
                 {
                     b.Property<int>("Id")
@@ -414,6 +452,82 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.ToTable("IdamUserLoginRole");
                 });
 
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.OrganisationAudit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<string>("Actioned")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ActionedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("ActionedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("OrganisationId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SchemeIdentifier")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganisationId");
+
+                    b.ToTable("OrganisationAudit");
+                });
+
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.OrganisationAuditEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<string>("Actioned")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ActionedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Event")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("text");
+
+                    b.Property<int>("OrganisationId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Roles")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SchemeIdentifier")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganisationId");
+
+                    b.ToTable("OrganisationAuditEvent");
+                });
+
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.OrganisationEligibleIdentityProvider", b =>
                 {
                     b.Property<int>("Id")
@@ -499,6 +613,48 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.HasIndex("OrganisationId");
 
                     b.ToTable("OrganisationEligibleRole");
+                });
+
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.OrganisationEligibleRolePending", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<int>("CcsAccessRoleId")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("ConcurrencyKey")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CreatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastUpdatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("LastUpdatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OrganisationId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CcsAccessRoleId");
+
+                    b.HasIndex("OrganisationId");
+
+                    b.ToTable("OrganisationEligibleRolePending");
                 });
 
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.OrganisationGroupEligibleRole", b =>
@@ -720,6 +876,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .HasColumnType("integer")
                         .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
+                    b.Property<int>("ApprovalRequired")
+                        .HasColumnType("integer");
+
                     b.Property<string>("CcsAccessRoleDescription")
                         .HasColumnType("text");
 
@@ -739,6 +898,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
                     b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("DefaultEligibility")
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -959,6 +1121,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("ExternalIdpFlag")
                         .HasColumnType("boolean");
 
@@ -1011,6 +1176,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
                     b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("DomainName")
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsActivated")
                         .HasColumnType("boolean");
@@ -1405,6 +1573,49 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.ToTable("ProcurementGroup");
                 });
 
+            modelBuilder.Entity("CcsSso.DbModel.Entity.RoleApprovalConfiguration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<int>("CcsAccessRoleId")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("ConcurrencyKey")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CreatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastUpdatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("LastUpdatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LinkExpiryDurationInMinute")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NotificationEmails")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CcsAccessRoleId");
+
+                    b.ToTable("RoleApprovalConfiguration");
+                });
+
             modelBuilder.Entity("CcsSso.DbModel.Entity.TradingOrganisation", b =>
                 {
                     b.Property<int>("Id")
@@ -1469,6 +1680,15 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("CreatedUserId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("DelegationAccepted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("DelegationEndDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("DelegationStartDate")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
@@ -1484,6 +1704,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<bool>("MfaEnabled")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("OriginOrganizationId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("PartyId")
                         .HasColumnType("integer");
 
@@ -1493,9 +1716,14 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("UserTitle")
                         .HasColumnType("integer");
 
+                    b.Property<int>("UserType")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CcsServiceId");
+
+                    b.HasIndex("OriginOrganizationId");
 
                     b.HasIndex("PartyId")
                         .IsUnique();
@@ -1545,6 +1773,51 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("UserAccessRole");
+                });
+
+            modelBuilder.Entity("CcsSso.DbModel.Entity.UserAccessRolePending", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<byte[]>("ConcurrencyKey")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CreatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastUpdatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("LastUpdatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OrganisationEligibleRoleId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganisationEligibleRoleId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserAccessRolePending");
                 });
 
             modelBuilder.Entity("CcsSso.DbModel.Entity.UserGroupMembership", b =>
@@ -1758,6 +2031,17 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.ToTable("VirtualAddressType");
                 });
 
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.AutoValidationRole", b =>
+                {
+                    b.HasOne("CcsSso.DbModel.Entity.CcsAccessRole", "CcsAccessRole")
+                        .WithMany()
+                        .HasForeignKey("CcsAccessRoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CcsAccessRole");
+                });
+
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.CcsServiceLogin", b =>
                 {
                     b.HasOne("CcsSso.Core.DbModel.Entity.CcsService", "CcsService")
@@ -1838,6 +2122,28 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.OrganisationAudit", b =>
+                {
+                    b.HasOne("CcsSso.DbModel.Entity.Organisation", "Organisation")
+                        .WithMany("OrganisationAudits")
+                        .HasForeignKey("OrganisationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organisation");
+                });
+
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.OrganisationAuditEvent", b =>
+                {
+                    b.HasOne("CcsSso.DbModel.Entity.Organisation", "Organisation")
+                        .WithMany()
+                        .HasForeignKey("OrganisationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organisation");
+                });
+
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.OrganisationEligibleIdentityProvider", b =>
                 {
                     b.HasOne("CcsSso.DbModel.Entity.IdentityProvider", "IdentityProvider")
@@ -1867,6 +2173,25 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
                     b.HasOne("CcsSso.DbModel.Entity.Organisation", "Organisation")
                         .WithMany("OrganisationEligibleRoles")
+                        .HasForeignKey("OrganisationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CcsAccessRole");
+
+                    b.Navigation("Organisation");
+                });
+
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.OrganisationEligibleRolePending", b =>
+                {
+                    b.HasOne("CcsSso.DbModel.Entity.CcsAccessRole", "CcsAccessRole")
+                        .WithMany()
+                        .HasForeignKey("CcsAccessRoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CcsSso.DbModel.Entity.Organisation", "Organisation")
+                        .WithMany()
                         .HasForeignKey("OrganisationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2100,6 +2425,17 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Navigation("Organisation");
                 });
 
+            modelBuilder.Entity("CcsSso.DbModel.Entity.RoleApprovalConfiguration", b =>
+                {
+                    b.HasOne("CcsSso.DbModel.Entity.CcsAccessRole", "CcsAccessRole")
+                        .WithMany()
+                        .HasForeignKey("CcsAccessRoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CcsAccessRole");
+                });
+
             modelBuilder.Entity("CcsSso.DbModel.Entity.TradingOrganisation", b =>
                 {
                     b.HasOne("CcsSso.DbModel.Entity.Organisation", "Organisation")
@@ -2117,6 +2453,10 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .WithMany("CreatedUsers")
                         .HasForeignKey("CcsServiceId");
 
+                    b.HasOne("CcsSso.DbModel.Entity.Organisation", "OriginOrganization")
+                        .WithMany()
+                        .HasForeignKey("OriginOrganizationId");
+
                     b.HasOne("CcsSso.DbModel.Entity.Party", "Party")
                         .WithOne("User")
                         .HasForeignKey("CcsSso.DbModel.Entity.User", "PartyId")
@@ -2124,6 +2464,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .IsRequired();
 
                     b.Navigation("CcsService");
+
+                    b.Navigation("OriginOrganization");
 
                     b.Navigation("Party");
                 });
@@ -2138,6 +2480,25 @@ namespace CcsSso.Core.DbMigrations.Migrations
 
                     b.HasOne("CcsSso.DbModel.Entity.User", "User")
                         .WithMany("UserAccessRoles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OrganisationEligibleRole");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CcsSso.DbModel.Entity.UserAccessRolePending", b =>
+                {
+                    b.HasOne("CcsSso.Core.DbModel.Entity.OrganisationEligibleRole", "OrganisationEligibleRole")
+                        .WithMany()
+                        .HasForeignKey("OrganisationEligibleRoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CcsSso.DbModel.Entity.User", "User")
+                        .WithMany("UserAccessRolePending")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2281,6 +2642,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
                 {
                     b.Navigation("OrganisationAccessRoles");
 
+                    b.Navigation("OrganisationAudits");
+
                     b.Navigation("OrganisationEligibleIdentityProviders");
 
                     b.Navigation("OrganisationEligibleRoles");
@@ -2320,6 +2683,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
             modelBuilder.Entity("CcsSso.DbModel.Entity.User", b =>
                 {
                     b.Navigation("IdamUserLogins");
+
+                    b.Navigation("UserAccessRolePending");
 
                     b.Navigation("UserAccessRoles");
 

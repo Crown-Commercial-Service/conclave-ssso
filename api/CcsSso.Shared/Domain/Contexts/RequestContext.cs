@@ -26,5 +26,10 @@ namespace CcsSso.Shared.Domain.Contexts
     public string RequestIntendedOrganisationId { get; set; }
 
     public string RequestIntendedUserName { get; set; }
+
+    // #Deleated: To manage delegate user search
+    public bool IsDelegated { get; set; }
+
+    public string apiKey { get; set; }
   }
 }

@@ -28,11 +28,19 @@ namespace CcsSso.Security.Api
               }
               else
               {
-                config.AddVault(options =>
+                var source = configBuilder.GetValue<string>("Source");
+                if (source.ToUpper() == "AWS")
                 {
-                  var vaultOptions = builtConfig.GetSection("Vault");
-                  options.Address = vaultOptions["Address"];
-                });
+                  config.AddParameterStore();
+                }
+                else
+                {
+                  config.AddVault(options =>
+                  {
+                    var vaultOptions = builtConfig.GetSection("Vault");
+                    options.Address = vaultOptions["Address"];
+                  });
+                }
               }
               config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
             })

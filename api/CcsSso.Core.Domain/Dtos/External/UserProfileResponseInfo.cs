@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using CcsSso.Core.DbModel.Constants;
 
 namespace CcsSso.Core.Domain.Dtos.External
 {
@@ -28,6 +29,11 @@ namespace CcsSso.Core.Domain.Dtos.External
     public bool AccountVerified { get; set; }
 
     public bool SendUserRegistrationEmail { get; set; } = true;
+
+    public string? OriginOrganisationName { get; set; }
+
+    // #Auto validation
+    public string? CompanyHouseId { get; set; }
 
   }
 
@@ -53,6 +59,21 @@ namespace CcsSso.Core.Domain.Dtos.External
     public List<RolePermissionInfo> RolePermissionInfo { get; set; }
 
     public List<UserIdentityProviderInfo> IdentityProviders { get; set; }
+    // #Delegated
+    public UserDelegationDetails[]? DelegatedOrgs { get; set; }
+  }
+  // #Delegated
+  public class UserDelegationDetails
+  {
+    public string? DelegatedOrgId { get; set; }
+
+    public string? DelegatedOrgName { get; set; }
+
+    public DateTime? StartDate { get; set; }
+
+    public DateTime? EndDate { get; set; }
+
+    public bool? DelegationAccepted { get; set; }
   }
 
   public class UserIdentityProviderInfo
@@ -93,6 +114,20 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string UserName { get; set; }
 
+    public int? RemainingDays { get; set; }
+
+    // #Delegated
+    public DateTime? StartDate { get; set; }
+
+    public DateTime? EndDate { get; set; }
+
+    public string? OriginOrganisation { get; set; }
+
+    public bool? DelegationAccepted { get; set; }
+
+    public List<RolePermissionInfo> RolePermissionInfo { get; set; }
+
+    public bool IsAdmin { get; set; } = false;
   }
 
   public class AdminUserListInfo
@@ -141,4 +176,47 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public bool IsRegisteredInIdam { get; set; }
   }
+  // #Delegated
+  public class DelegatedUserProfileRequestInfo
+  {
+    public string UserName { get; set; }
+    public DelegatedUserRequestDetail Detail { get; set; }
+  }
+  // #Delegated
+  public class DelegatedUserRequestDetail
+  {
+    public string DelegatedOrgId { get; set; }
+
+    public List<int> RoleIds { get; set; }
+
+    public DateTime StartDate { get; set; }
+
+    public DateTime EndDate { get; set; }
+  }
+
+  public class UserAccessRolePendingDetails
+  {
+    public int Status { get; set; }
+   
+    public string RoleName { get; set; }
+    
+    public string RoleKey { get; set; }
+  }
+
+  public class UserAccessRolePendingTokenDetails : UserAccessRolePendingDetails
+  {
+    public int Id { get; set; }
+    public string UserName { get; set; }
+  }
+
+  public class UserRoleApprovalEditRequest
+  {
+
+    //TODO: check datatype
+    public int[] PendingRoleIds { get; set; }
+
+    // TODO: Check enum type for status
+    public UserPendingRoleStaus Status { get; set; }
+  }
+
 }

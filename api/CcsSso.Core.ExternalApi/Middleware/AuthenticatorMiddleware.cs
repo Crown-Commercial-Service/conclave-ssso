@@ -22,6 +22,11 @@ namespace CcsSso.Core.ExternalApi.Middleware
     private readonly ApplicationConfigurationInfo _appConfig;
     private readonly ITokenService _tokenService;
     private readonly IRemoteCacheService _remoteCacheService;
+    // #Delegated
+    private List<string> allowedPaths = new List<string>()
+    {
+      "users/delegate-user-validation", "user-profiles/delegate-user-validation"
+    };
 
     public AuthenticatorMiddleware(RequestDelegate next, ApplicationConfigurationInfo appConfig, ITokenService tokenService, IRemoteCacheService remoteCacheService)
     {
@@ -35,8 +40,20 @@ namespace CcsSso.Core.ExternalApi.Middleware
     {
       var apiKey = context.Request.Headers["X-API-Key"];
       var bearerToken = context.Request.Headers["Authorization"].FirstOrDefault();
+      var path = context.Request.Path.Value.TrimStart('/').TrimEnd('/');
       requestContext.IpAddress = context.GetRemoteIPAddress();
       requestContext.Device = context.Request.Headers["User-Agent"];
+      requestContext.apiKey = apiKey;
+
+      if (allowedPaths.Contains(path))
+      {
+        await _next(context);
+        return;
+      }
+
+      // #Deleated: To identify delegate user search
+      var isDelegated = context.Request.Query["is-delegated"].FirstOrDefault();
+      requestContext.IsDelegated = isDelegated != null ? Convert.ToBoolean(isDelegated) : false;
 
       if (string.IsNullOrWhiteSpace(bearerToken) && (string.IsNullOrEmpty(apiKey) || apiKey != _appConfig.ApiKey))
       {
@@ -79,21 +96,21 @@ namespace CcsSso.Core.ExternalApi.Middleware
               }
             }
 
-            
-            if(result.ClaimValues["caller"] == "service")
+
+            if (result.ClaimValues["caller"] == "service")
             {
               requestContext.ServiceClientId = result.ClaimValues["sub"];
               requestContext.ServiceId = int.Parse(result.ClaimValues["uid"]);
             }
             else
             {
-              requestContext.UserId = int.Parse(result.ClaimValues["uid"]);              
+              requestContext.UserId = int.Parse(result.ClaimValues["uid"]);
               requestContext.UserName = result.ClaimValues["sub"];
 
               var serviceId = await configurationDetailService.GetDashboardServiceIdAsync();
               requestContext.ServiceId = serviceId;
             }
-            
+
             requestContext.CiiOrganisationId = result.ClaimValues["ciiOrgId"];
             requestContext.Roles = result.ClaimValues["roles"].Split(",").ToList();
           }

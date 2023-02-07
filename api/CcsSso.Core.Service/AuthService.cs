@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Dtos;
 using CcsSso.Domain.Constants;
@@ -126,7 +127,32 @@ namespace CcsSso.Core.Service
 
     public async Task<bool> AuthorizeForOrganisationAsync(RequestType requestType)
     {
+      var isOrgAdmin = _requestContext.Roles.Contains("ORG_ADMINISTRATOR");
+
+      // #Delegated: Change to handle request for delegate user
+      var isDelegateUserRequest = _requestContext.Roles.Contains("DELEGATED_USER");
+      if (isDelegateUserRequest)
+      {
+        return true;
+      }
+
       var isCcsAdminRequest = _requestContext.Roles.Contains("ORG_USER_SUPPORT") || _requestContext.Roles.Contains("MANAGE_SUBSCRIPTIONS");
+
+      // #Delegated: Change to allow org admin to serach for user of other org
+      var isDelegatedSearchRequest = isOrgAdmin && _requestContext.IsDelegated;
+
+      if (isDelegatedSearchRequest && _requestContext.RequestIntendedOrganisationId != null)
+      {
+        if (_requestContext.CiiOrganisationId == _requestContext.RequestIntendedOrganisationId)
+        {
+          return true;
+        }
+        else if (_requestContext.CiiOrganisationId != _requestContext.RequestIntendedOrganisationId && !isCcsAdminRequest)
+        {
+          throw new ForbiddenException();
+        }
+      }
+
       var isAuthorizedForOrganisation = false;
 
       if (requestType == RequestType.HavingOrgId)
@@ -139,8 +165,13 @@ namespace CcsSso.Core.Service
 
         if (string.IsNullOrEmpty(intendedOrganisationId))
         {
-          intendedOrganisationId = await _dataContext.User.Where(u => !u.IsDeleted && u.UserName == _requestContext.RequestIntendedUserName)
+          // Based on the delegation user logic we only come to this point when the request comes for primary user.
+          // primary condition has been added to fix the issue https://crowncommercialservice.atlassian.net/jira/software/c/projects/CON/issues/CON-3108
+
+          intendedOrganisationId = await _dataContext.User
+            .Where(u => !u.IsDeleted && u.UserName == _requestContext.RequestIntendedUserName && (u.UserType == UserType.Primary))
             .Select(u => u.Party.Person.Organisation.CiiOrganisationId).FirstOrDefaultAsync();
+
 
           await _remoteCacheService.SetValueAsync<string>($"{CacheKeyConstant.UserOrganisation}-{_requestContext.RequestIntendedUserName}", intendedOrganisationId,
             new TimeSpan(0, _applicationConfigurationInfo.RedisCacheSettings.CacheExpirationInMinutes, 0));

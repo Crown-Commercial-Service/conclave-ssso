@@ -1,5 +1,6 @@
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Service.External;
@@ -473,6 +474,9 @@ namespace CcsSso.Core.Tests.External
       }
       var mockWrapperCacheService = new Mock<IWrapperCacheService>();
       var mockRemoteCacheService = new Mock<IRemoteCacheService>();
+      var mockLookUpService = new Mock<ILookUpService>();
+      var mockOrganisationAuditService = new Mock<IOrganisationAuditService>();
+      var mockOrganisationAuditEventService = new Mock<IOrganisationAuditEventService>();
 
       if (mockIdamService == null)
       {
@@ -482,7 +486,8 @@ namespace CcsSso.Core.Tests.External
       RequestContext requestContext = new();
       var service = new OrganisationProfileService(dataContext, contactsHelperService, mockCcsSsoEmailService.Object,
        mockCiiService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object,
-       mockLocalCacheService.Object, applicationConfigurationInfo, requestContext, mockIdamService.Object, mockRemoteCacheService.Object);
+       mockLocalCacheService.Object, applicationConfigurationInfo, requestContext, mockIdamService.Object, mockRemoteCacheService.Object, 
+       mockLookUpService.Object, mockOrganisationAuditService.Object, mockOrganisationAuditEventService.Object);
       return service;
     }
 

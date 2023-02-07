@@ -85,16 +85,16 @@ namespace CcsSso.Security.Services
       return new TokenResponseInfo();
     }
 
-    public async Task<TokenResponseInfo> GetRenewedTokensAsync(string clientId, string clientSecret, string refreshToken, string sid)
+    public async Task<TokenResponseInfo> GetRenewedTokensAsync(TokenRequestInfo tokenRequestInfo, string sid)
     {
-      var userDetails = await GetUserAsync(refreshToken);
-      var customClaims = GetCustomClaimsForIdToken(clientId, refreshToken, userDetails);
-      var idToken = _jwtTokenHandler.CreateToken(clientId, customClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
-      var accessToken = GetAccessToken(clientId, refreshToken, userDetails, sid);
+      var userDetails = await GetUserAsync(tokenRequestInfo.RefreshToken);
+      var customClaims = GetCustomClaimsForIdToken(tokenRequestInfo.ClientId, tokenRequestInfo.RefreshToken, userDetails);
+      var idToken = _jwtTokenHandler.CreateToken(tokenRequestInfo.ClientId, customClaims, _appConfigInfo.JwtTokenConfiguration.IDTokenExpirationTimeInMinutes);
+      var accessToken = GetAccessToken(tokenRequestInfo.ClientId, tokenRequestInfo.RefreshToken, userDetails, sid);
       return new TokenResponseInfo
       {
         IdToken = idToken,
-        RefreshToken = refreshToken,
+        RefreshToken = tokenRequestInfo.RefreshToken,
         AccessToken = accessToken
       };
     }
@@ -262,6 +262,11 @@ namespace CcsSso.Security.Services
     }
 
     public async Task<string> GetActivationEmailVerificationLink(string email)
+    {
+      await Task.CompletedTask;
+      return null;
+    }
+    public async Task<string> GetSidFromRefreshToken(string refreshToken, string sid)
     {
       await Task.CompletedTask;
       return null;

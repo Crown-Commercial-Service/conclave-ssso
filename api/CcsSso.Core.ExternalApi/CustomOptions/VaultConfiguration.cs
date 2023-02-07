@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using CcsSso.Shared.Domain;
+using CcsSso.Domain.Dtos;
 
 namespace CcsSso.ExternalApi.Api.CustomOptions
 {
@@ -112,7 +113,8 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("Email:UserConfirmEmailBothIdpTemplateId", emailsettings.UserConfirmEmailBothIdpTemplateId);
         Data.Add("Email:UserConfirmEmailOnlyUserIdPwdTemplateId", emailsettings.UserConfirmEmailOnlyUserIdPwdTemplateId);
         Data.Add("Email:UserRegistrationEmailUserIdPwdTemplateId", emailsettings.UserRegistrationEmailUserIdPwdTemplateId);
-
+        // #Delegated
+        Data.Add("Email:UserDelegatedAccessEmailTemplateId", emailsettings.UserDelegatedAccessEmailTemplateId);
 
         Data.Add("Email:SendNotificationsEnabled", emailsettings.SendNotificationsEnabled);
       }
@@ -159,6 +161,65 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
           Data.Add($"ExternalServiceDefaultRoles:ScopedServiceDefaultRoles:{index++}", scopedRole);
         }
       }
+      // #Delegated
+      if (_secrets.Data.ContainsKey("UserDelegation"))
+      {
+        var userDelegationInfo = JsonConvert.DeserializeObject<UserDelegation>(_secrets.Data["UserDelegation"].ToString());
+        Data.Add("UserDelegation:DelegationEmailExpirationHours", userDelegationInfo.DelegationEmailExpirationHours.ToString());
+        Data.Add("UserDelegation:DelegationEmailTokenEncryptionKey", userDelegationInfo.DelegationEmailTokenEncryptionKey);
+        
+        int index = 0;
+        foreach (var excludeRole in userDelegationInfo.DelegationExcludeRoles)
+        {
+          Data.Add($"UserDelegation:DelegationExcludeRoles:{index++}", excludeRole);
+        }
+      }
+
+      // #Auto validation
+      if (_secrets.Data.ContainsKey("OrgAutoValidation"))
+      {
+        var orgAutoValidation = JsonConvert.DeserializeObject<OrgAutoValidation>(_secrets.Data["OrgAutoValidation"].ToString());
+        Data.Add("OrgAutoValidation:Enable", orgAutoValidation.Enable.ToString());
+        Data.Add("OrgAutoValidation:CCSAdminEmailId", orgAutoValidation.CCSAdminEmailId.ToString());
+
+        int buyerSuccessAdminRoleIndex = 0;
+        foreach (var role in orgAutoValidation.BuyerSuccessAdminRoles)
+        {
+          Data.Add($"OrgAutoValidation:BuyerSuccessAdminRoles:{buyerSuccessAdminRoleIndex++}", role);
+        }
+
+        int bothSuccessAdminRoleIndex = 0;
+        foreach (var role in orgAutoValidation.BothSuccessAdminRoles)
+        {
+          Data.Add($"OrgAutoValidation:BothSuccessAdminRoles:{bothSuccessAdminRoleIndex++}", role);
+        }
+      }
+      if (_secrets.Data.ContainsKey("LookUpApiSettings"))
+      {
+        var wrapperApiKeySettings = JsonConvert.DeserializeObject<LookUpApiSettings>(_secrets.Data["LookUpApiSettings"].ToString());
+        Data.Add("LookUpApiSettings:LookUpApiKey", wrapperApiKeySettings.LookUpApiKey);
+        Data.Add("LookUpApiSettings:LookUpApiUrl", wrapperApiKeySettings.LookUpApiUrl);
+      }
+      if (_secrets.Data.ContainsKey("OrgAutoValidationEmail"))
+      {
+        var orgAutoValidationEmailInfo = JsonConvert.DeserializeObject<OrgAutoValidationEmailInfo>(_secrets.Data["OrgAutoValidationEmail"].ToString());
+        Data.Add("OrgAutoValidationEmail:DeclineRightToBuyStatusEmailTemplateId", orgAutoValidationEmailInfo.DeclineRightToBuyStatusEmailTemplateId);
+        Data.Add("OrgAutoValidationEmail:ApproveRightToBuyStatusEmailTemplateId", orgAutoValidationEmailInfo.ApproveRightToBuyStatusEmailTemplateId);
+        Data.Add("OrgAutoValidationEmail:RemoveRightToBuyStatusEmailTemplateId", orgAutoValidationEmailInfo.RemoveRightToBuyStatusEmailTemplateId);
+        Data.Add("OrgAutoValidationEmail:OrgPendingVerificationEmailTemplateId", orgAutoValidationEmailInfo.OrgPendingVerificationEmailTemplateId);
+        Data.Add("OrgAutoValidationEmail:OrgBuyerStatusChangeUpdateToAllAdmins", orgAutoValidationEmailInfo.OrgBuyerStatusChangeUpdateToAllAdmins);
+
+      }
+      if (_secrets.Data.ContainsKey("UserRoleApproval"))
+      {
+        var orgAutoValidation = JsonConvert.DeserializeObject<UserRoleApproval>(_secrets.Data["UserRoleApproval"].ToString());
+        Data.Add("UserRoleApproval:Enable", orgAutoValidation.Enable.ToString());
+        Data.Add("UserRoleApproval:RoleApprovalTokenEncryptionKey", orgAutoValidation.RoleApprovalTokenEncryptionKey);
+        Data.Add("UserRoleApproval:UserRoleApprovalEmailTemplateId", orgAutoValidation.UserRoleApprovalEmailTemplateId);
+        Data.Add("UserRoleApproval:UserRoleApprovedEmailTemplateId", orgAutoValidation.UserRoleApprovedEmailTemplateId);
+        Data.Add("UserRoleApproval:UserRoleRejectedEmailTemplateId", orgAutoValidation.UserRoleRejectedEmailTemplateId);
+      }
+
     }
   }
 
@@ -219,8 +280,9 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
     public string UserConfirmEmailOnlyUserIdPwdTemplateId { get; set; }
 
     public string UserRegistrationEmailUserIdPwdTemplateId { get; set; }
-
-  public string SendNotificationsEnabled { get; set; }
+    // #Delegated
+    public string UserDelegatedAccessEmailTemplateId { get; set; }
+    public string SendNotificationsEnabled { get; set; }
   }
 
   public class Cii
@@ -262,6 +324,15 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
     public string[] GlobalServiceDefaultRoles { get; set; }
 
     public string[] ScopedServiceDefaultRoles { get; set; }
+  }
+  // #Delegated
+  public class UserDelegation
+  {
+    public int DelegationEmailExpirationHours { get; set; }
+
+    public string DelegationEmailTokenEncryptionKey { get; set; }
+
+    public string[] DelegationExcludeRoles { get; set; }
   }
 
   public class VaultOptions
