@@ -52,6 +52,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string UserId { get; set; }
 
     public string Name { get; set; }
+
+    public bool IsAdmin { get; set; } = false;
   }
 
   public class OrganisationGroupRolePatchInfo
