@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using CcsSso.Core.DbModel.Constants;
 
 namespace CcsSso.Core.Domain.Dtos.External
 {
@@ -30,6 +31,9 @@ namespace CcsSso.Core.Domain.Dtos.External
     public bool SendUserRegistrationEmail { get; set; } = true;
 
     public string? OriginOrganisationName { get; set; }
+
+    // #Auto validation
+    public string? CompanyHouseId { get; set; }
 
   }
 
@@ -122,6 +126,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public bool? DelegationAccepted { get; set; }
 
     public List<RolePermissionInfo> RolePermissionInfo { get; set; }
+
+    public bool IsAdmin { get; set; } = false;
   }
 
   public class AdminUserListInfo
@@ -187,4 +193,30 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public DateTime EndDate { get; set; }
   }
+
+  public class UserAccessRolePendingDetails
+  {
+    public int Status { get; set; }
+   
+    public string RoleName { get; set; }
+    
+    public string RoleKey { get; set; }
+  }
+
+  public class UserAccessRolePendingTokenDetails : UserAccessRolePendingDetails
+  {
+    public int Id { get; set; }
+    public string UserName { get; set; }
+  }
+
+  public class UserRoleApprovalEditRequest
+  {
+
+    //TODO: check datatype
+    public int[] PendingRoleIds { get; set; }
+
+    // TODO: Check enum type for status
+    public UserPendingRoleStaus Status { get; set; }
+  }
+
 }

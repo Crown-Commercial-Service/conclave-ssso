@@ -1,11 +1,13 @@
 using CcsSso.Core.Domain.Dtos.External;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Contracts.External
 {
   public interface IUserProfileService
   {
-    Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo);
+    // #Auto validation
+    Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo, bool isNewOrgAdmin = false);
 
     Task DeleteUserAsync(string userName, bool checkForLastAdmin = true);
     // #Delegated
@@ -25,6 +27,9 @@ namespace CcsSso.Core.Domain.Contracts.External
     Task RemoveAdminRolesAsync(string userName);
 
     Task AddAdminRoleAsync(string userName);
+
+    Task<bool> IsUserExist(string userName);
+
     // #Delegated
     Task CreateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo);
 
