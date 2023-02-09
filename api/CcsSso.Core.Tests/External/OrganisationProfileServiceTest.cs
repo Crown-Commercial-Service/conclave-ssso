@@ -477,6 +477,7 @@ namespace CcsSso.Core.Tests.External
       var mockLookUpService = new Mock<ILookUpService>();
       var mockOrganisationAuditService = new Mock<IOrganisationAuditService>();
       var mockOrganisationAuditEventService = new Mock<IOrganisationAuditEventService>();
+      var mockUserProfileRoleApprovalService = new Mock<IUserProfileRoleApprovalService>();
 
       if (mockIdamService == null)
       {
@@ -487,7 +488,8 @@ namespace CcsSso.Core.Tests.External
       var service = new OrganisationProfileService(dataContext, contactsHelperService, mockCcsSsoEmailService.Object,
        mockCiiService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object,
        mockLocalCacheService.Object, applicationConfigurationInfo, requestContext, mockIdamService.Object, mockRemoteCacheService.Object, 
-       mockLookUpService.Object, mockOrganisationAuditService.Object, mockOrganisationAuditEventService.Object);
+       mockLookUpService.Object, mockOrganisationAuditService.Object, mockOrganisationAuditEventService.Object, 
+       mockUserProfileRoleApprovalService.Object);
       return service;
     }
 
