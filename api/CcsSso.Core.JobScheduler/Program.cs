@@ -227,10 +227,10 @@ namespace CcsSso.Core.JobScheduler
           services.AddSingleton<IAutoValidationService, AutoValidationService>();
           services.AddSingleton<IAutoValidationOneTimeService, AutoValidationOneTimeService>();
 
-          //services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
-          //services.AddHostedService<UnverifiedUserDeleteJob>();
-          //services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
-          //services.AddHostedService<OrganisationAutovalidationJob>();
+          services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
+          services.AddHostedService<UnverifiedUserDeleteJob>();
+          services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
+          services.AddHostedService<OrganisationAutovalidationJob>();
           services.AddHostedService<RoleDeleteExpiredNotificationJob>();
 
 
