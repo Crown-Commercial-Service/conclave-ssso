@@ -11,5 +11,8 @@ namespace CcsSso.Shared.Domain
     public string UnverifiedUserDeletionNotificationTemplateId { get; set; }
 
     public string BulkUploadReportTemplateId { get; set; }
+
+    public string UserRoleExpiredEmailTemplateId { get; set; }
+    
   }
 }

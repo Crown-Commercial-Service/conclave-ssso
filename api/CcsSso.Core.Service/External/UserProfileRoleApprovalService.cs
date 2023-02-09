@@ -44,7 +44,7 @@ namespace CcsSso.Core.Service.External
       }
 
       var pendingRoleIds = userApprovalRequest.PendingRoleIds;
-      var status = userApprovalRequest.Status;       
+      var status = userApprovalRequest.Status;
       var serviceName = String.Empty;
 
       if (status != UserPendingRoleStaus.Approved && status != UserPendingRoleStaus.Rejected)
@@ -90,7 +90,7 @@ namespace CcsSso.Core.Service.External
           pendingUserRole.Status = (int)UserPendingRoleStaus.Approved;
           pendingUserRole.IsDeleted = true;
 
-          var roleAleadyExists =await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.UserId == pendingUserRole.UserId && !x.IsDeleted && x.OrganisationEligibleRoleId==pendingUserRole.OrganisationEligibleRoleId);
+          var roleAleadyExists = await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.UserId == pendingUserRole.UserId && !x.IsDeleted && x.OrganisationEligibleRoleId == pendingUserRole.OrganisationEligibleRoleId);
 
           if (roleAleadyExists == null)
           {
@@ -163,28 +163,18 @@ namespace CcsSso.Core.Service.External
         .Where(u => !u.IsDeleted && u.Status == (int)UserPendingRoleStaus.Pending && u.UserId == userId)
         .ToListAsync();
 
-      // TODO: Expire role remove logic need to be removed once handled in new job
       var approvalRoleConfig = await _dataContext.RoleApprovalConfiguration.Where(x => !x.IsDeleted).ToListAsync();
       List<UserAccessRolePending> validUserAccessRolePendingList = new();
-      List<int> expiredUserAccessRolePendingList = new();
+
       foreach (var role in userAccessRolePendingAllList)
       {
         var roleExpireTime = role.LastUpdatedOnUtc.AddMinutes(approvalRoleConfig.FirstOrDefault(x => x.CcsAccessRoleId ==
            role.OrganisationEligibleRole.CcsAccessRole.Id).LinkExpiryDurationInMinute);
 
-        if (roleExpireTime < DateTime.UtcNow)
-        {
-          expiredUserAccessRolePendingList.Add(role.Id);
-        }
-        else
+        if (roleExpireTime >= DateTime.UtcNow)
         {
           validUserAccessRolePendingList.Add(role);
         }
-      }
-
-      if (expiredUserAccessRolePendingList.Any())
-      {
-        await RemoveExpiredApprovalPendingRolesAsync(expiredUserAccessRolePendingList);
       }
 
       var userAccessRolePendingListResponse = validUserAccessRolePendingList.Select(u => new UserAccessRolePendingDetails()
@@ -311,7 +301,7 @@ namespace CcsSso.Core.Service.External
 
       var organisation = await _dataContext.Organisation
         .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == userProfileRequestInfo.OrganisationId);
-      
+
       if (organisation == null)
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidCiiOrganisationId);
@@ -359,8 +349,8 @@ namespace CcsSso.Core.Service.External
 
       var userAccessRoles = await _dataContext.UserAccessRole
        .FirstOrDefaultAsync(uar => !uar.IsDeleted && uar.UserId == user.Id && roles.Contains(uar.OrganisationEligibleRoleId));
-       
-      if(userAccessRoles != null)
+
+      if (userAccessRoles != null)
       {
         throw new ResourceAlreadyExistsException("User Role already exists");
       }
@@ -443,23 +433,5 @@ namespace CcsSso.Core.Service.External
         }
       }
     }
-
-    // TODO: Remove once job for this purpose created
-    private async Task RemoveExpiredApprovalPendingRolesAsync(List<int> userAccessRolePendingIds)
-    {
-      if (!_appConfigInfo.UserRoleApproval.Enable)
-      {
-        throw new InvalidOperationException();
-      }
-
-      var userAccessRolePendingExpiredList = await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && userAccessRolePendingIds.Contains(u.Id)).ToListAsync();
-
-      if (userAccessRolePendingExpiredList.Any())
-      {
-        userAccessRolePendingExpiredList.ForEach(l => { l.IsDeleted = true; l.Status = (int)UserPendingRoleStaus.Expired; });
-        await _dataContext.SaveChangesAsync();
-      }
-    }
-
   }
 }
