@@ -17,17 +17,17 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.JobScheduler.Jobs
 {
-  public class RoleDeleteExpiredNotificationJob : BackgroundService
+  public class RoleApprovalLinkExpiredJob : BackgroundService
   {
     private readonly IDataContext _dataContext;
     private readonly AppSettings _appSettings;
-    private readonly IRoleDeleteExpiredNotificationService _roleDeleteExpiredNotificationService;
+    private readonly IRoleApprovalLinkExpiredService _roleDeleteExpiredNotificationService;
 
-    private readonly ILogger<RoleDeleteExpiredNotificationJob> _logger;
+    private readonly ILogger<RoleApprovalLinkExpiredJob> _logger;
     private bool enable;
 
-    public RoleDeleteExpiredNotificationJob(ILogger<RoleDeleteExpiredNotificationJob> logger, IServiceScopeFactory factory,
-      AppSettings appSettings, IRoleDeleteExpiredNotificationService roleDeleteExpiredNotificationService )
+    public RoleApprovalLinkExpiredJob(ILogger<RoleApprovalLinkExpiredJob> logger, IServiceScopeFactory factory,
+      AppSettings appSettings, IRoleApprovalLinkExpiredService roleDeleteExpiredNotificationService )
     {
       _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
 

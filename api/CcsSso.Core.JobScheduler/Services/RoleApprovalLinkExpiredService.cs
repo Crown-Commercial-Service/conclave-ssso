@@ -17,13 +17,13 @@ using Microsoft.Extensions.Logging;
 
 namespace CcsSso.Core.JobScheduler.Services
 {
-  public class RoleDeleteExpiredNotificationService : IRoleDeleteExpiredNotificationService
+  public class RoleApprovalLinkExpiredService : IRoleApprovalLinkExpiredService
   {
     private readonly IDataContext _dataContext;
-    private readonly ILogger<RoleDeleteExpiredNotificationService> _logger;
+    private readonly ILogger<RoleApprovalLinkExpiredService> _logger;
     private readonly IEmailSupportService _emailSupportService;
-    public RoleDeleteExpiredNotificationService(IServiceScopeFactory factory,
-      ILogger<RoleDeleteExpiredNotificationService> logger,
+    public RoleApprovalLinkExpiredService(IServiceScopeFactory factory,
+      ILogger<RoleApprovalLinkExpiredService> logger,
        IEmailSupportService emailSupportService)
     {
       _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
@@ -81,9 +81,14 @@ namespace CcsSso.Core.JobScheduler.Services
 
       foreach (var pendingNotification in userAccessRolePending)
       {
+        if (!pendingNotification.SendEmailNotification)
+        {
+          continue;
+        }
+
         var user = await _dataContext.User
-                   .Include(u => u.UserAccessRoles)
-                   .FirstOrDefaultAsync(x => x.Id == pendingNotification.UserId && !x.IsDeleted && x.UserType == UserType.Primary);
+                 .Include(u => u.UserAccessRoles)
+                 .FirstOrDefaultAsync(x => x.Id == pendingNotification.UserId && !x.IsDeleted && x.UserType == UserType.Primary);
 
         var emailList = new List<string>() { user.UserName };
 
@@ -99,21 +104,19 @@ namespace CcsSso.Core.JobScheduler.Services
         }
 
         var serviceName = string.Empty;
-        if (pendingNotification.SendEmailNotification)
+
+        var orgEligibleRole = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
+                                       .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
+                                       .FirstOrDefaultAsync(u => u.Id == pendingNotification.OrganisationEligibleRoleId! && !u.IsDeleted);
+
+        if (orgEligibleRole != null)
         {
-          var orgEligibleRole = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
-                                         .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
-                                         .FirstOrDefaultAsync(u => u.Id == pendingNotification.OrganisationEligibleRoleId! && !u.IsDeleted);
+          serviceName = orgEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName;
+        }
 
-          if (orgEligibleRole != null)
-          {
-            serviceName = orgEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName;
-          }
-
-          foreach (var email in emailList)
-          {
-            await _emailSupportService.SendRoleRejectedEmailAsync(email, user.UserName, serviceName);
-          }
+        foreach (var email in emailList)
+        {
+          await _emailSupportService.SendRoleRejectedEmailAsync(email, user.UserName, serviceName);
         }
       }
 

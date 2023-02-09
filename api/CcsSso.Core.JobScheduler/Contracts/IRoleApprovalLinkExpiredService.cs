@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.JobScheduler.Contracts
 {
-  public interface IRoleDeleteExpiredNotificationService
+  public interface IRoleApprovalLinkExpiredService
   {
     Task PerformJobAsync(List<UserAccessRolePending> organisation);
   }

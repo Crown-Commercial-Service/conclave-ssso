@@ -220,7 +220,7 @@ namespace CcsSso.Core.JobScheduler
           services.AddScoped<IContactSupportService, ContactSupportService>();
           services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
           services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
-          services.AddSingleton<IRoleDeleteExpiredNotificationService, RoleDeleteExpiredNotificationService>();
+          services.AddSingleton<IRoleApprovalLinkExpiredService, RoleApprovalLinkExpiredService>();
           // #Auto validation
           services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
           services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();
@@ -231,7 +231,7 @@ namespace CcsSso.Core.JobScheduler
           services.AddHostedService<UnverifiedUserDeleteJob>();
           services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
           services.AddHostedService<OrganisationAutovalidationJob>();
-          services.AddHostedService<RoleDeleteExpiredNotificationJob>();
+          services.AddHostedService<RoleApprovalLinkExpiredJob>();
 
 
         });
