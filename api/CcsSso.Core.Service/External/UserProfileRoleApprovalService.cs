@@ -166,18 +166,8 @@ namespace CcsSso.Core.Service.External
       var approvalRoleConfig = await _dataContext.RoleApprovalConfiguration.Where(x => !x.IsDeleted).ToListAsync();
       List<UserAccessRolePending> validUserAccessRolePendingList = new();
 
-      foreach (var role in userAccessRolePendingAllList)
-      {
-        var roleExpireTime = role.LastUpdatedOnUtc.AddMinutes(approvalRoleConfig.FirstOrDefault(x => x.CcsAccessRoleId ==
-           role.OrganisationEligibleRole.CcsAccessRole.Id).LinkExpiryDurationInMinute);
 
-        if (roleExpireTime >= DateTime.UtcNow)
-        {
-          validUserAccessRolePendingList.Add(role);
-        }
-      }
-
-      var userAccessRolePendingListResponse = validUserAccessRolePendingList.Select(u => new UserAccessRolePendingDetails()
+      var userAccessRolePendingListResponse = userAccessRolePendingAllList.Select(u => new UserAccessRolePendingDetails()
       {
         Status = u.Status,
         RoleKey = u.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,

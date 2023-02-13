@@ -1044,27 +1044,7 @@ namespace CcsSso.Core.Service.External
 
       if (_appConfigInfo.UserRoleApproval.Enable)
       {
-        if (userAccessRoleRequiredApproval.Any())
-        {
-          await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(new UserProfileEditRequestInfo
-          {
-            UserName = userName,
-            OrganisationId = organisation.CiiOrganisationId,
-            Detail = new UserRequestDetail
-            {
-              RoleIds = userAccessRoleRequiredApproval
-            }
-          });
-        }
-
-        var userAccessRoleRequiredToRemoveFromApproval = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == user.Id
-        && !userAccessRoleRequiredApproval.Contains(x.OrganisationEligibleRoleId) && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
-
-        if (userAccessRoleRequiredToRemoveFromApproval != null && userAccessRoleRequiredToRemoveFromApproval.Any())
-        {
-          var roleIds = userAccessRoleRequiredToRemoveFromApproval.Select(x => x.OrganisationEligibleRoleId).ToList();
-          await _userProfileRoleApprovalService.RemoveApprovalPendingRolesAsync(userName, string.Join(",", roleIds));
-        }
+        await CreatePendingRoleRequest(userAccessRoleRequiredApproval, user.Id, userName, organisation.CiiOrganisationId);
       }
 
       // Log
@@ -1778,5 +1758,44 @@ namespace CcsSso.Core.Service.External
       }
     }
     #endregion
+
+    private async Task CreatePendingRoleRequest(List<int> userAccessRoleRequiredApproval,int userId, string userName, string ciiOrganisationId) 
+    {
+      // remove roles that were pending for approval but now no longer required
+      var userAccessRoleRequiredToRemoveFromApproval = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == userId
+      && !userAccessRoleRequiredApproval.Contains(x.OrganisationEligibleRoleId) && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
+
+      // get roles that are pending for approval
+      var existingPendingRequestRole = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == userId
+      && userAccessRoleRequiredApproval.Contains(x.OrganisationEligibleRoleId) && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
+
+      // ignore roles which are still pending for approval
+      foreach (var existingPendingRequestToIgnore in existingPendingRequestRole) 
+      {
+        userAccessRoleRequiredApproval.Remove(existingPendingRequestToIgnore.OrganisationEligibleRoleId);
+      }
+
+      // Remove pending for approval role that are no longer required (not passed in request)
+      if (userAccessRoleRequiredToRemoveFromApproval != null && userAccessRoleRequiredToRemoveFromApproval.Any())
+      {
+        var roleIds = userAccessRoleRequiredToRemoveFromApproval.Select(x => x.OrganisationEligibleRoleId).ToList();
+
+        await _userProfileRoleApprovalService.RemoveApprovalPendingRolesAsync(userName, string.Join(",", roleIds));
+      }
+
+      if (userAccessRoleRequiredApproval.Any())
+      {
+        await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(new UserProfileEditRequestInfo
+        {
+          UserName = userName,
+          OrganisationId = ciiOrganisationId,
+          Detail = new UserRequestDetail
+          {
+            RoleIds = userAccessRoleRequiredApproval
+          }
+        });
+      }
+
+    }
   }
 }
