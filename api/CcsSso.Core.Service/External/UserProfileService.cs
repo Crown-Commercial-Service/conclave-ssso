@@ -860,7 +860,7 @@ namespace CcsSso.Core.Service.External
 
       if (!isMyProfile || isAdminUser == true)
       {
-        user.UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title);
+        user.UserTitle = GetUserTitle(userProfileRequestInfo);
         requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
         requestRoles = userProfileRequestInfo.Detail.RoleIds == null ? new List<int>() : userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
         hasGroupMembershipsNotChanged = Enumerable.SequenceEqual(requestGroups, user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).OrderBy(e => e));
@@ -938,7 +938,7 @@ namespace CcsSso.Core.Service.External
           var ccsAccessRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.Id == roleId)?.CcsAccessRoleId;
           var isRoleRequiredApproval = ccsAccessRoleId != null && ccsAccessRoleRequiredApproval != null && ccsAccessRoleRequiredApproval.Any(x => x.Id == ccsAccessRoleId);
           var isUserDomainValid = userName?.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower();
-          
+
           if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && isRoleRequiredApproval && !previousRoles.Any(x => x == roleId))
           {
             userAccessRoleRequiredApproval.Add(roleId);
@@ -1096,6 +1096,11 @@ namespace CcsSso.Core.Service.External
         UserId = userName,
         IsRegisteredInIdam = isRegisteredInIdam
       };
+    }
+
+    private static int GetUserTitle(UserProfileEditRequestInfo userProfileRequestInfo)
+    {
+      return (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title);
     }
 
     public async Task ResetUserPasswodAsync(string userName, string? component)
