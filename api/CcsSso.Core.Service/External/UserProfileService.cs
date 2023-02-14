@@ -861,10 +861,10 @@ namespace CcsSso.Core.Service.External
       if (!isMyProfile || isAdminUser == true)
       {
         user.UserTitle = GetUserTitle(userProfileRequestInfo);
-        requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
-        requestRoles = userProfileRequestInfo.Detail.RoleIds == null ? new List<int>() : userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
-        hasGroupMembershipsNotChanged = Enumerable.SequenceEqual(requestGroups, user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).OrderBy(e => e));
-        hasRolesNotChanged = Enumerable.SequenceEqual(requestRoles, user.UserAccessRoles.Select(ur => ur.OrganisationEligibleRoleId).OrderBy(e => e));
+        requestGroups = GetRequestGroups(userProfileRequestInfo);
+        requestRoles = GetRequestRoles(userProfileRequestInfo);
+        hasGroupMembershipsNotChanged = HasGroupMembershipsNotChanged(user, requestGroups);
+        hasRolesNotChanged = HasRolesNotChanged(user, requestRoles);
         previousGroups = user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).ToList();
         previousRoles = user.UserAccessRoles.Select(ur => ur.OrganisationEligibleRoleId).ToList();
         user.UserGroupMemberships.RemoveAll(g => true);
@@ -1042,10 +1042,12 @@ namespace CcsSso.Core.Service.External
 
       await _dataContext.SaveChangesAsync();
 
-      if (_appConfigInfo.UserRoleApproval.Enable)
-      {
-        await CreatePendingRoleRequest(userAccessRoleRequiredApproval, user.Id, userName, organisation.CiiOrganisationId);
-      }
+      //if (_appConfigInfo.UserRoleApproval.Enable)
+      //{
+      //  await CreatePendingRoleRequest(userAccessRoleRequiredApproval, user.Id, userName, organisation.CiiOrganisationId);
+      //}
+
+      await CreatePendingRoleRequest(userAccessRoleRequiredApproval, user.Id, userName, organisation.CiiOrganisationId);
 
       // Log
       if (!isMyProfile || isAdminUser == true)
@@ -1098,9 +1100,34 @@ namespace CcsSso.Core.Service.External
       };
     }
 
+    private static bool HasRolesNotChanged(User user, List<int> requestRoles)
+    {
+      return Enumerable.SequenceEqual(requestRoles, user.UserAccessRoles.Select(ur => ur.OrganisationEligibleRoleId).OrderBy(e => e));
+    }
+
+    private static bool HasGroupMembershipsNotChanged(User user, List<int> requestGroups)
+    {
+      return Enumerable.SequenceEqual(requestGroups, user.UserGroupMemberships.Select(ug => ug.OrganisationUserGroup.Id).OrderBy(e => e));
+    }
+
+    private static List<int> GetRequestRoles(UserProfileEditRequestInfo userProfileRequestInfo)
+    {
+      return userProfileRequestInfo.Detail.RoleIds == null ? new List<int>() : userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
+    }
+
+    private static List<int> GetRequestGroups(UserProfileEditRequestInfo userProfileRequestInfo)
+    {
+      return userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
+    }
+
     private static int GetUserTitle(UserProfileEditRequestInfo userProfileRequestInfo)
     {
-      return (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title);
+      var userTitle = "Unspecified";
+      
+      if (!string.IsNullOrWhiteSpace(userProfileRequestInfo.Title))
+        userTitle =userProfileRequestInfo.Title;
+
+      return (int)Enum.Parse(typeof(UserTitle), userTitle);
     }
 
     public async Task ResetUserPasswodAsync(string userName, string? component)
@@ -1766,6 +1793,9 @@ namespace CcsSso.Core.Service.External
 
     private async Task CreatePendingRoleRequest(List<int> userAccessRoleRequiredApproval,int userId, string userName, string ciiOrganisationId) 
     {
+      if (!_appConfigInfo.UserRoleApproval.Enable)
+        return;
+
       // remove roles that were pending for approval but now no longer required
       var userAccessRoleRequiredToRemoveFromApproval = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == userId
       && !userAccessRoleRequiredApproval.Contains(x.OrganisationEligibleRoleId) && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
