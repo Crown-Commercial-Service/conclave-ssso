@@ -9,7 +9,6 @@ applications:
     - route: CF_SPACE-api-security.london.cloudapps.digital
   services:
     - CF_SPACE-security-pg-service
-    - CF_SPACE-vault 
     - CF_SPACE-security-redis-service
     - CF_SPACE-ssm-service
     - CF_SPACE-data-sqs-service
@@ -24,7 +23,6 @@ applications:
     - route: CF_SPACE-api-wrapper.london.cloudapps.digital
   services:
     - CF_SPACE-sso-pg-service
-    - CF_SPACE-vault
     - CF_SPACE-adaptor-sqs-service
     - CF_SPACE-data-redis-service
     - CF_SPACE-ssm-service
@@ -39,7 +37,6 @@ applications:
     - route: CF_SPACE-api-core.london.cloudapps.digital
   services:
     - CF_SPACE-sso-pg-service
-    - CF_SPACE-vault
     - CF_SPACE-data-redis-service
     - CF_SPACE-adaptor-sqs-service
     - CF_SPACE-ssm-service
@@ -57,7 +54,6 @@ applications:
     - CF_SPACE-adaptor-pg-service
     - CF_SPACE-data-redis-service
     - CF_SPACE-push-data-sqs-service
-    - CF_SPACE-vault
     - CF_SPACE-ssm-service
   env:
     CACHE_NUGET_PACKAGES: false
@@ -69,7 +65,6 @@ applications:
   no-route: true
   health-check-type: none
   services:
-    - CF_SPACE-vault
     - CF_SPACE-adaptor-sqs-service
     - CF_SPACE-push-data-sqs-service
     - CF_SPACE-ssm-service
@@ -85,7 +80,6 @@ applications:
   health-check-type: none
   services:
     - CF_SPACE-sso-pg-service
-    - CF_SPACE-vault
     - CF_SPACE-ssm-service
     - CF_SPACE-s3-service
   env:
