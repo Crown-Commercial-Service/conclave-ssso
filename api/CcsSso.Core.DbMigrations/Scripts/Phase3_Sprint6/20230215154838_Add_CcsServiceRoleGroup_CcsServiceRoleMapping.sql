@@ -21,8 +21,7 @@ CREATE TABLE "CcsServiceRoleGroup" (
     CONSTRAINT "PK_CcsServiceRoleGroup" PRIMARY KEY ("Id")
 );
 
-COMMENT ON TABLE public."CcsServiceRoleGroup"
-    IS 'This parent table holds the service role group name and its properties. It will be shared with the group of roles';
+COMMENT ON TABLE public."CcsServiceRoleGroup" IS 'This parent table holds the service role group name and its properties. It will be shared with the group of roles';
 
 
 CREATE TABLE "CcsServiceRoleMapping" (
@@ -42,8 +41,7 @@ INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
 VALUES ('20230215154838_Add_CcsServiceRoleGroup_CcsServiceRoleMapping', '5.0.10');
 
 
-COMMENT ON TABLE public."CcsServiceRoleMapping"
-    IS 'This child table holds list of roles for each service role group . Parent table : CcsServiceRoleGroup';
+COMMENT ON TABLE public."CcsServiceRoleMapping" IS 'This child table holds list of roles for each service role group . Parent table : CcsServiceRoleGroup';
 
 COMMIT;
 
