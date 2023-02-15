@@ -53,6 +53,25 @@ namespace CcsSso.Core.JobScheduler.Services
       await _emaillProviderService.SendEmailAsync(emailInfo);
     }
 
+    public async Task SendRoleRejectedEmailAsync(string email, string userName, string serviceName)
+    {
+      var data = new Dictionary<string, dynamic>
+      {
+          { "email", userName},
+          { "serviceName", serviceName}
+      };
+
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _emailConfigurationInfo.UserRoleExpiredEmailTemplateId,
+        BodyContent = data
+      };
+
+      await _emaillProviderService.SendEmailAsync(emailInfo);
+    }
+
+
     private EmailInfo GetEmailInfo(string toEmail, string templateId, Dictionary<string, dynamic> data)
     {
       var emailInfo = new EmailInfo
