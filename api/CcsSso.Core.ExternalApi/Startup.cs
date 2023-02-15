@@ -57,6 +57,7 @@ namespace CcsSso.ExternalApi
         int.TryParse(Configuration["RedisCacheSettings:CacheExpirationInMinutes"], out int cacheExpirationInMinutes);
         int.TryParse(Configuration["InMemoryCacheExpirationInMinutes"], out int inMemoryCacheExpirationInMinutes);
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
+        bool.TryParse(Configuration["EnableUserAccessTokenFix"], out bool enableUserAccessTokenFix);
         // #Delegated
         int.TryParse(Configuration["UserDelegation:DelegationEmailExpirationHours"], out int delegatedEmailExpirationHours);
 
@@ -79,6 +80,7 @@ namespace CcsSso.ExternalApi
         {
           ApiKey = Configuration["ApiKey"],
           ConclaveLoginUrl = Configuration["ConclaveLoginUrl"],
+          EnableUserAccessTokenFix = enableUserAccessTokenFix,
           EnableAdapterNotifications = enableAdaptorNotifications,
           InMemoryCacheExpirationInMinutes = inMemoryCacheExpirationInMinutes,
           DashboardServiceClientId = Configuration["DashboardServiceClientId"],
@@ -134,7 +136,7 @@ namespace CcsSso.ExternalApi
           OrgAutoValidation = new OrgAutoValidation()
           {
             Enable = Convert.ToBoolean(Configuration["OrgAutoValidation:Enable"]),
-            CCSAdminEmailId = Configuration["OrgAutoValidation:CCSAdminEmailId"],
+            CCSAdminEmailIds = Configuration.GetSection("OrgAutoValidation:CCSAdminEmailIds").Get<string[]>(),
             BuyerSuccessAdminRoles = Configuration.GetSection("OrgAutoValidation:BuyerSuccessAdminRoles").Get<string[]>(),
             BothSuccessAdminRoles = Configuration.GetSection("OrgAutoValidation:BothSuccessAdminRoles").Get<string[]>(),
           },

@@ -29,6 +29,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public DateTime DateOfRegistration { get; set; }
 
     public bool? RightToBuy { get; set; }
+    public OrgAutoValidationStatus? AuditStatus { get; set; }
+
   }
 
   public class OrganisationAuditInfoListResponse : PaginationInfo
