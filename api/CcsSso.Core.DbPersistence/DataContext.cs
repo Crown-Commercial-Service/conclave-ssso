@@ -205,7 +205,11 @@ namespace CcsSso.DbPersistence
 
         public DbSet<UserAccessRolePending> UserAccessRolePending { get; set; }
 
-        public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    public DbSet<CcsServiceRoleGroup> CcsServiceRoleGroup  { get; set; }
+
+    public DbSet<CcsServiceRoleMapping> CcsServiceRoleMapping { get; set; }
+
+    public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
             ValidateEntities();
             return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
