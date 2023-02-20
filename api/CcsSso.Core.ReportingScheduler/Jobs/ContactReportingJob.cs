@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Npgsql.Internal;
 using System.Linq.Expressions;
 using System.Threading.Tasks.Dataflow;
+using System.Web;
 using ContactResponseInfo = CcsSso.Shared.Domain.Dto.ContactResponseInfo;
 
 
@@ -248,7 +249,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     private async Task<ContactUserResponseInfo?> GetUserContactDetails(Tuple<int, int, int, string> eachModifiedContact, HttpClient client)
     {
 
-      string url = $"users/contacts/{eachModifiedContact.Item1}?user-id={eachModifiedContact.Item4}";
+      string url = $"users/contacts/{eachModifiedContact.Item1}?user-id={HttpUtility.UrlEncode(eachModifiedContact.Item4)}";
 
       var response = await client.GetAsync(url);
 

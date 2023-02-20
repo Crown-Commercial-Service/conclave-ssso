@@ -47,6 +47,8 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string RoleKey { get; set; }
 
+    public string ServiceName { get; set; }
+
     public DateTime Date { get; set; }
   }
 
