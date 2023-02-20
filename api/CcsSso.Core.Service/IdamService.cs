@@ -80,7 +80,7 @@ namespace CcsSso.Core.Service
       client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
       client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
 
-      var url = "security/users/activation-email-verification-link?email=" + email;
+      var url = "security/users/activation-email-verification-link?email=" + HttpUtility.UrlEncode(email);
       var response = await client.GetAsync(url);
 
       if (!response.IsSuccessStatusCode)

@@ -18,6 +18,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace CcsSso.Core.JobScheduler
 {
@@ -90,7 +91,7 @@ namespace CcsSso.Core.JobScheduler
             
             foreach (var adminUser in adminUsers)
             {
-              var url = "/security/users?email=" + adminUser.UserName;
+              var url = "/security/users?email=" + HttpUtility.UrlEncode(adminUser.UserName);
               var response = await client.GetAsync(url);
               if (response.StatusCode == System.Net.HttpStatusCode.OK)
               {

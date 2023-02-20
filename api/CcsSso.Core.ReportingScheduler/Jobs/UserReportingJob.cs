@@ -5,6 +5,7 @@ using CcsSso.Shared.Domain.Dto;
 using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System.Web;
 using UserProfileResponseInfo = CcsSso.Shared.Domain.Dto.UserProfileResponseInfo;
 
 namespace CcsSso.Core.ReportingScheduler.Jobs
@@ -167,7 +168,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
     private async Task<UserProfileResponseInfo?> GetUserDetails(Tuple<int, string> eachModifiedUser, HttpClient client)
     {
-      string url = $"users/?user-id={eachModifiedUser.Item2}"; // Send as Query String as expected in the Wrapper API - GetUser method
+      string url = $"users/?user-id={HttpUtility.UrlEncode(eachModifiedUser.Item2)}"; // Send as Query String as expected in the Wrapper API - GetUser method
 
       var response = await client.GetAsync(url);
 

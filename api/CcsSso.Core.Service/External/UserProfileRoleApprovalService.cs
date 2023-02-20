@@ -210,7 +210,7 @@ namespace CcsSso.Core.Service.External
 
       if (userId == 0)
       {
-        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserId);
+        throw new ResourceNotFoundException();
       }
 
       var userAccessRolePendingList = await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && u.UserId == userId &&
