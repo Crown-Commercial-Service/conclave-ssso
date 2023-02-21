@@ -16,6 +16,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace CcsSso.Core.JobScheduler
 {
@@ -177,7 +178,7 @@ namespace CcsSso.Core.JobScheduler
             var userPendingRoles = usersPendingRoleInfo.Where(x => x.UserId == user.Id).ToList();
             if (userPendingRoles.Any())
             {
-              var deleteResult = await client.DeleteAsync($"approve/roles?user-id={user.UserName}&roles=" + String.Join(",", userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList()));
+              var deleteResult = await client.DeleteAsync($"approve/roles?user-id={HttpUtility.UrlEncode(user.UserName)}&roles=" + String.Join(",", userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList()));
               if (deleteResult.StatusCode != HttpStatusCode.OK)
               {
                 Console.WriteLine($" **************** Unverified User pending role deletion failed for user:{user.UserName} **************** ");
