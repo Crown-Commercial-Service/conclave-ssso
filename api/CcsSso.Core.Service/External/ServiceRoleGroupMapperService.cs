@@ -95,6 +95,11 @@ namespace CcsSso.Core.Service.External
 
     public async Task<List<OrganisationEligibleRole>> ServiceRoleGroupsToOrgRolesAsync(List<int> serviceRoleGroupIds, string organisationId)
     {
+      if (!serviceRoleGroupIds.Any())
+      {
+        return new List<OrganisationEligibleRole>();
+      }
+
       var ccsAccessRoles = await ServiceRoleGroupsToCssRolesAsync(serviceRoleGroupIds);
 
       var ccsAccessRoleIds = ccsAccessRoles.Select(x => x.Id).ToList();
