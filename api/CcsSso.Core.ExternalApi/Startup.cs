@@ -239,6 +239,7 @@ namespace CcsSso.ExternalApi
       services.AddScoped<IUserService, UserService>();
       services.AddScoped<IAuthService, AuthService>();
       services.AddScoped<IUserProfileRoleApprovalService, UserProfileRoleApprovalService>();
+      services.AddScoped<IServiceRoleGroupMapperService, ServiceRoleGroupMapperService>();
       services.AddHttpClient();
       services.AddHttpContextAccessor();
 

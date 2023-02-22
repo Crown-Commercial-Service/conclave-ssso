@@ -37,18 +37,26 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   }
 
-  public class UserRequestDetail
+  public class UserRequestMain
   {
     public int Id { get; set; }
 
     public List<int> GroupIds { get; set; }
 
-    public List<int> RoleIds { get; set; }
-
     public List<int> IdentityProviderIds { get; set; }
   }
 
-  public class UserResponseDetail
+  public class UserRequestDetail : UserRequestMain
+  {
+    public List<int> RoleIds { get; set; }
+  }
+
+  public class UserServiceRoleGroupRequestDetail : UserRequestMain
+  {
+    public List<int> ServiceRoleGroupIds { get; set; }
+  }
+
+  public class UserResponseMain
   {
     public int Id { get; set; }
 
@@ -56,12 +64,21 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public bool CanChangePassword { get; set; }
 
-    public List<RolePermissionInfo> RolePermissionInfo { get; set; }
-
     public List<UserIdentityProviderInfo> IdentityProviders { get; set; }
     // #Delegated
     public UserDelegationDetails[]? DelegatedOrgs { get; set; }
   }
+
+  public class UserResponseDetail : UserResponseMain
+  {
+    public List<RolePermissionInfo> RolePermissionInfo { get; set; }    
+  }
+
+  public class UserServiceRoleGroupResponseDetail : UserResponseMain
+  {
+    public List<ServiceRoleGroupInfo> ServiceRoleGroupInfo { get; set; }
+  }
+
   // #Delegated
   public class UserDelegationDetails
   {
@@ -98,14 +115,34 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string ServiceClientName { get; set; }
   }
 
+  public class ServiceRoleGroupInfo
+  {
+    public int Id { get; set; }
+
+    public string Name { get; set; }
+
+    public string Key { get; set; }
+  }
+
+
   public class UserProfileEditRequestInfo : UserDetail
   {
     public UserRequestDetail Detail { get; set; }
   }
 
+  public class UserProfileServiceRoleGroupEditRequestInfo : UserDetail
+  {
+    public UserServiceRoleGroupRequestDetail Detail { get; set; }
+  }
+
   public class UserProfileResponseInfo : UserDetail
   {
     public UserResponseDetail Detail { get; set; }
+  }
+
+  public class UserProfileServiceRoleGroupResponseInfo : UserDetail
+  {
+    public UserServiceRoleGroupResponseDetail Detail { get; set; }
   }
 
   public class UserListInfo

@@ -556,6 +556,116 @@ namespace CcsSso.ExternalApi.Controllers
     {
       await _contactService.DeleteUserContactAsync(userId, contactId);
     }
-    #endregion
+    #endregion        
+
+    #region User profile version 1
+
+    /// <summary>
+    /// Allows a user to retrieve details for a given user
+    /// #Delegated
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_USER_ID
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /users/v1?user-id=user@mail.com&is-delegated=true&is-delegated-search=true&delegated-organisation-id=123
+    ///     
+    ///
+    /// </remarks>
+    [HttpGet("v1")]
+    [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR", "ORG_DEFAULT_USER", "DELEGATED_USER")]
+    [OrganisationAuthorise("USER")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(UserProfileServiceRoleGroupResponseInfo), 200)]
+    public async Task<UserProfileServiceRoleGroupResponseInfo> GetUserV1([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "is-delegated")] bool isDelegated = false, [FromQuery(Name = "is-delegated-search")] bool isSearchUser = false, [FromQuery(Name = "delegated-organisation-id")] string delegatedOrgId = "")
+    {
+      return await _userProfileService.GetUserV1Async(userId, isDelegated, isSearchUser, delegatedOrgId);
+    }
+
+    /// <summary>
+    /// Allows a user to create user details
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE,ERROR_PASSWORD_TOO_WEAK INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, INVALID_USER_DETAIL
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /users/v1
+    ///     {
+    ///        "firstName": "FirstName",
+    ///        "lastName": "LastName",
+    ///        "userName": "user@mail.com",
+    ///        "password":"",// Not mandatory
+    ///        "SendUserRegistrationEmail":false,
+    ///        "organisationId": "CcsOrgId1",
+    ///        "detail": {
+    ///           "id": 0,
+    ///           "groupIds": { 1, 2 },
+    ///           "serviceRoleGroupIds": { 1, 2 },
+    ///           "identityProviderId": 1,
+    ///        }
+    ///     }
+    ///
+    /// </remarks>
+    [HttpPost("v1")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("USER_POST")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
+    public async Task<UserEditResponseInfo> CreateUserV1(UserProfileServiceRoleGroupEditRequestInfo userProfileServiceRoleGroupEditRequestInfo)
+    {
+      return await _userProfileService.CreateUserV1Async(userProfileServiceRoleGroupEditRequestInfo);
+    }
+
+    /// <summary>
+    /// Allows a user to update user details
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE, INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, ERROR_CANNOT_REMOVE_ADMIN_ROLE_OR_GROUP_OF_LAST_ADMIN, INVALID_USER_DETAIL
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     PUT /users/v1?user-id=user@mail.com
+    ///     {
+    ///        "firstName": "FirstName",
+    ///        "lastName": "LastName",
+    ///        "organisationId": "CcsOrgId1",
+    ///        "userName": "user@mail.com",
+    ///        "detail": {
+    ///           "id": 1,
+    ///           "groupIds": { 1, 2},
+    ///           "serviceRoleGroupIds": { 1, 2 },
+    ///           "identityProviderId": 1,
+    ///        }
+    ///     }
+    ///
+    /// </remarks>
+    [HttpPut("v1")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("USER")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(UserEditResponseInfo), 200)]
+    public async Task<UserEditResponseInfo> UpdateUserV1([FromQuery(Name = "user-id")] string userId, UserProfileServiceRoleGroupEditRequestInfo userProfileServiceRoleGroupEditRequestInfo)
+    {
+      return await _userProfileService.UpdateUserV1Async(userId, userProfileServiceRoleGroupEditRequestInfo);
+    }
+
+    #endregion  
   }
 }
