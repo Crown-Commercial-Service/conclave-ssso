@@ -1803,6 +1803,11 @@ namespace CcsSso.Core.Service.External
     #region User Profile Version 1
     public async Task<UserProfileServiceRoleGroupResponseInfo> GetUserV1Async(string userName, bool isDelegated = false, bool isSearchUser = false, string delegatedOrgId = "")
     {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
       var userProfileServiceRoleGroupResponseInfo = new UserProfileServiceRoleGroupResponseInfo();
 
       var userProfileResponseInfo = await this.GetUserAsync(userName, isDelegated, isSearchUser, delegatedOrgId);
@@ -1835,6 +1840,11 @@ namespace CcsSso.Core.Service.External
 
     public async Task<UserEditResponseInfo> CreateUserV1Async(UserProfileServiceRoleGroupEditRequestInfo userProfileServiceRoleGroupEditRequestInfo, bool isNewOrgAdmin = false)
     {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
       var serviceRoleGroupIds = userProfileServiceRoleGroupEditRequestInfo?.Detail?.ServiceRoleGroupIds;
       var organisationId = userProfileServiceRoleGroupEditRequestInfo?.OrganisationId;
 
@@ -1852,6 +1862,11 @@ namespace CcsSso.Core.Service.External
 
     public async Task<UserEditResponseInfo> UpdateUserV1Async(string userName, UserProfileServiceRoleGroupEditRequestInfo userProfileServiceRoleGroupEditRequestInfo)
     {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
       var serviceRoleGroupIds = userProfileServiceRoleGroupEditRequestInfo?.Detail?.ServiceRoleGroupIds;
       var organisationId = userProfileServiceRoleGroupEditRequestInfo?.OrganisationId;
 

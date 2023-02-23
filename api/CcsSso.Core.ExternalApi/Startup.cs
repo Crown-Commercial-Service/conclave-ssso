@@ -156,6 +156,10 @@ namespace CcsSso.ExternalApi
             UserRoleApprovedEmailTemplateId = Configuration["UserRoleApproval:UserRoleApprovedEmailTemplateId"],
             UserRoleRejectedEmailTemplateId = Configuration["UserRoleApproval:UserRoleRejectedEmailTemplateId"]
           },
+          ServiceRoleGroupSettings = new ServiceRoleGroupSettings()
+          {
+            Enable = Convert.ToBoolean(Configuration["ServiceRoleGroupSettings:Enable"])
+          },
         };
         return appConfigInfo;
       });
