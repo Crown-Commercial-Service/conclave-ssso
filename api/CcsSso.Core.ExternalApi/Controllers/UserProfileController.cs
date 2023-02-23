@@ -569,7 +569,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_USER_ID
+    /// Error Codes: INVALID_USER_ID, INVALID_SERVICE
     /// </response>
     /// <remarks>
     /// Sample request:
@@ -596,7 +596,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE,ERROR_PASSWORD_TOO_WEAK INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, INVALID_USER_DETAIL
+    /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE,ERROR_PASSWORD_TOO_WEAK INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, INVALID_USER_DETAIL, INVALID_SERVICE
     /// </response>
     /// <remarks>
     /// Sample request:
@@ -636,7 +636,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <response  code="403">Forbidden</response>
     /// <response  code="404">Not found</response>
     /// <response  code="400">Bad request.
-    /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE, INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, ERROR_CANNOT_REMOVE_ADMIN_ROLE_OR_GROUP_OF_LAST_ADMIN, INVALID_USER_DETAIL
+    /// Error Codes: INVALID_USER_ID, INVALID_FIRST_NAME, INVALID_LAST_NAME, INVALID_USER_GROUP_ROLE, INVALID_USER_GROUP, INVALID_ROLE, INVALID_IDENTITY_PROVIDER, ERROR_CANNOT_REMOVE_ADMIN_ROLE_OR_GROUP_OF_LAST_ADMIN, INVALID_USER_DETAIL, INVALID_SERVICE
     /// </response>
     /// <remarks>
     /// Sample request:
