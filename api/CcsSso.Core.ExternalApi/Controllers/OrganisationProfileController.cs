@@ -1,4 +1,5 @@
 using CcsSso.Core.DbModel.Constants;
+using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.ExternalApi.Authorisation;
@@ -1339,6 +1340,104 @@ namespace CcsSso.ExternalApi.Controllers
     {
       // bool isDomainValid = true;
       return await _organisationService.AutoValidateOrganisationRoleFromJob(ciiOrganisationId, autoValidationOneTimeJobDetails);
+    }
+
+    #endregion
+
+    #region ServiceRoleGroup
+
+    /// <summary>
+    /// Get organisation service role groups
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/servicerolegroups
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/servicerolegroups")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS", "ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    [ProducesResponseType(typeof(List<ServiceRoleGroup>), 200)]
+    public async Task<List<ServiceRoleGroup>> GetOrganisationServiceRoleGroups(string organisationId)
+    {
+      return await _organisationService.GetOrganisationServiceRoleGroupsAsync(organisationId);
+    }
+
+    /// <summary>
+    /// Update organisation eligible service role groups
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes:  INVALID_DETAILS, INVALID_SERVICE
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/servicerolegroups
+    ///     {
+    ///       isBuyer: true,
+    ///       serviceRoleGroupsToAdd: [
+    ///         2
+    ///       ],
+    ///       serviceRoleGroupsToDelete: [
+    ///         1
+    ///       ]
+    ///      }
+    ///     
+    /// </remarks>
+    [HttpPut("{organisationId}/servicerolegroups")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    public async Task UpdateEligableServiceRoleGroups(string organisationId, OrganisationServiceRoleGroupUpdate model)
+    {
+      await _organisationService.UpdateOrganisationEligibleServiceRoleGroupsAsync(organisationId, model.IsBuyer, model.ServiceRoleGroupsToAdd, model.ServiceRoleGroupsToDelete);
+    }
+
+    /// <summary>
+    /// Update organisation eligible service role groups
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes:  INVALID_DETAILS, INVALID_SERVICE
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     PUT /organisations/1/servicerolegroups/switch
+    ///     {
+    ///       orgType: 1,
+    ///       serviceRoleGroupsToAdd: [
+    ///         2
+    ///       ],
+    ///       serviceRoleGroupsToDelete: [
+    ///         1
+    ///       ],
+    ///       serviceRoleGroupsToAutoValid: [
+    ///         3
+    ///       ],
+    ///       companyHouseId: "123" 
+    ///      }
+    ///     
+    /// </remarks>
+    [HttpPut("{organisationId}/servicerolegroups/switch")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
+    [SwaggerOperation(Tags = new[] { "AutoValidation" })]
+    [ProducesResponseType(typeof(string), 200)]
+    public async Task AutoValidateOrgTypeServiceRoleGroupsSwitch(string organisationId, OrgAutoValidServiceRoleGroupUpdate orgUpdateDetails)
+    {
+      await _organisationService.UpdateOrgAutoValidServiceRoleGroupsAsync(organisationId, orgUpdateDetails.OrgType, orgUpdateDetails.ServiceRoleGroupsToAdd, orgUpdateDetails.ServiceRoleGroupsToDelete, orgUpdateDetails.ServiceRoleGroupsToAutoValid, orgUpdateDetails.CompanyHouseId);
     }
 
     #endregion

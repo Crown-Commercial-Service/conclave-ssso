@@ -1,4 +1,5 @@
 using CcsSso.Core.DbModel.Entity;
+using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Service.External;
 using CcsSso.Core.Tests.Infrastructure;
@@ -61,7 +62,9 @@ namespace CcsSso.Core.Tests.External
     {
       var memCacheService = GetLocalCache();
       ApplicationConfigurationInfo applicationConfigurationInfo = new();
-      var service = new ConfigurationDetailService(dataContext, memCacheService, applicationConfigurationInfo);
+      var mockRolesToServiceRoleGroupMapperService = new Mock<IServiceRoleGroupMapperService>();
+
+      var service = new ConfigurationDetailService(dataContext, memCacheService, applicationConfigurationInfo, mockRolesToServiceRoleGroupMapperService.Object);
       return service;
     }
 
