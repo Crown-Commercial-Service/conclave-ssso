@@ -666,6 +666,27 @@ namespace CcsSso.ExternalApi.Controllers
       return await _userProfileService.UpdateUserV1Async(userId, userProfileServiceRoleGroupEditRequestInfo);
     }
 
+
+    [HttpPost("v1/delegate-user")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("DELEGATION")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(bool), 200)]
+    public async Task CreateDelegatedUserV1(DelegatedUserProfileServiceRoleGroupRequestInfo userProfileRequestInfo)
+    {
+      await _userProfileService.CreateDelegatedUserV1Async(userProfileRequestInfo);
+    }
+
+    [HttpPut("v1/delegate-user")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("DELEGATION")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(bool), 200)]
+    public async Task UpdateDelegatedUserV1(DelegatedUserProfileServiceRoleGroupRequestInfo userProfileServiceRoleGroupRequestInfo)
+    {
+      await _userProfileService.UpdateDelegatedUserV1Async(userProfileServiceRoleGroupRequestInfo);
+    }
+
     #endregion  
   }
 }
