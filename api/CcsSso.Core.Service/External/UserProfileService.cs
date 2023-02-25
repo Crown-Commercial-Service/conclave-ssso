@@ -464,6 +464,63 @@ namespace CcsSso.Core.Service.External
       throw new ResourceNotFoundException();
     }
     // #Delegated
+
+    public async Task<UserListWithServiceGroupRoleResponse> GetUsersV1Async(string organisationId, ResultSetCriteria resultSetCriteria, UserFilterCriteria userFilterCriteria)
+    {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var userListResponse = await GetUsersAsync(organisationId, resultSetCriteria, userFilterCriteria);
+
+
+      List<UserListWithServiceRoleGroupInfo> userlist = new List<UserListWithServiceRoleGroupInfo>();
+
+      foreach (var user in userListResponse.UserList)
+      {
+        var roleIds = user.RolePermissionInfo.Select(x => x.RoleId).ToList();
+        var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(roleIds);
+
+        List<ServiceRoleGroupInfo> serviceRoleGroupInfo = new List<ServiceRoleGroupInfo>();
+
+        foreach (var serviceRoleGroup in serviceRoleGroups)
+        {
+          serviceRoleGroupInfo.Add(new ServiceRoleGroupInfo()
+          {
+            Id = serviceRoleGroup.Id,
+            Name = serviceRoleGroup.Name,
+            Key = serviceRoleGroup.Key,
+          });
+        }
+
+        userlist.Add(new UserListWithServiceRoleGroupInfo
+        {
+          RemainingDays = user.RemainingDays,
+          OriginOrganisation = user.OriginOrganisation,
+          UserName = user.UserName,
+          DelegationAccepted = user.DelegationAccepted,
+          EndDate = user.EndDate,
+          IsAdmin = user.IsAdmin,
+          Name = user.Name,
+          StartDate = user.StartDate,
+          ServicePermissionInfo = serviceRoleGroupInfo
+
+        });
+
+      }
+
+      return new UserListWithServiceGroupRoleResponse
+      {
+        CurrentPage = userListResponse.CurrentPage,
+        PageCount = userListResponse.PageCount,
+        RowCount = userListResponse.RowCount,
+        OrganisationId = userListResponse.OrganisationId,
+        UserList = userlist
+      };
+
+
+    }
     public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, UserFilterCriteria userFilterCriteria)
     {
 
@@ -1378,6 +1435,30 @@ namespace CcsSso.Core.Service.External
     #region Delegated user
 
     /// Insert delegated user (Other org user) to represent org 
+
+    public async Task CreateDelegatedUserV1Async(DelegatedUserProfileServiceRoleGroupRequestInfo userProfileRoleGroupRequestInfo)
+    {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+      var userProfileRequestInfo = await ConvertServiceRoleGroupTouserProfileRequest(userProfileRoleGroupRequestInfo);
+
+      await CreateDelegatedUserAsync(userProfileRequestInfo);
+    }
+
+    public async Task UpdateDelegatedUserV1Async(DelegatedUserProfileServiceRoleGroupRequestInfo userProfileRoleGroupRequestInfo)
+    {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+      var userProfileRequestInfo = await ConvertServiceRoleGroupTouserProfileRequest(userProfileRoleGroupRequestInfo);
+
+      await UpdateDelegatedUserAsync(userProfileRequestInfo);
+    }
+
+
     public async Task CreateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo)
     {
       var userName = userProfileRequestInfo.UserName.ToLower();
@@ -1761,7 +1842,7 @@ namespace CcsSso.Core.Service.External
     }
     #endregion
 
-    private async Task CreatePendingRoleRequest(List<int> userAccessRoleRequiredApproval,int userId, string userName, string ciiOrganisationId)
+    private async Task CreatePendingRoleRequest(List<int> userAccessRoleRequiredApproval, int userId, string userName, string ciiOrganisationId)
     {
       // remove roles that were pending for approval but now no longer required
       var userAccessRoleRequiredToRemoveFromApproval = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == userId
@@ -1965,6 +2046,45 @@ namespace CcsSso.Core.Service.External
           DelegatedOrgs = userProfileResponseInfo.Detail.DelegatedOrgs
         }
       };
+    }
+    private async Task<DelegatedUserProfileRequestInfo> ConvertServiceRoleGroupTouserProfileRequest(DelegatedUserProfileServiceRoleGroupRequestInfo delegatedUserRoleGroupRequestInfo)
+    {
+      var roleIds = new List<int>();
+
+      var serviceRoleGroupIds = delegatedUserRoleGroupRequestInfo.Detail.ServiceRoleGroupIds;
+
+      if (serviceRoleGroupIds != null && serviceRoleGroupIds.Count > 0)
+      {
+        var serviceRoleGroups = await _dataContext.CcsServiceRoleGroup
+        .Where(x => !x.IsDeleted && serviceRoleGroupIds.Contains(x.Id))
+        .ToListAsync();
+
+        if (serviceRoleGroups.Count != serviceRoleGroupIds.Count)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+
+        List<OrganisationEligibleRole> organisationEligibleRoles = await _serviceRoleGroupMapperService.ServiceRoleGroupsToOrgRolesAsync(serviceRoleGroupIds, delegatedUserRoleGroupRequestInfo.Detail.DelegatedOrgId);
+
+        roleIds = organisationEligibleRoles.Select(x => x.Id).ToList();
+      }
+      else
+      {
+        roleIds = new List<int>();
+      }
+
+      return new DelegatedUserProfileRequestInfo
+      {
+        UserName = delegatedUserRoleGroupRequestInfo.UserName,
+        Detail = new DelegatedUserRequestDetail
+        {
+          DelegatedOrgId = delegatedUserRoleGroupRequestInfo.Detail.DelegatedOrgId,
+          EndDate = delegatedUserRoleGroupRequestInfo.Detail.EndDate,
+          StartDate = delegatedUserRoleGroupRequestInfo.Detail.StartDate,
+          RoleIds = roleIds
+        }
+      };
+
     }
     #endregion
   }

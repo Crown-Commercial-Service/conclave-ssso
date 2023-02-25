@@ -71,7 +71,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class UserResponseDetail : UserResponseMain
   {
-    public List<RolePermissionInfo> RolePermissionInfo { get; set; }    
+    public List<RolePermissionInfo> RolePermissionInfo { get; set; }
   }
 
   public class UserServiceRoleGroupResponseDetail : UserResponseMain
@@ -145,7 +145,7 @@ namespace CcsSso.Core.Domain.Dtos.External
     public UserServiceRoleGroupResponseDetail Detail { get; set; }
   }
 
-  public class UserListInfo
+  public class UserList
   {
     public string Name { get; set; }
 
@@ -162,9 +162,18 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public bool? DelegationAccepted { get; set; }
 
-    public List<RolePermissionInfo> RolePermissionInfo { get; set; }
-
     public bool IsAdmin { get; set; } = false;
+
+  }
+
+  public class UserListInfo:UserList
+  {
+    public List<RolePermissionInfo> RolePermissionInfo { get; set; }
+  }
+
+  public class UserListWithServiceRoleGroupInfo:UserList
+  {
+    public List<ServiceRoleGroupInfo> ServicePermissionInfo { get; set; }
   }
 
   public class AdminUserListInfo
@@ -183,6 +192,12 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string OrganisationId { get; set; }
 
     public List<UserListInfo> UserList { get; set; }
+  }
+
+  public class UserListWithServiceGroupRoleResponse : PaginationInfo
+  {
+    public string OrganisationId { get; set; }
+    public List<UserListWithServiceRoleGroupInfo> UserList { get; set; }
   }
 
   public class AdminUserListResponse : PaginationInfo
@@ -219,6 +234,14 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string UserName { get; set; }
     public DelegatedUserRequestDetail Detail { get; set; }
   }
+
+  public class DelegatedUserProfileServiceRoleGroupRequestInfo
+  {
+    public string UserName { get; set; }
+    public DelegatedUserServiceRoleGroupRequestDetail Detail { get; set; }
+  }
+
+
   // #Delegated
   public class DelegatedUserRequestDetail
   {
@@ -230,13 +253,24 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public DateTime EndDate { get; set; }
   }
+  public class DelegatedUserServiceRoleGroupRequestDetail
+  {
+    public string DelegatedOrgId { get; set; }
+
+    public List<int> ServiceRoleGroupIds { get; set; }
+
+    public DateTime StartDate { get; set; }
+
+    public DateTime EndDate { get; set; }
+  }
+
 
   public class UserAccessRolePendingDetails
   {
     public int Status { get; set; }
-   
+
     public string RoleName { get; set; }
-    
+
     public string RoleKey { get; set; }
   }
 
