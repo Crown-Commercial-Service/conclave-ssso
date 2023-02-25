@@ -64,8 +64,4 @@ SELECT AddGroupRoleMapping('RMI_USER','RMI_USER','RMI Tile');
 SELECT AddGroupRoleMapping('RMI_USER','RMI_USER','RMI User');
 
 
-SELECT AddGroupRoleMapping('CAS_USER_GROUP','CAS_USER','Contract Award Service (CAS) - add service');
-
-
-
 DROP FUNCTION AddGroupRoleMapping;

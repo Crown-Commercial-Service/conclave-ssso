@@ -1440,6 +1440,24 @@ namespace CcsSso.ExternalApi.Controllers
       await _organisationService.UpdateOrgAutoValidServiceRoleGroupsAsync(organisationId, orgUpdateDetails.OrgType, orgUpdateDetails.ServiceRoleGroupsToAdd, orgUpdateDetails.ServiceRoleGroupsToDelete, orgUpdateDetails.ServiceRoleGroupsToAutoValid, orgUpdateDetails.CompanyHouseId);
     }
 
+
+    [HttpGet("{organisationId}/users/v1")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation User" })]
+    [ProducesResponseType(typeof(UserListResponse), 200)]
+    public async Task<UserListWithServiceGroupRoleResponse> GetUsersV1(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria, [FromQuery] UserFilterCriteria userFilterCriteria)
+    {
+      resultSetCriteria ??= new ResultSetCriteria
+      {
+        CurrentPage = 1,
+        PageSize = 10
+      };
+      resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
+      resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
+      return await _userProfileService.GetUsersV1Async(organisationId, resultSetCriteria, userFilterCriteria);
+    }
+
     #endregion
   }
 }
