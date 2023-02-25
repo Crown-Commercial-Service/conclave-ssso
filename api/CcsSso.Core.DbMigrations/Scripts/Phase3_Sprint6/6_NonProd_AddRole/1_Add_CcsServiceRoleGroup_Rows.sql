@@ -89,51 +89,19 @@ IF NOT EXISTS (SELECT "Id" FROM "CcsServiceRoleGroup" WHERE "Key" = 'DATA_MIGRAT
 END IF;
 
 
-IF NOT EXISTS (SELECT "Id" FROM "CcsServiceRoleGroup" WHERE "Key" = 'DigiTS_USER') THEN
+IF NOT EXISTS (SELECT "Id" FROM "CcsServiceRoleGroup" WHERE "Key" = 'DigiTS_GROUP') THEN
 	INSERT INTO public."CcsServiceRoleGroup"(
 		"Key", "Name", "Description", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility","DisplayOrder", "MfaEnabled", 
 		"DefaultEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc","IsDeleted")
-		VALUES ('DigiTS_USER','DigiTS', 'DigiTS', 2, 1, 1, 20,false, null,0,0,0,now(),now(),false);
+		VALUES ('DigiTS_GROUP','DigiTS', 'DigiTS', 2, 1, 1, 20,false, null,0,0,0,now(),now(),false);
 END IF;
 
-IF NOT EXISTS (SELECT "Id" FROM "CcsServiceRoleGroup" WHERE "Key" = 'DIGITS_DEPARTMENT_ADMIN') THEN
+IF NOT EXISTS (SELECT "Id" FROM "CcsServiceRoleGroup" WHERE "Key" = 'RMI') THEN
 	INSERT INTO public."CcsServiceRoleGroup"(
 		"Key", "Name", "Description", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility","DisplayOrder", "MfaEnabled", 
 		"DefaultEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc","IsDeleted")
-		VALUES ('DIGITS_DEPARTMENT_ADMIN','DigiTS', 'DigiTS', 2, 1, 1, 21,true, null,0,0,0,now(),now(),false);
+		VALUES ('RMI','RMI', 'RMI', 2, 1, 2, 21,true, null,0,0,0,now(),now(),false);
 END IF;
-IF NOT EXISTS (SELECT "Id" FROM "CcsServiceRoleGroup" WHERE "Key" = 'DIGITS_CONTRACT_OWNER') THEN
-	INSERT INTO public."CcsServiceRoleGroup"(
-		"Key", "Name", "Description", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility","DisplayOrder", "MfaEnabled", 
-		"DefaultEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc","IsDeleted")
-		VALUES ('DIGITS_CONTRACT_OWNER','DigiTS', 'DigiTS', 2, 1, 1, 22,false, null,0,0,0,now(),now(),false);
-END IF;
-IF NOT EXISTS (SELECT "Id" FROM "CcsServiceRoleGroup" WHERE "Key" = 'DIGITS_MI') THEN
-	INSERT INTO public."CcsServiceRoleGroup"(
-		"Key", "Name", "Description", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility","DisplayOrder", "MfaEnabled", 
-		"DefaultEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc","IsDeleted")
-		VALUES ('DIGITS_MI','DigiTS', 'DigiTS', 2, 1, 1, 23,true, null,0,0,0,now(),now(),false);
-END IF;
-IF NOT EXISTS (SELECT "Id" FROM "CcsServiceRoleGroup" WHERE "Key" = 'USER') THEN
-	INSERT INTO public."CcsServiceRoleGroup"(
-		"Key", "Name", "Description", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility","DisplayOrder", "MfaEnabled", 
-		"DefaultEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc","IsDeleted")
-		VALUES ('USER','DigiTS', 'DigiTS', 2, 1, 1, 24,false, null,0,0,0,now(),now(),false);
-END IF;
-IF NOT EXISTS (SELECT "Id" FROM "CcsServiceRoleGroup" WHERE "Key" = 'SERVICE_ADMIN') THEN
-	INSERT INTO public."CcsServiceRoleGroup"(
-		"Key", "Name", "Description", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility","DisplayOrder", "MfaEnabled", 
-		"DefaultEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc","IsDeleted")
-		VALUES ('SERVICE_ADMIN','DigiTS', 'DigiTS', 2, 1, 1, 25,false, null,0,0,0,now(),now(),false);
-END IF;
-IF NOT EXISTS (SELECT "Id" FROM "CcsServiceRoleGroup" WHERE "Key" = 'PROVIDER_APP') THEN
-	INSERT INTO public."CcsServiceRoleGroup"(
-		"Key", "Name", "Description", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility","DisplayOrder", "MfaEnabled", 
-		"DefaultEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc","IsDeleted")
-		VALUES ('PROVIDER_APP','DigiTS', 'DigiTS', 2, 1, 1, 26,false, null,0,0,0,now(),now(),false);
-END IF;
-
-
 
 	
 RETURN 1;

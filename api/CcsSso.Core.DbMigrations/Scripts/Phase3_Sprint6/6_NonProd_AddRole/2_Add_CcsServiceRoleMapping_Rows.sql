@@ -1,4 +1,5 @@
 
+
 CREATE OR REPLACE FUNCTION AddGroupRoleMapping(
 		CcsServiceRoleGroupKey varchar(200),
 		CcsAccessRoleNameKey varchar(200),
@@ -18,11 +19,14 @@ if (roleId is null or roleGroupId is null) then
 	return 1;
 end if; 
 
-	raise notice 'Adding group role mapping';
+	
 
 	  IF NOT EXISTS (SELECT "Id" FROM public."CcsServiceRoleMapping" WHERE "CcsServiceRoleGroupId" = roleGroupId and "CcsAccessRoleId" = roleId LIMIT 1) THEN
+		  raise notice 'Adding group role mapping %',CcsAccessRoleNameKey;
 			INSERT INTO public."CcsServiceRoleMapping"("CcsServiceRoleGroupId", "CcsAccessRoleId")
 			VALUES (roleGroupId,roleId );
+		ELSE
+			raise notice 'Already Mapping exists role name key %',CcsAccessRoleNameKey;
    	END IF;
 	
 
@@ -52,16 +56,16 @@ SELECT AddGroupRoleMapping('DATA_MIGRATION','DATA_MIGRATION','Access Data Migrat
 SELECT AddGroupRoleMapping('DATA_MIGRATION','DATA_MIGRATION','Data Migration');
 
 
-SELECT AddGroupRoleMapping('DigiTS_USER_GROUP','DigiTS_USER','Access DigiTS');
-SELECT AddGroupRoleMapping('DigiTS_USER_GROUP','DIGITS_DEPARTMENT_ADMIN','Department Admin');
-SELECT AddGroupRoleMapping('DigiTS_USER_GROUP','DIGITS_CONTRACT_OWNER','Contract Owner');
-SELECT AddGroupRoleMapping('DigiTS_USER_GROUP','DIGITS_MI','MI');
-SELECT AddGroupRoleMapping('DigiTS_USER_GROUP','USER','User');
-SELECT AddGroupRoleMapping('DigiTS_USER_GROUP','SERVICE_ADMIN','Service Admin');
-SELECT AddGroupRoleMapping('DigiTS_USER_GROUP','PROVIDER_APP','API Access Role');
+SELECT AddGroupRoleMapping('DigiTS_GROUP','DigiTS_USER','Access DigiTS');
+SELECT AddGroupRoleMapping('DigiTS_GROUP','DIGITS_DEPARTMENT_ADMIN','Department Admin');
+SELECT AddGroupRoleMapping('DigiTS_GROUP','DIGITS_CONTRACT_OWNER','Contract Owner');
+SELECT AddGroupRoleMapping('DigiTS_GROUP','DIGITS_MI','MI');
+SELECT AddGroupRoleMapping('DigiTS_GROUP','USER','User');
+SELECT AddGroupRoleMapping('DigiTS_GROUP','SERVICE_ADMIN','Service Admin');
+SELECT AddGroupRoleMapping('DigiTS_GROUP','PROVIDER_APP','API Access Role');
 
-SELECT AddGroupRoleMapping('RMI_USER','RMI_USER','RMI Tile');
-SELECT AddGroupRoleMapping('RMI_USER','RMI_USER','RMI User');
+SELECT AddGroupRoleMapping('RMI','RMI_USER','RMI Tile');
+SELECT AddGroupRoleMapping('RMI','RMI_USER','RMI User');
 
 
 DROP FUNCTION AddGroupRoleMapping;
