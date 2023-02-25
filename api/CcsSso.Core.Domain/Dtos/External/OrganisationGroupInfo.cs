@@ -15,6 +15,13 @@ namespace CcsSso.Core.Domain.Dtos.External
     public OrganisationGroupUserPatchInfo UserInfo { get; set; }
   }
 
+  public class OrganisationServiceRoleGroupRequestInfo : OrganisationGroupNameInfo
+  {
+    public OrganisationServiceRoleGroupPatchInfo ServiceRoleGroupInfo { get; set; }
+
+    public OrganisationGroupUserPatchInfo UserInfo { get; set; }
+  }
+
   public class OrganisationGroupInfo : OrganisationGroupNameInfo
   {
     public int GroupId { get; set; }
@@ -33,6 +40,17 @@ namespace CcsSso.Core.Domain.Dtos.External
     public List<GroupUser> Users { get; set; }
   }
 
+  public class OrganisationServiceRoleGroupResponseInfo : OrganisationGroupInfo
+  {
+    public string OrganisationId { get; set; }
+
+    public bool MfaEnabled { get; set; }
+
+    public List<GroupServiceRoleGroup> ServiceRoleGroups { get; set; }
+
+    public List<GroupUser> Users { get; set; }
+  }
+
   public class OrganisationGroupList
   {
     public string OrganisationId { get; set; }
@@ -41,6 +59,13 @@ namespace CcsSso.Core.Domain.Dtos.External
   }
 
   public class GroupRole
+  {
+    public int Id { get; set; }
+
+    public string Name { get; set; }
+  }
+
+  public class GroupServiceRoleGroup
   {
     public int Id { get; set; }
 
@@ -61,6 +86,13 @@ namespace CcsSso.Core.Domain.Dtos.External
     public List<int> AddedRoleIds { get; set; }
 
     public List<int> RemovedRoleIds { get; set; }
+  }
+
+  public class OrganisationServiceRoleGroupPatchInfo
+  {
+    public List<int> AddedServiceRoleGroupIds { get; set; }
+
+    public List<int> RemovedServiceRoleGroupIds { get; set; }
   }
 
   public class OrganisationGroupUserPatchInfo
