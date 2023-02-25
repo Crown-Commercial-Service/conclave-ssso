@@ -39,6 +39,7 @@ namespace CcsSso.Core.Service.External
     private readonly ILookUpService _lookUpService;
     private readonly IWrapperApiService _wrapperApiService;
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
+    private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
 
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
@@ -46,7 +47,7 @@ namespace CcsSso.Core.Service.External
       IAuditLoginService auditLoginService, IRemoteCacheService remoteCacheService,
       ICacheInvalidateService cacheInvalidateService, ICryptographyService cryptographyService,
       ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService
-      ,IUserProfileRoleApprovalService userProfileRoleApprovalService)
+      , IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService serviceRoleGroupMapperService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -63,6 +64,7 @@ namespace CcsSso.Core.Service.External
       _lookUpService = lookUpService;
       _wrapperApiService = wrapperApiService;
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
+      _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
     }
 
     public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo, bool isNewOrgAdmin = false)
@@ -296,7 +298,7 @@ namespace CcsSso.Core.Service.External
           var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
           await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink), ccsMsg);
         }
-      }      
+      }
 
       // Log
       await _auditLoginService.CreateLogAsync(AuditLogEvent.UserCreate, AuditLogApplication.ManageUserAccount, $"UserId:{party.User.Id}, UserIdpId:{string.Join(",", party.User.UserIdentityProviders.Select(uidp => uidp.OrganisationEligibleIdentityProviderId))}," + " " +
@@ -462,6 +464,63 @@ namespace CcsSso.Core.Service.External
       throw new ResourceNotFoundException();
     }
     // #Delegated
+
+    public async Task<UserListWithServiceGroupRoleResponse> GetUsersV1Async(string organisationId, ResultSetCriteria resultSetCriteria, UserFilterCriteria userFilterCriteria)
+    {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var userListResponse = await GetUsersAsync(organisationId, resultSetCriteria, userFilterCriteria);
+
+
+      List<UserListWithServiceRoleGroupInfo> userlist = new List<UserListWithServiceRoleGroupInfo>();
+
+      foreach (var user in userListResponse.UserList)
+      {
+        var roleIds = user.RolePermissionInfo.Select(x => x.RoleId).ToList();
+        var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(roleIds);
+
+        List<ServiceRoleGroupInfo> serviceRoleGroupInfo = new List<ServiceRoleGroupInfo>();
+
+        foreach (var serviceRoleGroup in serviceRoleGroups)
+        {
+          serviceRoleGroupInfo.Add(new ServiceRoleGroupInfo()
+          {
+            Id = serviceRoleGroup.Id,
+            Name = serviceRoleGroup.Name,
+            Key = serviceRoleGroup.Key,
+          });
+        }
+
+        userlist.Add(new UserListWithServiceRoleGroupInfo
+        {
+          RemainingDays = user.RemainingDays,
+          OriginOrganisation = user.OriginOrganisation,
+          UserName = user.UserName,
+          DelegationAccepted = user.DelegationAccepted,
+          EndDate = user.EndDate,
+          IsAdmin = user.IsAdmin,
+          Name = user.Name,
+          StartDate = user.StartDate,
+          ServicePermissionInfo = serviceRoleGroupInfo
+
+        });
+
+      }
+
+      return new UserListWithServiceGroupRoleResponse
+      {
+        CurrentPage = userListResponse.CurrentPage,
+        PageCount = userListResponse.PageCount,
+        RowCount = userListResponse.RowCount,
+        OrganisationId = userListResponse.OrganisationId,
+        UserList = userlist
+      };
+
+
+    }
     public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, UserFilterCriteria userFilterCriteria)
     {
 
@@ -938,7 +997,7 @@ namespace CcsSso.Core.Service.External
           var ccsAccessRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.Id == roleId)?.CcsAccessRoleId;
           var isRoleRequiredApproval = ccsAccessRoleId != null && ccsAccessRoleRequiredApproval != null && ccsAccessRoleRequiredApproval.Any(x => x.Id == ccsAccessRoleId);
           var isUserDomainValid = userName?.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower();
-          
+
           if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && isRoleRequiredApproval && !previousRoles.Any(x => x == roleId))
           {
             userAccessRoleRequiredApproval.Add(roleId);
@@ -1376,6 +1435,30 @@ namespace CcsSso.Core.Service.External
     #region Delegated user
 
     /// Insert delegated user (Other org user) to represent org 
+
+    public async Task CreateDelegatedUserV1Async(DelegatedUserProfileServiceRoleGroupRequestInfo userProfileRoleGroupRequestInfo)
+    {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+      var userProfileRequestInfo = await ConvertServiceRoleGroupTouserProfileRequest(userProfileRoleGroupRequestInfo);
+
+      await CreateDelegatedUserAsync(userProfileRequestInfo);
+    }
+
+    public async Task UpdateDelegatedUserV1Async(DelegatedUserProfileServiceRoleGroupRequestInfo userProfileRoleGroupRequestInfo)
+    {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+      var userProfileRequestInfo = await ConvertServiceRoleGroupTouserProfileRequest(userProfileRoleGroupRequestInfo);
+
+      await UpdateDelegatedUserAsync(userProfileRequestInfo);
+    }
+
+
     public async Task CreateDelegatedUserAsync(DelegatedUserProfileRequestInfo userProfileRequestInfo)
     {
       var userName = userProfileRequestInfo.UserName.ToLower();
@@ -1759,7 +1842,7 @@ namespace CcsSso.Core.Service.External
     }
     #endregion
 
-    private async Task CreatePendingRoleRequest(List<int> userAccessRoleRequiredApproval,int userId, string userName, string ciiOrganisationId) 
+    private async Task CreatePendingRoleRequest(List<int> userAccessRoleRequiredApproval, int userId, string userName, string ciiOrganisationId)
     {
       // remove roles that were pending for approval but now no longer required
       var userAccessRoleRequiredToRemoveFromApproval = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == userId
@@ -1770,7 +1853,7 @@ namespace CcsSso.Core.Service.External
       && userAccessRoleRequiredApproval.Contains(x.OrganisationEligibleRoleId) && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
 
       // ignore roles which are still pending for approval
-      foreach (var existingPendingRequestToIgnore in existingPendingRequestRole) 
+      foreach (var existingPendingRequestToIgnore in existingPendingRequestRole)
       {
         userAccessRoleRequiredApproval.Remove(existingPendingRequestToIgnore.OrganisationEligibleRoleId);
       }
@@ -1797,5 +1880,212 @@ namespace CcsSso.Core.Service.External
       }
 
     }
+
+    #region User Profile Version 1
+    public async Task<UserProfileServiceRoleGroupResponseInfo> GetUserV1Async(string userName, bool isDelegated = false, bool isSearchUser = false, string delegatedOrgId = "")
+    {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var userProfileServiceRoleGroupResponseInfo = new UserProfileServiceRoleGroupResponseInfo();
+
+      var userProfileResponseInfo = await this.GetUserAsync(userName, isDelegated, isSearchUser, delegatedOrgId);
+
+      if (userProfileResponseInfo != null)
+      {
+        userProfileServiceRoleGroupResponseInfo = ConvertUserRoleToServiceRoleGroupResponse(userProfileResponseInfo);
+
+        List<ServiceRoleGroupInfo> serviceRoleGroupInfo = new List<ServiceRoleGroupInfo>();
+
+        var roleIds = userProfileResponseInfo.Detail.RolePermissionInfo.Select(x => x.RoleId).ToList();
+
+        var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(roleIds);
+
+        foreach (var serviceRoleGroup in serviceRoleGroups)
+        {
+          serviceRoleGroupInfo.Add(new ServiceRoleGroupInfo()
+          {
+            Id = serviceRoleGroup.Id,
+            Name = serviceRoleGroup.Name,
+            Key = serviceRoleGroup.Key,
+          });
+        }
+
+        userProfileServiceRoleGroupResponseInfo.Detail.ServiceRoleGroupInfo = serviceRoleGroupInfo;
+      }
+
+      return userProfileServiceRoleGroupResponseInfo;
+    }
+
+    public async Task<UserEditResponseInfo> CreateUserV1Async(UserProfileServiceRoleGroupEditRequestInfo userProfileServiceRoleGroupEditRequestInfo, bool isNewOrgAdmin = false)
+    {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var serviceRoleGroupIds = userProfileServiceRoleGroupEditRequestInfo?.Detail?.ServiceRoleGroupIds;
+      var organisationId = userProfileServiceRoleGroupEditRequestInfo?.OrganisationId;
+
+      var userName = userProfileServiceRoleGroupEditRequestInfo.UserName?.ToLower();
+      _userHelper.ValidateUserName(userName);
+
+      await ValidateorOanisationId(organisationId);
+
+      UserProfileEditRequestInfo userProfileRequestInfo = await ConvertServiceRoleGroupToUserRoleRequest(userProfileServiceRoleGroupEditRequestInfo, serviceRoleGroupIds, organisationId);
+
+      var userProfileResponseInfo = await this.CreateUserAsync(userProfileRequestInfo, isNewOrgAdmin);
+
+      return userProfileResponseInfo;
+    }
+
+    public async Task<UserEditResponseInfo> UpdateUserV1Async(string userName, UserProfileServiceRoleGroupEditRequestInfo userProfileServiceRoleGroupEditRequestInfo)
+    {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var serviceRoleGroupIds = userProfileServiceRoleGroupEditRequestInfo?.Detail?.ServiceRoleGroupIds;
+      var organisationId = userProfileServiceRoleGroupEditRequestInfo?.OrganisationId;
+
+      _userHelper.ValidateUserName(userName);
+
+      if (userName != userProfileServiceRoleGroupEditRequestInfo.UserName)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserId);
+      }
+
+      await ValidateorOanisationId(organisationId);
+
+      UserProfileEditRequestInfo userProfileRequestInfo = await ConvertServiceRoleGroupToUserRoleRequest(userProfileServiceRoleGroupEditRequestInfo, serviceRoleGroupIds, organisationId);
+
+      var userProfileResponseInfo = await this.UpdateUserAsync(userName, userProfileRequestInfo);
+
+      return userProfileResponseInfo;
+    }
+
+    private async Task ValidateorOanisationId(string organisationId)
+    {
+      var organisation = await _dataContext.Organisation
+              .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId);
+
+      if (organisation == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+    }
+
+    private async Task<UserProfileEditRequestInfo> ConvertServiceRoleGroupToUserRoleRequest(UserProfileServiceRoleGroupEditRequestInfo userProfileServiceRoleGroupEditRequestInfo, List<int> serviceRoleGroupIds, string organisationId)
+    {
+      var roleIds = new List<int>();
+
+      if (serviceRoleGroupIds != null && serviceRoleGroupIds.Count > 0)
+      {
+        var serviceRoleGroups = await _dataContext.CcsServiceRoleGroup
+        .Where(x => !x.IsDeleted && serviceRoleGroupIds.Contains(x.Id))
+        .ToListAsync();
+
+        if (serviceRoleGroups.Count != serviceRoleGroupIds.Count)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+
+        List<OrganisationEligibleRole> organisationEligibleRoles = await _serviceRoleGroupMapperService.ServiceRoleGroupsToOrgRolesAsync(serviceRoleGroupIds, organisationId);
+
+        roleIds = organisationEligibleRoles.Select(x => x.Id).ToList();
+      }
+      else
+      {
+        roleIds = new List<int>();
+      }
+
+      return new UserProfileEditRequestInfo
+      {
+        UserName = userProfileServiceRoleGroupEditRequestInfo.UserName,
+        OrganisationId = userProfileServiceRoleGroupEditRequestInfo.OrganisationId,
+        FirstName = userProfileServiceRoleGroupEditRequestInfo.FirstName,
+        LastName = userProfileServiceRoleGroupEditRequestInfo.LastName,
+        Title = userProfileServiceRoleGroupEditRequestInfo.Title,
+        MfaEnabled = userProfileServiceRoleGroupEditRequestInfo.MfaEnabled,
+        Password = userProfileServiceRoleGroupEditRequestInfo.Password,
+        AccountVerified = userProfileServiceRoleGroupEditRequestInfo.AccountVerified,
+        SendUserRegistrationEmail = userProfileServiceRoleGroupEditRequestInfo.SendUserRegistrationEmail,
+        OriginOrganisationName = userProfileServiceRoleGroupEditRequestInfo.OriginOrganisationName,
+        CompanyHouseId = userProfileServiceRoleGroupEditRequestInfo.CompanyHouseId,
+        Detail = new UserRequestDetail
+        {
+          Id = userProfileServiceRoleGroupEditRequestInfo.Detail.Id,
+          GroupIds = userProfileServiceRoleGroupEditRequestInfo.Detail.GroupIds,
+          RoleIds = roleIds,
+          IdentityProviderIds = userProfileServiceRoleGroupEditRequestInfo.Detail.IdentityProviderIds,
+        }
+      };
+    }
+
+    private static UserProfileServiceRoleGroupResponseInfo ConvertUserRoleToServiceRoleGroupResponse(UserProfileResponseInfo userProfileResponseInfo)
+    {
+      return new UserProfileServiceRoleGroupResponseInfo
+      {
+        UserName = userProfileResponseInfo.UserName,
+        OrganisationId = userProfileResponseInfo.OrganisationId,
+        OriginOrganisationName = userProfileResponseInfo.OriginOrganisationName,
+        FirstName = userProfileResponseInfo.FirstName,
+        LastName = userProfileResponseInfo.LastName,
+        MfaEnabled = userProfileResponseInfo.MfaEnabled,
+        Title = userProfileResponseInfo.Title,
+        AccountVerified = userProfileResponseInfo.AccountVerified,
+        Detail = new UserServiceRoleGroupResponseDetail
+        {
+          Id = userProfileResponseInfo.Detail.Id,
+          CanChangePassword = userProfileResponseInfo.Detail.CanChangePassword,
+          IdentityProviders = userProfileResponseInfo.Detail.IdentityProviders,
+          UserGroups = userProfileResponseInfo.Detail.UserGroups,
+          DelegatedOrgs = userProfileResponseInfo.Detail.DelegatedOrgs
+        }
+      };
+    }
+    private async Task<DelegatedUserProfileRequestInfo> ConvertServiceRoleGroupTouserProfileRequest(DelegatedUserProfileServiceRoleGroupRequestInfo delegatedUserRoleGroupRequestInfo)
+    {
+      var roleIds = new List<int>();
+
+      var serviceRoleGroupIds = delegatedUserRoleGroupRequestInfo.Detail.ServiceRoleGroupIds;
+
+      if (serviceRoleGroupIds != null && serviceRoleGroupIds.Count > 0)
+      {
+        var serviceRoleGroups = await _dataContext.CcsServiceRoleGroup
+        .Where(x => !x.IsDeleted && serviceRoleGroupIds.Contains(x.Id))
+        .ToListAsync();
+
+        if (serviceRoleGroups.Count != serviceRoleGroupIds.Count)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+
+        List<OrganisationEligibleRole> organisationEligibleRoles = await _serviceRoleGroupMapperService.ServiceRoleGroupsToOrgRolesAsync(serviceRoleGroupIds, delegatedUserRoleGroupRequestInfo.Detail.DelegatedOrgId);
+
+        roleIds = organisationEligibleRoles.Select(x => x.Id).ToList();
+      }
+      else
+      {
+        roleIds = new List<int>();
+      }
+
+      return new DelegatedUserProfileRequestInfo
+      {
+        UserName = delegatedUserRoleGroupRequestInfo.UserName,
+        Detail = new DelegatedUserRequestDetail
+        {
+          DelegatedOrgId = delegatedUserRoleGroupRequestInfo.Detail.DelegatedOrgId,
+          EndDate = delegatedUserRoleGroupRequestInfo.Detail.EndDate,
+          StartDate = delegatedUserRoleGroupRequestInfo.Detail.StartDate,
+          RoleIds = roleIds
+        }
+      };
+
+    }
+    #endregion
   }
 }
