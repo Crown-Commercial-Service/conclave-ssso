@@ -35,7 +35,11 @@ SELECT "Id" into RoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey"
 INSERT INTO public."ServiceRolePermission"(
 	"ServicePermissionId", "CcsAccessRoleId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 	VALUES (ServicePermissionId, RoleId, 0, 0, now(), now(), false);
-	
+
+-- update in case the name of the CcsAccessRoleName is different in the DB, In the excel matrix it is different 	
+--https://dev.azure.com/CCS-Conclave/CCS-Conclave_P3/_wiki/wikis/CCS-Conclave_P3.wiki/464/(CON-2287)-Simplify-CAS-and-eSourcing-roles
+
+update "CcsAccessRole" set "CcsAccessRoleName" ='SAML Client User'  where "CcsAccessRoleNameKey" ='TEST_SAML_CLIENT_USER' and  "CcsAccessRoleName" ='Test SAML Client User'
 
 	RETURN 1;
 	END;
