@@ -20,7 +20,7 @@ namespace CcsSso.Core.Service.External
       _dataContext = dataContext;
     }
 
-    public async Task<List<CcsServiceRoleGroup>> CssRolesToServiceRoleGroupsAsync(List<int> roleIds)
+    public async Task<List<CcsServiceRoleGroup>> CcsRolesToServiceRoleGroupsAsync(List<int> roleIds)
     {
       if (!roleIds.Any())
       {
@@ -56,10 +56,10 @@ namespace CcsSso.Core.Service.External
 
       roleIds = await OrgRolesToCcsRoles(roleIds);
 
-      return await CssRolesToServiceRoleGroupsAsync(roleIds);
+      return await CcsRolesToServiceRoleGroupsAsync(roleIds);
     }
 
-    public async Task<List<CcsAccessRole>> ServiceRoleGroupsToCssRolesAsync(List<int> serviceRoleGroupIds)
+    public async Task<List<CcsAccessRole>> ServiceRoleGroupsToCcsRolesAsync(List<int> serviceRoleGroupIds)
     {
       List<CcsAccessRole> ccsAccessRole = new List<CcsAccessRole>();
 
@@ -100,7 +100,7 @@ namespace CcsSso.Core.Service.External
         return new List<OrganisationEligibleRole>();
       }
 
-      var ccsAccessRoles = await ServiceRoleGroupsToCssRolesAsync(serviceRoleGroupIds);
+      var ccsAccessRoles = await ServiceRoleGroupsToCcsRolesAsync(serviceRoleGroupIds);
 
       var ccsAccessRoleIds = ccsAccessRoles.Select(x => x.Id).ToList();
 

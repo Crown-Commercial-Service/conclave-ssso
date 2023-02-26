@@ -166,6 +166,8 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public int DisplayOrder { get; set; }
 
+    public string Description { get; set; }
+
     public int[] AutoValidationRoleTypeEligibility { get; set; } = { };
   }
 

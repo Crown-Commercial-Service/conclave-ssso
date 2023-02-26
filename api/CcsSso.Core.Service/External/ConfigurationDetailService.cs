@@ -195,7 +195,7 @@ namespace CcsSso.Core.Service.External
       }
 
       var roles = await GetRolesAsync();
-      var serviceRoleGroupsEntity = await _rolesToServiceRoleGroupMapperService.CssRolesToServiceRoleGroupsAsync(roles.Select(x => x.RoleId).ToList());
+      var serviceRoleGroupsEntity = await _rolesToServiceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(roles.Select(x => x.RoleId).ToList());
       var serviceRoleGroups = serviceRoleGroupsEntity.Select(x => new ServiceRoleGroup
       {
         Id = x.Id,
@@ -205,6 +205,7 @@ namespace CcsSso.Core.Service.External
         SubscriptionTypeEligibility = x.SubscriptionTypeEligibility,
         TradeEligibility = x.TradeEligibility,
         DisplayOrder = x.DisplayOrder,
+        Description = x.Description,
         AutoValidationRoleTypeEligibility = GetServiceAutoValidationElegiblity(x, roles)
       }).ToList();
 
