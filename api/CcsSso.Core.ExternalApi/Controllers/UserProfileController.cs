@@ -687,6 +687,33 @@ namespace CcsSso.ExternalApi.Controllers
       await _userProfileService.UpdateDelegatedUserV1Async(userProfileServiceRoleGroupRequestInfo);
     }
 
+    /// <summary>
+    /// Delete a user
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_USER_ID, ERROR_CANNOT_DELETE_LAST_ADMIN_OF_ORGANISATION
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     DELETE /users/v1?user-id=user@mail.com
+    ///     
+    ///
+    /// </remarks>
+    [HttpDelete("v1")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("USER")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task DeleteUserV1([FromQuery(Name = "user-id")] string userId)
+    {
+      await _userProfileService.DeleteUserAsync(userId);
+    }
+
     #endregion  
   }
 }

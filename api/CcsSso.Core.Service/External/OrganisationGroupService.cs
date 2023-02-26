@@ -6,6 +6,7 @@ using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
+using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Helpers;
@@ -25,14 +26,20 @@ namespace CcsSso.Core.Service.External
     private readonly IAuditLoginService _auditLoginService;
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
     private readonly IWrapperCacheService _wrapperCacheService;
+    private readonly ApplicationConfigurationInfo _appConfigInfo;
+    private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
+
     public OrganisationGroupService(IDataContext dataContext, IUserProfileHelperService userProfileHelperService,
-      IAuditLoginService auditLoginService, ICcsSsoEmailService ccsSsoEmailService, IWrapperCacheService wrapperCacheService)
+      IAuditLoginService auditLoginService, ICcsSsoEmailService ccsSsoEmailService, IWrapperCacheService wrapperCacheService
+      , ApplicationConfigurationInfo appConfigInfo, IServiceRoleGroupMapperService serviceRoleGroupMapperService)
     {
       _dataContext = dataContext;
       _userProfileHelperService = userProfileHelperService;
       _auditLoginService = auditLoginService;
       _ccsSsoEmailService = ccsSsoEmailService;
       _wrapperCacheService = wrapperCacheService;
+      _appConfigInfo = appConfigInfo;
+      _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
     }
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
@@ -191,7 +198,7 @@ namespace CcsSso.Core.Service.External
       }
 
       //Add/Update User and Roles 
-      if (string.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName) && organisationGroupRequestInfo.RoleInfo ==null && organisationGroupRequestInfo.UserInfo==null)
+      if (string.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName) && organisationGroupRequestInfo.RoleInfo == null && organisationGroupRequestInfo.UserInfo == null)
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupName);
       }
@@ -404,6 +411,108 @@ namespace CcsSso.Core.Service.External
       invalidatingCacheKeys.AddRange(changedUsersNameList.Select(changedUserName => $"{CacheKeyConstant.User}-{changedUserName}"));
       invalidatingCacheKeys.AddRange(existingUserNames.Select(existUserName => $"{CacheKeyConstant.User}-{existUserName}"));
       await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeys.ToArray());
+    }
+
+    public async Task<OrganisationServiceRoleGroupResponseInfo> GetServiceRoleGroupAsync(string ciiOrganisationId, int groupId)
+    {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var organisationServiceRoleGroupResponseInfo = new OrganisationServiceRoleGroupResponseInfo();
+
+      var organisationGroupResponseInfo = await this.GetGroupAsync(ciiOrganisationId, groupId);
+
+      if (organisationGroupResponseInfo != null)
+      {
+        organisationServiceRoleGroupResponseInfo = ConvertGroupRoleToServiceRoleGroupResponse(organisationGroupResponseInfo);
+
+        List<GroupServiceRoleGroup> groupServiceRoleGroups = new List<GroupServiceRoleGroup>();
+
+        var roleIds = organisationGroupResponseInfo.Roles.Select(x => x.Id).ToList();
+
+        var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(roleIds);
+
+        foreach (var serviceRoleGroup in serviceRoleGroups)
+        {
+          groupServiceRoleGroups.Add(new GroupServiceRoleGroup()
+          {
+            Id = serviceRoleGroup.Id,
+            Name = serviceRoleGroup.Name
+          });
+        }
+
+        organisationServiceRoleGroupResponseInfo.ServiceRoleGroups = groupServiceRoleGroups;
+      }
+
+      return organisationServiceRoleGroupResponseInfo;
+    }
+
+    public async Task UpdateServiceRoleGroupAsync(string ciiOrganisationId, int groupId, OrganisationServiceRoleGroupRequestInfo organisationServiceRoleGroupRequestInfo)
+    {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var addedServiceRoleGroupIds = organisationServiceRoleGroupRequestInfo?.ServiceRoleGroupInfo?.AddedServiceRoleGroupIds;
+      var addedRoleIds = await ConvertServiceRoleGroupsToOrganisationRoleIds(ciiOrganisationId, addedServiceRoleGroupIds);
+
+      var removedServiceRoleGroupIds = organisationServiceRoleGroupRequestInfo?.ServiceRoleGroupInfo?.RemovedServiceRoleGroupIds;
+      var removedRoleIds = await ConvertServiceRoleGroupsToOrganisationRoleIds(ciiOrganisationId, removedServiceRoleGroupIds);
+
+      OrganisationGroupRequestInfo organisationGroupRequestInfo = new OrganisationGroupRequestInfo()
+      {
+        UserInfo = organisationServiceRoleGroupRequestInfo.UserInfo,
+        RoleInfo = new OrganisationGroupRolePatchInfo()
+        {
+          AddedRoleIds = addedRoleIds,
+          RemovedRoleIds = removedRoleIds
+        }
+      };
+
+      await this.UpdateGroupAsync(ciiOrganisationId, groupId, organisationGroupRequestInfo);
+    }
+
+    private static OrganisationServiceRoleGroupResponseInfo ConvertGroupRoleToServiceRoleGroupResponse(OrganisationGroupResponseInfo organisationGroupResponseInfo)
+    {
+      return new OrganisationServiceRoleGroupResponseInfo
+      {
+        GroupId = organisationGroupResponseInfo.GroupId,
+        MfaEnabled = organisationGroupResponseInfo.MfaEnabled,
+        OrganisationId = organisationGroupResponseInfo.OrganisationId,
+        GroupName = organisationGroupResponseInfo.GroupName,
+        CreatedDate = organisationGroupResponseInfo.CreatedDate,
+        Users = organisationGroupResponseInfo.Users
+      };
+    }
+
+    private async Task<List<int>> ConvertServiceRoleGroupsToOrganisationRoleIds(string ciiOrganisationId, List<int> serviceRoleGroupIds)
+    {
+      var roleIds = new List<int>();
+
+      if (serviceRoleGroupIds != null && serviceRoleGroupIds.Count > 0)
+      {
+        var serviceRoleGroups = await _dataContext.CcsServiceRoleGroup
+        .Where(x => !x.IsDeleted && serviceRoleGroupIds.Contains(x.Id))
+        .ToListAsync();
+
+        if (serviceRoleGroups.Count != serviceRoleGroupIds.Count)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+
+        List<OrganisationEligibleRole> organisationEligibleRoles = await _serviceRoleGroupMapperService.ServiceRoleGroupsToOrgRolesAsync(serviceRoleGroupIds, ciiOrganisationId);
+
+        roleIds = organisationEligibleRoles.Select(x => x.Id).ToList();
+      }
+      else
+      {
+        roleIds = new List<int>();
+      }
+
+      return roleIds;
     }
   }
 }
