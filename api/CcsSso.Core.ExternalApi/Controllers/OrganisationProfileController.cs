@@ -1138,7 +1138,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET organisations/1/identity-providers
+    ///     PUT organisations/1/identity-providers
     ///     {
     ///       ciiOrganisationId: "orgid",
     ///       changedOrgIdentityProviders: [
@@ -1195,7 +1195,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /organisations/1/updateEligableRoles
+    ///     PUT /organisations/1/updateEligableRoles
     ///     {
     ///       isBuyer: true,
     ///       rolesToAdd: [
@@ -1385,7 +1385,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     POST /organisations/1/switch
+    ///     PUT /organisations/1/switch
     ///     {
     ///       orgType: 1,
     ///       rolesToAdd: [
@@ -1485,7 +1485,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /organisations/1/servicerolegroups
+    ///     PUT /organisations/1/servicerolegroups
     ///     {
     ///       isBuyer: true,
     ///       serviceRoleGroupsToAdd: [
@@ -1559,6 +1559,37 @@ namespace CcsSso.ExternalApi.Controllers
       resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
       resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
       return await _userProfileService.GetUsersV1Async(organisationId, resultSetCriteria, userFilterCriteria);
+    }
+
+    /// <summary>
+    /// To get organisation audit event log
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <remarks>
+    /// NOTE:- query params page-size, current-page
+    /// Sample request:
+    ///
+    ///     GET organisations/1/servicerolegroups/auditevents?page-size=10,current-page=1
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/servicerolegroups/auditevents")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
+    [SwaggerOperation(Tags = new[] { "Organisation Audit Event" })]
+    [ProducesResponseType(typeof(OrgAuditEventInfoServiceRoleGroupListResponse), 200)]
+    public async Task<OrgAuditEventInfoServiceRoleGroupListResponse> GetOrganisationServiceRoleGroupAuditEventsList(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
+    {
+      resultSetCriteria ??= new ResultSetCriteria
+      {
+        CurrentPage = 1,
+        PageSize = 10
+      };
+      resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
+      resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
+
+      return await _organisationAuditEventService.GetOrganisationServiceRoleGroupAuditEventsListAsync(organisationId, resultSetCriteria);
     }
 
     #endregion

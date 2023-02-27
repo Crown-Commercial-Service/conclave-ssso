@@ -13,7 +13,6 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
@@ -25,15 +24,17 @@ namespace CcsSso.Core.Service.External
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
     private readonly IUserProfileHelperService _userHelper;
     private readonly ICryptographyService _cryptographyService;
+    private readonly IServiceRoleGroupMapperService _rolesToServiceRoleGroupMapperService;
 
     public UserProfileRoleApprovalService(IDataContext dataContext, ApplicationConfigurationInfo appConfigInfo, ICcsSsoEmailService ccsSsoEmailService,
-      IUserProfileHelperService userHelper, ICryptographyService cryptographyService)
+      IUserProfileHelperService userHelper, ICryptographyService cryptographyService, IServiceRoleGroupMapperService serviceRoleGroupMapperService)
     {
       _dataContext = dataContext;
       _appConfigInfo = appConfigInfo;
       _ccsSsoEmailService = ccsSsoEmailService;
       _userHelper = userHelper;
       _cryptographyService = cryptographyService;
+      _rolesToServiceRoleGroupMapperService = serviceRoleGroupMapperService;
     }
 
     public async Task<bool> UpdateUserRoleStatusAsync(UserRoleApprovalEditRequest userApprovalRequest)
@@ -412,6 +413,12 @@ namespace CcsSso.Core.Service.External
             string roleApprovalInfo = "pendingid=" + userAccessRolePending.Id + "&exp=" + DateTime.UtcNow.AddMinutes(roleApprovalConfiguration.LinkExpiryDurationInMinute);
             var encryptedRoleApprovalInfo = _cryptographyService.EncryptString(roleApprovalInfo, _appConfigInfo.UserRoleApproval.RoleApprovalTokenEncryptionKey);
             string serviceName = userAccessRolePending.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName;
+
+            if (_appConfigInfo.ServiceRoleGroupSettings.Enable)
+            {
+              var roleServiceInfo = await _rolesToServiceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(new List<int>() { userAccessRolePending.OrganisationEligibleRole.CcsAccessRole.Id });
+              serviceName = roleServiceInfo?.FirstOrDefault()?.Name;
+            }
 
             string[] notificationEmails = roleApprovalConfiguration.NotificationEmails.Split(',');
 

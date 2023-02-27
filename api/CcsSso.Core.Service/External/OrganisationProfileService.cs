@@ -2027,7 +2027,8 @@ namespace CcsSso.Core.Service.External
                                 OrgTypeEligibility = x.OrgTypeEligibility,
                                 SubscriptionTypeEligibility = x.SubscriptionTypeEligibility,
                                 TradeEligibility = x.TradeEligibility,
-                                DisplayOrder = x.DisplayOrder
+                                DisplayOrder = x.DisplayOrder,
+                                Description = x.Description
                               }).ToList();
       return serviceRoleGroups;
     }
@@ -2044,11 +2045,11 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
       }
 
-      var ccsAccessRolesToAdd = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCssRolesAsync(serviceRoleGroupsToAdd);
-      var ccsAccessRolesToDelete = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCssRolesAsync(serviceRoleGroupsToDelete);
-      
-      var addRoles = ccsAccessRolesToAdd.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).ToList();
-      var deleteRoles = ccsAccessRolesToDelete.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey}).ToList();
+      var ccsAccessRolesToAdd = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCcsRolesAsync(serviceRoleGroupsToAdd);
+      var ccsAccessRolesToDelete = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCcsRolesAsync(serviceRoleGroupsToDelete);
+
+      var addRoles = ccsAccessRolesToAdd.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).Distinct().ToList();
+      var deleteRoles = ccsAccessRolesToDelete.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).Distinct().ToList();
 
       await UpdateOrganisationEligibleRolesAsync(ciiOrganisationId, isBuyer, addRoles, deleteRoles);
     }
@@ -2065,13 +2066,13 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
       }
 
-      var ccsAccessRolesToAdd = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCssRolesAsync(serviceRoleGroupsToAdd);
-      var ccsAccessRolesToDelete = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCssRolesAsync(serviceRoleGroupsToDelete);
-      var ccsAccessRolesAutoValidRoles = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCssRolesAsync(serviceRoleGroupsToAutoValid);
-      
-      var addRoles = ccsAccessRolesToAdd.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).ToList();
-      var deleteRoles = ccsAccessRolesToDelete.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).ToList();
-      var autoValidRoles = ccsAccessRolesAutoValidRoles.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).ToList();
+      var ccsAccessRolesToAdd = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCcsRolesAsync(serviceRoleGroupsToAdd);
+      var ccsAccessRolesToDelete = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCcsRolesAsync(serviceRoleGroupsToDelete);
+      var ccsAccessRolesAutoValidRoles = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCcsRolesAsync(serviceRoleGroupsToAutoValid);
+
+      var addRoles = ccsAccessRolesToAdd.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).Distinct().ToList();
+      var deleteRoles = ccsAccessRolesToDelete.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).Distinct().ToList();
+      var autoValidRoles = ccsAccessRolesAutoValidRoles.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).Distinct().ToList();
 
       await UpdateOrgAutoValidationEligibleRolesAsync(ciiOrganisationId, newOrgType, addRoles, deleteRoles, autoValidRoles, companyHouseId);
     }
