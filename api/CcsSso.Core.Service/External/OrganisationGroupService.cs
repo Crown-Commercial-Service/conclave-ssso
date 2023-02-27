@@ -439,7 +439,8 @@ namespace CcsSso.Core.Service.External
           groupServiceRoleGroups.Add(new GroupServiceRoleGroup()
           {
             Id = serviceRoleGroup.Id,
-            Name = serviceRoleGroup.Name
+            Name = serviceRoleGroup.Name,
+            Description = serviceRoleGroup.Description
           });
         }
 
