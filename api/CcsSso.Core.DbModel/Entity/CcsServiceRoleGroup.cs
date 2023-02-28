@@ -23,6 +23,7 @@ namespace CcsSso.Core.DbModel.Entity
     public RoleEligibleSubscriptionType SubscriptionTypeEligibility { get; set; }
 
     public RoleEligibleTradeType TradeEligibility { get; set; }
+
     public bool MfaEnabled { get; set; }
 
     public string DefaultEligibility { get; set; }

@@ -1,4 +1,6 @@
 
+UPDATE "CcsServiceRoleGroup" set "Key"= 'MANAGE_SUBSCRIPTIONS' WHERE "Key" = 'MANAGE_SUBSCRIPTIONS_GROUP';
+
 UPDATE "CcsServiceRoleGroup" set "Key"= 'CAT_USER',  "Description"='Find and contract suitable suppliers for your procurement project, and ask them about the services they can provide. Progress to one stage further competition.'
 WHERE "Key" in ('CAS_USER_GROUP','CAT_USER_GROUP','CAS_USER','CAT_USER','CAS_GROUP');
 

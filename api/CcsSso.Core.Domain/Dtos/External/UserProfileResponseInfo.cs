@@ -1,11 +1,7 @@
-using CcsSso.Domain.Constants;
+using CcsSso.Core.DbModel.Constants;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
-using CcsSso.Core.DbModel.Constants;
+using System.Text.Json.Serialization;
 
 namespace CcsSso.Core.Domain.Dtos.External
 {
@@ -117,13 +113,15 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class ServiceRoleGroupInfo
   {
+    [JsonPropertyOrder(-1)]
     public int Id { get; set; }
 
+    [JsonPropertyOrder(-1)]
     public string Name { get; set; }
 
+    [JsonPropertyOrder(-1)]
     public string Key { get; set; }
   }
-
 
   public class UserProfileEditRequestInfo : UserDetail
   {
@@ -267,11 +265,13 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class UserAccessRolePendingDetails
   {
-    public int Status { get; set; }
+    public int RoleId { get; set; }
+    public string RoleKey { get; set; }
 
     public string RoleName { get; set; }
 
-    public string RoleKey { get; set; }
+    public int Status { get; set; }
+
   }
 
   public class UserAccessRolePendingTokenDetails : UserAccessRolePendingDetails
@@ -290,4 +290,14 @@ namespace CcsSso.Core.Domain.Dtos.External
     public UserPendingRoleStaus Status { get; set; }
   }
 
+  public class UserServiceRoleGroupPendingDetails
+  {
+    public int Id { get; set; }
+
+    public string Key { get; set; }
+
+    public string Name { get; set; }
+
+    public int Status { get; set; }
+  }
 }

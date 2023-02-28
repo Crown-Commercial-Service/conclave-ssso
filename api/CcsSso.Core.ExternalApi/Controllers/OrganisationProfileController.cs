@@ -999,6 +999,109 @@ namespace CcsSso.ExternalApi.Controllers
     }
     #endregion
 
+    #region Organisation Group - Service Role Group
+    /// <summary>
+    /// Get organisation group
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/groups/1/servicerolegroups
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/groups/{groupId}/servicerolegroups")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation Group" })]
+    [ProducesResponseType(typeof(OrganisationServiceRoleGroupResponseInfo), 200)]
+    public async Task<OrganisationServiceRoleGroupResponseInfo> GetOrganisationServiceRoleGroup(string organisationId, int groupId)
+    {
+      return await _organisationGroupService.GetServiceRoleGroupAsync(organisationId, groupId);
+    }
+
+    /// <summary>
+    /// Update organisation group
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <response  code="409">Resource already exists</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_ROLE_INFO, INVALID_USER_INFO
+    /// </response>
+    /// <remarks>
+    /// Sample requests:
+    ///
+    ///     PATCH /organisations/1/groups/1/servicerolegroups
+    ///     {
+    ///       'groupName': "Group Name",
+    ///       'serviceRoleGroupInfo': null,
+    ///       'userInfo': null
+    ///     }
+    ///
+    ///     PATCH /organisations/1/groups/1/servicerolegroups
+    ///     {
+    ///       'groupName': "",
+    ///       'serviceRoleGroupInfo':{
+    ///           'addedServiceRoleGroupIds': [ 1, 2 ],
+    ///           'removedServiceRoleGroupIds': [ 3 ]
+    ///        },
+    ///       'userInfo':{
+    ///           'addedUserIds': [ "user1@mail.com", "user2@mail.com" ],
+    ///           'addedUserIds': [ "user3@mail.com" ]
+    ///        }
+    ///     }
+    ///
+    ///     PATCH /organisations/1/groups/1/servicerolegroups
+    ///     {
+    ///       'groupName': null,
+    ///       'serviceRoleGroupInfo':{
+    ///           'addedServiceRoleGroupIds': [ 1, 2 ],
+    ///           'removedServiceRoleGroupIds': [ 3 ]
+    ///        },
+    ///       'userInfo':{
+    ///           'addedUserIds': [ "user1@mail.com", "user2@mail.com" ],
+    ///           'addedUserIds': [ "user3@mail.com" ]
+    ///        }
+    ///     }
+    ///
+    ///     PATCH /organisations/1/groups/1/servicerolegroups
+    ///     {
+    ///       'groupName': "Group Name",
+    ///       'serviceRoleGroupInfo': null,
+    ///       'userInfo':{
+    ///           'addedUserIds': [ "user1@mail.com", "user2@mail.com" ],
+    ///           'addedUserIds': [ "user3@mail.com" ]
+    ///        }
+    ///     }
+    ///
+    ///     PATCH /organisations/1/groups/1/servicerolegroups
+    ///     {
+    ///       'groupName': "Group Name",
+    ///       'serviceRoleGroupInfo':{
+    ///           'addedServiceRoleGroupIds': [ 1, 2 ],
+    ///           'removedServiceRoleGroupIds': [ 3 ]
+    ///        },
+    ///       'userInfo': null
+    ///     }
+    ///     
+    /// </remarks>
+    [HttpPatch("{organisationId}/groups/{groupId}/servicerolegroups")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation Group" })]
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task UpdateOrganisationServiceRoleGroup(string organisationId, int groupId, OrganisationServiceRoleGroupRequestInfo organisationServiceRoleGroupRequestInfo)
+    {
+      await _organisationGroupService.UpdateServiceRoleGroupAsync(organisationId, groupId, organisationServiceRoleGroupRequestInfo);
+    }
+    #endregion
+
     #region Organisation IdentityProviders
     /// <summary>
     /// Allows a user to get identity provider details of an organisation
@@ -1035,7 +1138,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET organisations/1/identity-providers
+    ///     PUT organisations/1/identity-providers
     ///     {
     ///       ciiOrganisationId: "orgid",
     ///       changedOrgIdentityProviders: [
@@ -1092,7 +1195,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /organisations/1/updateEligableRoles
+    ///     PUT /organisations/1/updateEligableRoles
     ///     {
     ///       isBuyer: true,
     ///       rolesToAdd: [
@@ -1282,7 +1385,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     POST /organisations/1/switch
+    ///     PUT /organisations/1/switch
     ///     {
     ///       orgType: 1,
     ///       rolesToAdd: [
@@ -1382,7 +1485,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /organisations/1/servicerolegroups
+    ///     PUT /organisations/1/servicerolegroups
     ///     {
     ///       isBuyer: true,
     ///       serviceRoleGroupsToAdd: [
@@ -1456,6 +1559,37 @@ namespace CcsSso.ExternalApi.Controllers
       resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
       resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
       return await _userProfileService.GetUsersV1Async(organisationId, resultSetCriteria, userFilterCriteria);
+    }
+
+    /// <summary>
+    /// To get organisation audit event log
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <remarks>
+    /// NOTE:- query params page-size, current-page
+    /// Sample request:
+    ///
+    ///     GET organisations/1/servicerolegroups/auditevents?page-size=10,current-page=1
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/servicerolegroups/auditevents")]
+    [ClaimAuthorise("MANAGE_SUBSCRIPTIONS")]
+    [SwaggerOperation(Tags = new[] { "Organisation Audit Event" })]
+    [ProducesResponseType(typeof(OrgAuditEventInfoServiceRoleGroupListResponse), 200)]
+    public async Task<OrgAuditEventInfoServiceRoleGroupListResponse> GetOrganisationServiceRoleGroupAuditEventsList(string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
+    {
+      resultSetCriteria ??= new ResultSetCriteria
+      {
+        CurrentPage = 1,
+        PageSize = 10
+      };
+      resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
+      resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
+
+      return await _organisationAuditEventService.GetOrganisationServiceRoleGroupAuditEventsListAsync(organisationId, resultSetCriteria);
     }
 
     #endregion
