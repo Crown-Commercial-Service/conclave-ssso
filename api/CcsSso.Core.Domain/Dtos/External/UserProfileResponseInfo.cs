@@ -265,11 +265,13 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class UserAccessRolePendingDetails
   {
-    public int Status { get; set; }
+    public int RoleId { get; set; }
+    public string RoleKey { get; set; }
 
     public string RoleName { get; set; }
 
-    public string RoleKey { get; set; }
+    public int Status { get; set; }
+
   }
 
   public class UserAccessRolePendingTokenDetails : UserAccessRolePendingDetails
@@ -288,4 +290,14 @@ namespace CcsSso.Core.Domain.Dtos.External
     public UserPendingRoleStaus Status { get; set; }
   }
 
+  public class UserServiceRoleGroupPendingDetails
+  {
+    public int Id { get; set; }
+
+    public string Key { get; set; }
+
+    public string Name { get; set; }
+
+    public int Status { get; set; }
+  }
 }
