@@ -465,6 +465,7 @@ namespace CcsSso.Core.Service.External
 
       OrganisationGroupRequestInfo organisationGroupRequestInfo = new OrganisationGroupRequestInfo()
       {
+        GroupName = organisationServiceRoleGroupRequestInfo.GroupName,
         UserInfo = organisationServiceRoleGroupRequestInfo.UserInfo,
         RoleInfo = new OrganisationGroupRolePatchInfo()
         {

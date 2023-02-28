@@ -186,7 +186,33 @@ namespace CcsSso.Core.Service.External
       return roles;
     }
 
-    #region ServiceRoleGroup
+    #region Service Role Group
+
+    public async Task<List<ServiceRoleGroup>> GetServiceRoleGroupsRequireApprovalAsync()
+    {
+      if (!_applicationConfigurationInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var roles = await GetRolesRequireApprovalAsync();
+      var serviceRoleGroupsEntity = await _rolesToServiceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(roles.Select(x => x.RoleId).ToList());
+      var serviceRoleGroups = serviceRoleGroupsEntity.Select(x => new ServiceRoleGroup
+      {
+        Id = x.Id,
+        Key = x.Key,
+        Name = x.Name,
+        OrgTypeEligibility = x.OrgTypeEligibility,
+        SubscriptionTypeEligibility = x.SubscriptionTypeEligibility,
+        TradeEligibility = x.TradeEligibility,
+        DisplayOrder = x.DisplayOrder,
+        Description = x.Description
+      }).ToList();
+
+      return serviceRoleGroups;
+    }
+
+
     public async Task<List<ServiceRoleGroup>> GetServiceRoleGroupsAsync()
     {
       if (!_applicationConfigurationInfo.ServiceRoleGroupSettings.Enable)

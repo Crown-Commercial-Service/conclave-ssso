@@ -103,5 +103,24 @@ namespace CcsSso.Core.ExternalApi.Controllers
     {
       return await _configurationDetailService.GetServiceRoleGroupsAsync();
     }
+
+    /// <summary>
+    /// Return list of service role groups that require approval before assignment
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="400">Bad request.</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET configurations/approval/servicerolegroups
+    /// </remarks>
+    [HttpGet("approve/servicerolegroups")]
+    [SwaggerOperation(Tags = new[] { "Configuration" })]
+    [ProducesResponseType(typeof(List<ServiceRoleGroup>), 200)]
+    public async Task<List<ServiceRoleGroup>> GetServiceRoleGroupsRequireApproval()
+    {
+      return await _configurationDetailService.GetServiceRoleGroupsRequireApprovalAsync();
+    }
   }
 }
