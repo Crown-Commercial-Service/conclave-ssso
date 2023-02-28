@@ -112,6 +112,30 @@ namespace CcsSso.Core.Service.External
       return organisationEligibleRoles;
     }
 
+    public async Task<List<CcsServiceRoleGroup>> ServiceRoleGroupsWithApprovalRequiredRoleAsync() 
+    {
+      var serviceRoleGroups = await _dataContext.CcsServiceRoleGroup
+        .Include(g => g.CcsServiceRoleMappings).ThenInclude(g => g.CcsAccessRole)
+        .Where(x => !x.IsDeleted && x.CcsServiceRoleMappings.Any(y => y.CcsAccessRole.ApprovalRequired == 1)).ToListAsync();
+
+      return serviceRoleGroups;
+    }
+
+    // This method will remove roles that are part of approval required Service Role Group but it self not required approval
+    // This normal roles will be assigned together with approval required role, once it is approved.
+    public async Task RemoveApprovalRequiredRoleGroupOtherRolesAsync(List<OrganisationEligibleRole> organisationEligibleRoles) 
+    {
+      var servicesWithApprovalRequiredRole = await ServiceRoleGroupsWithApprovalRequiredRoleAsync();
+
+      foreach (var approvalRoleService in servicesWithApprovalRequiredRole)
+      {
+        // Remove all the roles of approval required service except approval required role.
+        // All roles of approval required service will be assigned once approval required role is approved.
+        var removeRoles = approvalRoleService.CcsServiceRoleMappings.Where(x => x.CcsAccessRole.ApprovalRequired != 1).Select(x => x.CcsAccessRoleId).ToList();
+        organisationEligibleRoles.RemoveAll(x => removeRoles.Contains(x.CcsAccessRoleId));
+      }
+    }
+
     private async Task<List<int>> OrgRolesToCcsRoles(List<int> roleIds)
     {
       return await _dataContext.OrganisationEligibleRole
