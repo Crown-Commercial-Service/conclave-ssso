@@ -35,9 +35,6 @@ end if;
 $$ LANGUAGE plpgsql;
 
 
-SELECT AddAutoValidationRoleMapping('JAEGGER_BUYER','eSourcing Tile for Buyer User','ACCESS_JAGGAER');
-SELECT AddAutoValidationRoleMapping('JAEGGER_BUYER','eSourcing buyer role to access Jagger','JAGGAER_USER');
-SELECT AddAutoValidationRoleMapping('FP_USER','Fleet Portal Tile','ACCESS_FP_CLIENT');
-SELECT AddAutoValidationRoleMapping('CAS_USER','Contract Award Service (CAS) - add to dashboard','ACCESS_CAAAC_CLIENT');
+SELECT AddAutoValidationRoleMapping('EL_USER','Buyer Supplier Information','ACCESS_EVIDENCE_LOCKER');
 
 DROP FUNCTION AddAutoValidationRoleMapping;
