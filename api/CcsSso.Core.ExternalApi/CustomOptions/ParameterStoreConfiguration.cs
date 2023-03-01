@@ -53,6 +53,7 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ApiKey", "ApiKey"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "IsApiGatewayEnabled", "IsApiGatewayEnabled"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "EnableAdditionalLogs", "EnableAdditionalLogs"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "EnableUserAccessTokenFix", "EnableUserAccessTokenFix"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ConclaveLoginUrl", "ConclaveLoginUrl"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "InMemoryCacheExpirationInMinutes", "InMemoryCacheExpirationInMinutes"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "DashboardServiceClientId", "DashboardServiceClientId"));
@@ -132,7 +133,7 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
 
       // #Auto validation
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/Enable", "OrgAutoValidation:Enable"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/CCSAdminEmailId", "OrgAutoValidation:CCSAdminEmailId"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/CCSAdminEmailIds", "OrgAutoValidation:CCSAdminEmailIds"));
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/BuyerSuccessAdminRoles", "OrgAutoValidation:BuyerSuccessAdminRoles"));
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/BothSuccessAdminRoles", "OrgAutoValidation:BothSuccessAdminRoles"));
 
