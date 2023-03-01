@@ -54,6 +54,7 @@ namespace CcsSso.Core.JobScheduler
           ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "Email/ApiKey"),
           BulkUploadReportTemplateId = _awsParameterStoreService.FindParameterByName(parameters, path + "Email/BulkUploadReportTemplateId"),
           UnverifiedUserDeletionNotificationTemplateId = _awsParameterStoreService.FindParameterByName(parameters, path + "Email/UnverifiedUserDeletionNotificationTemplateId"),
+          UserRoleExpiredEmailTemplateId= _awsParameterStoreService.FindParameterByName(parameters, path + "Email/UserRoleExpiredEmailTemplateId"),
         };
       }
       else if (objType == typeof(WrapperApiSettings))
@@ -82,7 +83,8 @@ namespace CcsSso.Core.JobScheduler
           InactiveOrganisationDeletionJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/InactiveOrganisationDeletionJobExecutionFrequencyInMinutes")),
           OrganizationRegistrationExpiredThresholdInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/OrganizationRegistrationExpiredThresholdInMinutes")),
           UnverifiedUserDeletionJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/UnverifiedUserDeletionJobExecutionFrequencyInMinutes")),
-          OrganisationAutovalidationJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/OrganisationAutovalidationJobExecutionFrequencyInMinutes"))
+          OrganisationAutovalidationJobExecutionFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/OrganisationAutovalidationJobExecutionFrequencyInMinutes")),
+          RoleExpiredNotificationDeleteFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "ScheduleJobSettings/RoleExpiredNotificationDeleteFrequencyInMinutes"))
         };
       }
       else if (objType == typeof(BulkUploadSettings))
@@ -177,6 +179,13 @@ namespace CcsSso.Core.JobScheduler
         returnParams = new OrgAutoValidationOneTimeJobEmail()
         {
           FailedAutoValidationNotificationTemplateId = _awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJobEmail/FailedAutoValidationNotificationTemplateId"),
+        };
+      }
+      else if (objType == typeof(ActiveJobStatus))
+      {
+        returnParams = new ActiveJobStatus()
+        {
+          RoleDeleteExpiredNotificationJob=Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "ActiveJobStatus/RoleDeleteExpiredNotificationJob"))
         };
       }
 
