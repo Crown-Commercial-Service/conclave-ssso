@@ -14,6 +14,6 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task RemoveApprovalPendingRolesAsync(string userName, string roles);
 
-    Task CreateUserRolesPendingForApprovalAsync(UserProfileEditRequestInfo userProfileRequestInfo);
+    Task CreateUserRolesPendingForApprovalAsync(UserProfileEditRequestInfo userProfileRequestInfo, bool sendEmailNotification = true);
   }
 }

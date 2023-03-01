@@ -111,15 +111,33 @@ namespace CcsSso.Core.Service
     {
       var isAuthorized = _requestContext.Roles.Any(r => claimList.Any(c => r == c));
 
-      // Org users (having only the ORG_DEFAULT_USER role) should not access other user details
-      if (_requestContext.RequestType == RequestType.NotHavingOrgId && _requestContext.Roles.Count == 1 && _requestContext.Roles.Contains("ORG_DEFAULT_USER"))
+      // BUG 4399 - To fix unauthorized access to user, if api is not allowed to access by user
+      if (_applicationConfigurationInfo.EnableUserAccessTokenFix)
       {
-        isAuthorized = _requestContext.UserName == _requestContext.RequestIntendedUserName;
+        if (isAuthorized)
+        {
+          isAuthorized = IsUserAuthorize(isAuthorized);
+        }
       }
+      else
+      {
+        isAuthorized = IsUserAuthorize(isAuthorized);
+      }      
 
       if (!isAuthorized)
       {
         throw new ForbiddenException();
+      }
+
+      return isAuthorized;
+    }
+
+    private bool IsUserAuthorize(bool isAuthorized)
+    {
+      // Org users (having only the ORG_DEFAULT_USER role) should not access other user details
+      if (_requestContext.RequestType == RequestType.NotHavingOrgId && _requestContext.Roles.Count == 1 && _requestContext.Roles.Contains("ORG_DEFAULT_USER"))
+      {
+        isAuthorized = _requestContext.UserName == _requestContext.RequestIntendedUserName;
       }
 
       return isAuthorized;

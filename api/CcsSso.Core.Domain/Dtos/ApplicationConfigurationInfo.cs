@@ -43,6 +43,7 @@ namespace CcsSso.Domain.Dtos
     public OrgAutoValidationEmailInfo OrgAutoValidationEmailInfo { get; set; }
 
     public UserRoleApproval UserRoleApproval { get; set; }
+    public bool EnableUserAccessTokenFix { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -137,7 +138,7 @@ namespace CcsSso.Domain.Dtos
   public class OrgAutoValidation
   {
     public bool Enable { get; set; } = false;
-    public string CCSAdminEmailId { get; set; }
+    public string[] CCSAdminEmailIds { get; set; }
     public string[] BuyerSuccessAdminRoles { get; set; }
     public string[] BothSuccessAdminRoles { get; set; }
   }
