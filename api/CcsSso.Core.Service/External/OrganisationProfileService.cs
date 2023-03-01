@@ -1966,39 +1966,56 @@ namespace CcsSso.Core.Service.External
             roleIds.Contains(r.CcsAccessRoleId))
             .ToListAsync();
 
+      var servicesWithApprovalRequiredRole = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsWithApprovalRequiredRoleAsync();
+
       foreach (var role in defaultRoles)
       {
-        foreach (var adminDetails in allAdminsOfOrg)
+        await AssignRoleToAllOrgAdmins(role, allAdminsOfOrg, organisation, servicesWithApprovalRequiredRole);
+      }
+
+      await _dataContext.SaveChangesAsync();
+    }
+
+    private async Task AssignRoleToAllOrgAdmins(OrganisationEligibleRole role, List<User> allAdminsOfOrg, Organisation organisation, List<CcsServiceRoleGroup> servicesWithApprovalRequiredRole) 
+    {
+      foreach (var adminDetails in allAdminsOfOrg)
+      {
+        if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id && !x.IsDeleted))
         {
-          if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id && !x.IsDeleted))
+          var isAdminDomainSameAsOrg = adminDetails.UserName.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower();
+          
+          // Remove normals roles which are part of service which required role approval
+          // They will be assigned together with role approval.
+          if (_applicationConfigurationInfo.UserRoleApproval.Enable && _applicationConfigurationInfo.ServiceRoleGroupSettings.Enable &&
+            !isAdminDomainSameAsOrg && RoleBelongToApprovalRequiredService(role, servicesWithApprovalRequiredRole)) 
           {
-            if (!_applicationConfigurationInfo.UserRoleApproval.Enable ||
-                role.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalNotRequired ||
-                adminDetails.UserName.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower())
+            continue;
+          }
+
+          if (!_applicationConfigurationInfo.UserRoleApproval.Enable || role.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalNotRequired || 
+              isAdminDomainSameAsOrg)
+          {
+            var defaultUserRole = new UserAccessRole
             {
-              var defaultUserRole = new UserAccessRole
-              {
-                OrganisationEligibleRoleId = role.Id
-              };
-              adminDetails.UserAccessRoles.Add(defaultUserRole);
-            }
-            else
+              OrganisationEligibleRoleId = role.Id
+            };
+            adminDetails.UserAccessRoles.Add(defaultUserRole);  
+          }
+          else
+          {
+            await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(new UserProfileEditRequestInfo
             {
-              await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(new UserProfileEditRequestInfo
+              UserName = adminDetails.UserName,
+              OrganisationId = organisation.CiiOrganisationId,
+              Detail = new UserRequestDetail
               {
-                UserName = adminDetails.UserName,
-                OrganisationId = organisation.CiiOrganisationId,
-                Detail = new UserRequestDetail
-                {
-                  RoleIds = new List<int> { role.Id }
-                }
-              }, sendEmailNotification: false);
-            }
+                RoleIds = new List<int> { role.Id }
+              }
+            }, sendEmailNotification: false);
           }
 
         }
       }
-
       await _dataContext.SaveChangesAsync();
     }
 
@@ -2075,6 +2092,20 @@ namespace CcsSso.Core.Service.External
       var autoValidRoles = ccsAccessRolesAutoValidRoles.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).Distinct().ToList();
 
       await UpdateOrgAutoValidationEligibleRolesAsync(ciiOrganisationId, newOrgType, addRoles, deleteRoles, autoValidRoles, companyHouseId);
+    }
+
+    private static bool RoleBelongToApprovalRequiredService(OrganisationEligibleRole role, List<CcsServiceRoleGroup> servicesWithApprovalRequiredRole) 
+    {
+      foreach (var approvalRoleService in servicesWithApprovalRequiredRole)
+      {
+        var removeRoles = approvalRoleService.CcsServiceRoleMappings.Where(x => x.CcsAccessRole.ApprovalRequired != 1).Select(x => x.CcsAccessRoleId).ToList();
+        // Return true for normal role that belongs to approval required service 
+        if (removeRoles.Any(x => x == role.CcsAccessRoleId)) 
+        {
+          return true;
+        }
+      }
+      return false;
     }
 
     #endregion

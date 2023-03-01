@@ -1991,9 +1991,10 @@ namespace CcsSso.Core.Service.External
         if (serviceRoleGroups.Count != serviceRoleGroupIds.Count)
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
-        }
+        }        
 
         List<OrganisationEligibleRole> organisationEligibleRoles = await _serviceRoleGroupMapperService.ServiceRoleGroupsToOrgRolesAsync(serviceRoleGroupIds, organisationId);
+        await _serviceRoleGroupMapperService.RemoveApprovalRequiredRoleGroupOtherRolesAsync(organisationEligibleRoles);
 
         roleIds = organisationEligibleRoles.Select(x => x.Id).ToList();
       }

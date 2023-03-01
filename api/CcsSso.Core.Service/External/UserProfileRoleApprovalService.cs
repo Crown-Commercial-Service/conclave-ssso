@@ -387,11 +387,11 @@ namespace CcsSso.Core.Service.External
 
       if (rolesToSendEmail.Count > 0)
       {
-        await SenEmailForApprovalPendingRolesAsync(user, rolesToSendEmail);
+        await SendEmailForApprovalPendingRolesAsync(user, rolesToSendEmail);
       }
     }
 
-    private async Task SenEmailForApprovalPendingRolesAsync(User user, List<int> roles)
+    private async Task SendEmailForApprovalPendingRolesAsync(User user, List<int> roles)
     {
       var userAccessRolePendingList = await _dataContext.UserAccessRolePending
         .Include(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
