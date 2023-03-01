@@ -68,6 +68,7 @@ namespace CcsSso.Domain.Constants
     public const string ErrorMfaFlagRequired = "MFA_DISABLED_USER";
     public const string ErrorMfaFlagForInvalidConnection = "MFA_ENABLED_INVALID_CONNECTION";
     public const string ErrorInvalidStatusInfo = "INVALID_STATUS_INFO";
+    public const string ErrorInvalidService = "INVALID_SERVICE";
 
     // #Delegated
     public const string ErrorInvalidUserDelegationPrimaryDetails = "INVALID_USER_DELEGATION_PRIMARY_DETAILS";

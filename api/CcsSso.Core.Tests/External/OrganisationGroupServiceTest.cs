@@ -969,9 +969,11 @@ namespace CcsSso.Core.Tests.External
       var mockAuditLoginService = new Mock<IAuditLoginService>();
       var mockEmailService = new Mock<ICcsSsoEmailService>();
       var mockCacheService = new Mock<IWrapperCacheService>();
+      ApplicationConfigurationInfo applicationConfigurationInfo = new();
+      var mockRolesToServiceRoleGroupMapperService = new Mock<IServiceRoleGroupMapperService>();
 
       var service = new OrganisationGroupService(dataContext, userProfileHelperService, mockAuditLoginService.Object, mockEmailService.Object,
-        mockCacheService.Object);
+        mockCacheService.Object, applicationConfigurationInfo, mockRolesToServiceRoleGroupMapperService.Object);
       return service;
     }
 

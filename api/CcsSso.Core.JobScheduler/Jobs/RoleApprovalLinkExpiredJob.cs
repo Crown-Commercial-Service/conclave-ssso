@@ -27,12 +27,12 @@ namespace CcsSso.Core.JobScheduler.Jobs
     private bool enable;
 
     public RoleApprovalLinkExpiredJob(ILogger<RoleApprovalLinkExpiredJob> logger, IServiceScopeFactory factory,
-      AppSettings appSettings, IRoleApprovalLinkExpiredService roleDeleteExpiredNotificationService )
+      AppSettings appSettings)
     {
       _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
 
       _appSettings = appSettings;
-      _roleDeleteExpiredNotificationService = roleDeleteExpiredNotificationService;
+      _roleDeleteExpiredNotificationService = factory.CreateScope().ServiceProvider.GetRequiredService<IRoleApprovalLinkExpiredService>(); ;
       _logger = logger;
       enable = false;
     }

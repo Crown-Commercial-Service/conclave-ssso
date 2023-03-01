@@ -1,5 +1,6 @@
 ﻿using Amazon.SimpleSystemsManagement.Model;
 using CcsSso.Core.Domain.Jobs;
+using CcsSso.Domain.Dtos;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
 using CcsSso.Shared.Domain.Helpers;
@@ -186,6 +187,13 @@ namespace CcsSso.Core.JobScheduler
         returnParams = new ActiveJobStatus()
         {
           RoleDeleteExpiredNotificationJob=Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "ActiveJobStatus/RoleDeleteExpiredNotificationJob"))
+        };
+      }
+      else if (objType == typeof(ServiceRoleGroupSettings))
+      {
+        returnParams = new ServiceRoleGroupSettings()
+        {
+          Enable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "ServiceRoleGroupSettings/Enable"))
         };
       }
 

@@ -857,11 +857,12 @@ namespace CcsSso.Core.Tests.External
       var mockLookUpService = new Mock<ILookUpService>();
       var mockWrapperApiService = new Mock<IWrapperApiService>();
       var mockUserProfileRoleApprovalService = new Mock<IUserProfileRoleApprovalService>();
+      var mockServiceRoleGroupMapperService = new Mock<IServiceRoleGroupMapperService>();
 
-    var service = new UserProfileService(dataContext, userProfileHelperService, requestContext, mockIdamService.Object,
+      var service = new UserProfileService(dataContext, userProfileHelperService, requestContext, mockIdamService.Object,
  mockEmailService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object, mockAuditLoginService.Object, mockRemoteCacheService.Object,
  mockCacheInvalidateService.Object, mockCryptographyService.Object, mockApplicationConfigurationInfo.Object, mockLookUpService.Object, mockWrapperApiService.Object,
- mockUserProfileRoleApprovalService.Object);
+ mockUserProfileRoleApprovalService.Object, mockServiceRoleGroupMapperService.Object);
       return service;
     }
 

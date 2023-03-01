@@ -1,3 +1,4 @@
+using CcsSso.Domain.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +30,7 @@ namespace CcsSso.Core.Domain.Jobs
 
     public ActiveJobStatus? ActiveJobStatus { get; set; }
     public bool IsApiGatewayEnabled { get; set; }
+    public ServiceRoleGroupSettings ServiceRoleGroupSettings { get; set; }
   }
 
   public class CiiSettings

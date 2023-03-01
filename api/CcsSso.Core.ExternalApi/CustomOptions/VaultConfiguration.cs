@@ -218,12 +218,18 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       }
       if (_secrets.Data.ContainsKey("UserRoleApproval"))
       {
-        var orgAutoValidation = JsonConvert.DeserializeObject<UserRoleApproval>(_secrets.Data["UserRoleApproval"].ToString());
-        Data.Add("UserRoleApproval:Enable", orgAutoValidation.Enable.ToString());
-        Data.Add("UserRoleApproval:RoleApprovalTokenEncryptionKey", orgAutoValidation.RoleApprovalTokenEncryptionKey);
-        Data.Add("UserRoleApproval:UserRoleApprovalEmailTemplateId", orgAutoValidation.UserRoleApprovalEmailTemplateId);
-        Data.Add("UserRoleApproval:UserRoleApprovedEmailTemplateId", orgAutoValidation.UserRoleApprovedEmailTemplateId);
-        Data.Add("UserRoleApproval:UserRoleRejectedEmailTemplateId", orgAutoValidation.UserRoleRejectedEmailTemplateId);
+        var roleApproval = JsonConvert.DeserializeObject<UserRoleApproval>(_secrets.Data["UserRoleApproval"].ToString());
+        Data.Add("UserRoleApproval:Enable", roleApproval.Enable.ToString());
+        Data.Add("UserRoleApproval:RoleApprovalTokenEncryptionKey", roleApproval.RoleApprovalTokenEncryptionKey);
+        Data.Add("UserRoleApproval:UserRoleApprovalEmailTemplateId", roleApproval.UserRoleApprovalEmailTemplateId);
+        Data.Add("UserRoleApproval:UserRoleApprovedEmailTemplateId", roleApproval.UserRoleApprovedEmailTemplateId);
+        Data.Add("UserRoleApproval:UserRoleRejectedEmailTemplateId", roleApproval.UserRoleRejectedEmailTemplateId);
+      }
+
+      if (_secrets.Data.ContainsKey("ServiceRoleGroupSettings"))
+      {
+        var serviceRoleGroupSettings = JsonConvert.DeserializeObject<ServiceRoleGroupSettings>(_secrets.Data["ServiceRoleGroupSettings"].ToString());
+        Data.Add("ServiceRoleGroupSettings:Enable", serviceRoleGroupSettings.Enable.ToString());
       }
 
     }

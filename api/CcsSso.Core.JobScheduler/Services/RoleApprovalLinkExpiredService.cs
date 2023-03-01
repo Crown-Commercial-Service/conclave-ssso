@@ -5,7 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.External;
+using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
 using CcsSso.Core.JobScheduler.Jobs;
 using CcsSso.DbModel.Entity;
@@ -22,13 +24,19 @@ namespace CcsSso.Core.JobScheduler.Services
     private readonly IDataContext _dataContext;
     private readonly ILogger<RoleApprovalLinkExpiredService> _logger;
     private readonly IEmailSupportService _emailSupportService;
+    private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
+    private readonly AppSettings _appSettings;
+
     public RoleApprovalLinkExpiredService(IServiceScopeFactory factory,
       ILogger<RoleApprovalLinkExpiredService> logger,
-       IEmailSupportService emailSupportService)
+       IEmailSupportService emailSupportService,
+       AppSettings appSettings)
     {
       _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
       _emailSupportService = emailSupportService;
       _logger = logger;
+      _serviceRoleGroupMapperService = factory.CreateScope().ServiceProvider.GetRequiredService<IServiceRoleGroupMapperService>();
+      _appSettings = appSettings;
     }
 
     public async Task PerformJobAsync(List<UserAccessRolePending> pendingRoles)
@@ -112,6 +120,12 @@ namespace CcsSso.Core.JobScheduler.Services
         if (orgEligibleRole != null)
         {
           serviceName = orgEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName;
+
+          if (_appSettings.ServiceRoleGroupSettings.Enable)
+          {
+            var roleServiceInfo = await _serviceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(new List<int>() { orgEligibleRole.CcsAccessRole.Id });
+            serviceName = roleServiceInfo?.FirstOrDefault()?.Name;
+          }
         }
 
         foreach (var email in emailList)

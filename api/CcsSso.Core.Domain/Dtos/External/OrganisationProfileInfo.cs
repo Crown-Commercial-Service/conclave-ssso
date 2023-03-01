@@ -120,6 +120,7 @@ namespace CcsSso.Core.Domain.Dtos.External
     public RoleEligibleSubscriptionType SubscriptionTypeEligibility { get; set; }
 
     public RoleEligibleTradeType TradeEligibility { get; set; }
+
     public int[] AutoValidationRoleTypeEligibility { get; set; }
   }
 
@@ -143,7 +144,6 @@ namespace CcsSso.Core.Domain.Dtos.External
     public bool isDomainValid { get; set; } = false;
   }
 
-
   public class OrganisationAutoValidationRoleUpdate
   {
     // -1 set if not passed to make invalid org type
@@ -153,5 +153,41 @@ namespace CcsSso.Core.Domain.Dtos.External
     public List<OrganisationRole> RolesToAutoValid { get; set; }
     public string? CompanyHouseId { get; set; }
   }
+
+
+  #region ServiceRoleGroup
+  public class ServiceRoleGroup : ServiceRoleGroupInfo
+  {
+    public RoleEligibleOrgType OrgTypeEligibility { get; set; }
+
+    public RoleEligibleSubscriptionType SubscriptionTypeEligibility { get; set; }
+
+    public RoleEligibleTradeType TradeEligibility { get; set; }
+
+    public int DisplayOrder { get; set; }
+
+    public string Description { get; set; }
+
+    public int[] AutoValidationRoleTypeEligibility { get; set; } = { };
+  }
+
+  public class OrganisationServiceRoleGroupUpdate
+  {
+    public bool IsBuyer { get; set; }
+    public List<int> ServiceRoleGroupsToAdd { get; set; }
+    public List<int> ServiceRoleGroupsToDelete { get; set; }
+  }
+
+  public class OrgAutoValidServiceRoleGroupUpdate
+  {
+    // -1 set if not passed to make invalid org type
+    public RoleEligibleTradeType OrgType { get; set; } = (RoleEligibleTradeType)(-1);
+    public List<int> ServiceRoleGroupsToAdd { get; set; }
+    public List<int> ServiceRoleGroupsToDelete { get; set; }
+    public List<int> ServiceRoleGroupsToAutoValid { get; set; }
+    public string? CompanyHouseId { get; set; }
+  }
+
+  #endregion
 
 }
