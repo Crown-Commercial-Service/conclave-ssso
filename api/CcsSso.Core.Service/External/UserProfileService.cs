@@ -1994,7 +1994,14 @@ namespace CcsSso.Core.Service.External
         }        
 
         List<OrganisationEligibleRole> organisationEligibleRoles = await _serviceRoleGroupMapperService.ServiceRoleGroupsToOrgRolesAsync(serviceRoleGroupIds, organisationId);
-        await _serviceRoleGroupMapperService.RemoveApprovalRequiredRoleGroupOtherRolesAsync(organisationEligibleRoles);
+        
+        var userDomain = userProfileServiceRoleGroupEditRequestInfo?.UserName?.ToLower().Split('@')?[1];
+        var orgDoamin = _dataContext.Organisation.FirstOrDefault(o => o.CiiOrganisationId == organisationId)?.DomainName?.ToLower();
+
+        if (userDomain?.Trim() != orgDoamin?.Trim())
+        {
+          await _serviceRoleGroupMapperService.RemoveApprovalRequiredRoleGroupOtherRolesAsync(organisationEligibleRoles);
+        }
 
         roleIds = organisationEligibleRoles.Select(x => x.Id).ToList();
       }
