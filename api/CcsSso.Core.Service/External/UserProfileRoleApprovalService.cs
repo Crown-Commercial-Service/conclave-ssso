@@ -116,7 +116,7 @@ namespace CcsSso.Core.Service.External
                                                 serviceMappingCcsRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
               foreach (var orgRole in allOrgEligibleRoles)
               {
-                if (!user.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == orgRole.Id && !x.OrganisationEligibleRole.IsDeleted))
+                if (!user.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == orgRole.Id && !x.IsDeleted))
                 {
                   user.UserAccessRoles.Add(new UserAccessRole
                   {
