@@ -76,7 +76,7 @@ namespace CcsSso.Core.Service.External
         }
 
         var user = await _dataContext.User
-                  .Include(u => u.UserAccessRoles)
+                  .Include(u => u.UserAccessRoles).ThenInclude(u => u.OrganisationEligibleRole)
                   .FirstOrDefaultAsync(x => x.Id == pendingUserRole.UserId && !x.IsDeleted && x.UserType == UserType.Primary);
 
         if (user == null)
@@ -116,7 +116,7 @@ namespace CcsSso.Core.Service.External
                                                 serviceMappingCcsRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
               foreach (var orgRole in allOrgEligibleRoles)
               {
-                if (!user.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == orgRole.Id))
+                if (!user.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == orgRole.Id && !x.OrganisationEligibleRole.IsDeleted))
                 {
                   user.UserAccessRoles.Add(new UserAccessRole
                   {
