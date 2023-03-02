@@ -300,4 +300,10 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public int Status { get; set; }
   }
+
+  public class UserAccessServiceRoleGroupPendingTokenDetails : UserServiceRoleGroupPendingDetails
+  {
+    public int Id { get; set; }
+    public string UserName { get; set; }
+  }
 }
