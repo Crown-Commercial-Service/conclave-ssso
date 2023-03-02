@@ -76,7 +76,7 @@ namespace CcsSso.Core.Service.External
         }
 
         var user = await _dataContext.User
-                  .Include(u => u.UserAccessRoles)
+                  .Include(u => u.UserAccessRoles).ThenInclude(u => u.OrganisationEligibleRole)
                   .FirstOrDefaultAsync(x => x.Id == pendingUserRole.UserId && !x.IsDeleted && x.UserType == UserType.Primary);
 
         if (user == null)
@@ -114,14 +114,18 @@ namespace CcsSso.Core.Service.External
               var allOrgEligibleRoles = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
                                         .Where(x => !x.IsDeleted && x.OrganisationId == pendingUserRole.OrganisationEligibleRole.OrganisationId &&
                                                 serviceMappingCcsRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
-              foreach (var role in allOrgEligibleRoles)
+              foreach (var orgRole in allOrgEligibleRoles)
               {
-                user.UserAccessRoles.Add(new UserAccessRole
+                if (!user.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == orgRole.Id && !x.IsDeleted))
                 {
-                  UserId = user.Id,
-                  OrganisationEligibleRoleId = role.Id
-                });
+                  user.UserAccessRoles.Add(new UserAccessRole
+                  {
+                    UserId = user.Id,
+                    OrganisationEligibleRoleId = orgRole.Id
+                  });
+                }
               }
+
             }
           }
 
