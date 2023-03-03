@@ -62,11 +62,13 @@ namespace CcsSso.Core.Service
       await SendEmailAsync(emailInfo);
     }
 
-    public async Task SendUserConfirmEmailOnlyUserIdPwdAsync(string email, string activationlink)
+    // #Auto validation
+    public async Task SendUserConfirmEmailOnlyUserIdPwdAsync(string email, string activationlink, string ccsMsg)
     {
       var data = new Dictionary<string, dynamic>
       {
-        { "link", activationlink }
+        { "link", activationlink },
+        { "CCSMsg", ccsMsg}
       };
       var emailInfo = new EmailInfo()
       {

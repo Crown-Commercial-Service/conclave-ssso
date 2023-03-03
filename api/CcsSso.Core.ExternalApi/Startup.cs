@@ -112,7 +112,7 @@ namespace CcsSso.ExternalApi
             UserConfirmEmailOnlyFederatedIdpTemplateId = Configuration["Email:UserConfirmEmailOnlyFederatedIdpTemplateId"],
             UserConfirmEmailOnlyUserIdPwdTemplateId = Configuration["Email:UserConfirmEmailOnlyUserIdPwdTemplateId"],
             UserConfirmEmailBothIdpTemplateId = Configuration["Email:UserConfirmEmailBothIdpTemplateId"],
-            UserRegistrationEmailUserIdPwdTemplateId= Configuration["Email:UserRegistrationEmailUserIdPwdTemplateId"],
+            UserRegistrationEmailUserIdPwdTemplateId= Configuration["Email:UserRegistrationEmailUserIdPwdTemplateId"],           
             SendNotificationsEnabled = sendNotificationsEnabled,
           },
           QueueUrlInfo = new QueueUrlInfo
@@ -129,7 +129,23 @@ namespace CcsSso.ExternalApi
           {
             GlobalServiceDefaultRoles = globalServiceRoles,
             ScopedServiceDefaultRoles = scopedServiceRoles
-          }
+          },
+          // #Auto validation
+          OrgAutoValidation = new OrgAutoValidation()
+          {
+            Enable = Convert.ToBoolean(Configuration["OrgAutoValidation:Enable"]),
+            CCSAdminEmailId = Configuration["OrgAutoValidation:CCSAdminEmailId"],
+            BuyerSuccessAdminRoles = Configuration.GetSection("OrgAutoValidation:BuyerSuccessAdminRoles").Get<string[]>(),
+            BothSuccessAdminRoles = Configuration.GetSection("OrgAutoValidation:BothSuccessAdminRoles").Get<string[]>(),
+          },
+          OrgAutoValidationEmailInfo = new OrgAutoValidationEmailInfo()
+          {
+            DeclineRightToBuyStatusEmailTemplateId = Configuration["OrgAutoValidationEmail:DeclineRightToBuyStatusEmailTemplateId"],
+            ApproveRightToBuyStatusEmailTemplateId = Configuration["OrgAutoValidationEmail:ApproveRightToBuyStatusEmailTemplateId"],
+            RemoveRightToBuyStatusEmailTemplateId = Configuration["OrgAutoValidationEmail:RemoveRightToBuyStatusEmailTemplateId"],
+            OrgPendingVerificationEmailTemplateId = Configuration["OrgAutoValidationEmail:OrgPendingVerificationEmailTemplateId"],
+            OrgBuyerStatusChangeUpdateToAllAdmins = Configuration["OrgAutoValidationEmail:OrgBuyerStatusChangeUpdateToAllAdmins"],
+          },
         };
         return appConfigInfo;
       });
@@ -184,6 +200,9 @@ namespace CcsSso.ExternalApi
       services.AddSingleton<ILocalCacheService, InMemoryCacheService>();
       services.AddSingleton<IAuthorizationPolicyProvider, ClaimAuthorisationPolicyProvider>();
       services.AddSingleton<ICryptographyService, CryptographyService>();
+      // #Auto validation
+      services.AddSingleton<IWrapperApiService, WrapperApiService>();
+      services.AddSingleton<ILookUpService, LookUpService>();
       services.AddMemoryCache();
 
       services.AddScoped<IDataContext>(s => s.GetRequiredService<DataContext>());
@@ -193,6 +212,8 @@ namespace CcsSso.ExternalApi
       services.AddScoped<IOrganisationContactService, OrganisationContactService>();
       services.AddScoped<IOrganisationSiteService, OrganisationSiteService>();
       services.AddScoped<IOrganisationSiteContactService, OrganisationSiteContactService>();
+      services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();
+      services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
       services.AddScoped<IUserProfileService, UserProfileService>();
       services.AddScoped<IUserContactService, UserContactService>();
       services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
@@ -214,6 +235,12 @@ namespace CcsSso.ExternalApi
       {
         c.BaseAddress = new Uri(Configuration["Cii:Url"]);
         c.DefaultRequestHeaders.Add("x-api-key", Configuration["Cii:Token"]);
+      });
+      // #Auto validation
+      services.AddHttpClient("LookupApi", c =>
+      {
+        c.BaseAddress = new Uri(Configuration["LookUpApiSettings:LookUpApiUrl"]);
+        c.DefaultRequestHeaders.Add("X-API-Key", Configuration["LookUpApiSettings:LookUpApiKey"]);
       });
       services.AddSwaggerGen(c =>
       {
