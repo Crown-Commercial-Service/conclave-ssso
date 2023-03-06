@@ -1,36 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
+﻿using CcsSso.Core.BSIRolesRemovalOneTimeJob.Contracts;
 using System.Text;
-using System.Threading.Tasks;
-using Amazon.Runtime;
-using Amazon.Runtime.Internal.Util;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Jobs;
-using CcsSso.Core.JobScheduler.Contracts;
-using CcsSso.Core.JobScheduler.Model;
+//using CcsSso.Core.JobScheduler.Contracts;
+//using CcsSso.Core.JobScheduler.Model;
 using CcsSso.Domain.Contracts;
-using CcsSso.Shared.Domain.Dto;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using VaultSharp.V1.SecretsEngines.AWS;
-using OrganisationDetail = CcsSso.Core.JobScheduler.Model.OrganisationDetail;
+using OrganisationDetail = CcsSso.Core.BSIRolesRemovalOneTimeJob.Model.OrganisationDetail;
+using CcsSso.Core.BSIRolesRemovalOneTimeJob.Model;
 
-namespace CcsSso.Core.JobScheduler.Services
+namespace CcsSso.Core.BSIRolesRemovalOneTimeJob.Service
 {
-  public class AutoValidationOneTimeService : IAutoValidationOneTimeService
+  public class RemoveRoleFromAllOrganisationService:IRemoveRoleFromAllOrganisationService
   {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly AppSettings _appSettings;
-    private readonly ILogger<AutoValidationService> _logger;
+    private readonly ILogger<RemoveRoleFromAllOrganisationService> _logger;
     private readonly IDataContext _dataContext;
 
-
-    public AutoValidationOneTimeService(IHttpClientFactory httpClientFactory, AppSettings appSettings, IServiceScopeFactory factory,
-      ILogger<AutoValidationService> logger)
+    public RemoveRoleFromAllOrganisationService(IHttpClientFactory httpClientFactory, AppSettings appSettings, IServiceScopeFactory factory,
+     ILogger<RemoveRoleFromAllOrganisationService> logger)
     {
       _httpClientFactory = httpClientFactory;
       _appSettings = appSettings;
@@ -38,7 +28,6 @@ namespace CcsSso.Core.JobScheduler.Services
       _logger = logger;
 
     }
-
 
     public async Task PerformJobAsync(List<OrganisationDetail> organisations)
     {
@@ -58,30 +47,9 @@ namespace CcsSso.Core.JobScheduler.Services
       {
         try
         {
-          //var bothRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveRoleFromAllOrg;
-          //await RemoveRoles(client, bothRoles, orgDetail, logMessage);
+          var bothRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveRoleFromAllOrg;
+          await RemoveRoles(client, bothRoles, orgDetail, logMessage);
 
-          if (orgDetail.SupplierBuyerType == 0)
-          {
-            if ((bool)!orgDetail.RightToBuy)
-            {
-              var buyerRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveBuyerRoleFromSupplierOrg;
-              await RemoveRoles(client, buyerRoles, orgDetail, logMessage);
-            }
-            var supplierRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.AddRolesToSupplierOrg;
-            await AddRoles(client, supplierRoles, orgDetail, logMessage);
-
-          }
-          else if (orgDetail.SupplierBuyerType == 1)
-          {
-            // var supplierRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveRoleFromBuyerOrg;
-            // await RemoveRoles(client, supplierRoles, orgDetail, logMessage);
-          }
-          else if (orgDetail.SupplierBuyerType == 2)
-          {
-            var addBothRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.AddRolesToBothOrgOnly;
-            await AddRoles(client, addBothRoles, orgDetail, logMessage);
-          }
         }
         catch (Exception e)
         {
@@ -155,64 +123,6 @@ namespace CcsSso.Core.JobScheduler.Services
       }
     }
 
-    private async Task AddRoles(HttpClient client, string[] roles, OrganisationDetail orgDetail, List<OrganisationLogDetail> logMessage)
-    {
-      var eligibleRolesToAdd = new List<int>();
-      try
-      {
-        _logger.LogInformation($"Add roles to Org. LegalName: {orgDetail.LegalName}, CiiOrgId={orgDetail.CiiOrganisationId}, Id={orgDetail.Id}");
-
-        var organisation = await _dataContext.Organisation
-       .Include(er => er.OrganisationEligibleRoles)
-      .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == orgDetail.CiiOrganisationId);
-
-        var rolesToAddIds = _dataContext.CcsAccessRole.Where(oer => roles.Contains(oer.CcsAccessRoleNameKey)).Select(x => x.Id).ToList();
-
-        eligibleRolesToAdd = rolesToAddIds.Except(organisation.OrganisationEligibleRoles.Where(oer => !oer.IsDeleted).Select(y => y.CcsAccessRoleId)).ToList();
-
-        if (!eligibleRolesToAdd.Any())
-        {
-          _logger.LogWarning($"No Roles are added. Roles {string.Join(',', eligibleRolesToAdd)} are already exists.");
-          AddLogMessage(logMessage, orgDetail, $"No Roles are added. Roles {string.Join(',', eligibleRolesToAdd)} are already exists.");
-          return;
-        }
-
-        var RolesToAdd = new List<OrganisationRole>();
-
-        foreach (var id in eligibleRolesToAdd)
-        {
-          RolesToAdd.Add(new OrganisationRole() { RoleId = id });
-        }
-
-        var updateRoles = new OrganisationRoleUpdate() { IsBuyer = (bool)orgDetail.RightToBuy, RolesToAdd = RolesToAdd };
-
-        var url = "/organisations/" + orgDetail.CiiOrganisationId + "/roles";
-        HttpContent data = new StringContent(JsonConvert.SerializeObject(updateRoles, new JsonSerializerSettings
-        { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
-
-        var response = await client.PutAsync(url, data);
-
-        if (response.StatusCode == System.Net.HttpStatusCode.OK)
-        {
-          _logger.LogInformation($"Role {string.Join(',', eligibleRolesToAdd)} added successfully for the org CiiId =" + orgDetail.CiiOrganisationId);
-          AddLogMessage(logMessage, orgDetail, $"Successfully added roles {string.Join(',', roles)}");
-        }
-        else
-        {
-
-          _logger.LogWarning($"Failed to add roles {string.Join(',', eligibleRolesToAdd)}. Response StatusCode =" + response.StatusCode);
-          _logger.LogWarning($"Failed to add roles {string.Join(',', eligibleRolesToAdd)}. Org CiiId =" + orgDetail.CiiOrganisationId);
-          _logger.LogWarning($"Failed to add roles {string.Join(',', eligibleRolesToAdd)}. Response =" + response.Content);
-          AddLogMessage(logMessage, orgDetail, $"Failed to add roles {string.Join(',', eligibleRolesToAdd)}");
-        }
-      }
-      catch (Exception)
-      {
-        _logger.LogError($"Exception while adding roles {string.Join(',', eligibleRolesToAdd)} to org. LegalName: {orgDetail.LegalName}, CiiOrgId={orgDetail.CiiOrganisationId}, Id={orgDetail.Id}");
-        AddLogMessage(logMessage, orgDetail, $"Failed to add roles {string.Join(',', eligibleRolesToAdd)}");
-
-      }
-    }
     private void AddLogMessage(List<OrganisationLogDetail> logMessage, OrganisationDetail orgDetail, string information)
     {
       logMessage.Add(new OrganisationLogDetail()
@@ -225,5 +135,7 @@ namespace CcsSso.Core.JobScheduler.Services
         Information = information
       });
     }
+
+
   }
 }
