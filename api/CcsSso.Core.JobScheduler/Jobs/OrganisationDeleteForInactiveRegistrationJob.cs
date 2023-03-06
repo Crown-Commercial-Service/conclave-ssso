@@ -62,21 +62,32 @@ namespace CcsSso.Core.JobScheduler
     {
       var organisationIds = await GetExpiredOrganisationIdsAsync();
       Guid groupId = Guid.NewGuid();
-      //Console.WriteLine($"{organisationIds.Count()} organizations found");
+
+      if (organisationIds != null)
+        Console.WriteLine($"{organisationIds.Count()} organizations found");
+      else
+        Console.WriteLine("No organizations found");
+
       if (organisationIds != null)
       {
         var client = _httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Add("X-API-Key", _appSettings.SecurityApiSettings.ApiKey);
         client.BaseAddress = new Uri(_appSettings.SecurityApiSettings.Url);
 
+        int i = 0;
         foreach (var orgDetail in organisationIds)
         {
+          i++;
+          Console.WriteLine($"Processing {i} out of {organisationIds.Count} Organisations");
+
           try
           {
             OrgDeleteCandidateStatus orgDeleteCandidateStatus = OrgDeleteCandidateStatus.None;
             //Get admin users to check their statuses in idam
             var adminUsers = await GetOrganisationAdmins(orgDetail.Id);
-            //Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.Item2}");
+            
+            Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.Id}");
+            
             foreach (var adminUser in adminUsers)
             {
               var url = "/security/users?email=" + adminUser.UserName;
@@ -98,18 +109,21 @@ namespace CcsSso.Core.JobScheduler
               }
               else
               {
+                Console.WriteLine("The user doesn't exist in Auth0. But exists in our DB. So no action has been taken.");
                 orgDeleteCandidateStatus = OrgDeleteCandidateStatus.None;
               }
             }
 
             if (orgDeleteCandidateStatus == OrgDeleteCandidateStatus.Delete)
             {
-              //Console.WriteLine($"*********Deleting from Conclave Organization id {orgDetail.Item1}***********************");
+              //Console.WriteLine($"*********Start Deleting from Conclave Organization id {orgDetail.Id}***********************");
               await DeleteOrganisationAsync(orgDetail.Id);
-              //Console.WriteLine($"*********Deleted from Conclave Organization id {orgDetail.Item1}***********************");
+              //Console.WriteLine($"*********End Deleted from Conclave Organization id {orgDetail.Id}***********************");
 
-              //Console.WriteLine($"*********Deleting from CII Organization id {orgDetail.Item1} ***********************");
+              //Console.WriteLine($"*********Start Deleting from CII Organization id {orgDetail.Id} ***********************");
               await DeleteCIIOrganisationEntryAsync(orgDetail.CiiOrganisationId);
+              //Console.WriteLine($"*********End Deleting from CII Organization id {orgDetail.Id} ***********************");
+
               if (_appSettings.OrgAutoValidationJobSettings.Enable && orgDetail.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier)
               {
                 var organisationAudit = _dataContext.OrganisationAudit.FirstOrDefault(x => x.OrganisationId == orgDetail.Id);
@@ -147,6 +161,8 @@ namespace CcsSso.Core.JobScheduler
           }
           catch (Exception e)
           {
+            Console.WriteLine($"Failed to processed {i}st Organisation from the list of Organisations");
+
             Console.WriteLine($"Org deletion error " + JsonConvert.SerializeObject(e));
             //Console.WriteLine($"*********Error deleting Organization***********************" + e.Message);
           }

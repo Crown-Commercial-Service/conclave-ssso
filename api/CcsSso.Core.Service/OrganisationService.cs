@@ -342,7 +342,8 @@ namespace CcsSso.Service
             OrganisationId = ciiOrgId,
             BusinessType = organisationRegistrationDto.BusinessType,
             RightToBuy = organisationRegistrationDto.RightToBuy,
-            SupplierBuyerType = organisationRegistrationDto.SupplierBuyerType
+            SupplierBuyerType = organisationRegistrationDto.SupplierBuyerType,
+            DomainName = organisationRegistrationDto.AdminUserName?.Split('@')?[1]
           }
         };
 
@@ -430,7 +431,7 @@ namespace CcsSso.Service
       {
         if (await _userProfileService.IsUserExist(organisationRegistrationDto.AdminUserName))
         {
-          await _userProfileService.DeleteUserAsync(organisationRegistrationDto.AdminUserName, false);
+          await _userProfileService.DeleteUserAsync(organisationRegistrationDto.AdminUserName.ToLower(), false);
         }
         await DeleteAsync(ciiOrgId);
         throw;

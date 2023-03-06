@@ -103,6 +103,7 @@ namespace CcsSso.Security.Api
         int.TryParse(Configuration["PasswordPolicy:RequiredUniqueChars"], out int requiredUniqueChars);
         bool.TryParse(Configuration["RedisCacheSettings:IsEnabled"], out bool isRedisEnabled);
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
+        bool.TryParse(Configuration["QueueInfo:EnableDataQueue"], out bool enableDataQueue);
 
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
@@ -221,7 +222,12 @@ namespace CcsSso.Security.Api
           {
             MaxAllowedAttempts = Configuration["ResetPasswordSettings:MaxAllowedAttempts"],
             MaxAllowedAttemptsThresholdInMinutes = Configuration["ResetPasswordSettings:MaxAllowedAttemptsThresholdInMinutes"],
-          }
+          },
+          QueueInfo = new QueueInfo
+          {
+            EnableDataQueue = enableDataQueue,
+            DataQueueUrl = Configuration["QueueInfo:DataQueueUrl"]
+          },
         };
         return appConfigInfo;
       });
@@ -234,6 +240,25 @@ namespace CcsSso.Security.Api
         };
 
         return emailConfigurationInfo;
+      });
+
+      services.AddSingleton(s =>
+      {
+        int.TryParse(Configuration["QueueInfo:DataQueueRecieveMessagesMaxCount"], out int dataQueueRecieveMessagesMaxCount);
+        dataQueueRecieveMessagesMaxCount = dataQueueRecieveMessagesMaxCount == 0 ? 10 : dataQueueRecieveMessagesMaxCount;
+
+        int.TryParse(Configuration["QueueInfo:DataQueueRecieveWaitTimeInSeconds"], out int dataQueueRecieveWaitTimeInSeconds); // Default value 0
+
+        var sqsConfiguration = new SqsConfiguration
+        {
+          ServiceUrl = Configuration["QueueInfo:ServiceUrl"],
+          DataQueueAccessKeyId = Configuration["QueueInfo:DataQueueAccessKeyId"],
+          DataQueueAccessSecretKey = Configuration["QueueInfo:DataQueueAccessSecretKey"],
+          DataQueueRecieveMessagesMaxCount = dataQueueRecieveMessagesMaxCount,
+          DataQueueRecieveWaitTimeInSeconds = dataQueueRecieveWaitTimeInSeconds
+        };
+
+        return sqsConfiguration;
       });
 
       if (!string.IsNullOrEmpty(Configuration["RollBarLogger:Token"]) && !string.IsNullOrEmpty(Configuration["RollBarLogger:Environment"]))
@@ -261,6 +286,7 @@ namespace CcsSso.Security.Api
       services.AddMemoryCache();
       services.AddSingleton<IRemoteCacheService, RedisCacheService>();
       services.AddSingleton<ICryptographyService, CryptographyService>();
+      services.AddSingleton<IAwsDataSqsService, AwsDataSqsService>();
       services.AddSingleton<RedisConnectionPoolService>(_ =>
         new RedisConnectionPoolService(Configuration["RedisCacheSettings:ConnectionString"])
       );
