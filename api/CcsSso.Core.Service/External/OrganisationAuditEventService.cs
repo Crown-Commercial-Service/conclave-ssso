@@ -139,7 +139,7 @@ namespace CcsSso.Core.Service.External
 
         foreach (var role in roles)
         {
-          var roleInfo = allRoles.FirstOrDefault(x => x.RoleName == role?.Trim());
+          var roleInfo = allRoles.FirstOrDefault(x => x.RoleName?.Trim() == role?.Trim());
           if (roleInfo != null)
           {
             var auditEventInfo = new OrganisationAuditEventResponseInfo
@@ -252,7 +252,7 @@ namespace CcsSso.Core.Service.External
       if (auditEvent.Event == OrganisationAuditEventType.OrgRoleAssigned.ToString() || auditEvent.Event == OrganisationAuditEventType.OrgRoleUnassigned.ToString())
       {
         var roles = auditEvent.Roles.Split(",");
-        var ccsRoleIds = allRoles.Where(r => roles.Any(x => x?.Trim() == r.RoleName)).Select(r => r.RoleId).ToList();
+        var ccsRoleIds = allRoles.Where(r => roles.Any(x => x?.Trim() == r.RoleName?.Trim())).Select(r => r.RoleId).ToList();
         var services  = await _rolesToServiceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(ccsRoleIds);
 
         auditEventInfos = services.Distinct().Select(s => new OrgAuditEventServiceRoleGroupResponseInfo() 
