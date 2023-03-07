@@ -152,5 +152,26 @@ namespace CcsSso.Core.ExternalApi.Controllers
     {
       return await _userProfileRoleApprovalService.GetUserServiceRoleGroupsPendingForApprovalAsync(userId);
     }
+
+    /// <summary>
+    /// Validate role approval token and return serice role group details
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="400">Bad request.</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET approve/servicerolegroup/verify?token=encryptedtoken
+    ///
+    /// </remarks>
+    [HttpGet("approve/servicerolegroup/verify")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(UserAccessServiceRoleGroupPendingTokenDetails), 200)]
+    public async Task<UserAccessServiceRoleGroupPendingTokenDetails> VerifyServiceRoleGroupApprovalToken([FromQuery(Name = "token")] string token)
+    {
+      return await _userProfileRoleApprovalService.VerifyAndReturnServiceRoleGroupApprovalTokenDetailsAsync(token);
+    }
   }
 }

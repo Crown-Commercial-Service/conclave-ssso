@@ -1,4 +1,5 @@
 ﻿using CcsSso.Core.DbModel.Constants;
+using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.Exceptions;
@@ -61,9 +62,12 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
       }
 
+      // Get all services with pending approval role
+      var serviceRoleGroupsWithApprovalRequiredRole = await _serviceRoleGroupMapperService.ServiceRoleGroupsWithApprovalRequiredRoleAsync();
+
       foreach (var pendingRoleId in pendingRoleIds)
       {
-        var pendingUserRole = await _dataContext.UserAccessRolePending
+        var pendingUserRole = await _dataContext.UserAccessRolePending.Include(x => x.OrganisationEligibleRole).ThenInclude(r => r.CcsAccessRole)
                    .FirstOrDefaultAsync(x => x.Id == pendingRoleId && !x.IsDeleted && x.Status == (int)UserPendingRoleStaus.Pending);
 
         if (pendingUserRole == null)
@@ -72,7 +76,7 @@ namespace CcsSso.Core.Service.External
         }
 
         var user = await _dataContext.User
-                  .Include(u => u.UserAccessRoles)
+                  .Include(u => u.UserAccessRoles).ThenInclude(u => u.OrganisationEligibleRole)
                   .FirstOrDefaultAsync(x => x.Id == pendingUserRole.UserId && !x.IsDeleted && x.UserType == UserType.Primary);
 
         if (user == null)
@@ -91,16 +95,40 @@ namespace CcsSso.Core.Service.External
           pendingUserRole.Status = (int)UserPendingRoleStaus.Approved;
           pendingUserRole.IsDeleted = true;
 
-          var roleAleadyExists = await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.UserId == pendingUserRole.UserId && !x.IsDeleted && x.OrganisationEligibleRoleId == pendingUserRole.OrganisationEligibleRoleId);
+          var roleAlreadyExists = await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.UserId == pendingUserRole.UserId && !x.IsDeleted && x.OrganisationEligibleRoleId == pendingUserRole.OrganisationEligibleRoleId);
 
-          if (roleAleadyExists == null)
+          if (roleAlreadyExists == null)
           {
             user.UserAccessRoles.Add(new UserAccessRole
             {
               UserId = user.Id,
               OrganisationEligibleRoleId = pendingUserRole.OrganisationEligibleRoleId
             });
+
+            // On role approval assign normal roles of service as well
+            if (_appConfigInfo.ServiceRoleGroupSettings.Enable)
+            {
+              var serviceGroup = serviceRoleGroupsWithApprovalRequiredRole.FirstOrDefault(x => x.CcsServiceRoleMappings.Any(r => r.CcsAccessRoleId == pendingUserRole.OrganisationEligibleRole.CcsAccessRoleId));
+              var serviceMappingCcsRoleIds = serviceGroup.CcsServiceRoleMappings.Where(y => y.CcsAccessRole.ApprovalRequired == 0).Select(x => x.CcsAccessRoleId).ToList();
+
+              var allOrgEligibleRoles = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
+                                        .Where(x => !x.IsDeleted && x.OrganisationId == pendingUserRole.OrganisationEligibleRole.OrganisationId &&
+                                                serviceMappingCcsRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
+              foreach (var orgRole in allOrgEligibleRoles)
+              {
+                if (!user.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == orgRole.Id && !x.IsDeleted))
+                {
+                  user.UserAccessRoles.Add(new UserAccessRole
+                  {
+                    UserId = user.Id,
+                    OrganisationEligibleRoleId = orgRole.Id
+                  });
+                }
+              }
+
+            }
           }
+
         }
 
         await _dataContext.SaveChangesAsync();
@@ -112,6 +140,11 @@ namespace CcsSso.Core.Service.External
         if (orgEligibleRole != null)
         {
           serviceName = orgEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName;
+          if (_appConfigInfo.ServiceRoleGroupSettings.Enable)
+          {
+            var roleServiceInfo = await _serviceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(new List<int>() { orgEligibleRole.CcsAccessRoleId });
+            serviceName = roleServiceInfo?.FirstOrDefault()?.Name;
+          }
         }
 
         var emailList = new List<string>() { user.UserName };
@@ -273,6 +306,7 @@ namespace CcsSso.Core.Service.External
         {
           Id = userAccessRolePendingRoleDetails.Id,
           UserName = userAccessRoleUserDetails.User.UserName,
+          RoleId = userAccessRolePendingRoleDetails.OrganisationEligibleRole.CcsAccessRoleId,
           RoleName = userAccessRolePendingRoleDetails.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
           RoleKey = userAccessRolePendingRoleDetails.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
           Status = isLinkExpired ? (int)UserPendingRoleStaus.Expired : userAccessRolePendingRoleDetails.Status
@@ -464,7 +498,33 @@ namespace CcsSso.Core.Service.External
       }
 
       return userServiceRoleGroups;
-
     }
+
+    public async Task<UserAccessServiceRoleGroupPendingTokenDetails> VerifyAndReturnServiceRoleGroupApprovalTokenDetailsAsync(string token)
+    {
+      if (!_appConfigInfo.UserRoleApproval.Enable || !_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var tokenDetails = await VerifyAndReturnRoleApprovalTokenDetailsAsync(token);
+      CcsServiceRoleGroup serviceRoleGroupDetails = new();
+
+      if (tokenDetails?.RoleId != null)
+      {
+        var serviceRoleGroups = await _serviceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(new List<int> { tokenDetails.RoleId });
+        serviceRoleGroupDetails = serviceRoleGroups.FirstOrDefault();
+      }
+
+      return new UserAccessServiceRoleGroupPendingTokenDetails()
+      {
+        Id = tokenDetails.Id,
+        Key = serviceRoleGroupDetails?.Key,
+        Name = serviceRoleGroupDetails?.Name,
+        UserName = tokenDetails.UserName,
+        Status = tokenDetails.Status
+      };
+    }
+
   }
 }

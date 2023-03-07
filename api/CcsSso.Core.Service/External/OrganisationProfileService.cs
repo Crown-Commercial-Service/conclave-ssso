@@ -1583,7 +1583,7 @@ namespace CcsSso.Core.Service.External
 
         if (organisationEligibleRoleId <= 0)
         {
-          return;
+          continue;
         }
         // assign roles to all admins
         foreach (var adminDetails in allAdminsOfOrg)
@@ -1597,7 +1597,8 @@ namespace CcsSso.Core.Service.External
           {
             var defaultUserRole = new UserAccessRole
             {
-              OrganisationEligibleRoleId = organisationEligibleRoleId
+              OrganisationEligibleRoleId = organisationEligibleRoleId,
+              OrganisationEligibleRole = organisationEligibleRole
             };
             adminDetails.UserAccessRoles.Add(defaultUserRole);
           }
@@ -1615,6 +1616,26 @@ namespace CcsSso.Core.Service.External
           }
         }
       }
+
+      if (_applicationConfigurationInfo.UserRoleApproval.Enable && _applicationConfigurationInfo.ServiceRoleGroupSettings.Enable)
+      {
+        foreach (var adminDetails in allAdminsOfOrg)
+        {
+          if (adminDetails.UserName.ToLower().Split('@')?[1] != organisation.DomainName?.ToLower())
+          {
+            var servicesWithApprovalRequiredRole = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsWithApprovalRequiredRoleAsync();
+
+            foreach (var approvalRoleService in servicesWithApprovalRequiredRole)
+            {
+              // Remove all the roles of approval required service except approval required role.
+              // All roles of approval required service will be assigned once approval required role is approved.
+              var removeCcsRoles = approvalRoleService.CcsServiceRoleMappings.Where(x => x.CcsAccessRole.ApprovalRequired != 1).Select(x => x.CcsAccessRoleId).ToList();
+              adminDetails.UserAccessRoles.RemoveAll(x => removeCcsRoles.Contains(x.OrganisationEligibleRole.CcsAccessRoleId));
+            }
+          }
+        }
+      }
+
     }
 
     private bool RoleApprovalRequiredCheck(Organisation organisation, AutoValidationRole role, User adminDetails)
@@ -2065,8 +2086,8 @@ namespace CcsSso.Core.Service.External
       var ccsAccessRolesToAdd = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCcsRolesAsync(serviceRoleGroupsToAdd);
       var ccsAccessRolesToDelete = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCcsRolesAsync(serviceRoleGroupsToDelete);
 
-      var addRoles = ccsAccessRolesToAdd.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).Distinct().ToList();
-      var deleteRoles = ccsAccessRolesToDelete.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).Distinct().ToList();
+      var addRoles = ccsAccessRolesToAdd.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey, RoleName = r.CcsAccessRoleName }).Distinct().ToList();
+      var deleteRoles = ccsAccessRolesToDelete.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey, RoleName = r.CcsAccessRoleName }).Distinct().ToList();
 
       await UpdateOrganisationEligibleRolesAsync(ciiOrganisationId, isBuyer, addRoles, deleteRoles);
     }
@@ -2087,9 +2108,9 @@ namespace CcsSso.Core.Service.External
       var ccsAccessRolesToDelete = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCcsRolesAsync(serviceRoleGroupsToDelete);
       var ccsAccessRolesAutoValidRoles = await _rolesToServiceRoleGroupMapperService.ServiceRoleGroupsToCcsRolesAsync(serviceRoleGroupsToAutoValid);
 
-      var addRoles = ccsAccessRolesToAdd.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).Distinct().ToList();
-      var deleteRoles = ccsAccessRolesToDelete.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).Distinct().ToList();
-      var autoValidRoles = ccsAccessRolesAutoValidRoles.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey }).Distinct().ToList();
+      var addRoles = ccsAccessRolesToAdd.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey, RoleName = r.CcsAccessRoleName }).Distinct().ToList();
+      var deleteRoles = ccsAccessRolesToDelete.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey, RoleName = r.CcsAccessRoleName }).Distinct().ToList();
+      var autoValidRoles = ccsAccessRolesAutoValidRoles.Select(r => new OrganisationRole { RoleId = r.Id, RoleKey = r.CcsAccessRoleNameKey, RoleName = r.CcsAccessRoleName }).Distinct().ToList();
 
       await UpdateOrgAutoValidationEligibleRolesAsync(ciiOrganisationId, newOrgType, addRoles, deleteRoles, autoValidRoles, companyHouseId);
     }
