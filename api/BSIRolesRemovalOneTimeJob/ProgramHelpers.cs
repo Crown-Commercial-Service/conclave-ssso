@@ -1,4 +1,4 @@
-﻿using Amazon.SimpleSystemsManagement.Model;
+using Amazon.SimpleSystemsManagement.Model;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
@@ -25,13 +25,13 @@ namespace CcsSso.Core.BSIRolesRemovalOneTimeJob
     public dynamic FillAwsParamsValue(Type objType, List<Parameter> parameters)
     {
       dynamic? returnParams = null;
-     
+
       if (objType == typeof(WrapperApiSettings))
       {
         returnParams = new WrapperApiSettings()
         {
-          ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/Url"),
-          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiKey"),
+          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/Url"),
+          ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiKey"),
         };
       }
 
@@ -49,7 +49,7 @@ namespace CcsSso.Core.BSIRolesRemovalOneTimeJob
           Enable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJob/Enable")),
           StartDate = _awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJob/StartDate"),
           EndDate = _awsParameterStoreService.FindParameterByName(parameters, path + "OrgAutoValidationOneTimeJob/EndDate")
-          
+
         };
       }
       else if (objType == typeof(OrgAutoValidationOneTimeJobRoles))

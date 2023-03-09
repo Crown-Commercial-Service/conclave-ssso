@@ -26,6 +26,9 @@ namespace CcsSso.Core.Domain.Jobs
     public OrgAutoValidationOneTimeJobEmail? OrgAutoValidationOneTimeJobEmail { get; set; }
 
     public OrgAutoValidationOneTimeJobRoles? OrgAutoValidationOneTimeJobRoles { get; set; }
+
+    public ActiveJobStatus? ActiveJobStatus { get; set; }
+    public bool IsApiGatewayEnabled { get; set; }
   }
 
   public class CiiSettings
@@ -33,6 +36,12 @@ namespace CcsSso.Core.Domain.Jobs
     public string Url { get; set; }
 
     public string Token { get; set; }
+  }
+
+  public class ActiveJobStatus
+  {
+    public bool RoleDeleteExpiredNotificationJob { get; set; }
+
   }
 
   public class ScheduleJobSettings
@@ -46,6 +55,7 @@ namespace CcsSso.Core.Domain.Jobs
     public int BulkUploadJobExecutionFrequencyInMinutes { get; set; }
 
     public int OrganisationAutovalidationJobExecutionFrequencyInMinutes { get; set; }
+    public int RoleExpiredNotificationDeleteFrequencyInMinutes { get; set; }
 
   }
   public class WrapperApiSettings
@@ -53,6 +63,10 @@ namespace CcsSso.Core.Domain.Jobs
     public string ApiKey { get; set; }
 
     public string Url { get; set; }
+
+    public string ApiGatewayEnabledUserUrl { get; set; }
+
+    public string ApiGatewayDisabledUserUrl   { get; set; }
   }
 
   public class SecurityApiSettings

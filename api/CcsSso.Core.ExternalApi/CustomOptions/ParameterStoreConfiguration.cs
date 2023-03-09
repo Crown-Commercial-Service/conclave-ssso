@@ -53,6 +53,7 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ApiKey", "ApiKey"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "IsApiGatewayEnabled", "IsApiGatewayEnabled"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "EnableAdditionalLogs", "EnableAdditionalLogs"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "EnableUserAccessTokenFix", "EnableUserAccessTokenFix"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ConclaveLoginUrl", "ConclaveLoginUrl"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "InMemoryCacheExpirationInMinutes", "InMemoryCacheExpirationInMinutes"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "DashboardServiceClientId", "DashboardServiceClientId"));
@@ -132,7 +133,7 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
 
       // #Auto validation
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/Enable", "OrgAutoValidation:Enable"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidation/CCSAdminEmailId", "OrgAutoValidation:CCSAdminEmailId"));
+      configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/CCSAdminEmailIds", "OrgAutoValidation:CCSAdminEmailIds"));
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/BuyerSuccessAdminRoles", "OrgAutoValidation:BuyerSuccessAdminRoles"));
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "OrgAutoValidation/BothSuccessAdminRoles", "OrgAutoValidation:BothSuccessAdminRoles"));
 
@@ -145,6 +146,12 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
 
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/OrgPendingVerificationEmailTemplateId", "OrgAutoValidationEmail:OrgPendingVerificationEmailTemplateId"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "OrgAutoValidationEmail/OrgBuyerStatusChangeUpdateToAllAdmins", "OrgAutoValidationEmail:OrgBuyerStatusChangeUpdateToAllAdmins"));
+
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/Enable", "UserRoleApproval:Enable"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/RoleApprovalTokenEncryptionKey", "UserRoleApproval:RoleApprovalTokenEncryptionKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/UserRoleApprovalEmailTemplateId", "UserRoleApproval:UserRoleApprovalEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/UserRoleApprovedEmailTemplateId", "UserRoleApproval:UserRoleApprovedEmailTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/UserRoleRejectedEmailTemplateId", "UserRoleApproval:UserRoleRejectedEmailTemplateId"));
 
       foreach (var configuration in configurations)
       {

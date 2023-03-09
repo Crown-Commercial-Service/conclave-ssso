@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -68,14 +68,15 @@ namespace CcsSso.Core.JobScheduler.Services
               var buyerRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveBuyerRoleFromSupplierOrg;
               await RemoveRoles(client, buyerRoles, orgDetail, logMessage);
             }
+
             var supplierRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.AddRolesToSupplierOrg;
             await AddRoles(client, supplierRoles, orgDetail, logMessage);
 
           }
           else if (orgDetail.SupplierBuyerType == 1)
           {
-            // var supplierRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveRoleFromBuyerOrg;
-            // await RemoveRoles(client, supplierRoles, orgDetail, logMessage);
+            //var supplierRoles = _appSettings.OrgAutoValidationOneTimeJobRoles.RemoveRoleFromBuyerOrg;
+            //await RemoveRoles(client, supplierRoles, orgDetail, logMessage);
           }
           else if (orgDetail.SupplierBuyerType == 2)
           {

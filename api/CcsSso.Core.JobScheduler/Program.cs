@@ -3,6 +3,7 @@ using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
+using CcsSso.Core.JobScheduler.Jobs;
 using CcsSso.Core.JobScheduler.Services;
 using CcsSso.Core.Service;
 using CcsSso.Core.Service.External;
@@ -21,6 +22,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 
@@ -69,6 +71,8 @@ namespace CcsSso.Core.JobScheduler
           OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles;
           OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob;
           OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail;
+          ActiveJobStatus activeJobStatus;
+          bool isApiGatewayEnabled = false;
 
 
           if (vaultEnabled)
@@ -93,15 +97,19 @@ namespace CcsSso.Core.JobScheduler
                 dbConnection = dbConnectionEndPoint;
               }
 
+              isApiGatewayEnabled = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "IsApiGatewayEnabled"));
+
               ReadFromAWS(out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings, out bulkUploadSettings,
                 out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
                  out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles,out orgAutoValidationOneTimeJobEmail, parameters);
+              ReadFromAWSActiveJobStatus(out activeJobStatus, parameters);
             }
             else
             {
               ReadFromHashicorp(out dbConnection, out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings,
                 out bulkUploadSettings, out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
-                out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail);
+                out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail, out isApiGatewayEnabled);
+              ReadFromHashicorpActiveJobStatus(out activeJobStatus);
 
             }
           }
@@ -109,7 +117,8 @@ namespace CcsSso.Core.JobScheduler
           {
             ReadFromAppSecret(hostContext, out dbConnection, out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings,
               out bulkUploadSettings, out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
-              out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail);
+              out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail, out isApiGatewayEnabled);
+            ReadFromAppSecretActiveJobStatus(hostContext, out activeJobStatus);
           }
 
           services.AddSingleton(s =>
@@ -121,7 +130,9 @@ namespace CcsSso.Core.JobScheduler
               WrapperApiSettings = new WrapperApiSettings()
               {
                 ApiKey = wrapperApiSettings.ApiKey,
-                Url = wrapperApiSettings.Url
+                Url = wrapperApiSettings.Url,
+                ApiGatewayEnabledUserUrl = wrapperApiSettings.ApiGatewayEnabledUserUrl,
+                ApiGatewayDisabledUserUrl = wrapperApiSettings.ApiGatewayDisabledUserUrl,
               },
               SecurityApiSettings = new SecurityApiSettings()
               {
@@ -138,7 +149,9 @@ namespace CcsSso.Core.JobScheduler
               OrgAutoValidationJobSettings = orgAutoValidationJobSettings,
               OrgAutoValidationOneTimeJob=orgAutoValidationOneTimeJob,
               OrgAutoValidationOneTimeJobRoles = orgAutoValidationOneTimeJobRoles,
-              OrgAutoValidationOneTimeJobEmail =orgAutoValidationOneTimeJobEmail
+              OrgAutoValidationOneTimeJobEmail =orgAutoValidationOneTimeJobEmail,
+              IsApiGatewayEnabled = isApiGatewayEnabled,
+              ActiveJobStatus = activeJobStatus
             };
           });
 
@@ -207,6 +220,7 @@ namespace CcsSso.Core.JobScheduler
           services.AddScoped<IContactSupportService, ContactSupportService>();
           services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
           services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
+          services.AddSingleton<IRoleApprovalLinkExpiredService, RoleApprovalLinkExpiredService>();
           // #Auto validation
           services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
           services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();
@@ -216,11 +230,13 @@ namespace CcsSso.Core.JobScheduler
           services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
           services.AddHostedService<UnverifiedUserDeleteJob>();
           services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
-          //Development in progress once ready need to uncomment
           services.AddHostedService<OrganisationAutovalidationJob>();
+          services.AddHostedService<RoleApprovalLinkExpiredJob>();
 
 
         });
+
+   
 
     private static void ReadFromAppSecret(HostBuilderContext hostContext, out string dbConnection, out CiiSettings ciiSettings,
       out List<UserDeleteJobSetting> userDeleteJobSettings, out SecurityApiSettings securityApiSettings, out WrapperApiSettings wrapperApiSettings,
@@ -228,7 +244,7 @@ namespace CcsSso.Core.JobScheduler
       out EmailConfigurationInfo emailConfigurationInfo, out DocUploadInfoVault docUploadConfig, out S3ConfigurationInfoVault s3ConfigurationInfo,
       out OrgAutoValidationJobSettings orgAutoValidationJobSettings,
       out OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob, out OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles,
-      out OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail)
+      out OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail, out bool isApiGatewayEnabled)
     {
       var config = hostContext.Configuration;
       dbConnection = config["DbConnection"];
@@ -247,6 +263,12 @@ namespace CcsSso.Core.JobScheduler
       orgAutoValidationOneTimeJob = config.GetSection("OrgAutoValidationOneTimeJob").Get<OrgAutoValidationOneTimeJob>();
       orgAutoValidationOneTimeJobRoles = config.GetSection("OrgAutoValidationOneTimeJobRoles").Get<OrgAutoValidationOneTimeJobRoles>();
       orgAutoValidationOneTimeJobEmail = config.GetSection("OrgAutoValidationOneTimeJobEmail").Get<OrgAutoValidationOneTimeJobEmail>();
+      isApiGatewayEnabled = Convert.ToBoolean(config["IsApiGatewayEnabled"]);
+    }
+    private static void ReadFromAppSecretActiveJobStatus(HostBuilderContext hostContext, out ActiveJobStatus activeJobStatus)
+    {
+      var config = hostContext.Configuration;
+      activeJobStatus = config.GetSection("ActiveJobStatus").Get<ActiveJobStatus>();
     }
 
     private static void ReadFromHashicorp(out string dbConnection, out CiiSettings ciiSettings, out List<UserDeleteJobSetting> userDeleteJobSettings,
@@ -254,7 +276,7 @@ namespace CcsSso.Core.JobScheduler
       out BulkUploadSettings bulkUploadSettings, out RedisCacheSettingsVault redisCacheSettingsVault, out EmailConfigurationInfo emailConfigurationInfo,
       out DocUploadInfoVault docUploadConfig, out S3ConfigurationInfoVault s3ConfigurationInfo, out OrgAutoValidationJobSettings orgAutoValidationJobSettings,
       out OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob, out OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles,
-      out OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail)
+      out OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail, out bool isApiGatewayEnabled)
     {
       var secrets = _programHelpers.LoadSecretsAsync().Result;
       dbConnection = secrets["DbConnection"].ToString();
@@ -273,9 +295,15 @@ namespace CcsSso.Core.JobScheduler
       orgAutoValidationOneTimeJob = JsonConvert.DeserializeObject<OrgAutoValidationOneTimeJob>(secrets["OrgAutoValidationOneTimeJob"].ToString());
       orgAutoValidationOneTimeJobRoles = JsonConvert.DeserializeObject<OrgAutoValidationOneTimeJobRoles>(secrets["OrgAutoValidationOneTimeJobRoles"].ToString());
       orgAutoValidationOneTimeJobEmail = JsonConvert.DeserializeObject<OrgAutoValidationOneTimeJobEmail>(secrets["OrgAutoValidationOneTimeJobEmail"].ToString());
-
+      isApiGatewayEnabled = Convert.ToBoolean(secrets["IsApiGatewayEnabled"].ToString());
 
     }
+    private static void ReadFromHashicorpActiveJobStatus(out ActiveJobStatus activeJobStatus)
+    {
+      var secrets = _programHelpers.LoadSecretsAsync().Result;
+      activeJobStatus = JsonConvert.DeserializeObject<ActiveJobStatus>(secrets["ActiveJobStatus"].ToString());
+    }
+
 
     private static void ReadFromAWS(out CiiSettings ciiSettings, out List<UserDeleteJobSetting> userDeleteJobSettings, out SecurityApiSettings securityApiSettings,
       out WrapperApiSettings wrapperApiSettings, out ScheduleJobSettings scheduleJobSettings, out BulkUploadSettings bulkUploadSettings,
@@ -300,6 +328,11 @@ namespace CcsSso.Core.JobScheduler
       orgAutoValidationOneTimeJobRoles = (OrgAutoValidationOneTimeJobRoles)_programHelpers.FillAwsParamsValue(typeof(OrgAutoValidationOneTimeJobRoles), parameters);
       orgAutoValidationOneTimeJobEmail = (OrgAutoValidationOneTimeJobEmail)_programHelpers.FillAwsParamsValue(typeof(OrgAutoValidationOneTimeJobEmail), parameters);
 
+    }
+
+    private static void ReadFromAWSActiveJobStatus(out ActiveJobStatus activeJobStatus, List<Parameter> parameters)
+    {
+      activeJobStatus = (ActiveJobStatus)_programHelpers.FillAwsParamsValue(typeof(ActiveJobStatus), parameters);
     }
 
   }

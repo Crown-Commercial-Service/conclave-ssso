@@ -12,8 +12,11 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace CcsSso.Core.JobScheduler
 {
@@ -27,15 +30,17 @@ namespace CcsSso.Core.JobScheduler
     private readonly IIdamSupportService _idamSupportService;
     private readonly IServiceProvider _serviceProvider;
     private IContactSupportService _contactSupportService;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public UnverifiedUserDeleteJob(IServiceProvider serviceProvider, IDateTimeService dataTimeService,
-      AppSettings appSettings, IEmailSupportService emailSupportService, IIdamSupportService idamSupportService)
+      AppSettings appSettings, IEmailSupportService emailSupportService, IIdamSupportService idamSupportService, IHttpClientFactory httpClientFactory)
     {
       _dataTimeService = dataTimeService;
       _appSettings = appSettings;
       _emailSupportService = emailSupportService;
       _idamSupportService = idamSupportService;
       _serviceProvider = serviceProvider;
+      _httpClientFactory = httpClientFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -44,12 +49,13 @@ namespace CcsSso.Core.JobScheduler
       {
         while (!stoppingToken.IsCancellationRequested)
         {
-          Console.WriteLine("Unverified User Deletion Job");
+          Console.WriteLine($" **************** Unverified User Deletion job started ***********");
           _dataContext = scope.ServiceProvider.GetRequiredService<IDataContext>();
           _organisationSupportService = scope.ServiceProvider.GetRequiredService<IOrganisationSupportService>();
           _contactSupportService = scope.ServiceProvider.GetRequiredService<IContactSupportService>();
           await PerformJobAsync();
           await Task.Delay(_appSettings.ScheduleJobSettings.UnverifiedUserDeletionJobExecutionFrequencyInMinutes * 60000, stoppingToken);
+          Console.WriteLine($"****************** Unverified User Deletion job ended ***********");
         }
       }
     }
@@ -64,12 +70,18 @@ namespace CcsSso.Core.JobScheduler
     {
       Dictionary<int, List<string>> adminList = new Dictionary<int, List<string>>();
       Dictionary<int, bool> orgSiteContactAvailabilityStatus = new Dictionary<int, bool>();
+      var client = _httpClientFactory.CreateClient();
+      client.DefaultRequestHeaders.Add("X-API-Key", _appSettings.WrapperApiSettings.ApiKey);
+      client.BaseAddress = new Uri(_appSettings.IsApiGatewayEnabled ? _appSettings.WrapperApiSettings.ApiGatewayEnabledUserUrl : _appSettings.WrapperApiSettings.ApiGatewayDisabledUserUrl);
+
       var users = await GetUsersToDeleteAsync();
 
       if (users != null)
         Console.WriteLine($"{users.Count()} user(s) found");
       else
         Console.WriteLine("No users found");
+
+      var usersPendingRoleInfo = await GetAllUserPendingRoleDetailsAsync(users.Select(x => x.Id).ToArray());
 
       var orgAdminList = new List<string>();
       foreach (var orgByUsers in users.GroupBy(u => u.Party.Person.OrganisationId))
@@ -162,6 +174,21 @@ namespace CcsSso.Core.JobScheduler
               });
             }
 
+            // Delete user roles pending for approval
+            var userPendingRoles = usersPendingRoleInfo.Where(x => x.UserId == user.Id).ToList();
+            if (userPendingRoles.Any())
+            {
+              var deleteResult = await client.DeleteAsync($"approve/roles?user-id={HttpUtility.UrlEncode(user.UserName)}&roles=" + String.Join(",", userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList()));
+              if (deleteResult.StatusCode != HttpStatusCode.OK)
+              {
+                Console.WriteLine($" **************** Unverified User pending role deletion failed for user:{user.UserName} **************** ");
+              }
+              else
+              {
+                Console.WriteLine($" **************** Unverified User pending role deletion success for user:{user.UserName} **************** ");
+              }
+            }
+
             await _dataContext.SaveChangesAsync();
 
             Console.WriteLine($"Unverified User Deletion User: {user.UserName} reassigningContactPoint: {reassigningContactPoint?.Id}");
@@ -221,6 +248,11 @@ namespace CcsSso.Core.JobScheduler
                           .Select(u => u).ToListAsync();
 
       return users;
+    }
+
+    private async Task<List<UserAccessRolePending>> GetAllUserPendingRoleDetailsAsync(int[] users)
+    {
+      return await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && users.Contains(u.UserId)).ToListAsync();
     }
   }
 }

@@ -201,6 +201,10 @@ namespace CcsSso.DbPersistence
 
         public DbSet<OrganisationEligibleRolePending> OrganisationEligibleRolePending { get; set; }
 
+        public DbSet<RoleApprovalConfiguration> RoleApprovalConfiguration { get; set; }
+
+        public DbSet<UserAccessRolePending> UserAccessRolePending { get; set; }
+
         public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
             ValidateEntities();

@@ -74,6 +74,7 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       Data.Add("ApiKey", _key);
       Data.Add("IsApiGatewayEnabled", _isApiGatewayEnabled);
       Data.Add("EnableAdditionalLogs", _secrets.Data["EnableAdditionalLogs"].ToString());
+      Data.Add("EnableUserAccessTokenFix", _secrets.Data["EnableUserAccessTokenFix"].ToString());
       Data.Add("ConclaveLoginUrl", _conclaveLoginUrl);
       Data.Add("InMemoryCacheExpirationInMinutes", _inMemoryCacheExpirationInMinutes);
       Data.Add("DashboardServiceClientId", _dashboardServiceClientId);
@@ -180,7 +181,12 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       {
         var orgAutoValidation = JsonConvert.DeserializeObject<OrgAutoValidation>(_secrets.Data["OrgAutoValidation"].ToString());
         Data.Add("OrgAutoValidation:Enable", orgAutoValidation.Enable.ToString());
-        Data.Add("OrgAutoValidation:CCSAdminEmailId", orgAutoValidation.CCSAdminEmailId.ToString());
+
+        int CCSAdminEmailIdIndex = 0;
+        foreach (var email in orgAutoValidation.CCSAdminEmailIds)
+        {
+          Data.Add($"OrgAutoValidation:CCSAdminEmailIds:{CCSAdminEmailIdIndex++}", email);
+        }
 
         int buyerSuccessAdminRoleIndex = 0;
         foreach (var role in orgAutoValidation.BuyerSuccessAdminRoles)
@@ -210,6 +216,16 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("OrgAutoValidationEmail:OrgBuyerStatusChangeUpdateToAllAdmins", orgAutoValidationEmailInfo.OrgBuyerStatusChangeUpdateToAllAdmins);
 
       }
+      if (_secrets.Data.ContainsKey("UserRoleApproval"))
+      {
+        var orgAutoValidation = JsonConvert.DeserializeObject<UserRoleApproval>(_secrets.Data["UserRoleApproval"].ToString());
+        Data.Add("UserRoleApproval:Enable", orgAutoValidation.Enable.ToString());
+        Data.Add("UserRoleApproval:RoleApprovalTokenEncryptionKey", orgAutoValidation.RoleApprovalTokenEncryptionKey);
+        Data.Add("UserRoleApproval:UserRoleApprovalEmailTemplateId", orgAutoValidation.UserRoleApprovalEmailTemplateId);
+        Data.Add("UserRoleApproval:UserRoleApprovedEmailTemplateId", orgAutoValidation.UserRoleApprovedEmailTemplateId);
+        Data.Add("UserRoleApproval:UserRoleRejectedEmailTemplateId", orgAutoValidation.UserRoleRejectedEmailTemplateId);
+      }
+
     }
   }
 
