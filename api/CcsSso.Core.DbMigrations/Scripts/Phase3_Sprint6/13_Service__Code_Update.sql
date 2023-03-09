@@ -51,4 +51,7 @@ UPDATE "CcsService" SET "ServiceCode"= null WHERE "ServiceCode" ='LOGIN_DIRECTOR
 	update "ServicePermission" set "ServicePermissionName" = 'CAT_USER_DS' where "ServicePermissionName"='CAS_USER_DS';
 	update "ServicePermission" set "ServicePermissionName" = 'CAT_USER_LD' where "ServicePermissionName"='CAS_USER_LD';
 
+	UPDATE "CcsService" SET "Description"='A self-service system where customers can obtain live pricing quotes for either purchasing or leasing standard build cars and light commercial vehicles.' 
+	WHERE "ServiceCode" ='FP_USER_DS';
+
 END $$
