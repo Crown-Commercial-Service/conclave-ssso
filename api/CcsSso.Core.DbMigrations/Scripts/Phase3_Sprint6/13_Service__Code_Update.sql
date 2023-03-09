@@ -15,8 +15,6 @@ UPDATE "CcsService" SET "ServiceCode"= 'FP_USER_DS' WHERE "ServiceCode" ='FP_CLI
 UPDATE "CcsService" SET "ServiceCode"= 'RMI_USER_DS' WHERE "ServiceCode" ='RMI_CLIENT';
 UPDATE "CcsService" SET "ServiceCode"= null WHERE "ServiceCode" ='LOGIN_DIRECTOR_CLIENT';
 
--- This is not going to be used so it has been deleted
-UPDATE "CcsService" SET "IsDeleted"= true WHERE "ServiceCode" ='JAGGAER';
 
 	-- New service entries are added to support jaegger buyer and supplier. Which is the replacement of deleted 'JAGGAER' service
 	IF NOT EXISTS (SELECT "Id" FROM public."CcsService" WHERE "ServiceCode" = 'JAEGGER_SUPPLIER_DS' LIMIT 1) THEN
@@ -35,6 +33,12 @@ UPDATE "CcsService" SET "IsDeleted"= true WHERE "ServiceCode" ='JAGGAER';
 			from public."CcsService" where "ServiceCode"= 'JAGGAER' AND "ServiceName"='eSourcing');
    	END IF;
 
+	-- This is not going to be used so it has been deleted
+	UPDATE "CcsService" SET "IsDeleted"= true WHERE "ServiceCode" ='JAGGAER';
+
+	-- this to update existing roles has the IsDeleted flag true.
+	UPDATE "CcsService" SET "IsDeleted"= false WHERE "ServiceCode" ='JAEGGER_BUYER_DS';
+	UPDATE "CcsService" SET "IsDeleted"= false WHERE "ServiceCode" ='JAEGGER_SUPPLIER_DS';
 
 	-- Since the 'JAGGAER' is deleted, its references are updated in the service permission table using new entries (JAEGGER_BUYER_ES,JAEGGER_SUPPLIER_ES)
 	
