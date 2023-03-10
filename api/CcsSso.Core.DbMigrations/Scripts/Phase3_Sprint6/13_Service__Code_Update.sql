@@ -54,4 +54,14 @@ UPDATE "CcsService" SET "ServiceCode"= null WHERE "ServiceCode" ='LOGIN_DIRECTOR
 	UPDATE "CcsService" SET "Description"='A self-service system where customers can obtain live pricing quotes for either purchasing or leasing standard build cars and light commercial vehicles.' 
 	WHERE "ServiceCode" ='FP_USER_DS';
 
+	UPDATE "CcsService" SET "Description"='The eSourcing tool will help you supply to, or buy for, the public sector, compliantly.'
+	WHERE "ServiceCode" ='JAEGGER_SUPPLIER_DS';
+
+	UPDATE "CcsService" SET "Description"='The eSourcing tool will help you supply to, or buy for, the public sector, compliantly.'
+	WHERE "ServiceCode" ='JAEGGER_BUYER_DS';
+
+	UPDATE "CcsService" SET "Description"='Find and contract suitable suppliers for your procurement project, and ask them about the services they can provide. Progress to one stage further competition.' 
+	WHERE "ServiceCode" ='CAT_USER_DS';
+
+
 END $$
