@@ -3,6 +3,10 @@ CREATE OR REPLACE FUNCTION PREPROD_UAT_NFT_ENV_ONLY_REMOVE_OLD_UNWANTED_ROLES(
 	) RETURNS integer AS $$
 
 DECLARE reportingModeOn boolean = 'true';
+DECLARE deleteRoleFromCcsAccessRoleTable boolean = 'false';
+DECLARE fromDate timestamp = '2023-03-07 00:00';
+DECLARE toDate timestamp = '2023-03-07 23:59';
+
 DECLARE ccsAccessRoleId int;
 DECLARE organisationEligibleRoleId int;
 
@@ -11,6 +15,7 @@ DECLARE organisationDetails RECORD;
 DECLARE groupDetails RECORD;
 DECLARE userDetails RECORD;
 
+DECLARE orgsAffectedCount int = 0;
 DECLARE groupAffectedCount int = 0;
 DECLARE userAffectedCount int = 0;
 DECLARE roleMappingDeleteCount int = 0;
@@ -25,11 +30,14 @@ ELSE
 	RAISE NOTICE 'Reporting mode is Off.';
 END IF;
 
+RAISE NOTICE 'Date Range: %', CONCAT(fromDate, ' - ', toDate);
+
 FOR ccsAccessRoleDetails IN SELECT "Id" FROM "CcsAccessRole" 
 	WHERE "CcsAccessRoleNameKey"= ccsAccessRoleNameKey AND "IsDeleted" = false
 LOOP
 
 ccsAccessRoleId = ccsAccessRoleDetails."Id";
+orgsAffectedCount = 0;
 
 	IF (ccsAccessRoleId IS null) THEN
 		RAISE NOTICE 'Role not found %', ccsAccessRoleNameKey;
@@ -42,9 +50,11 @@ ccsAccessRoleId = ccsAccessRoleDetails."Id";
 	FOR organisationDetails IN SELECT DISTINCT o."CiiOrganisationId", o."LegalName", oer."Id"
 		FROM public."OrganisationEligibleRole" oer
 		JOIN public."Organisation" o ON o."Id" = oer."OrganisationId"
-		WHERE o."IsDeleted" = false AND oer."IsDeleted" = false AND oer."CcsAccessRoleId" = ccsAccessRoleId
+		WHERE o."IsDeleted" = false AND o."CreatedOnUtc" >= fromDate AND o."CreatedOnUtc" <= toDate
+		AND oer."IsDeleted" = false AND oer."CcsAccessRoleId" = ccsAccessRoleId
 	LOOP 
 	organisationEligibleRoleId = organisationDetails."Id";
+	orgsAffectedCount = orgsAffectedCount + 1;
 
 	RAISE NOTICE 'Removing Role % for Organisation Id: %, Name: %', ccsAccessRoleNameKey, organisationDetails."CiiOrganisationId", organisationDetails."LegalName";
 	RAISE NOTICE 'OrganisationEligibleRole: % AND RoleId: %', organisationDetails."Id", ccsAccessRoleId;
@@ -82,7 +92,7 @@ ccsAccessRoleId = ccsAccessRoleDetails."Id";
 		UPDATE "OrganisationEligibleRole" SET "IsDeleted" = true, "LastUpdatedOnUtc" = timezone('utc', now()) 
 		WHERE "IsDeleted" = false AND "Id" = organisationEligibleRoleId;
 	
-	RAISE NOTICE 'Role % deleted from organisation Id: %, Name: %', ccsAccessRoleNameKey, organisationDetails."CiiOrganisationId", organisationDetails."LegalName";
+	RAISE NOTICE '-------------------Role % deleted from OrganisationEligibleRole Id: % -------------------', ccsAccessRoleNameKey, organisationEligibleRoleId;
 	END IF;
 
 	RAISE NOTICE '';
@@ -90,6 +100,7 @@ ccsAccessRoleId = ccsAccessRoleDetails."Id";
 	RAISE NOTICE 'Deleted Role key: %', ccsAccessRoleNameKey;
 	RAISE NOTICE 'No of Groups affected: %', groupAffectedCount;
 	RAISE NOTICE 'No of Users affected: %', userAffectedCount;
+	RAISE NOTICE 'No of Orgs affected: %',orgsAffectedCount;
 	RAISE NOTICE '***********************************************************';
 
 	END LOOP;
@@ -123,7 +134,7 @@ ccsAccessRoleId = ccsAccessRoleDetails."Id";
 	END IF;
 
 
-	IF (reportingModeOn = 'false') THEN
+	IF (reportingModeOn = 'false' AND deleteRoleFromCcsAccessRoleTable = 'true') THEN
 			UPDATE "CcsAccessRole"  SET "IsDeleted" = true, "LastUpdatedOnUtc" = timezone('utc', now()) 
 			WHERE "Id" = ccsAccessRoleId;
 			RAISE NOTICE '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~';
@@ -133,7 +144,9 @@ ccsAccessRoleId = ccsAccessRoleDetails."Id";
 	
 END LOOP;
 
-RAISE NOTICE '-------------------Role removal finished for %---------------------------', ccsAccessRoleNameKey;
+	RAISE NOTICE '-------------------Role removal finished/role not exist %.------------------------------------------------', ccsAccessRoleNameKey;
+	RAISE NOTICE '';
+	RAISE NOTICE '';
 RETURN 1;
 END;
 $$ LANGUAGE plpgsql;
