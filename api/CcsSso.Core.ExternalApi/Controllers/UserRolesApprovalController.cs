@@ -129,5 +129,49 @@ namespace CcsSso.Core.ExternalApi.Controllers
     {
       await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(userProfileRequestInfo);
     }
+
+    /// <summary>
+    /// Retrieve user all service role groups which are in pending for approval
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="400">Bad request.</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET approval/servicerolegroups/pending?user-id=user@mail.com
+    ///
+    /// </remarks>
+    [HttpGet("approve/servicerolegroups")]
+    [ClaimAuthorise("ORG_DEFAULT_USER")]
+    [OrganisationAuthorise("USER")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(UserServiceRoleGroupPendingDetails), 200)]
+    public async Task<List<UserServiceRoleGroupPendingDetails>> GetUserServiceRoleGroupsPendingForApproval([FromQuery(Name = "user-id")] string userId)
+    {
+      return await _userProfileRoleApprovalService.GetUserServiceRoleGroupsPendingForApprovalAsync(userId);
+    }
+
+    /// <summary>
+    /// Validate role approval token and return serice role group details
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="400">Bad request.</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET approve/servicerolegroup/verify?token=encryptedtoken
+    ///
+    /// </remarks>
+    [HttpGet("approve/servicerolegroup/verify")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(UserAccessServiceRoleGroupPendingTokenDetails), 200)]
+    public async Task<UserAccessServiceRoleGroupPendingTokenDetails> VerifyServiceRoleGroupApprovalToken([FromQuery(Name = "token")] string token)
+    {
+      return await _userProfileRoleApprovalService.VerifyAndReturnServiceRoleGroupApprovalTokenDetailsAsync(token);
+    }
   }
 }
