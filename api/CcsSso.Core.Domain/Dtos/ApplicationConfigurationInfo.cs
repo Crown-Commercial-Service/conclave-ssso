@@ -185,4 +185,11 @@ namespace CcsSso.Domain.Dtos
   {
     public bool Enable { get; set; } = false;
   }
+
+  public class NotificationApiSettings
+  {
+    public string ApiKey { get; set; }
+
+    public string Url { get; set; }
+  }
 }
