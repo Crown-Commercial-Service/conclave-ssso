@@ -76,19 +76,23 @@ namespace CcsSso.Core.Service
         TemplateId = _appConfigInfo.EmailInfo.UserConfirmEmailOnlyUserIdPwdTemplateId,
         BodyContent = data
       };
-     // await SendEmailAsync(emailInfo);
-      try
+       
+      if (_appConfigInfo.EmailInfo.SendNotificationsEnabled && _appConfigInfo.NotificationApiSettings.Enable)
       {
-        if (_appConfigInfo.EmailInfo.SendNotificationsEnabled)
+        try
         {
           await _notificationApiService.PostAsync<bool>($"notification/senduserconfirmemail", emailInfo, "ERROR_SENDING_EMAIL_NOTIFICATION");
         }
+        catch (Exception ex)
+        {
+          Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
+          Console.WriteLine(JsonConvert.SerializeObject(ex));
+          throw new CcsSsoException("ERROR_SENDING_EMAIL_NOTIFICATION");
+        }
       }
-      catch (Exception ex)
+      else 
       {
-        Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
-        Console.WriteLine(JsonConvert.SerializeObject(ex));
-        throw new CcsSsoException("ERROR_SENDING_EMAIL_NOTIFICATION");
+        await SendEmailAsync(emailInfo);
       }
     }
 

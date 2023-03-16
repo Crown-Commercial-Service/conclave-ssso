@@ -160,6 +160,12 @@ namespace CcsSso.ExternalApi
           {
             Enable = Convert.ToBoolean(Configuration["ServiceRoleGroupSettings:Enable"])
           },
+          NotificationApiSettings = new NotificationApiSettings() 
+          {
+            Enable = Convert.ToBoolean(Configuration["NotificationApiSettings:Enable"]),
+            Url = Configuration["NotificationApiSettings:Url"],
+            ApiKey = Configuration["NotificationApiSettings:ApiKey"]
+          }
         };
         return appConfigInfo;
       });

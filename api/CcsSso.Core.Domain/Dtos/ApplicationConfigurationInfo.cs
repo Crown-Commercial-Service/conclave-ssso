@@ -46,6 +46,8 @@ namespace CcsSso.Domain.Dtos
     public bool EnableUserAccessTokenFix { get; set; }
 
     public ServiceRoleGroupSettings ServiceRoleGroupSettings { get; set; }
+
+    public NotificationApiSettings NotificationApiSettings { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -188,6 +190,8 @@ namespace CcsSso.Domain.Dtos
 
   public class NotificationApiSettings
   {
+    public bool Enable { get; set; } = false;
+
     public string ApiKey { get; set; }
 
     public string Url { get; set; }
