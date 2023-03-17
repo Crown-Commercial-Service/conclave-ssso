@@ -16,6 +16,8 @@ namespace CcsSso.Adaptor.Domain.SqsListener
 
     public SecurityApiSettings SecurityApiSettings { get; set; }
 
+    public NotificationApiSettings NotificationApiSettings { get; set; }
+
     public EmailSettings EmailSettings { get; set; }
   }
 
@@ -104,6 +106,19 @@ namespace CcsSso.Adaptor.Domain.SqsListener
   }
 
   public class SecurityApiSettings
+  {
+    public string ApiKey { get; set; }
+
+    public string Url { get; set; }
+  }
+
+  public class NotificationApiSettingsVault
+  {
+    public string ApiKey { get; set; }
+
+    public string Url { get; set; }
+  }
+  public class NotificationApiSettings
   {
     public string ApiKey { get; set; }
 

@@ -40,7 +40,7 @@ namespace CcsSso.Core.Service.External
     private readonly IWrapperApiService _wrapperApiService;
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
     private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
-
+    
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
       IAdaptorNotificationService adapterNotificationService, IWrapperCacheService wrapperCacheService,
@@ -276,7 +276,7 @@ namespace CcsSso.Core.Service.External
 
         if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)
         {
-          var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+          var activationlink = "";
           var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
 
           await _ccsSsoEmailService.SendUserConfirmEmailBothIdpAsync(party.User.UserName, string.Join(",", listOfIdpName), activationlink);
@@ -295,7 +295,7 @@ namespace CcsSso.Core.Service.External
           string ccsMsg = (isNewOrgAdmin && !isAutovalidationSuccess && organisation.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier) ?
                           "Please note that notification has been sent to CCS to verify the buyer status of your Organisation. " +
                           "You will be informed within the next 24 to 72 hours" : string.Empty;
-          var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+          var activationlink = "";
           await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink), ccsMsg);
         }
       }
