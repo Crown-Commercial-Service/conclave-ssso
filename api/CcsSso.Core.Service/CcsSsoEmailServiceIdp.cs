@@ -81,7 +81,13 @@ namespace CcsSso.Core.Service
       {
         try
         {
-          await _notificationApiService.PostAsync<bool>($"notification/senduserconfirmemail", emailInfo, "ERROR_SENDING_EMAIL_NOTIFICATION");
+          var isEmailSuccess =await _notificationApiService.PostAsync<bool>($"notification/senduserconfirmemail", emailInfo, "ERROR_SENDING_EMAIL_NOTIFICATION");
+          if (!isEmailSuccess)
+          {
+            Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
+            Console.WriteLine(JsonConvert.SerializeObject(ex));
+            throw new CcsSsoException("ERROR_SENDING_EMAIL_NOTIFICATION");
+          }
         }
         catch (Exception ex)
         {
