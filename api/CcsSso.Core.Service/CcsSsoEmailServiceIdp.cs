@@ -85,7 +85,6 @@ namespace CcsSso.Core.Service
           if (!isEmailSuccess)
           {
             Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
-            Console.WriteLine(JsonConvert.SerializeObject(ex));
             throw new CcsSsoException("ERROR_SENDING_EMAIL_NOTIFICATION");
           }
         }
