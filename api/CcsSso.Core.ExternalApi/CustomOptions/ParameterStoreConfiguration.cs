@@ -155,6 +155,11 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
 
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ServiceRoleGroupSettings/Enable", "ServiceRoleGroupSettings:Enable"));
 
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "NotificationApiSettings/Enable", "NotificationApiSettings:Enable"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "NotificationApiSettings/ApiKey", "NotificationApiSettings:ApiKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "NotificationApiSettings/Url", "NotificationApiSettings:Url"));
+
+
       foreach (var configuration in configurations)
       {
         Data.Add(configuration);

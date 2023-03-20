@@ -74,6 +74,10 @@ namespace CcsSso.Adaptor.SqsListener.Listners
         {
           await DeleteUser(sqsMessageResponseDto);
         }
+        else if (destination.ToUpper() == "NOTIFICATION" && action.ToUpper() == "POST")
+        {
+          await SendEmail(sqsMessageResponseDto);
+        }
       }
       catch (Exception ex)
       {
@@ -85,6 +89,45 @@ namespace CcsSso.Adaptor.SqsListener.Listners
         }
       }
     }
+
+    private async Task SendEmail(SqsMessageResponseDto sqsMessageResponseDto, int retryCount = 0)
+    {
+      await Task.Delay(_appSetting.DataQueueSettings.DelayInSeconds * 1000);
+
+      var url = "notification/senduserconfirmemail";
+
+      var client = _httpClientFactory.CreateClient("NotificationApi");
+
+      HttpContent data = new StringContent(sqsMessageResponseDto.MessageBody, System.Text.Encoding.UTF8, "application/json");
+      var response = await client.PostAsync(url, data);
+
+      if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+      {
+        Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_DATA_QUEUE} :: Message processing succeeded for url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
+        await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
+      }
+      else
+      {
+        var responseContent = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"WorkerError: {LISTNER_JOB_DATA_QUEUE} :: Message processing error for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
+        _logger.LogError($"Worker: {LISTNER_JOB_DATA_QUEUE} :: MessageId: {sqsMessageResponseDto.MessageId}, ErroreCode: {response.StatusCode}, Error: {responseContent}");
+
+        if (retryCount <= _appSetting.DataQueueSettings.RetryMaxCount)
+        {
+          Console.WriteLine($"WorkerScuccess: {LISTNER_JOB_DATA_QUEUE} :: Message processing retry: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}");
+          retryCount = retryCount + 1;
+          await SendEmail(sqsMessageResponseDto, retryCount);
+        }
+        else
+        {
+          var user = JsonConvert.DeserializeObject<UserInfo>(sqsMessageResponseDto.MessageBody);
+          await SendCreateUserErrorNotification(user.Email);
+          Console.WriteLine($"WorkerError: {LISTNER_JOB_DATA_QUEUE} :: Message processing retry failed for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
+          await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
+        }
+      }
+    }
+
 
     private async Task CreateUser(SqsMessageResponseDto sqsMessageResponseDto, int retryCount = 0)
     {

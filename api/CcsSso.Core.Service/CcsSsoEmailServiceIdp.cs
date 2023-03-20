@@ -76,7 +76,33 @@ namespace CcsSso.Core.Service
         TemplateId = _appConfigInfo.EmailInfo.UserConfirmEmailOnlyUserIdPwdTemplateId,
         BodyContent = data
       };
-      await SendEmailAsync(emailInfo);
+
+      if (!_appConfigInfo.EmailInfo.SendNotificationsEnabled)
+      {
+        return;
+      }
+      if (_appConfigInfo.NotificationApiSettings.Enable)
+      {
+        try
+        {
+          var isEmailSuccess = await _notificationApiService.PostAsync<bool>($"notification/senduserconfirmemail", emailInfo, "ERROR_SENDING_EMAIL_NOTIFICATION");
+          if (!isEmailSuccess)
+          {
+            Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
+            throw new CcsSsoException("ERROR_SENDING_EMAIL_NOTIFICATION");
+          }
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
+          Console.WriteLine(JsonConvert.SerializeObject(ex));
+          throw new CcsSsoException("ERROR_SENDING_EMAIL_NOTIFICATION");
+        }
+      }
+      else
+      {
+        await SendEmailAsync(emailInfo);
+      }
     }
 
     public async Task SendUserConfirmEmailOnlyFederatedIdpAsync(string email, string idpName)
@@ -109,10 +135,36 @@ namespace CcsSso.Core.Service
         TemplateId = _appConfigInfo.EmailInfo.UserConfirmEmailBothIdpTemplateId,
         BodyContent = data
       };
-      await SendEmailAsync(emailInfo);
+
+      if (!_appConfigInfo.EmailInfo.SendNotificationsEnabled)
+      {
+        return;
+      }
+      if (_appConfigInfo.NotificationApiSettings.Enable)
+      {
+        try
+        {
+          var isEmailSuccess = await _notificationApiService.PostAsync<bool>($"notification/senduserconfirmemail", emailInfo, "ERROR_SENDING_EMAIL_NOTIFICATION");
+          if (!isEmailSuccess)
+          {
+            Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
+            throw new CcsSsoException("ERROR_SENDING_EMAIL_NOTIFICATION");
+          }
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
+          Console.WriteLine(JsonConvert.SerializeObject(ex));
+          throw new CcsSsoException("ERROR_SENDING_EMAIL_NOTIFICATION");
+        }
+      }
+      else
+      {
+        await SendEmailAsync(emailInfo);
+      }
     }
 
-    public async Task SendUserRegistrationEmailUserIdPwdAsync(string email,  string activationlink)
+    public async Task SendUserRegistrationEmailUserIdPwdAsync(string email, string activationlink)
     {
       var data = new Dictionary<string, dynamic>
       {
@@ -128,6 +180,6 @@ namespace CcsSso.Core.Service
     }
 
 
-    
+
   }
 }
