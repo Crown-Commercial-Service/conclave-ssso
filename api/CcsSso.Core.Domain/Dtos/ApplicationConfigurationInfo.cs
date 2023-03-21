@@ -46,6 +46,8 @@ namespace CcsSso.Domain.Dtos
     public bool EnableUserAccessTokenFix { get; set; }
 
     public ServiceRoleGroupSettings ServiceRoleGroupSettings { get; set; }
+
+    public string TokenEncryptionKey { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -76,6 +78,8 @@ namespace CcsSso.Domain.Dtos
     public string BaseUrl { get; set; }
 
     public string OrgRegistrationRoute { get; set; }
+
+    public string VerifyUserDetailsRoute { get; set; }
   }
 
   public class CcsEmailInfo

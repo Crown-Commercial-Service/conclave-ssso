@@ -3,10 +3,9 @@ using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.ExternalApi.Authorisation;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos.External;
+using CcsSso.Dtos.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CcsSso.ExternalApi.Controllers
@@ -217,6 +216,7 @@ namespace CcsSso.ExternalApi.Controllers
     {
       await _userProfileService.AddAdminRoleAsync(userId);
     }
+
     // #Delegated
     #region Delegated access
     /// <summary>
@@ -714,6 +714,32 @@ namespace CcsSso.ExternalApi.Controllers
       await _userProfileService.DeleteUserAsync(userId);
     }
 
-    #endregion  
+    #endregion
+
+
+    /// <summary>
+    /// Verify user details for joining org request
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_USER_DETAIL
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /users/join-request-validation?details=encrypted-token
+    ///     
+    /// </remarks>
+    [HttpGet("join-request-validation")]
+    [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("USER")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(OrganisationJoinRequest), 200)]
+    public async Task<OrganisationJoinRequest> GetUserJoinRequestDetails([FromQuery(Name = "details")] string joiningDetailsToken)
+    {
+      return await _userProfileService.GetUserJoinRequestDetails(joiningDetailsToken);
+    }
   }
 }
