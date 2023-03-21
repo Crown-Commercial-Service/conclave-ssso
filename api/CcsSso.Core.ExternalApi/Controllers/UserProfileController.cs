@@ -734,7 +734,6 @@ namespace CcsSso.ExternalApi.Controllers
     /// </remarks>
     [HttpGet("join-request-validation")]
     [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR")]
-    [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(OrganisationJoinRequest), 200)]
     public async Task<OrganisationJoinRequest> GetUserJoinRequestDetails([FromQuery(Name = "details")] string joiningDetailsToken)

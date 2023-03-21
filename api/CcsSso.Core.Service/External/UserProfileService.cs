@@ -2118,7 +2118,11 @@ namespace CcsSso.Core.Service.External
 
       if (await IsUserExist(orgJoiningDetailList["email"]?.Trim()))
       {
-        throw new CcsSsoException("ERROR_USER_ALREADY_EXISTS");
+        return new OrganisationJoinRequest()
+        {
+          Email = orgJoiningDetailList["email"].Trim(),
+          ErrorCode = "ERROR_USER_ALREADY_EXISTS"
+        };
       }
 
       return new OrganisationJoinRequest()

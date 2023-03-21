@@ -94,5 +94,7 @@ namespace CcsSso.Dtos.Domain.Models
     public string Email { get; set; }
 
     public string CiiOrgId { get; set; }
+
+    public string ErrorCode { get; set; } = string.Empty;
   }
 }
