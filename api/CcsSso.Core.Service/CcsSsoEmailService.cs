@@ -108,7 +108,7 @@ namespace CcsSso.Core.Service
         { "lastname", orgJoinNotificationInfo.LastName },
         { "email", orgJoinNotificationInfo.Email },
         { "conclaveloginlink", _appConfigInfo.ConclaveSettings.BaseUrl + _appConfigInfo.ConclaveSettings.VerifyUserDetailsRoute + 
-        "?joining-details=" + encryptedInfo}
+        "?details=" + encryptedInfo}
       };
       var emailInfo = new EmailInfo()
       {
