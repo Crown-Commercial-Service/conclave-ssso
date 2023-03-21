@@ -729,7 +729,7 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /users/join-request-validation?joining-details=encrypted-token
+    ///     GET /users/join-request-validation?details=encrypted-token
     ///     
     /// </remarks>
     [HttpGet("join-request-validation")]
