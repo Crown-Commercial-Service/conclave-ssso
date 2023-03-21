@@ -101,7 +101,8 @@ namespace CcsSso.Api
           ConclaveSettings = new ConclaveSettings()
           {
             BaseUrl = Configuration["ConclaveSettings:BaseUrl"],
-            OrgRegistrationRoute = Configuration["ConclaveSettings:OrgRegistrationRoute"]
+            OrgRegistrationRoute = Configuration["ConclaveSettings:OrgRegistrationRoute"],
+            VerifyUserDetailsRoute = Configuration["ConclaveSettings:VerifyUserDetailsRoute"]
           },
           // #Auto validation
           OrgAutoValidation = new OrgAutoValidation()
@@ -112,6 +113,7 @@ namespace CcsSso.Api
           {
             Enable = Convert.ToBoolean(Configuration["UserRoleApproval:Enable"])
           },
+          TokenEncryptionKey = Configuration["TokenEncryptionKey"],
         };
         return appConfigInfo;
       });

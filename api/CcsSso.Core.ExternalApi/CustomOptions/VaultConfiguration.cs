@@ -232,6 +232,7 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("ServiceRoleGroupSettings:Enable", serviceRoleGroupSettings.Enable.ToString());
       }
 
+      Data.Add("TokenEncryptionKey", _secrets.Data["TokenEncryptionKey"].ToString());
     }
   }
 

@@ -160,6 +160,7 @@ namespace CcsSso.ExternalApi
           {
             Enable = Convert.ToBoolean(Configuration["ServiceRoleGroupSettings:Enable"])
           },
+          TokenEncryptionKey = Configuration["TokenEncryptionKey"],
         };
         return appConfigInfo;
       });

@@ -9,6 +9,7 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Dtos.Domain.Models;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Constants;
@@ -2095,5 +2096,35 @@ namespace CcsSso.Core.Service.External
 
     }
     #endregion
+
+    public OrganisationJoinRequest GetUserJoinRequestDetails(string joiningDetailsToken)
+    {
+      joiningDetailsToken = joiningDetailsToken?.Replace(" ", "+");
+
+      string orgJoiningDetails = _cryptographyService.DecryptString(joiningDetailsToken, _appConfigInfo.TokenEncryptionKey);
+
+      if (string.IsNullOrWhiteSpace(orgJoiningDetails))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDetail);
+      }
+
+      Dictionary<string, string> orgJoiningDetailList = orgJoiningDetails.Split('&').Select(value => value.Split('='))
+                                                  .ToDictionary(pair => pair[0], pair => pair[1]);
+
+      if (_requestContext.CiiOrganisationId != orgJoiningDetailList["org"]?.Trim()) 
+      {
+        throw new ForbiddenException();
+      }
+
+      var organisationJoinRequestDetails = new OrganisationJoinRequest()
+      {
+        FirstName = orgJoiningDetailList["first"].Trim(),
+        LastName = orgJoiningDetailList["last"].Trim(),
+        Email = orgJoiningDetailList["email"].Trim(),
+        CiiOrgId = orgJoiningDetailList["org"].Trim()
+      };
+
+      return organisationJoinRequestDetails;
+    }
   }
 }
