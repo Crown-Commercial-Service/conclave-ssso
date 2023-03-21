@@ -2097,7 +2097,7 @@ namespace CcsSso.Core.Service.External
     }
     #endregion
 
-    public OrganisationJoinRequest GetUserJoinRequestDetails(string joiningDetailsToken)
+    public async Task<OrganisationJoinRequest> GetUserJoinRequestDetails(string joiningDetailsToken)
     {
       joiningDetailsToken = joiningDetailsToken?.Replace(" ", "+");
 
@@ -2114,6 +2114,11 @@ namespace CcsSso.Core.Service.External
       if (_requestContext.CiiOrganisationId != orgJoiningDetailList["org"]?.Trim()) 
       {
         throw new ForbiddenException();
+      }
+
+      if (await IsUserExist(orgJoiningDetailList["email"]?.Trim()))
+      {
+        throw new CcsSsoException("ERROR_USER_ALREADY_EXISTS");
       }
 
       var organisationJoinRequestDetails = new OrganisationJoinRequest()

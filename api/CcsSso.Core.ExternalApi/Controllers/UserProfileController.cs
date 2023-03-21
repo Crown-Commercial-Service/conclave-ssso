@@ -6,8 +6,6 @@ using CcsSso.Domain.Dtos.External;
 using CcsSso.Dtos.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CcsSso.ExternalApi.Controllers
@@ -733,16 +731,15 @@ namespace CcsSso.ExternalApi.Controllers
     ///
     ///     GET /users/join-request-validation?joining-details=encrypted-token
     ///     
-    ///
     /// </remarks>
     [HttpGet("join-request-validation")]
     [ClaimAuthorise("ORG_USER_SUPPORT", "ORG_ADMINISTRATOR")]
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(OrganisationJoinRequest), 200)]
-    public OrganisationJoinRequest GetUserJoinRequestDetails([FromQuery(Name = "joining-details")] string joiningDetailsToken)
+    public async Task<OrganisationJoinRequest> GetUserJoinRequestDetails([FromQuery(Name = "joining-details")] string joiningDetailsToken)
     {
-      return _userProfileService.GetUserJoinRequestDetails(joiningDetailsToken);
+      return await _userProfileService.GetUserJoinRequestDetails(joiningDetailsToken);
     }
   }
 }

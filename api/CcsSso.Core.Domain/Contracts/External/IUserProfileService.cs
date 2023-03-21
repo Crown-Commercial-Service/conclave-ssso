@@ -51,6 +51,6 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task<UserEditResponseInfo> UpdateUserV1Async(string userName, UserProfileServiceRoleGroupEditRequestInfo userProfileServiceRoleGroupEditRequestInfo);
 
-    OrganisationJoinRequest GetUserJoinRequestDetails(string joiningDetailsToken);
+    Task<OrganisationJoinRequest> GetUserJoinRequestDetails(string joiningDetailsToken);
   }
 }
