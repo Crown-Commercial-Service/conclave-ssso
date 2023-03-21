@@ -1136,10 +1136,17 @@ namespace CcsSso.Core.Service.External
         auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.OrgRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToOrg));
       }
       //for admin roles
-      string rolesAsssignToAdmin = await AutoValidationAdminRoleAssignmentAsync(adminUserDetails, organisation.SupplierBuyerType, organisation.CiiOrganisationId, isAutoValidationSuccess: true);
-      if (!string.IsNullOrWhiteSpace(rolesAsssignToAdmin))
+      if (isFromBackgroundJob)
       {
-        auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.AdminRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToAdmin));
+        await AutoValidationAdminRolesForBackgroundJob(organisation, schemeIdentifier, groupId, auditEventLogs, adminUserDetails,true);
+      }
+      else
+      {
+        string rolesAsssignToAdmin = await AutoValidationAdminRoleAssignmentAsync(adminUserDetails, organisation.SupplierBuyerType, organisation.CiiOrganisationId, isAutoValidationSuccess: true);
+        if (!string.IsNullOrWhiteSpace(rolesAsssignToAdmin))
+        {
+          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.AdminRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToAdmin));
+        }
       }
 
       var orgStatus = new OrganisationAuditInfo
@@ -1168,6 +1175,25 @@ namespace CcsSso.Core.Service.External
       return true;
     }
 
+    private async Task AutoValidationAdminRolesForBackgroundJob(Organisation organisation, string schemeIdentifier, Guid groupId, List<OrganisationAuditEventInfo> auditEventLogs, User adminUserDetails, bool isAutoValidationSuccess)
+    {
+      // assign the oldest admin auto validation roles without role approval validation check
+      string rolesAsssignToAdmin = await AutoValidationAdminRoleAssignmentAsync(adminUserDetails, organisation.SupplierBuyerType, organisation.CiiOrganisationId, isAutoValidationSuccess: isAutoValidationSuccess, false);
+      if (!string.IsNullOrWhiteSpace(rolesAsssignToAdmin))
+      {
+        auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.AdminRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToAdmin));
+      }
+
+      // assign auto validation roles to all other admins with role approval validation check
+      List<User> allAdminsOfOrg = await GetAdminUsers(organisation, false);
+      allAdminsOfOrg.Remove(allAdminsOfOrg.FirstOrDefault(x => x.Id == adminUserDetails.Id));
+
+      foreach (var otherAdminUser in allAdminsOfOrg)
+      {
+        await AutoValidationAdminRoleAssignmentAsync(otherAdminUser, organisation.SupplierBuyerType, organisation.CiiOrganisationId, isAutoValidationSuccess: isAutoValidationSuccess, true);
+      }
+    }
+
     private async Task<bool> AutoValidateForInValidDomain(Organisation organisation, User actionedBy, string schemeIdentifier, bool isFromBackgroundJob = false)
     {
       Guid groupId = Guid.NewGuid();
@@ -1191,10 +1217,18 @@ namespace CcsSso.Core.Service.External
       }
 
       //for admin roles
-      string rolesAsssignToAdmin = await AutoValidationAdminRoleAssignmentAsync(adminUserDetails, organisation.SupplierBuyerType, organisation.CiiOrganisationId, isAutoValidationSuccess: false);
-      if (!string.IsNullOrWhiteSpace(rolesAsssignToAdmin))
+      if (isFromBackgroundJob)
       {
-        auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.AdminRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToAdmin));
+        await AutoValidationAdminRolesForBackgroundJob(organisation, schemeIdentifier, groupId, auditEventLogs, adminUserDetails,false);
+      }
+      else
+      {
+        string rolesAsssignToAdmin = await AutoValidationAdminRoleAssignmentAsync(adminUserDetails, organisation.SupplierBuyerType, organisation.CiiOrganisationId, isAutoValidationSuccess: false);
+
+        if (!string.IsNullOrWhiteSpace(rolesAsssignToAdmin))
+        {
+          auditEventLogs.Add(CreateAutoValidationEventLog(OrganisationAuditActionType.Autovalidation, OrganisationAuditEventType.AdminRoleAssigned, groupId, organisation.Id, schemeIdentifier, rolesAsssignToAdmin));
+        }
       }
 
       // invalid
@@ -1266,6 +1300,10 @@ namespace CcsSso.Core.Service.External
 
     private async Task<string> AutoValidationAdminRoleAssignmentAsync(User adminDetails, int? orgType, string ciiOrganisation, bool isAutoValidationSuccess)
     {
+      return await AutoValidationAdminRoleAssignmentAsync(adminDetails, orgType, ciiOrganisation, isAutoValidationSuccess, false);
+    }
+    private async Task<string> AutoValidationAdminRoleAssignmentAsync(User adminDetails, int? orgType, string ciiOrganisation, bool isAutoValidationSuccess, bool roleApprovalCheckRequired = false)
+    {
       var defaultAdminRoles = await _dataContext.AutoValidationRole.Where(ar => ar.AssignToAdmin).ToListAsync();
 
       if (orgType == (int)RoleEligibleTradeType.Both)
@@ -1286,17 +1324,25 @@ namespace CcsSso.Core.Service.External
         roleIds = roleIds.Union(successAdminRoleIds);
       }
 
-      var defaultRoles = await _dataContext.OrganisationEligibleRole
+      var defaultRoles = await _dataContext.OrganisationEligibleRole 
             .Where(r => r.Organisation.CiiOrganisationId == ciiOrganisation && !r.IsDeleted &&
             roleIds.Contains(r.CcsAccessRoleId))
             .ToListAsync();
+
+      var organisation = await _dataContext.Organisation.Where(o => o.CiiOrganisationId == ciiOrganisation && !o.IsDeleted).FirstOrDefaultAsync();
+
 
       // if (organisation.SupplierBuyerType == (int)RoleEligibleTradeType.Buyer)
       StringBuilder rolesAssigned = new();
       foreach (var role in defaultRoles)
       {
         // additional roles for admin user added if not exist
-        if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id && !x.IsDeleted))
+        if (adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id && !x.IsDeleted))
+        {
+          continue;
+        }
+
+        if (!roleApprovalCheckRequired)
         {
           var defaultUserRole = new UserAccessRole
           {
@@ -1305,9 +1351,42 @@ namespace CcsSso.Core.Service.External
           adminDetails.UserAccessRoles.Add(defaultUserRole);
           rolesAssigned.Append(rolesAssigned.Length > 0 ? "," + role.CcsAccessRole.CcsAccessRoleName : role.CcsAccessRole.CcsAccessRoleName);
         }
+        else
+        {
+          await AddRoleWithRoleApprovalCheck(adminDetails, organisation, rolesAssigned, role);
+        }
       }
       return rolesAssigned.ToString();
     }
+
+    private async Task AddRoleWithRoleApprovalCheck(User adminDetails, Organisation organisation, StringBuilder rolesAssigned, OrganisationEligibleRole role)
+    {
+      var IsRoleValid = RoleApprovalRequiredCheck(organisation, role.CcsAccessRole.ApprovalRequired, adminDetails);
+
+      if (IsRoleValid)
+      {
+        var defaultUserRole = new UserAccessRole
+        {
+          OrganisationEligibleRoleId = role.Id
+        };
+        adminDetails.UserAccessRoles.Add(defaultUserRole);
+        rolesAssigned.Append(rolesAssigned.Length > 0 ? "," + role.CcsAccessRole.CcsAccessRoleName : role.CcsAccessRole.CcsAccessRoleName);
+      }
+      else
+      {
+        UserProfileEditRequestInfo userProfileRequestInfo = new UserProfileEditRequestInfo
+        {
+          UserName = adminDetails.UserName,
+          OrganisationId = organisation.CiiOrganisationId,
+          Detail = new UserRequestDetail
+          {
+            RoleIds = new List<int> { role.Id }
+          }
+        };
+        await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(userProfileRequestInfo, sendEmailNotification: false);
+      }
+    }
+
 
     private async Task SupplierRoleAssignmentAsync(Organisation organisation, string adminEmailId)
     {
@@ -1642,6 +1721,12 @@ namespace CcsSso.Core.Service.External
     {
       return (!_applicationConfigurationInfo.UserRoleApproval.Enable ||
                   role.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalNotRequired ||
+                  adminDetails.UserName.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower());
+    }
+    private bool RoleApprovalRequiredCheck(Organisation organisation, int approvalRequired, User adminDetails)
+    {
+      return (!_applicationConfigurationInfo.UserRoleApproval.Enable ||
+                  approvalRequired == (int)RoleApprovalRequiredStatus.ApprovalNotRequired ||
                   adminDetails.UserName.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower());
     }
 
