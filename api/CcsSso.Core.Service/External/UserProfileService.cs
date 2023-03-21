@@ -2121,15 +2121,13 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException("ERROR_USER_ALREADY_EXISTS");
       }
 
-      var organisationJoinRequestDetails = new OrganisationJoinRequest()
+      return new OrganisationJoinRequest()
       {
         FirstName = orgJoiningDetailList["first"].Trim(),
         LastName = orgJoiningDetailList["last"].Trim(),
         Email = orgJoiningDetailList["email"].Trim(),
         CiiOrgId = orgJoiningDetailList["org"].Trim()
       };
-
-      return organisationJoinRequestDetails;
     }
   }
 }
