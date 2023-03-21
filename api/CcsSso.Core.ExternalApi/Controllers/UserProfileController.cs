@@ -737,7 +737,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(OrganisationJoinRequest), 200)]
-    public async Task<OrganisationJoinRequest> GetUserJoinRequestDetails([FromQuery(Name = "joining-details")] string joiningDetailsToken)
+    public async Task<OrganisationJoinRequest> GetUserJoinRequestDetails([FromQuery(Name = "details")] string joiningDetailsToken)
     {
       return await _userProfileService.GetUserJoinRequestDetails(joiningDetailsToken);
     }
