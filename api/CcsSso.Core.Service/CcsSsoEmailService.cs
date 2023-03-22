@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using CcsSso.Core.Domain.Contracts.External;
 
 namespace CcsSso.Core.Service
 {
@@ -16,11 +17,14 @@ namespace CcsSso.Core.Service
 
     private readonly IEmailProviderService _emaillProviderService;
     private readonly ApplicationConfigurationInfo _appConfigInfo;
+    private readonly INotificationApiService _notificationApiService;
 
-    public CcsSsoEmailService(IEmailProviderService emaillProviderService, ApplicationConfigurationInfo appConfigInfo)
+    public CcsSsoEmailService(IEmailProviderService emaillProviderService, ApplicationConfigurationInfo appConfigInfo, 
+      INotificationApiService notificationApiService)
     {
       _emaillProviderService = emaillProviderService;
       _appConfigInfo = appConfigInfo;
+      _notificationApiService = notificationApiService;
     }
 
     public async Task SendUserWelcomeEmailAsync(string email, string idpName)

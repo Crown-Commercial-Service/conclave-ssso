@@ -209,6 +209,7 @@ namespace CcsSso.Api
       services.AddSingleton<IAwsSqsService, AwsSqsService>();
       services.AddSingleton<IAwsS3Service, AwsS3Service>();
       services.AddSingleton<IEmailProviderService, EmailProviderService>();
+      services.AddSingleton<INotificationApiService, NotificationApiService>();
       services.AddSingleton<ICcsSsoEmailService, CcsSsoEmailService>();
       services.AddSingleton<ITokenService, TokenService>();
       services.AddSingleton<IRemoteCacheService, RedisCacheService>();

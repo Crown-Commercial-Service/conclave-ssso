@@ -8,6 +8,7 @@ namespace CcsSso.Core.Domain.Contracts
     Task DeleteUserInIdamAsync(string userName);
 
     Task RegisterUserInIdamAsync(SecurityApiUserInfo securityApiUserInfo);
+    Task<string> RegisterUserInIdamGetAuthIdAsync(SecurityApiUserInfo securityApiUserInfo);
 
     Task UpdateUserMfaInIdamAsync(SecurityApiUserInfo securityApiUserInfo);
 

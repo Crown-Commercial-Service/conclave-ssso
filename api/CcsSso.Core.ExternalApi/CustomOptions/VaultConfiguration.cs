@@ -225,6 +225,13 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("UserRoleApproval:UserRoleApprovedEmailTemplateId", orgAutoValidation.UserRoleApprovedEmailTemplateId);
         Data.Add("UserRoleApproval:UserRoleRejectedEmailTemplateId", orgAutoValidation.UserRoleRejectedEmailTemplateId);
       }
+      if (_secrets.Data.ContainsKey("NotificationApiSettings"))
+      {
+        var notificationApiSettings = JsonConvert.DeserializeObject<NotificationApiSettings>(_secrets.Data["NotificationApiSettings"].ToString());
+        Data.Add("NotificationApiSettings:Enable", notificationApiSettings.Enable.ToString());
+        Data.Add("NotificationApiSettings:ApiKey", notificationApiSettings.ApiKey);
+        Data.Add("NotificationApiSettings:Url", notificationApiSettings.Url);
+      }
 
     }
   }

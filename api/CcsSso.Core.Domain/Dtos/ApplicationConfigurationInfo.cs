@@ -44,6 +44,7 @@ namespace CcsSso.Domain.Dtos
 
     public UserRoleApproval UserRoleApproval { get; set; }
     public bool EnableUserAccessTokenFix { get; set; }
+    public NotificationApiSettings NotificationApiSettings { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -51,6 +52,14 @@ namespace CcsSso.Domain.Dtos
     public List<string> GlobalServiceDefaultRoles { get; set; }
 
     public List<string> ScopedServiceDefaultRoles { get; set; }
+  }
+  public class NotificationApiSettings
+  {
+    public bool Enable { get; set; } = false;
+
+    public string ApiKey { get; set; }
+
+    public string Url { get; set; }
   }
 
   public class JwtTokenValidationConfigurationInfo

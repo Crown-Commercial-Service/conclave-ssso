@@ -156,6 +156,12 @@ namespace CcsSso.ExternalApi
             UserRoleApprovedEmailTemplateId = Configuration["UserRoleApproval:UserRoleApprovedEmailTemplateId"],
             UserRoleRejectedEmailTemplateId = Configuration["UserRoleApproval:UserRoleRejectedEmailTemplateId"]
           },
+          NotificationApiSettings = new NotificationApiSettings()
+          {
+            Enable = Convert.ToBoolean(Configuration["NotificationApiSettings:Enable"]),
+            Url = Configuration["NotificationApiSettings:Url"],
+            ApiKey = Configuration["NotificationApiSettings:ApiKey"]
+          }
         };
         return appConfigInfo;
       });
@@ -199,6 +205,7 @@ namespace CcsSso.ExternalApi
       });
       services.AddSingleton<IAwsSqsService, AwsSqsService>();
       services.AddSingleton<IEmailProviderService, EmailProviderService>();
+      services.AddSingleton<INotificationApiService, NotificationApiService>();
       services.AddSingleton<ICcsSsoEmailService, CcsSsoEmailService>();
       services.AddDbContext<DataContext>(options => options.UseNpgsql(Configuration["DbConnection"]));
       services.AddSingleton<IRemoteCacheService, RedisCacheService>();
