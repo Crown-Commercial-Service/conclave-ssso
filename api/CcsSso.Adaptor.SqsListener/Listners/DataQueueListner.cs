@@ -1,5 +1,6 @@
 using CcsSso.Adaptor.Domain.Dtos.Security;
 using CcsSso.Adaptor.Domain.SqsListener;
+using CcsSso.Adaptor.SqsListener.Models;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
 using CcsSso.Shared.Domain.Dto;
@@ -92,13 +93,19 @@ namespace CcsSso.Adaptor.SqsListener.Listners
 
     private async Task SendEmail(SqsMessageResponseDto sqsMessageResponseDto, int retryCount = 0)
     {
-      await Task.Delay(_appSetting.DataQueueSettings.DelayInSeconds * 1000);
+      var dataQueueDelayInSeconds = _appSetting.DataQueueSettings.DelayInSeconds + 2;
+
+      await Task.Delay(dataQueueDelayInSeconds * 1000);
 
       var url = "notification/senduserconfirmemail";
 
       var client = _httpClientFactory.CreateClient("NotificationApi");
 
-      HttpContent data = new StringContent(sqsMessageResponseDto.MessageBody, System.Text.Encoding.UTF8, "application/json");
+      var emailRequestInfo = JsonConvert.DeserializeObject<EmailRequestInfo>(sqsMessageResponseDto.MessageBody.ToString());
+      emailRequestInfo.isMessageRetry = true;
+      var serializedData = JsonConvert.SerializeObject(emailRequestInfo);
+
+      HttpContent data = new StringContent(serializedData, System.Text.Encoding.UTF8, "application/json");
       var response = await client.PostAsync(url, data);
 
       if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.BadRequest)
@@ -120,8 +127,8 @@ namespace CcsSso.Adaptor.SqsListener.Listners
         }
         else
         {
-          var user = JsonConvert.DeserializeObject<UserInfo>(sqsMessageResponseDto.MessageBody);
-          await SendCreateUserErrorNotification(user.Email);
+          emailRequestInfo = JsonConvert.DeserializeObject<EmailRequestInfo>(sqsMessageResponseDto.MessageBody);
+          await SendCreateUserErrorNotification(emailRequestInfo.EmailInfo.To);
           Console.WriteLine($"WorkerError: {LISTNER_JOB_DATA_QUEUE} :: Message processing retry failed for MessageId: {sqsMessageResponseDto.MessageId}, url: {url}, data: {JsonConvert.SerializeObject(sqsMessageResponseDto.MessageBody)}, at: {DateTime.UtcNow}, ErroreCode: {response.StatusCode}, Error: {JsonConvert.SerializeObject(responseContent)}");
           await DeleteMessageFromQueueAsync(sqsMessageResponseDto);
         }
