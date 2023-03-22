@@ -238,8 +238,7 @@ namespace CcsSso.Core.Service.External
         try
         {
           userAuth0Id = await _idamService.RegisterUserInIdamGetAuthIdAsync(securityApiUserInfo);
-         
-          isRegisteredInIdam = true;
+           isRegisteredInIdam = true;
         }
         catch (Exception)
         {

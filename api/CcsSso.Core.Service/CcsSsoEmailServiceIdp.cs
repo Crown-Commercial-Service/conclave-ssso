@@ -1,9 +1,11 @@
+using Azure;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Dtos;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
+using CcsSso.Shared.Domain.Dto;
 using CcsSso.Shared.Domain.Helpers;
 using Newtonsoft.Json;
 using System;
@@ -95,12 +97,15 @@ namespace CcsSso.Core.Service
           var isEmailSuccess = await _notificationApiService.PostAsync<bool>($"notification/senduserconfirmemail", emailResquestInfo, "ERROR_SENDING_EMAIL_NOTIFICATION");
           if (!isEmailSuccess)
           {
+            Console.WriteLine("RateLimitCheck: Notification api returns false while sending the email with activation link");
             Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
             throw new CcsSsoException("ERROR_SENDING_EMAIL_NOTIFICATION");
           }
         }
         catch (Exception ex)
         {
+          Console.WriteLine("RateLimitCheck: Exception while calling Notification api to send email with activation link");
+
           Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
           Console.WriteLine(JsonConvert.SerializeObject(ex));
           throw new CcsSsoException("ERROR_SENDING_EMAIL_NOTIFICATION");

@@ -151,6 +151,8 @@ namespace CcsSso.Security.Services
       }
       catch (ErrorApiException e)
       {
+        Console.WriteLine($"RateLimitCheck: some exception has been raised for user {userInfo.Email}");
+
         if (e.ApiError.Error == "Conflict")
         {
           throw new CcsSsoException("USERNAME_EXISTS");
@@ -172,6 +174,8 @@ namespace CcsSso.Security.Services
       }
       catch (RateLimitApiException)
       {
+        Console.WriteLine($"RateLimitCheck: Rate Limit exception raised for user {userInfo.Email}");
+
         await PushCreateUserMessageToDataQueueAsync(userInfo);
 
         return new UserRegisterResult()
@@ -1182,11 +1186,15 @@ namespace CcsSso.Security.Services
           }
           else
           {
+            Console.WriteLine($"RateLimitCheck: User not found for user {email}");
+
             throw new RecordNotFoundException();
           }
         }
         catch (ErrorApiException e)
         {
+          Console.WriteLine($"RateLimitCheck: other exception. User Email- {email}");
+
           if (e.ApiError.ErrorCode == "invalid_query_string")
           {
             throw new CcsSsoException("INVALID_EMAIL");

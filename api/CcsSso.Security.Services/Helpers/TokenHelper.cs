@@ -68,15 +68,21 @@ namespace CcsSso.Security.Services.Helpers
         }
         else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
+          Console.WriteLine("RateLimitCheck: unauthorized error while getting auth 0 token ");
+
           throw new UnauthorizedAccessException();
         }
         else
         {
+          Console.WriteLine("RateLimitCheck: other error while getting auth 0 token ");
+
           throw new CcsSsoException("ERROR_COMMUNICATING");
         }
       }
       catch (HttpRequestException)
       {
+        Console.WriteLine("RateLimitCheck: http request error while getting auth 0 token ");
+
         throw new CcsSsoException("ERROR_COMMUNICATING");
       }
     }
