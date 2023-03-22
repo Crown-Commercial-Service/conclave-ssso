@@ -211,7 +211,7 @@ namespace CcsSso.Adaptor.SqsListener.Listners
       {
         Console.WriteLine($"Worker: {LISTNER_JOB_DATA_QUEUE} :: Deleteing message from queue. MessageId: {sqsMessageResponseDto.MessageId}");
         await _awsDataSqsService.DeleteMessageAsync(_appSetting.QueueUrlInfo.DataQueueUrl, sqsMessageResponseDto.ReceiptHandle);
-      }
+       }
       catch (Exception ex)
       {
         _logger.LogError(ex, $"Worker: {LISTNER_JOB_DATA_QUEUE} :: Message deleting error at: {DateTime.UtcNow}");

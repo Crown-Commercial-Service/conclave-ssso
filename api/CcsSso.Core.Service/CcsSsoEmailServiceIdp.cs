@@ -4,6 +4,7 @@ using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
+using CcsSso.Shared.Domain.Helpers;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -65,6 +66,11 @@ namespace CcsSso.Core.Service
     // #Auto validation
     public async Task SendUserConfirmEmailOnlyUserIdPwdAsync(string email, string activationlink, string ccsMsg)
     {
+      await SendUserConfirmEmailOnlyUserIdPwdAsync(email, activationlink, ccsMsg, true);
+    }
+
+    public async Task SendUserConfirmEmailOnlyUserIdPwdAsync(string email, string activationlink, string ccsMsg, bool isUserInAuth0)
+    {
       var data = new Dictionary<string, dynamic>
       {
         { "link", activationlink },
@@ -85,7 +91,8 @@ namespace CcsSso.Core.Service
       {
         try
         {
-          var isEmailSuccess = await _notificationApiService.PostAsync<bool>($"notification/senduserconfirmemail", emailInfo, "ERROR_SENDING_EMAIL_NOTIFICATION");
+          EmailResquestInfo emailResquestInfo = new EmailResquestInfo { EmailInfo = emailInfo, IsUserInAuth0 = isUserInAuth0 };
+          var isEmailSuccess = await _notificationApiService.PostAsync<bool>($"notification/senduserconfirmemail", emailResquestInfo, "ERROR_SENDING_EMAIL_NOTIFICATION");
           if (!isEmailSuccess)
           {
             Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
@@ -123,6 +130,11 @@ namespace CcsSso.Core.Service
 
     public async Task SendUserConfirmEmailBothIdpAsync(string email, string idpName, string activationlink)
     {
+      await SendUserConfirmEmailBothIdpAsync(email, idpName, activationlink, true);
+    }
+
+    public async Task SendUserConfirmEmailBothIdpAsync(string email, string idpName, string activationlink,bool isUserInAuth0)
+    {
       var data = new Dictionary<string, dynamic>
       {
         { "sigininproviders", idpName },
@@ -144,7 +156,8 @@ namespace CcsSso.Core.Service
       {
         try
         {
-          var isEmailSuccess = await _notificationApiService.PostAsync<bool>($"notification/senduserconfirmemail", emailInfo, "ERROR_SENDING_EMAIL_NOTIFICATION");
+          EmailResquestInfo emailResquestInfo = new EmailResquestInfo { EmailInfo = emailInfo, IsUserInAuth0 = isUserInAuth0 };
+          var isEmailSuccess = await _notificationApiService.PostAsync<bool>($"notification/senduserconfirmemail", emailResquestInfo, "ERROR_SENDING_EMAIL_NOTIFICATION");
           if (!isEmailSuccess)
           {
             Console.WriteLine("ERROR_SENDING_EMAIL_NOTIFICATION");
