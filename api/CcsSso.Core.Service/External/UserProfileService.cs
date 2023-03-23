@@ -301,10 +301,25 @@ namespace CcsSso.Core.Service.External
                           "You will be informed within the next 24 to 72 hours" : string.Empty;
          
           var activationlink = "";
+
+          Console.WriteLine($"RateLimitCheck: _appConfigInfo.NotificationApiSettings.Enable value- {_appConfigInfo.NotificationApiSettings.Enable}");
+
           if (!_appConfigInfo.NotificationApiSettings.Enable)
           {
-            activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+            try
+            {
+              activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+
+            }
+            catch (Exception ex)
+            {
+              Console.WriteLine($"RateLimitCheck: Exception while calling activation link method call- {ex.Message}");
+
+              throw;
+            }
           }
+
+          Console.WriteLine($"RateLimitCheck: activationlink- {activationlink}");
 
           await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink), ccsMsg, userAuth0Id != null);
         }

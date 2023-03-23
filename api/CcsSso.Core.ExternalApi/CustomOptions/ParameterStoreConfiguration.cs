@@ -153,6 +153,12 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/UserRoleApprovedEmailTemplateId", "UserRoleApproval:UserRoleApprovedEmailTemplateId"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/UserRoleRejectedEmailTemplateId", "UserRoleApproval:UserRoleRejectedEmailTemplateId"));
 
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "NotificationApiSettings/Enable", "NotificationApiSettings:Enable"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "NotificationApiSettings/ApiKey", "NotificationApiSettings:ApiKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "NotificationApiSettings/Url", "NotificationApiSettings:Url"));
+
+
+
       foreach (var configuration in configurations)
       {
         Data.Add(configuration);
