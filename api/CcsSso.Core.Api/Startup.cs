@@ -113,6 +113,10 @@ namespace CcsSso.Api
           {
             Enable = Convert.ToBoolean(Configuration["UserRoleApproval:Enable"])
           },
+          NewUserJoinRequest = new NewUserJoinRequest()
+          {
+            LinkExpirationInMinutes = Convert.ToInt32(Configuration["NewUserJoinRequest:LinkExpirationInMinutes"])
+          },
           TokenEncryptionKey = Configuration["TokenEncryptionKey"],
         };
         return appConfigInfo;

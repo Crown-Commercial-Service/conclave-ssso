@@ -176,7 +176,14 @@ namespace CcsSso.Api.CustomOptions
         var userRoleApproval = JsonConvert.DeserializeObject<UserRoleApproval>(_secrets.Data["UserRoleApproval"].ToString());
         Data.Add("UserRoleApproval:Enable", userRoleApproval.Enable.ToString());
       }
+
       Data.Add("TokenEncryptionKey", _secrets.Data["TokenEncryptionKey"].ToString());
+
+      if (_secrets.Data.ContainsKey("NewUserJoinRequest"))
+      {
+        var newUserJoinRequest = JsonConvert.DeserializeObject<NewUserJoinRequest>(_secrets.Data["NewUserJoinRequest"].ToString());
+        Data.Add("NewUserJoinRequest:LinkExpirationInMinutes", newUserJoinRequest.LinkExpirationInMinutes.ToString());
+      }
     }
   }
 
@@ -339,6 +346,11 @@ namespace CcsSso.Api.CustomOptions
   public class UserRoleApproval
   {
     public bool Enable { get; set; } = false;
+  }
+
+  public class NewUserJoinRequest
+  {
+    public int LinkExpirationInMinutes { get; set; }
   }
 
 }
