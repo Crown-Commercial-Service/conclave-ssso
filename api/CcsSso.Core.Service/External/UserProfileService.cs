@@ -2099,6 +2099,30 @@ namespace CcsSso.Core.Service.External
 
     public async Task<OrganisationJoinRequest> GetUserJoinRequestDetails(string joiningDetailsToken)
     {
+      Dictionary<string, string> orgJoiningDetailList = DecryptTokenAndReturnDetails(joiningDetailsToken);
+      string errorCode = await ValidateJoiningRequestAsync(orgJoiningDetailList);
+
+      if (!string.IsNullOrWhiteSpace(errorCode))
+      {
+        return new OrganisationJoinRequest()
+        {
+          Email = orgJoiningDetailList["email"].Trim(),
+          ErrorCode = errorCode
+        };
+      }
+
+      return new OrganisationJoinRequest()
+      {
+        FirstName = orgJoiningDetailList["first"].Trim(),
+        LastName = orgJoiningDetailList["last"].Trim(),
+        Email = orgJoiningDetailList["email"].Trim(),
+        CiiOrgId = orgJoiningDetailList["org"].Trim(),
+        ErrorCode = errorCode
+      };
+    }
+
+    private Dictionary<string, string> DecryptTokenAndReturnDetails(string joiningDetailsToken)
+    {
       joiningDetailsToken = joiningDetailsToken?.Replace(" ", "+");
 
       string orgJoiningDetails = _cryptographyService.DecryptString(joiningDetailsToken, _appConfigInfo.TokenEncryptionKey);
@@ -2111,27 +2135,28 @@ namespace CcsSso.Core.Service.External
       Dictionary<string, string> orgJoiningDetailList = orgJoiningDetails.Split('&').Select(value => value.Split('='))
                                                   .ToDictionary(pair => pair[0], pair => pair[1]);
 
-      if (_requestContext.CiiOrganisationId != orgJoiningDetailList["org"]?.Trim()) 
+      return orgJoiningDetailList;
+    }
+
+    private async Task<string> ValidateJoiningRequestAsync(Dictionary<string, string> orgJoiningDetailList)
+    {
+      string errorCode = string.Empty;
+      DateTime expirationTime = Convert.ToDateTime(orgJoiningDetailList["exp"]);
+
+      if (_requestContext.CiiOrganisationId != orgJoiningDetailList["org"]?.Trim())
       {
         throw new ForbiddenException();
       }
-
-      if (await IsUserExist(orgJoiningDetailList["email"]?.Trim()))
+      else if (expirationTime < DateTime.UtcNow)
       {
-        return new OrganisationJoinRequest()
-        {
-          Email = orgJoiningDetailList["email"].Trim(),
-          ErrorCode = "ERROR_USER_ALREADY_EXISTS"
-        };
+        errorCode = ErrorConstant.ErrorLinkExpired;
+      }
+      else if (await IsUserExist(orgJoiningDetailList["email"]?.Trim()))
+      {
+        errorCode = ErrorConstant.ErrorUserAlreadyExists;
       }
 
-      return new OrganisationJoinRequest()
-      {
-        FirstName = orgJoiningDetailList["first"].Trim(),
-        LastName = orgJoiningDetailList["last"].Trim(),
-        Email = orgJoiningDetailList["email"].Trim(),
-        CiiOrgId = orgJoiningDetailList["org"].Trim()
-      };
+      return errorCode;
     }
   }
 }

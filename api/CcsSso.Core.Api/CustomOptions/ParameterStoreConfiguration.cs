@@ -152,6 +152,7 @@ namespace CcsSso.Core.Api.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/Enable", "UserRoleApproval:Enable"));
       
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "TokenEncryptionKey", "TokenEncryptionKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "NewUserJoinRequest/LinkExpirationInMinutes", "NewUserJoinRequest:LinkExpirationInMinutes"));
 
       foreach (var configuration in configurations)
       {
