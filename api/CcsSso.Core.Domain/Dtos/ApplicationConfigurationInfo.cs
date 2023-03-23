@@ -48,6 +48,8 @@ namespace CcsSso.Domain.Dtos
     public ServiceRoleGroupSettings ServiceRoleGroupSettings { get; set; }
 
     public string TokenEncryptionKey { get; set; }
+
+    public NewUserJoinRequest NewUserJoinRequest { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -188,5 +190,10 @@ namespace CcsSso.Domain.Dtos
   public class ServiceRoleGroupSettings
   {
     public bool Enable { get; set; } = false;
+  }
+
+  public class NewUserJoinRequest
+  {
+    public int LinkExpirationInMinutes { get; set; }
   }
 }
