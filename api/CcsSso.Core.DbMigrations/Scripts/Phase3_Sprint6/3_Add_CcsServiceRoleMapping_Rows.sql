@@ -30,7 +30,7 @@ end if;
 	END;
 $$ LANGUAGE plpgsql;
 
-SELECT AddGroupRoleMapping('CAS_USER_GROUP','CAS_USER','Contract Award Service (CAS) - add service');
+SELECT AddGroupRoleMapping('CAS_USER_GROUP','CAT_USER','Contract Award Service (CAS) - add service');
 SELECT AddGroupRoleMapping('CAS_USER_GROUP','CAS_USER','Contract Award Service (CAS) - add to dashboard');
 SELECT AddGroupRoleMapping('CAS_USER_GROUP','CAS_USER','Contract Award Service role to create buyer in Jagger-LD');
 
