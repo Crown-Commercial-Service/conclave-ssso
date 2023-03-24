@@ -99,7 +99,8 @@ namespace CcsSso.Core.Service
 
     public async Task SendOrgJoinRequestEmailAsync(OrgJoinNotificationInfo orgJoinNotificationInfo)
     {
-      string activationInfo = "first=" + orgJoinNotificationInfo.FirstName + "&last=" + orgJoinNotificationInfo.LastName + "&email=" + orgJoinNotificationInfo.Email + "&org=" + orgJoinNotificationInfo.CiiOrganisationId;
+      string activationInfo = "first=" + orgJoinNotificationInfo.FirstName + "&last=" + orgJoinNotificationInfo.LastName + "&email=" + orgJoinNotificationInfo.Email + 
+                              "&org=" + orgJoinNotificationInfo.CiiOrganisationId + "&exp=" + DateTime.UtcNow.AddMinutes(_appConfigInfo.NewUserJoinRequest.LinkExpirationInMinutes);
       var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.TokenEncryptionKey);
 
       var data = new Dictionary<string, dynamic>
