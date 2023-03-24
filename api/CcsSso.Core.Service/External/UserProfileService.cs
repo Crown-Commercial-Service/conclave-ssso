@@ -41,14 +41,16 @@ namespace CcsSso.Core.Service.External
     private readonly IWrapperApiService _wrapperApiService;
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
     private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
+    private readonly IOrganisationGroupService _organisationGroupService;
 
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
       IAdaptorNotificationService adapterNotificationService, IWrapperCacheService wrapperCacheService,
       IAuditLoginService auditLoginService, IRemoteCacheService remoteCacheService,
       ICacheInvalidateService cacheInvalidateService, ICryptographyService cryptographyService,
-      ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService
-      , IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService serviceRoleGroupMapperService)
+      ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService,
+      IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
+      IOrganisationGroupService organisationGroupService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -66,6 +68,7 @@ namespace CcsSso.Core.Service.External
       _wrapperApiService = wrapperApiService;
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
       _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
+      _organisationGroupService = organisationGroupService;
     }
 
     public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo, bool isNewOrgAdmin = false)
@@ -1915,6 +1918,44 @@ namespace CcsSso.Core.Service.External
         }
 
         userProfileServiceRoleGroupResponseInfo.Detail.ServiceRoleGroupInfo = serviceRoleGroupInfo;
+
+        var groupIds = userProfileResponseInfo.Detail.UserGroups.Select(x => x.GroupId).Distinct().ToList();
+
+        List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups = new List<GroupAccessServiceRoleGroup>();
+
+        foreach (var groupId in groupIds)
+        {
+          var groupInfo = await _organisationGroupService.GetServiceRoleGroupAsync(userProfileResponseInfo.OrganisationId, groupId);
+
+          if (groupInfo != null && groupInfo.ServiceRoleGroups != null && groupInfo.ServiceRoleGroups.Count > 0)
+          {
+            foreach (var serviceRoleGroup in groupInfo.ServiceRoleGroups)
+            {
+              groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+              {
+                GroupId = groupInfo.GroupId,
+                Group = groupInfo.GroupName,
+                AccessServiceRoleGroupId = serviceRoleGroup.Id,
+                AccessServiceRoleGroupName = serviceRoleGroup.Name,
+              });
+            }
+          }
+          else
+          {
+            var userGroup = userProfileResponseInfo.Detail.UserGroups.FirstOrDefault(x => x.GroupId == groupId);
+
+            if (userGroup != null)
+            {
+              groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+              {
+                GroupId = userGroup.GroupId,
+                Group = userGroup.Group,
+              });
+            }
+          }
+        }
+
+        userProfileServiceRoleGroupResponseInfo.Detail.UserGroups = groupAccessServiceRoleGroups;
       }
 
       return userProfileServiceRoleGroupResponseInfo;
@@ -1992,10 +2033,10 @@ namespace CcsSso.Core.Service.External
         if (serviceRoleGroups.Count != serviceRoleGroupIds.Count)
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
-        }        
+        }
 
         List<OrganisationEligibleRole> organisationEligibleRoles = await _serviceRoleGroupMapperService.ServiceRoleGroupsToOrgRolesAsync(serviceRoleGroupIds, organisationId);
-        
+
         var userDomain = userProfileServiceRoleGroupEditRequestInfo?.UserName?.ToLower().Split('@')?[1];
         var orgDoamin = _dataContext.Organisation.FirstOrDefault(o => o.CiiOrganisationId == organisationId)?.DomainName?.ToLower();
 
@@ -2051,7 +2092,6 @@ namespace CcsSso.Core.Service.External
           Id = userProfileResponseInfo.Detail.Id,
           CanChangePassword = userProfileResponseInfo.Detail.CanChangePassword,
           IdentityProviders = userProfileResponseInfo.Detail.IdentityProviders,
-          UserGroups = userProfileResponseInfo.Detail.UserGroups,
           DelegatedOrgs = userProfileResponseInfo.Detail.DelegatedOrgs
         }
       };

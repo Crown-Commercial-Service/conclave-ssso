@@ -256,6 +256,7 @@ namespace CcsSso.Api
       services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
       services.AddScoped<IUserProfileRoleApprovalService, UserProfileRoleApprovalService>();
       services.AddScoped<IServiceRoleGroupMapperService, ServiceRoleGroupMapperService>();
+      services.AddScoped<IOrganisationGroupService, OrganisationGroupService>();
 
       services.AddHttpContextAccessor();
 
