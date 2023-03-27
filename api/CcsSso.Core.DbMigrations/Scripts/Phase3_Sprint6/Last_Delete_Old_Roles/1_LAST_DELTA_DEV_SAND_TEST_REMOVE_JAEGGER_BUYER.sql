@@ -1,8 +1,8 @@
 -- This will be used to Jagger buyer role with description (eSourcing  buyer role for CAS -Optional)
 
-CREATE OR REPLACE FUNCTION 1_LAST_DELTA_DEV_TEST_REMOVE_JAEGGER_BUYER(
+CREATE OR REPLACE FUNCTION LAST_DELTA_DEV_TEST_REMOVE_JAEGGER_BUYER(
 		ccsAccessRoleNameKey varchar(200),
-		ccsAccessRoleName text,
+		ccsAccessRoleName text
 	) RETURNS integer AS $$
 
 DECLARE reportingModeOn boolean = 'true';
@@ -155,7 +155,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-SELECT 1_LAST_DELTA_DEV_TEST_REMOVE_JAEGGER_BUYER('JAEGGER_BUYER','eSourcing  buyer role for CAS -Optional');
+SELECT LAST_DELTA_DEV_TEST_REMOVE_JAEGGER_BUYER('JAEGGER_BUYER','eSourcing  buyer role for CAS -Optional');
 
 
-DROP FUNCTION 1_LAST_DELTA_DEV_TEST_REMOVE_JAEGGER_BUYER;
+DROP FUNCTION LAST_DELTA_DEV_TEST_REMOVE_JAEGGER_BUYER;
