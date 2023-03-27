@@ -1,49 +1,52 @@
 
-CREATE OR REPLACE FUNCTION AddRole() RETURNS integer AS $$
+-- No need to run this script. 
+ 
 
-DECLARE serviceName text = 'Contract Award Service';
+--CREATE OR REPLACE FUNCTION AddRole() RETURNS integer AS $$
 
-DECLARE clientServiceId int;
-DECLARE dashboardServiceId int;
+--DECLARE serviceName text = 'Contract Award Service';
 
-declare ServicePermissionId int;
-declare RoleId int;
+--DECLARE clientServiceId int;
+--DECLARE dashboardServiceId int;
 
-begin
+--declare ServicePermissionId int;
+--declare RoleId int;
 
-SELECT "Id" into clientServiceId From public."CcsService" WHERE "ServiceName" = serviceName LIMIT 1;
+--begin
 
-if (clientServiceId is null) then
-	raise notice 'No service found';
-	return 1;
-end if; 
+--SELECT "Id" into clientServiceId From public."CcsService" WHERE "ServiceName" = serviceName LIMIT 1;
 
-INSERT INTO public."ServicePermission"(
-	"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc","LastUpdatedOnUtc", "IsDeleted")
-	VALUES ('JAEGGER_BUYER_CAS', clientServiceId, 0, 0, now(), now(), false);
+--if (clientServiceId is null) then
+--	raise notice 'No service found';
+--	return 1;
+--end if; 
 
-SELECT "Id" into ServicePermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'JAEGGER_BUYER_CAS' AND "CcsServiceId" = clientServiceId  LIMIT 1;
+--INSERT INTO public."ServicePermission"(
+--	"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc","LastUpdatedOnUtc", "IsDeleted")
+--	VALUES ('JAEGGER_BUYER_CAS', clientServiceId, 0, 0, now(), now(), false);
 
-INSERT INTO public."CcsAccessRole"(
- 	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
-	"SubscriptionTypeEligibility", "TradeEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
-	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('JAEGGER_BUYER', 'eSourcing  buyer role for CAS -Optional', 'eSourcing  buyer role for CAS -Optional', 2, 0, 1,0, 0, 0, now(), now(), 
-			false, false);
-SELECT "Id" into RoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'JAEGGER_BUYER' AND "CcsAccessRoleName" = 'eSourcing  buyer role for CAS -Optional' LIMIT 1;
+--SELECT "Id" into ServicePermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'JAEGGER_BUYER_CAS' AND "CcsServiceId" = clientServiceId  LIMIT 1;
 
-INSERT INTO public."ServiceRolePermission"(
-	"ServicePermissionId", "CcsAccessRoleId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
-	VALUES (ServicePermissionId, RoleId, 0, 0, now(), now(), false);
+--INSERT INTO public."CcsAccessRole"(
+-- 	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
+--	"SubscriptionTypeEligibility", "TradeEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
+--	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
+--	VALUES ('JAEGGER_BUYER', 'eSourcing  buyer role for CAS -Optional', 'eSourcing  buyer role for CAS -Optional', 2, 0, 1,0, 0, 0, now(), now(), 
+--			false, false);
+--SELECT "Id" into RoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'JAEGGER_BUYER' AND "CcsAccessRoleName" = 'eSourcing  buyer role for CAS -Optional' LIMIT 1;
+
+--INSERT INTO public."ServiceRolePermission"(
+--	"ServicePermissionId", "CcsAccessRoleId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+--	VALUES (ServicePermissionId, RoleId, 0, 0, now(), now(), false);
 	
 
-	RETURN 1;
-	END;
-$$ LANGUAGE plpgsql;
+--	RETURN 1;
+--	END;
+--$$ LANGUAGE plpgsql;
 
-SELECT setval('"CcsAccessRole_Id_seq"', max("Id")) FROM "CcsAccessRole";
-SELECT setval('"ServicePermission_Id_seq"', max("Id")) FROM "ServicePermission";
-SELECT setval('"ServiceRolePermission_Id_seq"', max("Id")) FROM "ServiceRolePermission";
-SELECT AddRole();
-DROP FUNCTION AddRole;
+--SELECT setval('"CcsAccessRole_Id_seq"', max("Id")) FROM "CcsAccessRole";
+--SELECT setval('"ServicePermission_Id_seq"', max("Id")) FROM "ServicePermission";
+--SELECT setval('"ServiceRolePermission_Id_seq"', max("Id")) FROM "ServiceRolePermission";
+--SELECT AddRole();
+--DROP FUNCTION AddRole;
 

@@ -1,7 +1,8 @@
 
+
 CREATE OR REPLACE FUNCTION AddRole() RETURNS integer AS $$
 
-DECLARE serviceName text = 'Dashboard Service';
+DECLARE serviceName text = 'eSourcing';
 
 DECLARE clientServiceId int;
 DECLARE dashboardServiceId int;
@@ -18,28 +19,31 @@ if (clientServiceId is null) then
 	return 1;
 end if; 
 
+IF EXISTS (SELECT "Id" FROM public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'CAT_USER' AND "CcsAccessRoleName" = 'Contract Award Service role to merge buyer via Jaggaer' LIMIT 1) THEN
+	raise notice 'Role already exists';
+	return 1;
+END IF;
+
+
 INSERT INTO public."ServicePermission"(
 	"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc","LastUpdatedOnUtc", "IsDeleted")
-	VALUES ('TEST_SAML_CLIENT_USER_DS', clientServiceId, 0, 0, now(), now(), false);
+	VALUES ('CAT_USER_ES', clientServiceId, 0, 0, now(), now(), false);
 
-SELECT "Id" into ServicePermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'TEST_SAML_CLIENT_USER_DS' AND "CcsServiceId" = clientServiceId  LIMIT 1;
+SELECT "Id" into ServicePermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'CAT_USER_ES' AND "CcsServiceId" = clientServiceId  LIMIT 1;
 
 INSERT INTO public."CcsAccessRole"(
  	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
 	"SubscriptionTypeEligibility", "TradeEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
 	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('TEST_SAML_CLIENT_USER', 'SAML Client Tile', 'SAML Client Tile', 2, 1, 2,0, 0, 0, now(), now(), 
+	VALUES ('CAT_USER', 'Contract Award Service role to merge buyer via Jaggaer', 'Contract Award Service role to merge buyer via Jaggaer', 2, 0, 1,0, 0, 0, now(), now(), 
 			false, false);
-SELECT "Id" into RoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'TEST_SAML_CLIENT_USER' AND "CcsAccessRoleName" = 'SAML Client Tile' LIMIT 1;
+
+SELECT "Id" into RoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'CAT_USER' AND "CcsAccessRoleName" = 'Contract Award Service role to merge buyer via Jaggaer' LIMIT 1;
 
 INSERT INTO public."ServiceRolePermission"(
 	"ServicePermissionId", "CcsAccessRoleId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 	VALUES (ServicePermissionId, RoleId, 0, 0, now(), now(), false);
-
--- update in case the name of the CcsAccessRoleName is different in the DB, In the excel matrix it is different 	
---https://dev.azure.com/CCS-Conclave/CCS-Conclave_P3/_wiki/wikis/CCS-Conclave_P3.wiki/464/(CON-2287)-Simplify-CAS-and-eSourcing-roles
-
-update "CcsAccessRole" set "CcsAccessRoleName" ='SAML Client User'  where "CcsAccessRoleNameKey" ='TEST_SAML_CLIENT_USER' and  "CcsAccessRoleName" ='Test SAML Client User';
+	
 
 	RETURN 1;
 	END;
