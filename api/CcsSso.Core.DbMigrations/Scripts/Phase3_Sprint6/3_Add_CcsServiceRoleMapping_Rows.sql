@@ -33,7 +33,13 @@ $$ LANGUAGE plpgsql;
 SELECT AddGroupRoleMapping('CAS_USER_GROUP','CAT_USER','Contract Award Service (CAS) - add service');
 SELECT AddGroupRoleMapping('CAS_USER_GROUP','CAS_USER','Contract Award Service (CAS) - add to dashboard');
 SELECT AddGroupRoleMapping('CAS_USER_GROUP','CAS_USER','Contract Award Service role to create buyer in Jagger-LD');
-SELECT AddGroupRoleMapping('CAS_USER_GROUP','CAT_USER','Contract Award Service role to merge buyer via Jaggaer');
+
+-- run the below line the if you are executing all the script at the first time - (Above TEST env)
+--SELECT AddGroupRoleMapping('CAS_USER_GROUP','CAT_USER','Contract Award Service role to merge buyer via Jaggaer');
+
+-- run the following in the environment if the script already execuated. (TEST and lower environment.)
+--SELECT AddGroupRoleMapping('CAT_USER','CAT_USER','Contract Award Service role to merge buyer via Jaggaer');
+
 
 SELECT AddGroupRoleMapping('JAEGGER_BUYER_GROUP','JAEGGER_BUYER','eSourcing Service as a buyer');
 -- don't add this role
