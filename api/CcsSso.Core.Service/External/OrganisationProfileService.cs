@@ -647,10 +647,10 @@ namespace CcsSso.Core.Service.External
         {
           var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
 
-          //if (!deletingRoleIds.All(dr => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == dr)))
-          //{
-          //  throw new CcsSsoException("INVALID_ROLES_TO_DELETE");
-          //}
+          if (!deletingRoleIds.All(dr => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == dr)))
+          {
+            throw new CcsSsoException("INVALID_ROLES_TO_DELETE");
+          }
 
           var deletingOrgEligibleRoles = organisation.OrganisationEligibleRoles.Where(oer => deletingRoleIds.Contains(oer.CcsAccessRoleId)).ToList();
 

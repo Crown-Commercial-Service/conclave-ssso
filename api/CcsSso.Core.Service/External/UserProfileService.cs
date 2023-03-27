@@ -1423,10 +1423,19 @@ namespace CcsSso.Core.Service.External
           throw new CcsSsoException(ErrorConstant.ErrorInvalidUserGroup);
         }
 
+        if (userProfileReqestInfo.Detail.RoleIds != null)
+        {
+          var duplicatesRoleIds = userProfileReqestInfo.Detail.RoleIds.GroupBy(x => x).SelectMany(g => g.Skip(1));
+          if (duplicatesRoleIds.Any())
+          {
+            throw new CcsSsoException(ErrorConstant.ErrorInvalidUserRole);
+          }
+        }
+
         if (userProfileReqestInfo.Detail.RoleIds != null && userProfileReqestInfo.Detail.RoleIds.Any(gId => !orgRoleIds.Contains(gId)))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidUserRole);
-        }
+        }        
 
         if (userProfileReqestInfo.Detail.IdentityProviderIds == null || !userProfileReqestInfo.Detail.IdentityProviderIds.Any() ||
           userProfileReqestInfo.Detail.IdentityProviderIds.Any(id => !orgIdpIds.Contains(id)))
