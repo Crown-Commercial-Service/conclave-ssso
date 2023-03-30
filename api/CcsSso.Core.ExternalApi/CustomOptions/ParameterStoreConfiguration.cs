@@ -153,6 +153,8 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/UserRoleApprovedEmailTemplateId", "UserRoleApproval:UserRoleApprovedEmailTemplateId"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/UserRoleRejectedEmailTemplateId", "UserRoleApproval:UserRoleRejectedEmailTemplateId"));
 
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ServiceRoleGroupSettings/Enable", "ServiceRoleGroupSettings:Enable"));
+
       foreach (var configuration in configurations)
       {
         Data.Add(configuration);

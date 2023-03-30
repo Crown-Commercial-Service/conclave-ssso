@@ -22,5 +22,9 @@ namespace CcsSso.Core.Domain.Contracts.External
         Task<List<CountryDetail>> GetCountryDetailAsync();
 
         Task<List<OrganisationRole>> GetRolesRequireApprovalAsync();
+
+        Task<List<ServiceRoleGroup>> GetServiceRoleGroupsAsync();
+
+        Task<List<ServiceRoleGroup>> GetServiceRoleGroupsRequireApprovalAsync();
   }
 }
