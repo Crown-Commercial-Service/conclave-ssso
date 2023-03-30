@@ -22,6 +22,12 @@ INSERT INTO public."ServicePermission"(
 	"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc","LastUpdatedOnUtc", "IsDeleted")
 	VALUES ('JAEGGER_SUPPLIER_ES', clientServiceId, 0, 0, now(), now(), false);
 
+ IF EXISTS (SELECT "Id" FROM public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'JAEGGER_SUPPLIER' AND "CcsAccessRoleName" = 'eSourcing  Supplier role to access Jagger' LIMIT 1) THEN
+	raise notice 'Role already exists';
+	return 1;
+ END IF;
+
+
 SELECT "Id" into ServicePermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'JAEGGER_SUPPLIER_ES' AND "CcsServiceId" = clientServiceId  LIMIT 1;
 
 INSERT INTO public."CcsAccessRole"(
