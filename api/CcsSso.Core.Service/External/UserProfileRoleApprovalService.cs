@@ -460,6 +460,41 @@ namespace CcsSso.Core.Service.External
       var userAccessRoleIds = await _dataContext.UserAccessRole.Where(x => !x.IsDeleted && x.UserId == user.Id).Select(x => x.OrganisationEligibleRoleId).ToListAsync();
       var userGroupApprovedRoleIds = await GetUserGroupApprovedRoleIds(user);
 
+        if (group == null)
+        {
+          throw new ResourceAlreadyExistsException(ErrorConstant.ErrorInvalidUserGroup);
+        }
+
+        var groupEligibleRoleIds = group.GroupEligibleRoles.Where(x => !x.IsDeleted).Select(x => x.OrganisationEligibleRoleId);
+        if (!roles.All(roleId => groupEligibleRoleIds.Any(x => x == roleId)))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidUserGroupRole);
+        }
+
+        var isUserMemberOfGroup = group.UserGroupMemberships.Where(x => !x.IsDeleted).Any(x => x.UserId == user.Id);
+        if (isUserMemberOfGroup)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidUserInfo);
+        }
+      }
+
+      // If GroupId is null then request is for user profile so we need check for user role exists
+      if (groupId == null)
+      {
+        var userAccessRoles = await _dataContext.UserAccessRole
+       .FirstOrDefaultAsync(uar => !uar.IsDeleted && uar.UserId == user.Id && roles.Contains(uar.OrganisationEligibleRoleId));
+
+        if (userAccessRoles != null)
+        {
+          throw new ResourceAlreadyExistsException(ErrorConstant.ErrorUserRoleAlreadyExists);
+        }
+      }
+
+      List<UserAccessRolePending> userAccessRolePendingToSendEmail = new List<UserAccessRolePending>();
+
+      var userAccessRoleIds = await _dataContext.UserAccessRole.Where(x => !x.IsDeleted && x.UserId == user.Id).Select(x => x.OrganisationEligibleRoleId).ToListAsync();
+      var userGroupApprovedRoleIds = await GetUserGroupApprovedRoleIds(user);
+
       roles.ForEach((roleId) =>
       {
         var isUserAccessRoleRequestPending = user.UserAccessRolePending.Any(x => !x.IsDeleted
