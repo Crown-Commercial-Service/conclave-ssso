@@ -1,4 +1,5 @@
-﻿using CcsSso.Core.DbModel.Entity;
+﻿using CcsSso.Core.DbModel.Constants;
+using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
@@ -116,7 +117,7 @@ namespace CcsSso.Core.Service.External
     {
       var serviceRoleGroups = await _dataContext.CcsServiceRoleGroup
         .Include(g => g.CcsServiceRoleMappings).ThenInclude(g => g.CcsAccessRole)
-        .Where(x => !x.IsDeleted && x.CcsServiceRoleMappings.Any(y => y.CcsAccessRole.ApprovalRequired == 1)).ToListAsync();
+        .Where(x => !x.IsDeleted && x.CcsServiceRoleMappings.Any(y => y.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired)).ToListAsync();
 
       return serviceRoleGroups;
     }
