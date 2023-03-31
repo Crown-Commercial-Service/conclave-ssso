@@ -63,7 +63,7 @@ namespace CcsSso.Core.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     DELETE /approve/role?user-id=user@mail.com&roles=1,2
+    ///     DELETE /approve/role?user-id=user@mail.com&roles=1,2&groupId=1
     ///     
     ///
     /// </remarks>
@@ -72,9 +72,9 @@ namespace CcsSso.Core.ExternalApi.Controllers
     [OrganisationAuthorise("USER")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task RemoveApprovalPendingRoles([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "roles")] string roleIds)
+    public async Task RemoveApprovalPendingRoles([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "roles")] string roleIds, [FromQuery(Name = "groupId")] int? groupId)
     {
-      await _userProfileRoleApprovalService.RemoveApprovalPendingRolesAsync(userId, roleIds);
+      await _userProfileRoleApprovalService.RemoveApprovalPendingRolesAsync(userId, roleIds, groupId);
     }
 
     /// <summary>
@@ -115,7 +115,8 @@ namespace CcsSso.Core.ExternalApi.Controllers
     ///     {
     ///        "userName": "user@mail.com",
     ///        "detail": {
-    ///           "roleIds": { 1, 2 }
+    ///           "roleIds": { 1, 2 },
+    ///           "groupId": null
     ///        }
     ///     }
     ///
