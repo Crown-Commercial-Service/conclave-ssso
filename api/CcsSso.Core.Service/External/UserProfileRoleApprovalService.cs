@@ -173,25 +173,30 @@ namespace CcsSso.Core.Service.External
           });
 
           // On role approval assign normal roles of service as well
-          if (_appConfigInfo.ServiceRoleGroupSettings.Enable)
-          {
-            var serviceGroup = serviceRoleGroupsWithApprovalRequiredRole.FirstOrDefault(x => x.CcsServiceRoleMappings.Any(r => r.CcsAccessRoleId == pendingUserRole.OrganisationEligibleRole.CcsAccessRoleId));
-            var serviceMappingCcsRoleIds = serviceGroup.CcsServiceRoleMappings.Where(y => y.CcsAccessRole.ApprovalRequired == 0).Select(x => x.CcsAccessRoleId).ToList();
+          await AssignOtherServiceGroupRoleToUser(serviceRoleGroupsWithApprovalRequiredRole, pendingUserRole, user);
+        }
+      }
+    }
 
-            var allOrgEligibleRoles = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
-                                      .Where(x => !x.IsDeleted && x.OrganisationId == pendingUserRole.OrganisationEligibleRole.OrganisationId &&
-                                              serviceMappingCcsRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
-            foreach (var orgRole in allOrgEligibleRoles)
+    private async Task AssignOtherServiceGroupRoleToUser(List<CcsServiceRoleGroup> serviceRoleGroupsWithApprovalRequiredRole, UserAccessRolePending pendingUserRole, User user)
+    {
+      if (_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        var serviceGroup = serviceRoleGroupsWithApprovalRequiredRole.FirstOrDefault(x => x.CcsServiceRoleMappings.Any(r => r.CcsAccessRoleId == pendingUserRole.OrganisationEligibleRole.CcsAccessRoleId));
+        var serviceMappingCcsRoleIds = serviceGroup.CcsServiceRoleMappings.Where(y => y.CcsAccessRole.ApprovalRequired == 0).Select(x => x.CcsAccessRoleId).ToList();
+
+        var allOrgEligibleRoles = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
+                                  .Where(x => !x.IsDeleted && x.OrganisationId == pendingUserRole.OrganisationEligibleRole.OrganisationId &&
+                                          serviceMappingCcsRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
+        foreach (var orgRole in allOrgEligibleRoles)
+        {
+          if (!user.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == orgRole.Id && !x.IsDeleted))
+          {
+            user.UserAccessRoles.Add(new UserAccessRole
             {
-              if (!user.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == orgRole.Id && !x.IsDeleted))
-              {
-                user.UserAccessRoles.Add(new UserAccessRole
-                {
-                  UserId = user.Id,
-                  OrganisationEligibleRoleId = orgRole.Id
-                });
-              }
-            }
+              UserId = user.Id,
+              OrganisationEligibleRoleId = orgRole.Id
+            });
           }
         }
       }

@@ -60,13 +60,9 @@ namespace CcsSso.Service
         PermissionList = uar.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.Where(sp => sp.ServicePermission.CcsService.ServiceClientId == serviceClientId).Select(srp => srp.ServicePermission.ServicePermissionName).ToList()
       }).ToList();
 
-      var userGroupsApprovalRequest = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == user.Id
-      && x.OrganisationUserGroupId != null && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
-      var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(userGroupsApprovalRequest.Select(x => x.OrganisationEligibleRoleId).ToList());
-
       if (user.UserGroupMemberships != null)
       {
-        GetGroupPermissions(serviceClientId, user, rolePermissions, userGroupsApprovalRequest, serviceRoleGroups);
+        await GetGroupPermissions(serviceClientId, user, rolePermissions);
       }
 
       var permissions = rolePermissions.SelectMany(rp => rp.PermissionList, (r, p) => new ServicePermissionDto()
@@ -78,6 +74,7 @@ namespace CcsSso.Service
 
       return permissions;
     }
+
     public async Task SendUserActivationEmailAsync(string email, bool isExpired = false)
     {
       _userHelper.ValidateUserName(email);
@@ -100,8 +97,13 @@ namespace CcsSso.Service
       await _ccsSsoEmailService.SendNominateEmailAsync(email, url);
     }
 
-    private void GetGroupPermissions(string serviceClientId, User user, List<UserRolePermissionInfo> rolePermissions, List<UserAccessRolePending> userGroupsApprovalRequest, List<Core.DbModel.Entity.CcsServiceRoleGroup> serviceRoleGroups)
+    private async Task GetGroupPermissions(string serviceClientId, User user, List<UserRolePermissionInfo> rolePermissions)
     {
+      var userGroupsApprovalRequest = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == user.Id
+            && x.OrganisationUserGroupId != null && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
+
+      var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(userGroupsApprovalRequest.Select(x => x.OrganisationEligibleRoleId).ToList());
+
       foreach (var userGroupMembership in user.UserGroupMemberships)
       {
         if (!userGroupMembership.IsDeleted && userGroupMembership.OrganisationUserGroup.GroupEligibleRoles != null && userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Any())
@@ -111,18 +113,21 @@ namespace CcsSso.Service
             if (_applicationConfigurationInfo.UserRoleApproval.Enable && userGroupsApprovalRequest.Any(x => x.OrganisationUserGroupId == groupAccess.OrganisationUserGroupId && serviceRoleGroups.Any(g => g.CcsServiceRoleMappings.Any(m => m.CcsAccessRoleId == groupAccess.OrganisationEligibleRole.CcsAccessRoleId))))
             {
               continue;
-            }
-            var groupAccessRole = new UserRolePermissionInfo
-            {
-              RoleName = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
-              RoleKey = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
-              PermissionList = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.Where(sp => sp.ServicePermission.CcsService.ServiceClientId == serviceClientId).Select(srp => srp.ServicePermission.ServicePermissionName).ToList()
-            };
-            rolePermissions.Add(groupAccessRole);
+            }            
+            rolePermissions.Add(GetGroupRolePermissions(serviceClientId, groupAccess));
           }
         }
       }
     }
 
+    private static UserRolePermissionInfo GetGroupRolePermissions(string serviceClientId, Core.DbModel.Entity.OrganisationGroupEligibleRole groupAccess)
+    {
+      return new UserRolePermissionInfo
+      {
+        RoleName = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
+        RoleKey = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
+        PermissionList = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.Where(sp => sp.ServicePermission.CcsService.ServiceClientId == serviceClientId).Select(srp => srp.ServicePermission.ServicePermissionName).ToList()
+      };
+    }
   }
 }
