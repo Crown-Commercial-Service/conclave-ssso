@@ -371,6 +371,7 @@ namespace CcsSso.Core.Service.External
 
       var user = await _dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
+        .Include(u => u.UserAccessRoles)
         .Include(u => u.UserAccessRolePending)
         .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName.ToLower() == userName.ToLower() && u.UserType == UserType.Primary);
 
@@ -456,6 +457,7 @@ namespace CcsSso.Core.Service.External
       }
 
       List<UserAccessRolePending> userAccessRolePendingToSendEmail = new List<UserAccessRolePending>();
+      List<UserAccessRolePending> userAccessRolePendingAutoApproved = new List<UserAccessRolePending>();
 
       var userAccessRoleIds = await _dataContext.UserAccessRole.Where(x => !x.IsDeleted && x.UserId == user.Id).Select(x => x.OrganisationEligibleRoleId).ToListAsync();
       var userGroupApprovedRoleIds = await GetUserGroupApprovedRoleIds(user);
@@ -488,6 +490,7 @@ namespace CcsSso.Core.Service.External
           {
             userAccessRolePending.Status = (int)UserPendingRoleStaus.Approved;
             userAccessRolePending.IsDeleted = true;
+            userAccessRolePendingAutoApproved.Add(userAccessRolePending);
           }
 
           user.UserAccessRolePending.Add(userAccessRolePending);
@@ -505,6 +508,23 @@ namespace CcsSso.Core.Service.External
       {
         await SendEmailForApprovalPendingRolesAsync(user, userAccessRolePendingToSendEmail);
       }
+
+      if (userAccessRolePendingAutoApproved.Count > 0)
+      {
+        await AssignRoleToUserForAutoApproved(user, userAccessRolePendingAutoApproved);
+      }
+    }
+
+    private async Task AssignRoleToUserForAutoApproved(User user, List<UserAccessRolePending> userAccessRolePendingAutoApproved)
+    {
+      var serviceRoleGroupsWithApprovalRequiredRole = await _serviceRoleGroupMapperService.ServiceRoleGroupsWithApprovalRequiredRoleAsync();
+
+      foreach (UserAccessRolePending userAccessRolePending in userAccessRolePendingAutoApproved)
+      {
+        await AssignRequestedRoleToUser(serviceRoleGroupsWithApprovalRequiredRole, userAccessRolePending, user);
+      }
+
+      await _dataContext.SaveChangesAsync();
     }
 
     private async Task<List<int>> GetUserGroupApprovedRoleIds(User user)
