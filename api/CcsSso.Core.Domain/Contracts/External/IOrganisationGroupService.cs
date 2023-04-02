@@ -21,6 +21,9 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task<OrganisationServiceRoleGroupResponseInfo> GetServiceRoleGroupAsync(string ciiOrganisationId, int groupId);
 
+    Task<List<GroupUser>> GetGroupUsersPendingRequestSummary(int groupId, string ciiOrgId);
+
+
     Task UpdateServiceRoleGroupAsync(string ciiOrganisationId, int groupId, OrganisationServiceRoleGroupRequestInfo organisationServiceRoleGroupRequestInfo);
   }
 }

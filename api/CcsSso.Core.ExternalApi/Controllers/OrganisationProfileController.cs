@@ -1100,6 +1100,30 @@ namespace CcsSso.ExternalApi.Controllers
     {
       await _organisationGroupService.UpdateServiceRoleGroupAsync(organisationId, groupId, organisationServiceRoleGroupRequestInfo);
     }
+
+    /// <summary>
+    /// Get organisation group users and their role approval status
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/groups/1/groupusers
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/groups/{groupId}/groupusers")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation Group" })]
+    [ProducesResponseType(typeof(GroupUser), 200)]
+    public async Task<List<GroupUser>> GetGroupUsersPendingRequestSummary(string organisationId, int groupId)
+    {
+      return await _organisationGroupService.GetGroupUsersPendingRequestSummary(groupId,organisationId);
+    }
+
     #endregion
 
     #region Organisation IdentityProviders
