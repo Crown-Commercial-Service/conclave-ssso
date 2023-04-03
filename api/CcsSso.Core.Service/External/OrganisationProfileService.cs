@@ -643,7 +643,8 @@ namespace CcsSso.Core.Service.External
           });
           _dataContext.OrganisationEligibleRole.AddRange(addedEligibleRoles);
         }
-        if (rolesToDelete != null && rolesToDelete.Any())
+
+        if (rolesToDelete?.Any() ?? false)
         {
           var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
 
@@ -1573,7 +1574,7 @@ namespace CcsSso.Core.Service.External
     {
       StringBuilder rolesRemoved = new();
 
-      if (rolesToDelete != null && rolesToDelete.Any())
+      if (rolesToDelete?.Any() ?? false)
       {
         var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
 
