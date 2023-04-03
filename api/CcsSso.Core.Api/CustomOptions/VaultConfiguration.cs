@@ -97,6 +97,7 @@ namespace CcsSso.Api.CustomOptions
         var conclaveSettingsVault = JsonConvert.DeserializeObject<ConclaveSettingsVault>(_secrets.Data["ConclaveSettings"].ToString());
         Data.Add("ConclaveSettings:BaseUrl", conclaveSettingsVault.BaseUrl);
         Data.Add("ConclaveSettings:OrgRegistrationRoute", conclaveSettingsVault.OrgRegistrationRoute);
+        Data.Add("ConclaveSettings:VerifyUserDetailsRoute", conclaveSettingsVault.VerifyUserDetailsRoute);
       }
 
       if (_secrets.Data.ContainsKey("JwtTokenValidationInfo"))
@@ -176,6 +177,13 @@ namespace CcsSso.Api.CustomOptions
         Data.Add("UserRoleApproval:Enable", userRoleApproval.Enable.ToString());
       }
 
+      Data.Add("TokenEncryptionKey", _secrets.Data["TokenEncryptionKey"].ToString());
+
+      if (_secrets.Data.ContainsKey("NewUserJoinRequest"))
+      {
+        var newUserJoinRequest = JsonConvert.DeserializeObject<NewUserJoinRequest>(_secrets.Data["NewUserJoinRequest"].ToString());
+        Data.Add("NewUserJoinRequest:LinkExpirationInMinutes", newUserJoinRequest.LinkExpirationInMinutes.ToString());
+      }
     }
   }
 
@@ -252,6 +260,8 @@ namespace CcsSso.Api.CustomOptions
     public string BaseUrl { get; set; }
 
     public string OrgRegistrationRoute { get; set; }
+
+    public string VerifyUserDetailsRoute { get; set; }
   }
 
 
@@ -336,6 +346,11 @@ namespace CcsSso.Api.CustomOptions
   public class UserRoleApproval
   {
     public bool Enable { get; set; } = false;
+  }
+
+  public class NewUserJoinRequest
+  {
+    public int LinkExpirationInMinutes { get; set; }
   }
 
 }
