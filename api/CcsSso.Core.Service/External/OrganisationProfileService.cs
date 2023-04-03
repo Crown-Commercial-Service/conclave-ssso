@@ -644,7 +644,7 @@ namespace CcsSso.Core.Service.External
           _dataContext.OrganisationEligibleRole.AddRange(addedEligibleRoles);
         }
 
-        if (rolesToDelete?.Any() ?? false)
+        if ((rolesToDelete != null) && (rolesToDelete.Any()))
         {
           var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
 
@@ -1574,7 +1574,7 @@ namespace CcsSso.Core.Service.External
     {
       StringBuilder rolesRemoved = new();
 
-      if (rolesToDelete?.Any() ?? false)
+      if ((rolesToDelete != null) && (rolesToDelete.Any()))
       {
         var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
 

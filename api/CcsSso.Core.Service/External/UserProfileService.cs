@@ -1943,38 +1943,6 @@ namespace CcsSso.Core.Service.External
       return userProfileServiceRoleGroupResponseInfo;
     }
 
-    private async Task ConvertGroupsToServiceRoleGroup(UserProfileResponseInfo userProfileResponseInfo, List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups, int groupId)
-    {
-      var groupInfo = await _organisationGroupService.GetServiceRoleGroupAsync(userProfileResponseInfo.OrganisationId, groupId);
-
-      if (groupInfo != null && groupInfo.ServiceRoleGroups != null && groupInfo.ServiceRoleGroups.Count > 0)
-      {
-        foreach (var serviceRoleGroup in groupInfo.ServiceRoleGroups)
-        {
-          groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
-          {
-            GroupId = groupInfo.GroupId,
-            Group = groupInfo.GroupName,
-            AccessServiceRoleGroupId = serviceRoleGroup.Id,
-            AccessServiceRoleGroupName = serviceRoleGroup.Name,
-          });
-        }
-      }
-      else
-      {
-        var userGroup = userProfileResponseInfo.Detail.UserGroups.FirstOrDefault(x => x.GroupId == groupId);
-
-        if (userGroup != null)
-        {
-          groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
-          {
-            GroupId = userGroup.GroupId,
-            Group = userGroup.Group,
-          });
-        }
-      }
-    }
-
     public async Task<UserEditResponseInfo> CreateUserV1Async(UserProfileServiceRoleGroupEditRequestInfo userProfileServiceRoleGroupEditRequestInfo, bool isNewOrgAdmin = false)
     {
       if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
@@ -2212,5 +2180,38 @@ namespace CcsSso.Core.Service.External
 
       return errorCode;
     }
+
+    private async Task ConvertGroupsToServiceRoleGroup(UserProfileResponseInfo userProfileResponseInfo, List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups, int groupId)
+    {
+      var groupInfo = await _organisationGroupService.GetServiceRoleGroupAsync(userProfileResponseInfo.OrganisationId, groupId);
+
+      if (groupInfo != null && groupInfo.ServiceRoleGroups != null && groupInfo.ServiceRoleGroups.Count > 0)
+      {
+        foreach (var serviceRoleGroup in groupInfo.ServiceRoleGroups)
+        {
+          groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+          {
+            GroupId = groupInfo.GroupId,
+            Group = groupInfo.GroupName,
+            AccessServiceRoleGroupId = serviceRoleGroup.Id,
+            AccessServiceRoleGroupName = serviceRoleGroup.Name,
+          });
+        }
+      }
+      else
+      {
+        var userGroup = userProfileResponseInfo.Detail.UserGroups.FirstOrDefault(x => x.GroupId == groupId);
+
+        if (userGroup != null)
+        {
+          groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+          {
+            GroupId = userGroup.GroupId,
+            Group = userGroup.Group,
+          });
+        }
+      }
+    }
+
   }
 }
