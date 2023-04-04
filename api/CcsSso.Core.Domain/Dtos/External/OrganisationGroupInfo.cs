@@ -89,7 +89,7 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string Name { get; set; }
 
     public bool IsAdmin { get; set; } = false;
-    public bool isPendingApproval { get; set; } = false;  
+    public bool IsPendingApproval { get; set; } = false;  
   }
 
   public class OrganisationGroupRolePatchInfo
