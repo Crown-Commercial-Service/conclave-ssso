@@ -21,5 +21,9 @@ namespace CcsSso.DbModel.Entity
     public int Status { get; set; }
 
     public bool SendEmailNotification { get; set; } = true;
+
+    public OrganisationUserGroup OrganisationUserGroup { get; set; }
+
+    public int? OrganisationUserGroupId { get; set; }
   }
 }

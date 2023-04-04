@@ -18,6 +18,7 @@ using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -82,10 +83,13 @@ namespace CcsSso.Core.Service.External
         .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
         .Include(o => o.OrganisationEligibleIdentityProviders)
         .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == userProfileRequestInfo.OrganisationId);
+
       if (organisation == null)
       {
         throw new ResourceNotFoundException();
       }
+
+      var isUserDomainValid = userName?.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower();
 
       var user = await _dataContext.User
         .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
@@ -130,8 +134,13 @@ namespace CcsSso.Core.Service.External
         }
       }
 
-
       // Set user groups
+      var groupsWithRoleRequiredApproval = new List<KeyValuePair<int, List<int>>>();
+      if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && userProfileRequestInfo.Detail.GroupIds.Any())
+      {
+        groupsWithRoleRequiredApproval = GetGroupsWithApprovalOrgRole(organisation.UserGroups, userProfileRequestInfo.Detail.GroupIds);
+      }
+
       var userGroupMemberships = new List<UserGroupMembership>();
       userProfileRequestInfo.Detail.GroupIds?.ForEach((groupId) =>
       {
@@ -154,7 +163,6 @@ namespace CcsSso.Core.Service.External
         {
           var ccsAccessRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.Id == roleId)?.CcsAccessRoleId;
           var isRoleRequiredApproval = ccsAccessRoleId != null && ccsAccessRoleRequiredApproval != null && ccsAccessRoleRequiredApproval.Any(x => x.Id == ccsAccessRoleId);
-          var isUserDomainValid = userName?.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower();
 
           if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && isRoleRequiredApproval)
           {
@@ -222,6 +230,23 @@ namespace CcsSso.Core.Service.External
             RoleIds = userAccessRoleRequiredApproval
           }
         });
+      }
+
+      if (groupsWithRoleRequiredApproval.Any())
+      {
+        foreach (var group in groupsWithRoleRequiredApproval)
+        {
+          await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(new UserProfileEditRequestInfo
+          {
+            UserName = userName,
+            OrganisationId = organisation.CiiOrganisationId,
+            Detail = new UserRequestDetail
+            {
+              GroupId = group.Key,
+              RoleIds = group.Value
+            }
+          });
+        }
       }
 
       if (isConclaveConnectionIncluded)
@@ -423,6 +448,9 @@ namespace CcsSso.Core.Service.External
 
         if (user.UserGroupMemberships != null)
         {
+          var userGroupsApprovalRequest = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == user.Id
+            && x.OrganisationUserGroupId != null && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
+
           foreach (var userGroupMembership in user.UserGroupMemberships)
           {
             if (!userGroupMembership.IsDeleted && userGroupMembership.OrganisationUserGroup.GroupEligibleRoles != null)
@@ -433,6 +461,11 @@ namespace CcsSso.Core.Service.External
                 // For every role in the group populate the group role info
                 foreach (var groupAccess in userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Where(x => !x.IsDeleted))
                 {
+                  if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalRequest.Any(x => x.OrganisationUserGroupId == groupAccess.OrganisationUserGroupId && x.OrganisationEligibleRoleId == groupAccess.OrganisationEligibleRoleId))
+                  {
+                    continue;
+                  }
+
                   var groupAccessRole = new GroupAccessRole
                   {
                     GroupId = userGroupMembership.OrganisationUserGroup.Id,
@@ -850,7 +883,7 @@ namespace CcsSso.Core.Service.External
       {
         throw new ResourceNotFoundException();
       }
-
+      var isUserDomainValid = userName?.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower();
       var user = await _dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person)
         .Include(u => u.UserGroupMemberships)
@@ -920,6 +953,7 @@ namespace CcsSso.Core.Service.External
       List<int> requestRoles = new();
       List<int> previousIdentityProviderIds = new();
       var userAccessRoleRequiredApproval = new List<int>();
+      var groupsWithRoleRequiredApproval = new List<KeyValuePair<int, List<int>>>();
 
       if (!isMyProfile || isAdminUser == true)
       {
@@ -981,6 +1015,11 @@ namespace CcsSso.Core.Service.External
         }
 
         // Set groups
+        if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && userProfileRequestInfo.Detail.GroupIds != null && userProfileRequestInfo.Detail.GroupIds.Any())
+        {
+          groupsWithRoleRequiredApproval = GetGroupsWithApprovalOrgRole(organisation.UserGroups, userProfileRequestInfo.Detail.GroupIds);
+        }
+
         var userGroupMemberships = new List<UserGroupMembership>();
         userProfileRequestInfo.Detail.GroupIds?.ForEach((groupId) =>
         {
@@ -1000,7 +1039,6 @@ namespace CcsSso.Core.Service.External
         {
           var ccsAccessRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.Id == roleId)?.CcsAccessRoleId;
           var isRoleRequiredApproval = ccsAccessRoleId != null && ccsAccessRoleRequiredApproval != null && ccsAccessRoleRequiredApproval.Any(x => x.Id == ccsAccessRoleId);
-          var isUserDomainValid = userName?.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower();
 
           if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && isRoleRequiredApproval && !previousRoles.Any(x => x == roleId))
           {
@@ -1108,6 +1146,7 @@ namespace CcsSso.Core.Service.External
       if (_appConfigInfo.UserRoleApproval.Enable)
       {
         await CreatePendingRoleRequest(userAccessRoleRequiredApproval, user.Id, userName, organisation.CiiOrganisationId);
+        await CreatePendingRoleRequestForGroup(groupsWithRoleRequiredApproval, user.Id, userName, organisation.CiiOrganisationId);
       }
 
       // Log
@@ -1435,7 +1474,7 @@ namespace CcsSso.Core.Service.External
         if (userProfileReqestInfo.Detail.RoleIds != null && userProfileReqestInfo.Detail.RoleIds.Any(gId => !orgRoleIds.Contains(gId)))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidUserRole);
-        }        
+        }
 
         if (userProfileReqestInfo.Detail.IdentityProviderIds == null || !userProfileReqestInfo.Detail.IdentityProviderIds.Any() ||
           userProfileReqestInfo.Detail.IdentityProviderIds.Any(id => !orgIdpIds.Contains(id)))
@@ -1859,11 +1898,11 @@ namespace CcsSso.Core.Service.External
     {
       // remove roles that were pending for approval but now no longer required
       var userAccessRoleRequiredToRemoveFromApproval = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == userId
-      && !userAccessRoleRequiredApproval.Contains(x.OrganisationEligibleRoleId) && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
+      && !userAccessRoleRequiredApproval.Contains(x.OrganisationEligibleRoleId) && x.Status == (int)UserPendingRoleStaus.Pending && x.OrganisationUserGroupId == null).ToListAsync();
 
       // get roles that are pending for approval
       var existingPendingRequestRole = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == userId
-      && userAccessRoleRequiredApproval.Contains(x.OrganisationEligibleRoleId) && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
+      && userAccessRoleRequiredApproval.Contains(x.OrganisationEligibleRoleId) && x.Status == (int)UserPendingRoleStaus.Pending && x.OrganisationUserGroupId == null).ToListAsync();
 
       // ignore roles which are still pending for approval
       foreach (var existingPendingRequestToIgnore in existingPendingRequestRole)
@@ -1872,12 +1911,7 @@ namespace CcsSso.Core.Service.External
       }
 
       // Remove pending for approval role that are no longer required (not passed in request)
-      if (userAccessRoleRequiredToRemoveFromApproval != null && userAccessRoleRequiredToRemoveFromApproval.Any())
-      {
-        var roleIds = userAccessRoleRequiredToRemoveFromApproval.Select(x => x.OrganisationEligibleRoleId).ToList();
-
-        await _userProfileRoleApprovalService.RemoveApprovalPendingRolesAsync(userName, string.Join(",", roleIds));
-      }
+      userAccessRoleRequiredToRemoveFromApproval.ForEach(l => { l.IsDeleted = true; l.Status = (int)UserPendingRoleStaus.Removed; });
 
       if (userAccessRoleRequiredApproval.Any())
       {
@@ -1932,6 +1966,10 @@ namespace CcsSso.Core.Service.External
 
         List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups = new List<GroupAccessServiceRoleGroup>();
 
+        var userGroupsApprovalRequestRoleIds = await _dataContext.UserAccessRolePending.Include(u => u.User).Where(x => !x.IsDeleted && x.User.UserName == userName.ToLower()
+            && x.OrganisationUserGroupId != null && x.Status == (int)UserPendingRoleStaus.Pending).Select(x => x.OrganisationEligibleRoleId).ToListAsync();
+        var userGroupsApprovalServiceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(userGroupsApprovalRequestRoleIds);
+
         foreach (var groupId in groupIds)
         {
           var groupInfo = await _organisationGroupService.GetServiceRoleGroupAsync(userProfileResponseInfo.OrganisationId, groupId);
@@ -1940,6 +1978,10 @@ namespace CcsSso.Core.Service.External
           {
             foreach (var serviceRoleGroup in groupInfo.ServiceRoleGroups)
             {
+              if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroups.Any(x => x.Id == serviceRoleGroup.Id))
+              {
+                continue;
+              }
               groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
               {
                 GroupId = groupInfo.GroupId,
@@ -2001,6 +2043,10 @@ namespace CcsSso.Core.Service.External
 
       var serviceRoleGroupIds = userProfileServiceRoleGroupEditRequestInfo?.Detail?.ServiceRoleGroupIds;
       var organisationId = userProfileServiceRoleGroupEditRequestInfo?.OrganisationId;
+
+
+      userName = userName?.ToLower();
+      userProfileServiceRoleGroupEditRequestInfo.UserName = userProfileServiceRoleGroupEditRequestInfo.UserName?.ToLower();
 
       _userHelper.ValidateUserName(userName);
 
@@ -2206,6 +2252,72 @@ namespace CcsSso.Core.Service.External
       }
 
       return errorCode;
+    }
+
+    private static List<KeyValuePair<int, List<int>>> GetGroupsWithApprovalOrgRole(List<OrganisationUserGroup> userGroups, List<int> groupIds)
+    {
+      var grpWithPendingOrgEligibleRole = new List<KeyValuePair<int, List<int>>>();
+      var allSelectedGroups = userGroups.Where(oug => groupIds.Contains(oug.Id) && !oug.IsDeleted).ToList();
+
+      foreach (var group in allSelectedGroups)
+      {
+        List<int> approvalRequiredRoles = new();
+        foreach (var role in group.GroupEligibleRoles)
+        {
+          if (role.OrganisationEligibleRole.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired)
+          {
+            approvalRequiredRoles.Add(role.OrganisationEligibleRoleId);
+          }
+        }
+        if (approvalRequiredRoles.Any())
+        {
+          grpWithPendingOrgEligibleRole.Add(new KeyValuePair<int, List<int>>(group.Id, approvalRequiredRoles));
+        }
+      }
+
+      return grpWithPendingOrgEligibleRole;
+    }
+
+    private async Task CreatePendingRoleRequestForGroup(List<KeyValuePair<int, List<int>>> groupsWithRoleRequiredApproval, int userId, string userName, string ciiOrganisationId)
+    {
+      var userPendingGroups = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == userId && x.Status == (int)UserPendingRoleStaus.Pending &&
+                                 x.OrganisationUserGroupId != null).ToListAsync();
+
+      foreach (var existRequest in userPendingGroups)
+      {
+        if (!groupsWithRoleRequiredApproval.Any(x => x.Key == existRequest.OrganisationUserGroupId && x.Value.Contains(existRequest.OrganisationEligibleRoleId)))
+        {
+          existRequest.IsDeleted = true; 
+          existRequest.Status = (int)UserPendingRoleStaus.Removed;
+        }
+      }
+
+      foreach (var group in groupsWithRoleRequiredApproval)
+      {
+        // get roles that are pending for approval
+        var existingPendingRequestRole = userPendingGroups.Where(x => !x.IsDeleted && group.Value.Contains(x.OrganisationEligibleRoleId)).ToList();
+
+        // ignore roles which are still pending for approval
+        foreach (var existingPendingRequestToIgnore in existingPendingRequestRole)
+        {
+          group.Value.Remove(existingPendingRequestToIgnore.OrganisationEligibleRoleId);
+        }
+
+        if (group.Value.Any())
+        {
+          await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(new UserProfileEditRequestInfo
+          {
+            UserName = userName,
+            OrganisationId = ciiOrganisationId,
+            Detail = new UserRequestDetail
+            {
+              GroupId = group.Key,
+              RoleIds = group.Value
+            }
+          });
+        }
+      }
+
     }
   }
 }

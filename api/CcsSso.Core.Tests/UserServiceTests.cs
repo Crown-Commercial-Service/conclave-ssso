@@ -56,6 +56,7 @@ namespace CcsSso.Tests
                 var mockHttpClientFactory = new Mock<IHttpClientFactory>();
                 var mockCcsSsoEmailService = new Mock<ICcsSsoEmailService>();
                 var mockUserHelperService = new Mock<IUserProfileHelperService>();
+                var mockServiceRoleGroupMapperService = new Mock<IServiceRoleGroupMapperService>();
                 var applicationConfigurationInfo = new ApplicationConfigurationInfo
                 {
                     EnableAdapterNotifications = false,
@@ -65,7 +66,7 @@ namespace CcsSso.Tests
                     }
                 };
                 await SetupTestDataAsync(dataContext);
-                return new UserService(dataContext, mockHttpClientFactory.Object, applicationConfigurationInfo, mockCcsSsoEmailService.Object, mockUserHelperService.Object);
+                return new UserService(dataContext, mockHttpClientFactory.Object, applicationConfigurationInfo, mockCcsSsoEmailService.Object, mockUserHelperService.Object, mockServiceRoleGroupMapperService.Object);
             }
 
             static async Task SetupTestDataAsync(IDataContext dataContext)

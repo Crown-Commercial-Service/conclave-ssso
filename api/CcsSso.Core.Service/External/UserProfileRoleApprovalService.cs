@@ -84,54 +84,7 @@ namespace CcsSso.Core.Service.External
           throw new ResourceNotFoundException();
         }
 
-        if (status == UserPendingRoleStaus.Rejected)
-        {
-          pendingUserRole.Status = (int)UserPendingRoleStaus.Rejected;
-          pendingUserRole.IsDeleted = true;
-
-        }
-        else
-        {
-          pendingUserRole.Status = (int)UserPendingRoleStaus.Approved;
-          pendingUserRole.IsDeleted = true;
-
-          var roleAlreadyExists = await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.UserId == pendingUserRole.UserId && !x.IsDeleted && x.OrganisationEligibleRoleId == pendingUserRole.OrganisationEligibleRoleId);
-
-          if (roleAlreadyExists == null)
-          {
-            user.UserAccessRoles.Add(new UserAccessRole
-            {
-              UserId = user.Id,
-              OrganisationEligibleRoleId = pendingUserRole.OrganisationEligibleRoleId
-            });
-
-            // On role approval assign normal roles of service as well
-            if (_appConfigInfo.ServiceRoleGroupSettings.Enable)
-            {
-              var serviceGroup = serviceRoleGroupsWithApprovalRequiredRole.FirstOrDefault(x => x.CcsServiceRoleMappings.Any(r => r.CcsAccessRoleId == pendingUserRole.OrganisationEligibleRole.CcsAccessRoleId));
-              var serviceMappingCcsRoleIds = serviceGroup.CcsServiceRoleMappings.Where(y => y.CcsAccessRole.ApprovalRequired == 0).Select(x => x.CcsAccessRoleId).ToList();
-
-              var allOrgEligibleRoles = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
-                                        .Where(x => !x.IsDeleted && x.OrganisationId == pendingUserRole.OrganisationEligibleRole.OrganisationId &&
-                                                serviceMappingCcsRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
-              foreach (var orgRole in allOrgEligibleRoles)
-              {
-                if (!user.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == orgRole.Id && !x.IsDeleted))
-                {
-                  user.UserAccessRoles.Add(new UserAccessRole
-                  {
-                    UserId = user.Id,
-                    OrganisationEligibleRoleId = orgRole.Id
-                  });
-                }
-              }
-
-            }
-          }
-
-        }
-
-        await _dataContext.SaveChangesAsync();
+        await ApproveRejectRoleRequest(status, serviceRoleGroupsWithApprovalRequiredRole, pendingUserRole, user);
 
         var orgEligibleRole = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
                                           .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
@@ -170,9 +123,89 @@ namespace CcsSso.Core.Service.External
               await _ccsSsoEmailService.SendRoleRejectedEmailAsync(email, user.UserName, serviceName);
           }
         }
-      }
-      return await Task.FromResult(true);
 
+        await UpdateRemaningRequestsOfUser(status, serviceRoleGroupsWithApprovalRequiredRole, pendingUserRole, user);
+      }
+
+      return await Task.FromResult(true);
+    }
+
+    private async Task UpdateRemaningRequestsOfUser(UserPendingRoleStaus status, List<CcsServiceRoleGroup> serviceRoleGroupsWithApprovalRequiredRole, UserAccessRolePending pendingUserRole, User user)
+    {
+      var userAccessRolePendingRequests = await _dataContext.UserAccessRolePending
+                .Include(x => x.OrganisationEligibleRole).ThenInclude(r => r.CcsAccessRole)
+                .Where(x => !x.IsDeleted && x.UserId == pendingUserRole.UserId && x.Status == (int)UserPendingRoleStaus.Pending
+                      && x.OrganisationEligibleRoleId == pendingUserRole.OrganisationEligibleRoleId && x.Id != pendingUserRole.Id)
+                .ToListAsync();
+
+      foreach (var userAccessRolePendingRequest in userAccessRolePendingRequests)
+      {
+        await ApproveRejectRoleRequest(status, serviceRoleGroupsWithApprovalRequiredRole, userAccessRolePendingRequest, user);
+      }
+    }
+
+    private async Task ApproveRejectRoleRequest(UserPendingRoleStaus status, List<CcsServiceRoleGroup> serviceRoleGroupsWithApprovalRequiredRole, UserAccessRolePending pendingUserRole, User user)
+    {
+      if (status == UserPendingRoleStaus.Rejected)
+      {
+        UpdateRoleRequestStatus(pendingUserRole, UserPendingRoleStaus.Rejected);
+      }
+      else
+      {
+        UpdateRoleRequestStatus(pendingUserRole, UserPendingRoleStaus.Approved);
+        await AssignRequestedRoleToUser(serviceRoleGroupsWithApprovalRequiredRole, pendingUserRole, user);
+      }
+      await _dataContext.SaveChangesAsync();
+    }
+
+    private async Task AssignRequestedRoleToUser(List<CcsServiceRoleGroup> serviceRoleGroupsWithApprovalRequiredRole, UserAccessRolePending pendingUserRole, User user)
+    {
+      if (pendingUserRole.OrganisationUserGroupId == null)
+      {
+        var roleAlreadyExists = await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.UserId == pendingUserRole.UserId && !x.IsDeleted && x.OrganisationEligibleRoleId == pendingUserRole.OrganisationEligibleRoleId);
+
+        if (roleAlreadyExists == null)
+        {
+          user.UserAccessRoles.Add(new UserAccessRole
+          {
+            UserId = user.Id,
+            OrganisationEligibleRoleId = pendingUserRole.OrganisationEligibleRoleId
+          });
+
+          // On role approval assign normal roles of service as well
+          await AssignOtherServiceGroupRoleToUser(serviceRoleGroupsWithApprovalRequiredRole, pendingUserRole, user);
+        }
+      }
+    }
+
+    private async Task AssignOtherServiceGroupRoleToUser(List<CcsServiceRoleGroup> serviceRoleGroupsWithApprovalRequiredRole, UserAccessRolePending pendingUserRole, User user)
+    {
+      if (_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        var serviceGroup = serviceRoleGroupsWithApprovalRequiredRole.FirstOrDefault(x => x.CcsServiceRoleMappings.Any(r => r.CcsAccessRoleId == pendingUserRole.OrganisationEligibleRole.CcsAccessRoleId));
+        var serviceMappingCcsRoleIds = serviceGroup.CcsServiceRoleMappings.Where(y => y.CcsAccessRole.ApprovalRequired == 0).Select(x => x.CcsAccessRoleId).ToList();
+
+        var allOrgEligibleRoles = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
+                                  .Where(x => !x.IsDeleted && x.OrganisationId == pendingUserRole.OrganisationEligibleRole.OrganisationId &&
+                                          serviceMappingCcsRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
+        foreach (var orgRole in allOrgEligibleRoles)
+        {
+          if (!user.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == orgRole.Id && !x.IsDeleted))
+          {
+            user.UserAccessRoles.Add(new UserAccessRole
+            {
+              UserId = user.Id,
+              OrganisationEligibleRoleId = orgRole.Id
+            });
+          }
+        }
+      }
+    }
+
+    private static void UpdateRoleRequestStatus(UserAccessRolePending pendingUserRole, UserPendingRoleStaus status)
+    {
+      pendingUserRole.Status = (int)status;
+      pendingUserRole.IsDeleted = true;
     }
 
     public async Task<List<UserAccessRolePendingDetails>> GetUserRolesPendingForApprovalAsync(string userName)
@@ -194,7 +227,8 @@ namespace CcsSso.Core.Service.External
 
       var userAccessRolePendingAllList = await _dataContext.UserAccessRolePending
         .Include(u => u.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
-        .Where(u => !u.IsDeleted && u.Status == (int)UserPendingRoleStaus.Pending && u.UserId == userId)
+        .Where(u => !u.IsDeleted && u.Status == (int)UserPendingRoleStaus.Pending
+                    && u.OrganisationUserGroupId == null && u.UserId == userId)
         .ToListAsync();
 
       var approvalRoleConfig = await _dataContext.RoleApprovalConfiguration.Where(x => !x.IsDeleted).ToListAsync();
@@ -212,7 +246,7 @@ namespace CcsSso.Core.Service.External
       return userAccessRolePendingListResponse;
     }
 
-    public async Task RemoveApprovalPendingRolesAsync(string userName, string roleIds)
+    public async Task RemoveApprovalPendingRolesAsync(string userName, string roleIds, int? groupId = null)
     {
       if (!_appConfigInfo.UserRoleApproval.Enable)
       {
@@ -236,8 +270,8 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
-      var userAccessRolePendingList = await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && u.UserId == userId &&
-                                      roles.Contains(u.OrganisationEligibleRoleId.ToString())).ToListAsync();
+      var userAccessRolePendingList = await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && u.UserId == userId
+                                      && u.OrganisationUserGroupId == groupId && roles.Contains(u.OrganisationEligibleRoleId.ToString())).ToListAsync();
 
       if (userAccessRolePendingList.Any())
       {
@@ -342,6 +376,7 @@ namespace CcsSso.Core.Service.External
 
       var user = await _dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(o => o.Organisation)
+        .Include(u => u.UserAccessRoles)
         .Include(u => u.UserAccessRolePending)
         .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName.ToLower() == userName.ToLower() && u.UserType == UserType.Primary);
 
@@ -373,14 +408,6 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
       }
 
-      var userAccessRoles = await _dataContext.UserAccessRole
-       .FirstOrDefaultAsync(uar => !uar.IsDeleted && uar.UserId == user.Id && roles.Contains(uar.OrganisationEligibleRoleId));
-
-      if (userAccessRoles != null)
-      {
-        throw new ResourceAlreadyExistsException("User Role already exists");
-      }
-
       var roleRequiredApprovalIds = await _dataContext.CcsAccessRole
         .Where(x => !x.IsDeleted && x.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired)
         .Select(x => x.Id)
@@ -395,51 +422,155 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
       }
 
-      List<UserAccessRolePending> userAccessRolePendingList = new List<UserAccessRolePending>();
+      var groupId = userProfileRequestInfo.Detail.GroupId;
 
-      List<int> rolesToSendEmail = new List<int>();
+      if (groupId != null)
+      {
+        var group = await _dataContext.OrganisationUserGroup
+        .Include(g => g.GroupEligibleRoles)
+        .Include(g => g.UserGroupMemberships).ThenInclude(ugm => ugm.User)
+        .FirstOrDefaultAsync(g => !g.IsDeleted && g.Id == groupId && g.Organisation.CiiOrganisationId == organisation.CiiOrganisationId);
+
+        if (group == null)
+        {
+          throw new ResourceAlreadyExistsException(ErrorConstant.ErrorInvalidUserGroup);
+        }
+
+        var groupEligibleRoleIds = group.GroupEligibleRoles.Where(x => !x.IsDeleted).Select(x => x.OrganisationEligibleRoleId);
+        if (!roles.All(roleId => groupEligibleRoleIds.Any(x => x == roleId)))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidUserGroupRole);
+        }
+
+        var isUserMemberOfGroup = group.UserGroupMemberships.Where(x => !x.IsDeleted).Any(x => x.UserId == user.Id);
+        if (!isUserMemberOfGroup)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidUserInfo);
+        }
+      }
+
+      // If GroupId is null then request is for user profile so we need check for user role exists
+      if (groupId == null)
+      {
+        var userAccessRoles = await _dataContext.UserAccessRole
+       .FirstOrDefaultAsync(uar => !uar.IsDeleted && uar.UserId == user.Id && roles.Contains(uar.OrganisationEligibleRoleId));
+
+        if (userAccessRoles != null)
+        {
+          throw new ResourceAlreadyExistsException(ErrorConstant.ErrorUserRoleAlreadyExists);
+        }
+      }
+
+      List<UserAccessRolePending> userAccessRolePendingToSendEmail = new List<UserAccessRolePending>();
+      List<UserAccessRolePending> userAccessRolePendingAutoApproved = new List<UserAccessRolePending>();
+
+      var userAccessRoleIds = await _dataContext.UserAccessRole.Where(x => !x.IsDeleted && x.UserId == user.Id).Select(x => x.OrganisationEligibleRoleId).ToListAsync();
+      var userGroupApprovedRoleIds = await GetUserGroupApprovedRoleIds(user);
 
       roles.ForEach((roleId) =>
       {
+        var isUserAccessRoleRequestPending = user.UserAccessRolePending.Any(x => !x.IsDeleted
+          && x.OrganisationEligibleRoleId == Convert.ToInt32(roleId)
+          && x.Status == (int)UserPendingRoleStaus.Pending);
+
         var isUserAccessRolePendingExist = user.UserAccessRolePending.Any(x => !x.IsDeleted
           && x.OrganisationEligibleRoleId == Convert.ToInt32(roleId)
+          && x.OrganisationUserGroupId == groupId
           && x.Status == (int)UserPendingRoleStaus.Pending);
 
         if (!isUserAccessRolePendingExist)
         {
-          user.UserAccessRolePending.Add(new UserAccessRolePending
+          var isRoleAssignedToUser = userAccessRoleIds.Any(x => x == roleId);
+          var isRoleAssignedToUserFromGroup = userGroupApprovedRoleIds.Any(x => x == roleId);
+
+          var userAccessRolePending = new UserAccessRolePending
           {
             OrganisationEligibleRoleId = roleId,
             Status = (int)UserPendingRoleStaus.Pending,
+            OrganisationUserGroupId = groupId,
             SendEmailNotification = sendEmailNotification
-          });
-          rolesToSendEmail.Add(roleId);
+          };
+
+          if (isRoleAssignedToUser || isRoleAssignedToUserFromGroup)
+          {
+            userAccessRolePending.Status = (int)UserPendingRoleStaus.Approved;
+            userAccessRolePending.IsDeleted = true;
+            userAccessRolePendingAutoApproved.Add(userAccessRolePending);
+          }
+
+          user.UserAccessRolePending.Add(userAccessRolePending);
+
+          if (!isUserAccessRoleRequestPending && userAccessRolePending.Status == (int)UserPendingRoleStaus.Pending)
+          {
+            userAccessRolePendingToSendEmail.Add(userAccessRolePending);
+          }
         }
       });
 
       await _dataContext.SaveChangesAsync();
 
-      if (rolesToSendEmail.Count > 0)
+      if (userAccessRolePendingToSendEmail.Count > 0)
       {
-        await SendEmailForApprovalPendingRolesAsync(user, rolesToSendEmail);
+        await SendEmailForApprovalPendingRolesAsync(user, userAccessRolePendingToSendEmail);
+      }
+
+      if (userAccessRolePendingAutoApproved.Count > 0)
+      {
+        await AssignRoleToUserForAutoApproved(user, userAccessRolePendingAutoApproved);
       }
     }
 
-    private async Task SendEmailForApprovalPendingRolesAsync(User user, List<int> roles)
+    private async Task AssignRoleToUserForAutoApproved(User user, List<UserAccessRolePending> userAccessRolePendingAutoApproved)
     {
-      var userAccessRolePendingList = await _dataContext.UserAccessRolePending
-        .Include(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
-        .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
-        .Where(u => !u.IsDeleted && u.UserId == user.Id && u.Status == (int)UserPendingRoleStaus.Pending && roles.Contains(u.OrganisationEligibleRoleId))
-        .ToListAsync();
+      var serviceRoleGroupsWithApprovalRequiredRole = await _serviceRoleGroupMapperService.ServiceRoleGroupsWithApprovalRequiredRoleAsync();
 
+      foreach (UserAccessRolePending userAccessRolePending in userAccessRolePendingAutoApproved)
+      {
+        await AssignRequestedRoleToUser(serviceRoleGroupsWithApprovalRequiredRole, userAccessRolePending, user);
+      }
+
+      await _dataContext.SaveChangesAsync();
+    }
+
+    private async Task<List<int>> GetUserGroupApprovedRoleIds(User user)
+    {
+      List<int> userGroupApprovedRoleIds = new List<int>();
+
+      var userGroupIds = await _dataContext.UserGroupMembership.Where(x => !x.IsDeleted && x.UserId == user.Id).Select(x => x.OrganisationUserGroupId).ToListAsync();
+      var userGroupRoleIds = await _dataContext.OrganisationGroupEligibleRole.Where(x => !x.IsDeleted && userGroupIds.Contains(x.OrganisationUserGroupId)).Select(x => x.OrganisationEligibleRoleId).ToListAsync();
+
+      userGroupRoleIds.ForEach((userGroupRoleId) =>
+      {
+        var lastUserAccessRolePedningRequest = user.UserAccessRolePending
+        .OrderByDescending(o => o.CreatedOnUtc)
+        .FirstOrDefault(x => x.IsDeleted && x.OrganisationUserGroupId != null && x.OrganisationEligibleRoleId == userGroupRoleId);
+
+        if (lastUserAccessRolePedningRequest?.Status == (int)UserPendingRoleStaus.Approved)
+        {
+          userGroupApprovedRoleIds.Add(userGroupRoleId);
+        }
+      });
+
+      return userGroupApprovedRoleIds;
+    }
+
+    private async Task SendEmailForApprovalPendingRolesAsync(User user, List<UserAccessRolePending> userAccessRolePendingRequests)
+    {
       string orgName = user.Party.Person.Organisation.LegalName;
 
-      if (userAccessRolePendingList.Any())
-      {
-        var roleApprovalConfigurations = await _dataContext.RoleApprovalConfiguration.ToListAsync();
+      var roleApprovalConfigurations = await _dataContext.RoleApprovalConfiguration.ToListAsync();
 
-        foreach (var userAccessRolePending in userAccessRolePendingList)
+      foreach (var userAccessRolePendingRequest in userAccessRolePendingRequests)
+      {
+        var userAccessRolePending = await _dataContext.UserAccessRolePending
+          .Include(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
+          .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
+          .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserId == userAccessRolePendingRequest.UserId
+              && u.Status == userAccessRolePendingRequest.Status
+              && u.OrganisationUserGroupId == userAccessRolePendingRequest.OrganisationUserGroupId
+              && u.OrganisationEligibleRoleId == userAccessRolePendingRequest.OrganisationEligibleRoleId);
+
+        if (userAccessRolePending != null)
         {
           var roleApprovalConfiguration = roleApprovalConfigurations.FirstOrDefault(x => x.CcsAccessRoleId == userAccessRolePending.OrganisationEligibleRole.CcsAccessRoleId);
 
@@ -465,7 +596,6 @@ namespace CcsSso.Core.Service.External
         }
       }
     }
-
     public async Task<List<UserServiceRoleGroupPendingDetails>> GetUserServiceRoleGroupsPendingForApprovalAsync(string userName)
     {
       if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
