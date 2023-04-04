@@ -1118,10 +1118,20 @@ namespace CcsSso.ExternalApi.Controllers
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
     [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation Group" })]
-    [ProducesResponseType(typeof(GroupUser), 200)]
-    public async Task<List<GroupUser>> GetGroupUsersPendingRequestSummary(string organisationId, int groupId)
+    [ProducesResponseType(typeof(GroupUserListResponse), 200)]
+    public async Task<GroupUserListResponse> GetGroupUsersPendingRequestSummary(string organisationId, int groupId,
+      [FromQuery] ResultSetCriteria resultSetCriteria,
+      [FromQuery(Name = "is-pending-approval")] bool isPendingApproval = false)
     {
-      return await _organisationGroupService.GetGroupUsersPendingRequestSummary(groupId,organisationId);
+      resultSetCriteria ??= new ResultSetCriteria
+      {
+        CurrentPage = 1,
+        PageSize = 10
+      };
+      resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
+      resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
+
+      return await _organisationGroupService.GetGroupUsersPendingRequestSummary(groupId, organisationId, resultSetCriteria,isPendingApproval);
     }
 
     #endregion
@@ -1455,7 +1465,7 @@ namespace CcsSso.ExternalApi.Controllers
     [HttpPost("{ciiOrganisationId}/autovalidationjob")]
     [SwaggerOperation(Tags = new[] { "AutoValidation" })]
     [ProducesResponseType(typeof(string), 200)]
-    public async Task<Tuple<bool,string>> AutovalidationJob(string ciiOrganisationId)
+    public async Task<Tuple<bool, string>> AutovalidationJob(string ciiOrganisationId)
     {
       return await _organisationService.AutoValidateOrganisationJob(ciiOrganisationId);
     }

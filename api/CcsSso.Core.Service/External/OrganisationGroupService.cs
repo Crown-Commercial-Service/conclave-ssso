@@ -488,7 +488,7 @@ namespace CcsSso.Core.Service.External
       }
     }
 
-   private async Task RemoveGroupRolePendingRequest(OrganisationUserGroup group)
+    private async Task RemoveGroupRolePendingRequest(OrganisationUserGroup group)
     {
       var pendingGroupRequest = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted
             && x.OrganisationUserGroupId == group.Id
@@ -506,7 +506,7 @@ namespace CcsSso.Core.Service.External
     {
       var pendingGroupRequest = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted
             && x.OrganisationUserGroupId == group.Id
-            && !users.Select(user=>user.Id).Contains(x.UserId)
+            && !users.Select(user => user.Id).Contains(x.UserId)
             && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
 
       foreach (var pendingRequest in pendingGroupRequest)
@@ -517,36 +517,45 @@ namespace CcsSso.Core.Service.External
       await _dataContext.SaveChangesAsync();
     }
 
-    public async Task<List<GroupUser>> GetGroupUsersPendingRequestSummary(int groupId, string ciiOrgId)
+    public async Task<GroupUserListResponse> GetGroupUsersPendingRequestSummary(int groupId, string ciiOrgId, ResultSetCriteria resultSetCriteria, bool isPendingApproval)
     {
       var group = await _dataContext.OrganisationUserGroup
-       .Include(g => g.GroupEligibleRoles).ThenInclude(r => r.OrganisationEligibleRole)
-       .Include(g => g.UserGroupMemberships).ThenInclude(ugm => ugm.User)
-       .FirstOrDefaultAsync(g => !g.IsDeleted && g.Id == groupId && g.Organisation.CiiOrganisationId == ciiOrgId);
+          .Include(g => g.UserGroupMemberships).ThenInclude(ugm => ugm.User)
+          .FirstOrDefaultAsync(g => !g.IsDeleted && g.Id == groupId && g.Organisation.CiiOrganisationId == ciiOrgId);
 
       if (group == null)
       {
         throw new ResourceNotFoundException();
       }
 
-      List<User> existingUserNames = group.UserGroupMemberships.Where(x => !x.IsDeleted).Select(ugm => ugm.User).ToList();
+      var existingUserIds = group.UserGroupMemberships.Where(x => !x.IsDeleted).Select(ugm => ugm.UserId);
 
-      var pendingRequest = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && existingUserNames.Select(x => x.Id).Contains(x.UserId)
-                              && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
+      var pendingRequests = await _dataContext.UserAccessRolePending
+          .Where(x => !x.IsDeleted && existingUserIds.Contains(x.UserId) && x.Status == (int)UserPendingRoleStaus.Pending)
+          .ToListAsync();
 
+      var filteredUserIds = isPendingApproval ? existingUserIds.Where(x => !pendingRequests.Any(y => y.UserId == x)) : existingUserIds.Where(x => pendingRequests.Any(y => y.UserId == x));
 
-      var groupUserRoleRequestStatus = new List<GroupUser>();
+      var usersQuery = _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).Where(user => !user.IsDeleted && filteredUserIds.Contains(user.Id)).OrderBy(u => u.UserName);
 
-      foreach (var user in existingUserNames)
+      var pagedResult = await _dataContext.GetPagedResultAsync(usersQuery, resultSetCriteria);
+
+      var groupUserListResponse = new GroupUserListResponse
       {
-        groupUserRoleRequestStatus.Add(new GroupUser { UserId = user.Id.ToString(), Name = user.UserName, isPendingApproval = pendingRequest.Any(x => x.UserId == user.Id) });
+        groupId = groupId,
+        CurrentPage = pagedResult.CurrentPage,
+        PageCount = pagedResult.PageCount,
+        RowCount = pagedResult.RowCount,
+        GroupUser = pagedResult.Results?.Select(up => new GroupUser
+        {
+          UserId = up.UserName,
+          Name = $"{up.Party.Person.FirstName} {up.Party.Person.LastName}",
+        }).ToList() ?? new List<GroupUser>()
+      };
 
-      }
-
-
-      return groupUserRoleRequestStatus;
-
+      return groupUserListResponse;
     }
+      
 
 
     public async Task<OrganisationServiceRoleGroupResponseInfo> GetServiceRoleGroupAsync(string ciiOrganisationId, int groupId)
