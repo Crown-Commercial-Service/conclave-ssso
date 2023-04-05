@@ -44,6 +44,8 @@ namespace CcsSso.Domain.Dtos
 
     public UserRoleApproval UserRoleApproval { get; set; }
     public bool EnableUserAccessTokenFix { get; set; }
+
+    public ServiceRoleGroupSettings ServiceRoleGroupSettings { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -177,5 +179,10 @@ namespace CcsSso.Domain.Dtos
     public string UserRoleApprovedEmailTemplateId { get; set; }
 
     public string UserRoleRejectedEmailTemplateId { get; set; }
+  }
+
+  public class ServiceRoleGroupSettings
+  {
+    public bool Enable { get; set; } = false;
   }
 }
