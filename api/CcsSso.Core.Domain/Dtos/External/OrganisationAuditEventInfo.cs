@@ -27,7 +27,7 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string Roles { get; set; }
   }
 
-  public class OrganisationAuditEventResponseInfo
+  public class AuditEventResponseBase 
   {
     public string OrganisationId { get; set; }
 
@@ -43,17 +43,34 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string Event { get; set; }
 
+    public DateTime Date { get; set; }
+  }
+
+  public class OrganisationAuditEventResponseInfo : AuditEventResponseBase
+  {
     public string Role { get; set; }
 
     public string RoleKey { get; set; }
 
     public string ServiceName { get; set; }
-
-    public DateTime Date { get; set; }
   }
 
   public class OrganisationAuditEventInfoListResponse : PaginationInfo
   {
     public List<OrganisationAuditEventResponseInfo> OrganisationAuditEventList { get; set; }
   }
+
+  #region ServiceRoleGroup
+  public class OrgAuditEventServiceRoleGroupResponseInfo : AuditEventResponseBase
+  {
+    public string Name { get; set; }
+
+    public string Key { get; set; }
+  }
+
+  public class OrgAuditEventInfoServiceRoleGroupListResponse : PaginationInfo
+  {
+    public List<OrgAuditEventServiceRoleGroupResponseInfo> OrgAuditEventServiceRoleGroupList { get; set; }
+  }
+  #endregion
 }

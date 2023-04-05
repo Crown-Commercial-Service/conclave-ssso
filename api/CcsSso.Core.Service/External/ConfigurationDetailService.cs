@@ -20,11 +20,15 @@ namespace CcsSso.Core.Service.External
     private readonly IDataContext _dataContext;
     private ILocalCacheService _localCacheService;
     private ApplicationConfigurationInfo _applicationConfigurationInfo;
-    public ConfigurationDetailService(IDataContext dataContext, ILocalCacheService localCacheService, ApplicationConfigurationInfo applicationConfigurationInfo)
+    private readonly IServiceRoleGroupMapperService _rolesToServiceRoleGroupMapperService;
+   
+    public ConfigurationDetailService(IDataContext dataContext, ILocalCacheService localCacheService, ApplicationConfigurationInfo applicationConfigurationInfo,
+      IServiceRoleGroupMapperService rolesToServiceRoleGroupMapperService)
     {
       _dataContext = dataContext;
       _localCacheService = localCacheService;
       _applicationConfigurationInfo = applicationConfigurationInfo;
+      _rolesToServiceRoleGroupMapperService = rolesToServiceRoleGroupMapperService;
     }
     public async Task<List<IdentityProviderDetail>> GetIdentityProvidersAsync()
     {
@@ -181,5 +185,73 @@ namespace CcsSso.Core.Service.External
 
       return roles;
     }
+
+    #region Service Role Group
+
+    public async Task<List<ServiceRoleGroup>> GetServiceRoleGroupsRequireApprovalAsync()
+    {
+      if (!_applicationConfigurationInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var roles = await GetRolesRequireApprovalAsync();
+      var serviceRoleGroupsEntity = await _rolesToServiceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(roles.Select(x => x.RoleId).ToList());
+      var serviceRoleGroups = serviceRoleGroupsEntity.Select(x => new ServiceRoleGroup
+      {
+        Id = x.Id,
+        Key = x.Key,
+        Name = x.Name,
+        OrgTypeEligibility = x.OrgTypeEligibility,
+        SubscriptionTypeEligibility = x.SubscriptionTypeEligibility,
+        TradeEligibility = x.TradeEligibility,
+        DisplayOrder = x.DisplayOrder,
+        Description = x.Description
+      }).ToList();
+
+      return serviceRoleGroups;
+    }
+
+
+    public async Task<List<ServiceRoleGroup>> GetServiceRoleGroupsAsync()
+    {
+      if (!_applicationConfigurationInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var roles = await GetRolesAsync();
+      var serviceRoleGroupsEntity = await _rolesToServiceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(roles.Select(x => x.RoleId).ToList());
+      var serviceRoleGroups = serviceRoleGroupsEntity.Select(x => new ServiceRoleGroup
+      {
+        Id = x.Id,
+        Key = x.Key,
+        Name = x.Name,
+        OrgTypeEligibility = x.OrgTypeEligibility,
+        SubscriptionTypeEligibility = x.SubscriptionTypeEligibility,
+        TradeEligibility = x.TradeEligibility,
+        DisplayOrder = x.DisplayOrder,
+        Description = x.Description,
+        AutoValidationRoleTypeEligibility = GetServiceAutoValidationElegiblity(x, roles)
+      }).ToList();
+
+      return serviceRoleGroups;
+    }
+
+    private static int[] GetServiceAutoValidationElegiblity(CcsServiceRoleGroup group, List<OrganisationRole> roles) 
+    {
+      var groupCcsAccessRoleIds = group.CcsServiceRoleMappings.Select(x => x.CcsAccessRoleId).ToArray();
+      var autoValidationEligibilityOfRoles = roles.Where(x => groupCcsAccessRoleIds.Contains(x.RoleId)).Select(x => x.AutoValidationRoleTypeEligibility).ToList();
+      List<int> autoValidationRoleTypeEligibilityOfService = new();
+      
+      foreach (var eligRole in autoValidationEligibilityOfRoles) 
+      {
+        autoValidationRoleTypeEligibilityOfService.AddRange(eligRole);
+      }
+
+      return autoValidationRoleTypeEligibilityOfService.Distinct().ToArray();
+    }
+    #endregion
+
   }
 }
