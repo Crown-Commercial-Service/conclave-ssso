@@ -1016,10 +1016,13 @@ namespace CcsSso.Core.Service.External
         }
 
         // list of new groups to check for approval required role
-        var newlyAddedGroupIds = userProfileRequestInfo.Detail.GroupIds.Where(x => !previousGroups.Contains(x)).ToList();
-        if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && userProfileRequestInfo.Detail.GroupIds != null && newlyAddedGroupIds.Any())
-        {
-          groupsWithRoleRequiredApproval = GetGroupsWithApprovalOrgRole(organisation.UserGroups, newlyAddedGroupIds);
+        if (userProfileRequestInfo.Detail.GroupIds != null)
+        {  
+          var newlyAddedGroupIds = userProfileRequestInfo.Detail.GroupIds.Where(x => !previousGroups.Contains(x)).ToList();
+          if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && userProfileRequestInfo.Detail.GroupIds != null && newlyAddedGroupIds.Any())
+          {
+            groupsWithRoleRequiredApproval = GetGroupsWithApprovalOrgRole(organisation.UserGroups, newlyAddedGroupIds);
+          }
         }
 
         // Set groups
