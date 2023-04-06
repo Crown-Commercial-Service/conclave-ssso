@@ -28,7 +28,7 @@ INSERT INTO public."CcsAccessRole"(
  	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
 	"SubscriptionTypeEligibility", "TradeEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
 	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('FP_USER', 'Fleet Portal Tile', 'Fleet Portal Tile', 2, 0, 1,1, 0, 0, now(), now(), 
+	VALUES ('FP_USER', 'Fleet Portal Tile', 'Fleet Portal Tile', 2, 0, 1,0, 0, 0, now(), now(), 
 			false, false);
 SELECT "Id" into RoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'FP_USER' AND "CcsAccessRoleName" = 'Fleet Portal Tile' LIMIT 1;
 
