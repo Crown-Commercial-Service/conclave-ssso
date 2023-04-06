@@ -74,6 +74,14 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string Description { get; set; }
   }
 
+  public class GroupUserListResponse:PaginationInfo
+  {
+    public int groupId { get; set; }
+
+    public List<GroupUser> GroupUser { get; set; }
+
+  }
+
   public class GroupUser
   {
     public string UserId { get; set; }
@@ -81,6 +89,7 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string Name { get; set; }
 
     public bool IsAdmin { get; set; } = false;
+    public bool IsPendingApproval { get; set; } = false;  
   }
 
   public class OrganisationGroupRolePatchInfo
