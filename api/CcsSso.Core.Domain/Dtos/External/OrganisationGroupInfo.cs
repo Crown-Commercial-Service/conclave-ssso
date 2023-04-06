@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using System;
 using System.Collections.Generic;
 
@@ -89,7 +90,9 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string Name { get; set; }
 
     public bool IsAdmin { get; set; } = false;
-    public bool IsPendingApproval { get; set; } = false;  
+    public bool IsPendingApproval { get; set; } = false;
+    public UserPendingRoleStaus? UserPendingRoleStaus { get; set; } 
+
   }
 
   public class OrganisationGroupRolePatchInfo

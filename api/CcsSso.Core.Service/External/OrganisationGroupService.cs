@@ -167,15 +167,25 @@ namespace CcsSso.Core.Service.External
         UserId = ugm.User.UserName,
         Name = $"{ugm.User.Party.Person.FirstName} {ugm.User.Party.Person.LastName}",
         IsAdmin = ugm.User.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted),
-        IsPendingApproval = !isApprovalRequired ? false : getUserRolePendingStatus(ugm),
+        // IsPendingApproval = !isApprovalRequired ? false : getUserRolePendingStatus(ugm),
+        UserPendingRoleStaus = !isApprovalRequired ? null : getUserRolePendingStatus(ugm),
       }).ToList();
 
       return organisationGroupResponseInfo;
     }
 
-    private bool getUserRolePendingStatus(UserGroupMembership ugm)
+    private UserPendingRoleStaus? getUserRolePendingStatus(UserGroupMembership ugm)
     {
-      return _dataContext.UserAccessRolePending.OrderByDescending(y => y.Id).FirstOrDefault(x => !x.IsDeleted && x.UserId == ugm.User.Id && x.Status == (int)UserPendingRoleStaus.Pending) != null;
+      // return _dataContext.UserAccessRolePending.OrderByDescending(y => y.Id).FirstOrDefault(x => !x.IsDeleted && x.UserId == ugm.User.Id && x.Status == (int)UserPendingRoleStaus.Pending) != null;
+      var pendingRole = _dataContext.UserAccessRolePending
+          .OrderByDescending(y => y.Id)
+          .FirstOrDefault(x => x.UserId == ugm.User.Id
+            && (x.Status == (int)UserPendingRoleStaus.Pending ||
+                x.Status == (int)UserPendingRoleStaus.Rejected ||
+                x.Status == (int)UserPendingRoleStaus.Expired));
+
+      // return pendingRole == null ? null : (UserPendingRoleStaus)pendingRole?.Status;
+      return (UserPendingRoleStaus?)(pendingRole?.Status);
     }
 
     public async Task<OrganisationGroupList> GetGroupsAsync(string ciiOrganisationId, string searchString = null)
@@ -450,7 +460,7 @@ namespace CcsSso.Core.Service.External
           await RemoveGroupRolePendingRequest(group, userHasInValidDomain);
 
           List<int> approvalRequiredRoles = new();
-          foreach (var role in group.GroupEligibleRoles)
+          foreach (var role in group.GroupEligibleRoles.Where(x => !x.IsDeleted))
           {
             if (role.OrganisationEligibleRole.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired)
             {
@@ -531,10 +541,10 @@ namespace CcsSso.Core.Service.External
       var existingUserIds = group.UserGroupMemberships.Where(x => !x.IsDeleted).Select(ugm => ugm.UserId);
 
       var pendingRequests = await _dataContext.UserAccessRolePending
-          .Where(x => !x.IsDeleted && existingUserIds.Contains(x.UserId) && x.Status == (int)UserPendingRoleStaus.Pending)
+          .Where(x => !x.IsDeleted && existingUserIds.Contains(x.UserId) && x.Status == (int)UserPendingRoleStaus.Pending || x.Status == (int)UserPendingRoleStaus.Rejected)
           .ToListAsync();
 
-      var filteredUserIds = isPendingApproval ? existingUserIds.Where(x => !pendingRequests.Any(y => y.UserId == x)) : existingUserIds.Where(x => pendingRequests.Any(y => y.UserId == x));
+      var filteredUserIds = isPendingApproval ? existingUserIds.Where(x => pendingRequests.Any(y => y.UserId == x)) : existingUserIds.Where(x => !pendingRequests.Any(y => y.UserId == x));
 
       var usersQuery = _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).Where(user => !user.IsDeleted && filteredUserIds.Contains(user.Id)).OrderBy(u => u.UserName);
 
@@ -549,7 +559,7 @@ namespace CcsSso.Core.Service.External
         GroupUser = pagedResult.Results?.Select(up => new GroupUser
         {
           UserId = up.UserName,
-          IsPendingApproval = isPendingApproval,
+          UserPendingRoleStaus = UserPendingRoleStaus.Pending, // pending and rejected will be shown as users doesn't have the role. 
           Name = $"{up.Party.Person.FirstName} {up.Party.Person.LastName}",
         }).ToList() ?? new List<GroupUser>()
       };
