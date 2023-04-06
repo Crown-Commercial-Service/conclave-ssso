@@ -465,7 +465,7 @@ namespace CcsSso.Core.Service.External
       List<UserAccessRolePending> userAccessRolePendingAutoApproved = new List<UserAccessRolePending>();
 
       var userAccessRoleIds = await _dataContext.UserAccessRole.Where(x => !x.IsDeleted && x.UserId == user.Id).Select(x => x.OrganisationEligibleRoleId).ToListAsync();
-      var userGroupApprovedRoleIds = await GetUserGroupApprovedRoleIds(user);
+      var userGroupApprovedRoleIds = await GetUserGroupApprovedRoleIds(user, groupId);
 
       roles.ForEach((roleId) =>
       {
@@ -532,18 +532,22 @@ namespace CcsSso.Core.Service.External
       await _dataContext.SaveChangesAsync();
     }
 
-    private async Task<List<int>> GetUserGroupApprovedRoleIds(User user)
+    private async Task<List<int>> GetUserGroupApprovedRoleIds(User user, int? groupId)
     {
       List<int> userGroupApprovedRoleIds = new List<int>();
 
       var userGroupIds = await _dataContext.UserGroupMembership.Where(x => !x.IsDeleted && x.UserId == user.Id).Select(x => x.OrganisationUserGroupId).ToListAsync();
+      if (groupId != null)
+      {
+        userGroupIds = userGroupIds.Where(x => x != groupId).ToList();
+      }
       var userGroupRoleIds = await _dataContext.OrganisationGroupEligibleRole.Where(x => !x.IsDeleted && userGroupIds.Contains(x.OrganisationUserGroupId)).Select(x => x.OrganisationEligibleRoleId).ToListAsync();
 
       userGroupRoleIds.ForEach((userGroupRoleId) =>
       {
         var lastUserAccessRolePedningRequest = user.UserAccessRolePending
         .OrderByDescending(o => o.CreatedOnUtc)
-        .FirstOrDefault(x => x.IsDeleted && x.OrganisationUserGroupId != null && x.OrganisationEligibleRoleId == userGroupRoleId);
+        .FirstOrDefault(x => x.OrganisationUserGroupId != null && x.OrganisationEligibleRoleId == userGroupRoleId);
 
         if (lastUserAccessRolePedningRequest?.Status == (int)UserPendingRoleStaus.Approved)
         {
