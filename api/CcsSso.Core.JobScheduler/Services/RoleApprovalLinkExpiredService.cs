@@ -41,10 +41,10 @@ namespace CcsSso.Core.JobScheduler.Services
 
     public async Task PerformJobAsync(List<UserAccessRolePending> pendingRoles)
     {
-
       var approvalRoleConfig = await _dataContext.RoleApprovalConfiguration.Where(x => !x.IsDeleted).ToListAsync();
 
       List<UserAccessRolePending> expiredUserAccessRolePendingList = new();
+      List<UserAccessRolePending> relatedExpiredUserAccessRolePendingList = new();
 
       foreach (var role in pendingRoles)
       {
@@ -53,10 +53,35 @@ namespace CcsSso.Core.JobScheduler.Services
 
         if (roleExpireTime < DateTime.UtcNow)
         {
-          expiredUserAccessRolePendingList.Add(role);
+          var isExistInRelatedList = relatedExpiredUserAccessRolePendingList.Any(x => x.Id == role.Id);
+
+          if (!isExistInRelatedList)
+          {
+            expiredUserAccessRolePendingList.Add(role);
+
+            var relatedPendingRoles = pendingRoles.Where(x => x.Id != role.Id && x.UserId == role.UserId).ToList();
+            relatedExpiredUserAccessRolePendingList.AddRange(relatedPendingRoles);
+          }
         }
       }
 
+      await ProcessRelatedExpiredUserAccessRolePending(relatedExpiredUserAccessRolePendingList);
+      await ProcessExpiredUserAccessRolePending(expiredUserAccessRolePendingList);
+    }
+
+    private async Task ProcessRelatedExpiredUserAccessRolePending(List<UserAccessRolePending> relatedExpiredUserAccessRolePendingList)
+    {
+      _logger.LogInformation($"Total number of related expired Roles: {relatedExpiredUserAccessRolePendingList.Count()}");
+
+      if (relatedExpiredUserAccessRolePendingList.Any())
+      {
+        await RemoveExpiredApprovalPendingRolesAsync(relatedExpiredUserAccessRolePendingList);
+        _logger.LogInformation($"Successfully updated the related expired roles");
+      }
+    }
+
+    private async Task ProcessExpiredUserAccessRolePending(List<UserAccessRolePending> expiredUserAccessRolePendingList)
+    {
       _logger.LogInformation($"Total number of expired Roles: {expiredUserAccessRolePendingList.Count()}");
 
       if (expiredUserAccessRolePendingList.Any())
@@ -67,7 +92,6 @@ namespace CcsSso.Core.JobScheduler.Services
         _logger.LogInformation($"Sending email if it is eligible");
         await SendEmail(expiredUserAccessRolePendingList);
         _logger.LogInformation($"Finished sending email");
-
       }
     }
 
@@ -78,9 +102,7 @@ namespace CcsSso.Core.JobScheduler.Services
       if (userAccessRolePendingExpiredList.Any())
       {
         userAccessRolePendingExpiredList.ForEach(l => { l.IsDeleted = true; l.Status = (int)UserPendingRoleStaus.Expired; });
-        await _dataContext.SaveChangesAsync();
-
-        
+        await _dataContext.SaveChangesAsync();        
       }
     }
 

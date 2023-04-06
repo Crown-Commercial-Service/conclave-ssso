@@ -83,6 +83,7 @@ namespace CcsSso.Core.JobScheduler.Jobs
       var userAccessRolePendingAllList = await _dataContext.UserAccessRolePending
        .Include(u => u.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
        .Where(u => !u.IsDeleted && u.Status == (int)UserPendingRoleStaus.Pending)
+       .OrderBy(u => u.CreatedOnUtc)
        .ToListAsync();
 
       return userAccessRolePendingAllList;
