@@ -244,8 +244,8 @@ namespace CcsSso.Core.Service.External
             {
               GroupId = group.Key,
               RoleIds = group.Value
-            }
-          });
+            },
+          }, sendEmailNotification: false);
         }
       }
 
@@ -450,7 +450,8 @@ namespace CcsSso.Core.Service.External
         {
           var userGroupsApprovalRequest = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == user.Id
             && x.OrganisationUserGroupId != null && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
-
+          var userGroupsApprovalServiceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(userGroupsApprovalRequest.Select(x => x.OrganisationEligibleRoleId).ToList());
+          
           foreach (var userGroupMembership in user.UserGroupMemberships)
           {
             if (!userGroupMembership.IsDeleted && userGroupMembership.OrganisationUserGroup.GroupEligibleRoles != null)
@@ -461,7 +462,7 @@ namespace CcsSso.Core.Service.External
                 // For every role in the group populate the group role info
                 foreach (var groupAccess in userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Where(x => !x.IsDeleted))
                 {
-                  if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalRequest.Any(x => x.OrganisationUserGroupId == groupAccess.OrganisationUserGroupId && x.OrganisationEligibleRoleId == groupAccess.OrganisationEligibleRoleId))
+                  if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroups.Any(x => x.CcsServiceRoleMappings.Any(m => m.CcsAccessRoleId == groupAccess.OrganisationEligibleRole.CcsAccessRoleId)))
                   {
                     continue;
                   }
@@ -1014,12 +1015,14 @@ namespace CcsSso.Core.Service.External
           hasProfileInfoChanged = true;
         }
 
-        // Set groups
-        if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && userProfileRequestInfo.Detail.GroupIds != null && userProfileRequestInfo.Detail.GroupIds.Any())
+        // list of new groups to check for approval required role
+        var newlyAddedGroupIds = userProfileRequestInfo.Detail.GroupIds.Where(x => !previousGroups.Contains(x)).ToList();
+        if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && userProfileRequestInfo.Detail.GroupIds != null && newlyAddedGroupIds.Any())
         {
-          groupsWithRoleRequiredApproval = GetGroupsWithApprovalOrgRole(organisation.UserGroups, userProfileRequestInfo.Detail.GroupIds);
+          groupsWithRoleRequiredApproval = GetGroupsWithApprovalOrgRole(organisation.UserGroups, newlyAddedGroupIds);
         }
 
+        // Set groups
         var userGroupMemberships = new List<UserGroupMembership>();
         userProfileRequestInfo.Detail.GroupIds?.ForEach((groupId) =>
         {
@@ -2097,7 +2100,7 @@ namespace CcsSso.Core.Service.External
 
         if (userDomain?.Trim() != orgDoamin?.Trim())
         {
-          await _serviceRoleGroupMapperService.RemoveApprovalRequiredRoleGroupOtherRolesAsync(organisationEligibleRoles);
+          await _serviceRoleGroupMapperService.RemoveApprovalRequiredRoleGroupOtherRolesAsync(organisationEligibleRoles, userProfileServiceRoleGroupEditRequestInfo?.UserName);
         }
 
         roleIds = organisationEligibleRoles.Select(x => x.Id).ToList();
@@ -2283,6 +2286,7 @@ namespace CcsSso.Core.Service.External
       var userPendingGroups = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == userId && x.Status == (int)UserPendingRoleStaus.Pending &&
                                  x.OrganisationUserGroupId != null).ToListAsync();
 
+      // remove request that no longer required
       foreach (var existRequest in userPendingGroups)
       {
         if (!groupsWithRoleRequiredApproval.Any(x => x.Key == existRequest.OrganisationUserGroupId && x.Value.Contains(existRequest.OrganisationEligibleRoleId)))
@@ -2314,7 +2318,7 @@ namespace CcsSso.Core.Service.External
               GroupId = group.Key,
               RoleIds = group.Value
             }
-          });
+          }, sendEmailNotification: false);
         }
       }
 
