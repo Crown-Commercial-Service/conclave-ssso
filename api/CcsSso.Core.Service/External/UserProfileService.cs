@@ -448,10 +448,15 @@ namespace CcsSso.Core.Service.External
 
         if (user.UserGroupMemberships != null)
         {
-          var userGroupsApprovalRequest = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == user.Id
-            && x.OrganisationUserGroupId != null && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
-          var userGroupsApprovalServiceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(userGroupsApprovalRequest.Select(x => x.OrganisationEligibleRoleId).ToList());
-          
+          var lastGroupRequest = await _dataContext.UserAccessRolePending.Include(u => u.User).OrderByDescending(x => x.Id).FirstOrDefaultAsync(x => x.User.UserName == userName.ToLower()
+            && x.OrganisationUserGroupId != null);
+
+          List<CcsServiceRoleGroup> userGroupsApprovalServiceRoleGroups = new();
+          if (lastGroupRequest != null && lastGroupRequest.Status != (int)UserPendingRoleStaus.Approved)
+          {
+            userGroupsApprovalServiceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(new List<int>() { lastGroupRequest.OrganisationEligibleRoleId });
+          }
+
           foreach (var userGroupMembership in user.UserGroupMemberships)
           {
             if (!userGroupMembership.IsDeleted && userGroupMembership.OrganisationUserGroup.GroupEligibleRoles != null)
@@ -1972,9 +1977,14 @@ namespace CcsSso.Core.Service.External
 
         List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups = new List<GroupAccessServiceRoleGroup>();
 
-        var userGroupsApprovalRequestRoleIds = await _dataContext.UserAccessRolePending.Include(u => u.User).Where(x => !x.IsDeleted && x.User.UserName == userName.ToLower()
-            && x.OrganisationUserGroupId != null && x.Status == (int)UserPendingRoleStaus.Pending).Select(x => x.OrganisationEligibleRoleId).ToListAsync();
-        var userGroupsApprovalServiceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(userGroupsApprovalRequestRoleIds);
+        var lastGroupRequest = await _dataContext.UserAccessRolePending.Include(u => u.User).OrderByDescending(x => x.Id).FirstOrDefaultAsync(x => x.User.UserName == userName.ToLower()
+            && x.OrganisationUserGroupId != null);
+
+        List<CcsServiceRoleGroup> userGroupsApprovalServiceRoleGroups = new();
+        if (lastGroupRequest != null && lastGroupRequest.Status != (int)UserPendingRoleStaus.Approved)
+        {
+          userGroupsApprovalServiceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(new List<int>() { lastGroupRequest.OrganisationEligibleRoleId });
+        }
 
         foreach (var groupId in groupIds)
         {
