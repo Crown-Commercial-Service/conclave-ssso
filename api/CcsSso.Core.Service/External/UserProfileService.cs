@@ -2051,7 +2051,7 @@ namespace CcsSso.Core.Service.External
 
         if (userDomain?.Trim() != orgDoamin?.Trim())
         {
-          await _serviceRoleGroupMapperService.RemoveApprovalRequiredRoleGroupOtherRolesAsync(organisationEligibleRoles);
+          await _serviceRoleGroupMapperService.RemoveApprovalRequiredRoleGroupOtherRolesAsync(organisationEligibleRoles, userProfileServiceRoleGroupEditRequestInfo?.UserName);
         }
 
         roleIds = organisationEligibleRoles.Select(x => x.Id).ToList();
