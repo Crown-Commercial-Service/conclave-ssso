@@ -17,6 +17,6 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task<List<CcsServiceRoleGroup>> ServiceRoleGroupsWithApprovalRequiredRoleAsync();
 
-    Task RemoveApprovalRequiredRoleGroupOtherRolesAsync(List<OrganisationEligibleRole> organisationEligibleRoles);
+    Task RemoveApprovalRequiredRoleGroupOtherRolesAsync(List<OrganisationEligibleRole> organisationEligibleRoles, string userName);
   }
 }
