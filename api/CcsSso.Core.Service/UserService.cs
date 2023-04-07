@@ -99,24 +99,35 @@ namespace CcsSso.Service
 
     private async Task GetGroupPermissions(string serviceClientId, User user, List<UserRolePermissionInfo> rolePermissions)
     {
-      var userGroupsApprovalRequest = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == user.Id
-            && x.OrganisationUserGroupId != null && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
-
-      var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(userGroupsApprovalRequest.Select(x => x.OrganisationEligibleRoleId).ToList());
+      var userGroupsApprovalRequest = await _dataContext.UserAccessRolePending.Where(x => x.UserId == user.Id && x.OrganisationUserGroupId != null).ToListAsync();
 
       foreach (var userGroupMembership in user.UserGroupMemberships)
       {
         if (!userGroupMembership.IsDeleted && userGroupMembership.OrganisationUserGroup.GroupEligibleRoles != null && userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Any())
         {
-          foreach (var groupAccess in userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Where(x => !x.IsDeleted))
+          await AddRolePermissionsFromGroup(serviceClientId, rolePermissions, userGroupsApprovalRequest, userGroupMembership);
+        }
+      }
+    }
+
+    private async Task AddRolePermissionsFromGroup(string serviceClientId, List<UserRolePermissionInfo> rolePermissions, List<UserAccessRolePending> userGroupsApprovalRequest, UserGroupMembership userGroupMembership)
+    {
+      foreach (var groupAccess in userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Where(x => !x.IsDeleted))
+      {
+        if (userGroupsApprovalRequest.Any())
+        {
+          var lastGroupRequest = userGroupsApprovalRequest.OrderByDescending(x => x.Id).FirstOrDefault(x => x.OrganisationUserGroupId == groupAccess.OrganisationUserGroupId);
+          if (lastGroupRequest != null && lastGroupRequest.Status != (int)UserPendingRoleStaus.Approved)
           {
-            if (_applicationConfigurationInfo.UserRoleApproval.Enable && userGroupsApprovalRequest.Any(x => x.OrganisationUserGroupId == groupAccess.OrganisationUserGroupId && serviceRoleGroups.Any(g => g.CcsServiceRoleMappings.Any(m => m.CcsAccessRoleId == groupAccess.OrganisationEligibleRole.CcsAccessRoleId))))
+            var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(new List<int>() { lastGroupRequest.OrganisationEligibleRoleId });
+
+            if (_applicationConfigurationInfo.UserRoleApproval.Enable && serviceRoleGroups.Any(g => g.CcsServiceRoleMappings.Any(m => m.CcsAccessRoleId == groupAccess.OrganisationEligibleRole.CcsAccessRoleId)))
             {
               continue;
-            }            
-            rolePermissions.Add(GetGroupRolePermissions(serviceClientId, groupAccess));
+            }
           }
         }
+        rolePermissions.Add(GetGroupRolePermissions(serviceClientId, groupAccess));
       }
     }
 

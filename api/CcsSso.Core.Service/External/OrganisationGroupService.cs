@@ -167,7 +167,7 @@ namespace CcsSso.Core.Service.External
         UserId = ugm.User.UserName,
         Name = $"{ugm.User.Party.Person.FirstName} {ugm.User.Party.Person.LastName}",
         IsAdmin = ugm.User.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted),
-        // IsPendingApproval = !isApprovalRequired ? false : getUserRolePendingStatus(ugm),
+        
         UserPendingRoleStaus = !isApprovalRequired ? null : getUserRolePendingStatus(ugm),
       }).ToList();
 
@@ -185,7 +185,7 @@ namespace CcsSso.Core.Service.External
                 x.Status == (int)UserPendingRoleStaus.Removed ||
                 x.Status == (int)UserPendingRoleStaus.Expired));
 
-      // return pendingRole == null ? null : (UserPendingRoleStaus)pendingRole?.Status;
+      
       return (UserPendingRoleStaus?)(pendingRole?.Status);
     }
 
