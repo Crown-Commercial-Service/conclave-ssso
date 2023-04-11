@@ -91,7 +91,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public bool IsAdmin { get; set; } = false;
    
-    public UserPendingRoleStaus? UserPendingRoleStaus { get; set; } 
+    public UserPendingRoleStaus? UserPendingRoleStatus { get; set; } 
 
   }
 
