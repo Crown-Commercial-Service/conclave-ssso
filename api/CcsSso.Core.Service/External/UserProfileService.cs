@@ -2341,14 +2341,11 @@ namespace CcsSso.Core.Service.External
 
     private async Task CreatePendingRoleRequestForGroup(List<KeyValuePair<int, List<int>>> groupsWithRoleRequiredApproval, int userId, string userName, string ciiOrganisationId)
     {
-      var userPendingGroups = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == userId && x.Status == (int)UserPendingRoleStaus.Pending &&
-                                 x.OrganisationUserGroupId != null).ToListAsync();
+      var userPendingGroups = await _dataContext.UserAccessRolePending.Where(x => !x.IsDeleted && x.UserId == userId && x.Status == (int)UserPendingRoleStaus.Pending && x.OrganisationUserGroupId != null).ToListAsync();
 
       foreach (var group in groupsWithRoleRequiredApproval)
       {
-        // get roles that are pending for approval
-        var existingPendingRequestRole = userPendingGroups.Where(x => !x.IsDeleted 
-            && x.OrganisationUserGroupId == group.Key && group.Value.Contains(x.OrganisationEligibleRoleId)).ToList();
+        var existingPendingRequestRole = userPendingGroups.Where(x => !x.IsDeleted && x.OrganisationUserGroupId == group.Key && group.Value.Contains(x.OrganisationEligibleRoleId)).ToList();
 
         // ignore roles which are still pending for approval
         foreach (var existingPendingRequestToIgnore in existingPendingRequestRole)
