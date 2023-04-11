@@ -47,15 +47,14 @@ namespace CcsSso.Core.Service.External
 
       var pendingRoleIds = userApprovalRequest.PendingRoleIds;
       var status = userApprovalRequest.Status;
-      var serviceName = String.Empty;
-
+      
       if (status != UserPendingRoleStaus.Approved && status != UserPendingRoleStaus.Rejected)
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidStatusInfo);
       }
 
       var pendingRole = await _dataContext.UserAccessRolePending
-         .Where(x => pendingRoleIds.Contains(x.Id) && !x.IsDeleted && x.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
+         .Where(x => pendingRoleIds.Contains(x.Id)).ToListAsync();
 
       if (pendingRole != null && pendingRole.Count() < pendingRoleIds.Length)
       {
@@ -68,11 +67,22 @@ namespace CcsSso.Core.Service.External
       foreach (var pendingRoleId in pendingRoleIds)
       {
         var pendingUserRole = await _dataContext.UserAccessRolePending.Include(x => x.OrganisationEligibleRole).ThenInclude(r => r.CcsAccessRole)
-                   .FirstOrDefaultAsync(x => x.Id == pendingRoleId && !x.IsDeleted && x.Status == (int)UserPendingRoleStaus.Pending);
+                   .FirstOrDefaultAsync(x => x.Id == pendingRoleId);
 
         if (pendingUserRole == null)
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
+        }
+
+        var isPendingRequest = !pendingUserRole.IsDeleted && pendingUserRole.Status == (int)UserPendingRoleStaus.Pending;
+
+        var isOtherPendingRequest = await _dataContext.UserAccessRolePending
+              .AnyAsync(x => !x.IsDeleted && x.UserId == pendingUserRole.UserId && x.Status == (int)UserPendingRoleStaus.Pending
+                    && x.OrganisationEligibleRoleId == pendingUserRole.OrganisationEligibleRoleId && x.Id != pendingUserRole.Id);
+
+        if (!isPendingRequest && !isOtherPendingRequest)
+        {
+            throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
         }
 
         var user = await _dataContext.User
@@ -84,50 +94,66 @@ namespace CcsSso.Core.Service.External
           throw new ResourceNotFoundException();
         }
 
-        await ApproveRejectRoleRequest(status, serviceRoleGroupsWithApprovalRequiredRole, pendingUserRole, user);
-
-        var orgEligibleRole = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
-                                          .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
-                                          .FirstOrDefaultAsync(u => u.Id == pendingUserRole.OrganisationEligibleRoleId! && !u.IsDeleted);
-
-        if (orgEligibleRole != null)
+        if (isPendingRequest)
         {
-          serviceName = orgEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName;
-          if (_appConfigInfo.ServiceRoleGroupSettings.Enable)
-          {
-            var roleServiceInfo = await _serviceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(new List<int>() { orgEligibleRole.CcsAccessRoleId });
-            serviceName = roleServiceInfo?.FirstOrDefault()?.Name;
-          }
-        }
-
-        var emailList = new List<string>() { user.UserName };
-
-        if (pendingUserRole.UserId != pendingUserRole.CreatedUserId)
-        {
-          var roleRequester = await _dataContext.User
-                  .FirstOrDefaultAsync(x => x.Id == pendingUserRole.CreatedUserId && !x.IsDeleted && x.UserType == UserType.Primary);
-
-          if (roleRequester != null)
-          {
-            emailList.Add(roleRequester.UserName);
-          }
-        }
-
-        if (pendingUserRole.SendEmailNotification)
-        {
-          foreach (var email in emailList)
-          {
-            if (status == UserPendingRoleStaus.Approved)
-              await _ccsSsoEmailService.SendRoleApprovedEmailAsync(email, user.UserName, serviceName, _appConfigInfo.ConclaveLoginUrl);
-            else
-              await _ccsSsoEmailService.SendRoleRejectedEmailAsync(email, user.UserName, serviceName);
-          }
+          await ApproveRejectRoleRequest(status, serviceRoleGroupsWithApprovalRequiredRole, pendingUserRole, user);
+          await SendApproveRejectRoleRequestEmail(status, pendingUserRole, user);
         }
 
         await UpdateRemaningRequestsOfUser(status, serviceRoleGroupsWithApprovalRequiredRole, pendingUserRole, user);
       }
 
       return await Task.FromResult(true);
+    }
+
+    private async Task SendApproveRejectRoleRequestEmail(UserPendingRoleStaus status, UserAccessRolePending pendingUserRole, User user)
+    {
+      string serviceName = await GetServiceNameForEmail(pendingUserRole);
+
+      var emailList = new List<string>() { user.UserName };
+
+      if (pendingUserRole.UserId != pendingUserRole.CreatedUserId)
+      {
+        var roleRequester = await _dataContext.User
+                .FirstOrDefaultAsync(x => x.Id == pendingUserRole.CreatedUserId && !x.IsDeleted && x.UserType == UserType.Primary);
+
+        if (roleRequester != null)
+        {
+          emailList.Add(roleRequester.UserName);
+        }
+      }
+
+      if (pendingUserRole.SendEmailNotification)
+      {
+        foreach (var email in emailList)
+        {
+          if (status == UserPendingRoleStaus.Approved)
+            await _ccsSsoEmailService.SendRoleApprovedEmailAsync(email, user.UserName, serviceName, _appConfigInfo.ConclaveLoginUrl);
+          else
+            await _ccsSsoEmailService.SendRoleRejectedEmailAsync(email, user.UserName, serviceName);
+        }
+      }
+    }
+
+    private async Task<string> GetServiceNameForEmail(UserAccessRolePending pendingUserRole)
+    {
+      var serviceName = String.Empty;
+
+      var orgEligibleRole = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
+                                                  .ThenInclude(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
+                                                  .FirstOrDefaultAsync(u => u.Id == pendingUserRole.OrganisationEligibleRoleId! && !u.IsDeleted);
+
+      if (orgEligibleRole != null)
+      {
+        serviceName = orgEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName;
+        if (_appConfigInfo.ServiceRoleGroupSettings.Enable)
+        {
+          var roleServiceInfo = await _serviceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(new List<int>() { orgEligibleRole.CcsAccessRoleId });
+          serviceName = roleServiceInfo?.FirstOrDefault()?.Name;
+        }
+      }
+
+      return serviceName;
     }
 
     private async Task UpdateRemaningRequestsOfUser(UserPendingRoleStaus status, List<CcsServiceRoleGroup> serviceRoleGroupsWithApprovalRequiredRole, UserAccessRolePending pendingUserRole, User user)
@@ -336,6 +362,18 @@ namespace CcsSso.Core.Service.External
       }
       else
       {
+        var status = isLinkExpired ? (int)UserPendingRoleStaus.Expired : userAccessRolePendingRoleDetails.Status;
+
+        if (status != (int)UserPendingRoleStaus.Pending)
+        {
+          var isPendingRequest = await _dataContext.UserAccessRolePending
+            .AnyAsync(u => !u.IsDeleted && u.Status == (int)UserPendingRoleStaus.Pending
+              && u.UserId == userAccessRolePendingRoleDetails.UserId 
+              && u.OrganisationEligibleRoleId == userAccessRolePendingRoleDetails.OrganisationEligibleRoleId);
+
+          status = isPendingRequest ? (int)UserPendingRoleStaus.Pending : status;
+        }
+
         return new UserAccessRolePendingTokenDetails
         {
           Id = userAccessRolePendingRoleDetails.Id,
@@ -343,7 +381,7 @@ namespace CcsSso.Core.Service.External
           RoleId = userAccessRolePendingRoleDetails.OrganisationEligibleRole.CcsAccessRoleId,
           RoleName = userAccessRolePendingRoleDetails.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
           RoleKey = userAccessRolePendingRoleDetails.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
-          Status = isLinkExpired ? (int)UserPendingRoleStaus.Expired : userAccessRolePendingRoleDetails.Status
+          Status = status
         };
       }
     }
