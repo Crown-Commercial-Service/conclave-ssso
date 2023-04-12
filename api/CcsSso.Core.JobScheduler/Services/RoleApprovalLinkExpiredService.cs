@@ -48,8 +48,13 @@ namespace CcsSso.Core.JobScheduler.Services
 
       foreach (var role in pendingRoles)
       {
-        var roleExpireTime = role.LastUpdatedOnUtc.AddMinutes(approvalRoleConfig.FirstOrDefault(x => x.CcsAccessRoleId ==
-           role.OrganisationEligibleRole.CcsAccessRole.Id).LinkExpiryDurationInMinute);
+        var roleConfig = approvalRoleConfig.FirstOrDefault(x => x.CcsAccessRoleId ==
+           role.OrganisationEligibleRole.CcsAccessRole.Id);
+        
+        if(roleConfig == null)
+          continue;
+
+        var roleExpireTime = role.LastUpdatedOnUtc.AddMinutes(roleConfig.LinkExpiryDurationInMinute);
 
         if (roleExpireTime < DateTime.UtcNow)
         {
