@@ -39,7 +39,7 @@ INSERT INTO public."ServiceRolePermission"(
 -- update in case the name of the CcsAccessRoleName is different in the DB, In the excel matrix it is different 	
 --https://dev.azure.com/CCS-Conclave/CCS-Conclave_P3/_wiki/wikis/CCS-Conclave_P3.wiki/464/(CON-2287)-Simplify-CAS-and-eSourcing-roles
 
-update "CcsAccessRole" set "CcsAccessRoleName" ='SAML Client User'  where "CcsAccessRoleNameKey" ='TEST_SAML_CLIENT_USER' and  "CcsAccessRoleName" ='Test SAML Client User'
+update "CcsAccessRole" set "CcsAccessRoleName" ='SAML Client User'  where "CcsAccessRoleNameKey" ='TEST_SAML_CLIENT_USER' and  "CcsAccessRoleName" ='Test SAML Client User';
 
 	RETURN 1;
 	END;

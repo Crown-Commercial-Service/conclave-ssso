@@ -43,9 +43,11 @@ $$ LANGUAGE plpgsql;
 
 SELECT AddAutoValidationRoleMapping('CAT_USER','Contract Award Service (CAS) - add to dashboard','CAT_USER','Contract Award Service (CAS) - add service');
 SELECT AddAutoValidationRoleMapping('CAT_USER','Contract Award Service role to create buyer in Jagger','CAT_USER','Contract Award Service (CAS) - add service');
+SELECT AddAutoValidationRoleMapping('CAT_USER','Contract Award Service role to merge buyer via Jaggaer','CAT_USER','Contract Award Service (CAS) - add service');
 
 SELECT AddAutoValidationRoleMapping('JAEGGER_BUYER','eSourcing Tile for Buyer User','JAEGGER_BUYER','eSourcing Service as a buyer');
-SELECT AddAutoValidationRoleMapping('JAEGGER_BUYER','eSourcing  buyer role for CAS -Optional','JAEGGER_BUYER','eSourcing Service as a buyer');
+-- No need to add it to the auto validation.
+--SELECT AddAutoValidationRoleMapping('JAEGGER_BUYER','eSourcing  buyer role for CAS -Optional','JAEGGER_BUYER','eSourcing Service as a buyer');
 SELECT AddAutoValidationRoleMapping('JAEGGER_BUYER','eSourcing buyer role to access Jagger','JAEGGER_BUYER','eSourcing Service as a buyer');
 
 SELECT AddAutoValidationRoleMapping('JAEGGER_SUPPLIER','eSourcing Tile for Supplier User','JAEGGER_SUPPLIER','eSourcing Service as a supplier');

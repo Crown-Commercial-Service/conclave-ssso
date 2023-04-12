@@ -101,7 +101,8 @@ namespace CcsSso.Api
           ConclaveSettings = new ConclaveSettings()
           {
             BaseUrl = Configuration["ConclaveSettings:BaseUrl"],
-            OrgRegistrationRoute = Configuration["ConclaveSettings:OrgRegistrationRoute"]
+            OrgRegistrationRoute = Configuration["ConclaveSettings:OrgRegistrationRoute"],
+            VerifyUserDetailsRoute = Configuration["ConclaveSettings:VerifyUserDetailsRoute"]
           },
           // #Auto validation
           OrgAutoValidation = new OrgAutoValidation()
@@ -112,6 +113,11 @@ namespace CcsSso.Api
           {
             Enable = Convert.ToBoolean(Configuration["UserRoleApproval:Enable"])
           },
+          NewUserJoinRequest = new NewUserJoinRequest()
+          {
+            LinkExpirationInMinutes = Convert.ToInt32(Configuration["NewUserJoinRequest:LinkExpirationInMinutes"])
+          },
+          TokenEncryptionKey = Configuration["TokenEncryptionKey"],
         };
         return appConfigInfo;
       });
@@ -250,6 +256,7 @@ namespace CcsSso.Api
       services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
       services.AddScoped<IUserProfileRoleApprovalService, UserProfileRoleApprovalService>();
       services.AddScoped<IServiceRoleGroupMapperService, ServiceRoleGroupMapperService>();
+      services.AddScoped<IOrganisationGroupService, OrganisationGroupService>();
 
       services.AddHttpContextAccessor();
 

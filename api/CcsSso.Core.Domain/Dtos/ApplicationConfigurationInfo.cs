@@ -46,6 +46,10 @@ namespace CcsSso.Domain.Dtos
     public bool EnableUserAccessTokenFix { get; set; }
 
     public ServiceRoleGroupSettings ServiceRoleGroupSettings { get; set; }
+
+    public string TokenEncryptionKey { get; set; }
+
+    public NewUserJoinRequest NewUserJoinRequest { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -76,6 +80,8 @@ namespace CcsSso.Domain.Dtos
     public string BaseUrl { get; set; }
 
     public string OrgRegistrationRoute { get; set; }
+
+    public string VerifyUserDetailsRoute { get; set; }
   }
 
   public class CcsEmailInfo
@@ -184,5 +190,10 @@ namespace CcsSso.Domain.Dtos
   public class ServiceRoleGroupSettings
   {
     public bool Enable { get; set; } = false;
+  }
+
+  public class NewUserJoinRequest
+  {
+    public int LinkExpirationInMinutes { get; set; }
   }
 }

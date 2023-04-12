@@ -160,6 +160,11 @@ namespace CcsSso.ExternalApi
           {
             Enable = Convert.ToBoolean(Configuration["ServiceRoleGroupSettings:Enable"])
           },
+          NewUserJoinRequest = new NewUserJoinRequest()
+          {
+            LinkExpirationInMinutes = Convert.ToInt32(Configuration["NewUserJoinRequest:LinkExpirationInMinutes"])
+          },
+          TokenEncryptionKey = Configuration["TokenEncryptionKey"],
         };
         return appConfigInfo;
       });

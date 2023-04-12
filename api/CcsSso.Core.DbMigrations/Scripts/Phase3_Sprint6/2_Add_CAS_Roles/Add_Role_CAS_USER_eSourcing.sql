@@ -1,7 +1,7 @@
 
 CREATE OR REPLACE FUNCTION AddRole() RETURNS integer AS $$
 
-DECLARE serviceName text = 'Dashboard Service';
+DECLARE serviceName text = 'eSourcing';
 
 DECLARE clientServiceId int;
 DECLARE dashboardServiceId int;
@@ -18,24 +18,31 @@ if (clientServiceId is null) then
 	return 1;
 end if; 
 
+IF EXISTS (SELECT "Id" FROM public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'CAT_USER' AND "CcsAccessRoleName" = 'Contract Award Service role to merge buyer via Jaggaer' LIMIT 1) THEN
+	raise notice 'Role already exists';
+	return 1;
+END IF;
+
+
 INSERT INTO public."ServicePermission"(
 	"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc","LastUpdatedOnUtc", "IsDeleted")
-	VALUES ('FP_USER_DS', clientServiceId, 0, 0, now(), now(), false);
+	VALUES ('CAT_USER_ES', clientServiceId, 0, 0, now(), now(), false);
 
-SELECT "Id" into ServicePermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'FP_USER_DS' AND "CcsServiceId" = clientServiceId  LIMIT 1;
+SELECT "Id" into ServicePermissionId From public."ServicePermission" WHERE "ServicePermissionName" = 'CAT_USER_ES' AND "CcsServiceId" = clientServiceId  LIMIT 1;
 
 INSERT INTO public."CcsAccessRole"(
  	"CcsAccessRoleNameKey", "CcsAccessRoleName", "CcsAccessRoleDescription", "OrgTypeEligibility", 
 	"SubscriptionTypeEligibility", "TradeEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", 
 	"LastUpdatedOnUtc", "IsDeleted", "MfaEnabled")
-	VALUES ('FP_USER', 'Fleet Portal Tile', 'Fleet Portal Tile', 2, 0, 1,0, 0, 0, now(), now(), 
+	VALUES ('CAT_USER', 'Contract Award Service role to merge buyer via Jaggaer', 'Contract Award Service role to merge buyer via Jaggaer', 2, 0, 1,0, 0, 0, now(), now(), 
 			false, false);
-SELECT "Id" into RoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'FP_USER' AND "CcsAccessRoleName" = 'Fleet Portal Tile' LIMIT 1;
+
+SELECT "Id" into RoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'CAT_USER' AND "CcsAccessRoleName" = 'Contract Award Service role to merge buyer via Jaggaer' LIMIT 1;
 
 INSERT INTO public."ServiceRolePermission"(
 	"ServicePermissionId", "CcsAccessRoleId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 	VALUES (ServicePermissionId, RoleId, 0, 0, now(), now(), false);
-	
+
 
 	RETURN 1;
 	END;
@@ -46,4 +53,3 @@ SELECT setval('"ServicePermission_Id_seq"', max("Id")) FROM "ServicePermission";
 SELECT setval('"ServiceRolePermission_Id_seq"', max("Id")) FROM "ServiceRolePermission";
 SELECT AddRole();
 DROP FUNCTION AddRole;
-
