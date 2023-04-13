@@ -487,8 +487,9 @@ namespace CcsSso.Core.Service.External
     private async Task RemoveGroupRolePendingRequest(OrganisationUserGroup group)
     {
       var pendingGroupRequest = await _dataContext.UserAccessRolePending.Where(x =>
-      (x.Status == (int)UserPendingRoleStaus.Pending ||
-      x.Status == (int)UserPendingRoleStaus.Approved) &&
+      (x.Status == (int)UserPendingRoleStaus.Pending 
+      || x.Status == (int)UserPendingRoleStaus.Approved
+      || x.Status == (int)UserPendingRoleStaus.Rejected) &&
       x.OrganisationUserGroupId == group.Id).ToListAsync();
 
       foreach (var pendingRequest in pendingGroupRequest)
