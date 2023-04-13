@@ -38,5 +38,12 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task<Tuple<bool, string>> AutoValidateOrganisationDetails(string ciiOrganisationId, string adminEmailId = "");
     Task ManualValidateOrganisation(string ciiOrganisationId, ManualValidateOrganisationStatus status);
+
+    Task<List<ServiceRoleGroup>> GetOrganisationServiceRoleGroupsAsync(string ciiOrganisationId);
+
+    Task UpdateOrganisationEligibleServiceRoleGroupsAsync(string ciiOrganisationId, bool isBuyer, List<int> serviceRoleGroupsToAdd, List<int> serviceRoleGroupsToDelete);
+
+    Task UpdateOrgAutoValidServiceRoleGroupsAsync(string ciiOrganisationId, RoleEligibleTradeType orgType, List<int> serviceRoleGroupsToAdd, List<int> serviceRoleGroupsToDelete, List<int> serviceRoleGroupsToAutoValid, string? companyHouseId);
+
   }
 }
