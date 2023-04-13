@@ -168,7 +168,7 @@ namespace CcsSso.Core.Service.External
         Name = $"{ugm.User.Party.Person.FirstName} {ugm.User.Party.Person.LastName}",
         IsAdmin = ugm.User.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted),
         
-        UserPendingRoleStaus = !isApprovalRequired ? null : getUserRolePendingStatus(ugm),
+        UserPendingRoleStatus = !isApprovalRequired ? null : getUserRolePendingStatus(ugm),
       }).ToList();
 
       return organisationGroupResponseInfo;
@@ -553,7 +553,7 @@ namespace CcsSso.Core.Service.External
         GroupUser = pagedResult.Results?.Select(up => new GroupUser
         {
           UserId = up.UserName,
-          UserPendingRoleStaus = isPendingApproval? UserPendingRoleStaus.Pending: null, // pending and rejected will be shown as users doesn't have the role. 
+          UserPendingRoleStatus = isPendingApproval? UserPendingRoleStaus.Pending: null, // pending and rejected will be shown as users doesn't have the role. 
           Name = $"{up.Party.Person.FirstName} {up.Party.Person.LastName}",
         }).ToList() ?? new List<GroupUser>()
       };
