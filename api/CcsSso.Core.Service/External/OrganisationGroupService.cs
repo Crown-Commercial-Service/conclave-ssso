@@ -505,7 +505,8 @@ namespace CcsSso.Core.Service.External
             x.OrganisationUserGroupId == group.Id
             && !users.Select(user => user.Id).Contains(x.UserId)
             && (x.Status == (int)UserPendingRoleStaus.Pending
-            || x.Status == (int)UserPendingRoleStaus.Approved)).ToListAsync();
+            || x.Status == (int)UserPendingRoleStaus.Approved
+            || x.Status == (int)UserPendingRoleStaus.Rejected)).ToListAsync();
 
       foreach (var pendingRequest in pendingGroupRequest)
       {
@@ -528,12 +529,15 @@ namespace CcsSso.Core.Service.External
 
       var existingUserIds = group.UserGroupMemberships.Where(x => !x.IsDeleted).Select(ugm => ugm.UserId);
 
-      var pendingRequests = await _dataContext.UserAccessRolePending
-          .Where(x => !x.IsDeleted && existingUserIds.Contains(x.UserId) && x.OrganisationUserGroupId == groupId
+      var pendingAndRejectedRequests = await _dataContext.UserAccessRolePending
+          .Where(x => existingUserIds.Contains(x.UserId) && x.OrganisationUserGroupId == groupId
           && (x.Status == (int)UserPendingRoleStaus.Pending || x.Status == (int)UserPendingRoleStaus.Rejected))
           .ToListAsync();
 
-      var filteredUserIds = isPendingApproval ? existingUserIds.Where(x => pendingRequests.Any(y => y.UserId == x)) : existingUserIds.Where(x => !pendingRequests.Any(y => y.UserId == x));
+      var pendingRequests = pendingAndRejectedRequests.Where(x => x.Status ==(int) UserPendingRoleStaus.Pending && !x.IsDeleted);
+     
+
+      var filteredUserIds = isPendingApproval ? existingUserIds.Where(x => pendingRequests.Any(y => y.UserId == x)) : existingUserIds.Where(x => !pendingAndRejectedRequests.Any(y => y.UserId == x));
 
       var usersQuery = _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).Where(user => !user.IsDeleted && filteredUserIds.Contains(user.Id)).OrderBy(u => u.UserName);
 
@@ -679,7 +683,11 @@ namespace CcsSso.Core.Service.External
       foreach (var user in userHasInValidDomain)
       {
         var latestRequestOfUser = existingUsersRequests.OrderByDescending(x => x.Id).FirstOrDefault(x => x.UserId == user.Id);
-        if (latestRequestOfUser == null || (latestRequestOfUser.Status != (int)UserPendingRoleStaus.Pending && latestRequestOfUser.Status != (int)UserPendingRoleStaus.Approved))
+
+        if (latestRequestOfUser == null || 
+          (latestRequestOfUser.Status != (int)UserPendingRoleStaus.Pending 
+          && latestRequestOfUser.Status != (int)UserPendingRoleStaus.Approved
+          && latestRequestOfUser.Status != (int)UserPendingRoleStaus.Rejected))
         {
           await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(new UserProfileEditRequestInfo
           {

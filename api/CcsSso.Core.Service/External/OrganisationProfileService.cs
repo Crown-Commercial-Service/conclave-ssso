@@ -1699,7 +1699,7 @@ namespace CcsSso.Core.Service.External
             var anyExistingRoleRequest = await _dataContext.UserAccessRolePending.AnyAsync(x => x.OrganisationEligibleRoleId == organisationEligibleRoleId
                 && x.OrganisationUserGroupId == null
                 && x.UserId == adminDetails.Id
-                && (x.Status == (int)UserPendingRoleStaus.Approved || x.Status == (int)UserPendingRoleStaus.Rejected || x.Status == (int)UserPendingRoleStaus.Expired));
+                && (x.Status == (int)UserPendingRoleStaus.Approved));
 
             if (anyExistingRoleRequest)
             {
