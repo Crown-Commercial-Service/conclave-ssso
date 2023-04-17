@@ -47,7 +47,7 @@ namespace CcsSso.Core.Service.External
 
       var pendingRoleIds = userApprovalRequest.PendingRoleIds;
       var status = userApprovalRequest.Status;
-      
+
       if (status != UserPendingRoleStaus.Approved && status != UserPendingRoleStaus.Rejected)
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidStatusInfo);
@@ -82,7 +82,7 @@ namespace CcsSso.Core.Service.External
 
         if (!isPendingRequest && !isOtherPendingRequest)
         {
-            throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
         }
 
         var user = await _dataContext.User
@@ -368,7 +368,7 @@ namespace CcsSso.Core.Service.External
         {
           var isPendingRequest = await _dataContext.UserAccessRolePending
             .AnyAsync(u => !u.IsDeleted && u.Status == (int)UserPendingRoleStaus.Pending
-              && u.UserId == userAccessRolePendingRoleDetails.UserId 
+              && u.UserId == userAccessRolePendingRoleDetails.UserId
               && u.OrganisationEligibleRoleId == userAccessRolePendingRoleDetails.OrganisationEligibleRoleId);
 
           status = isPendingRequest ? (int)UserPendingRoleStaus.Pending : status;
@@ -583,11 +583,11 @@ namespace CcsSso.Core.Service.External
 
       userGroupRoleIds.ForEach((userGroupRoleId) =>
       {
-        var lastUserAccessRolePedningRequest = user.UserAccessRolePending
-        .OrderByDescending(o => o.CreatedOnUtc)
-        .FirstOrDefault(x => x.OrganisationUserGroupId != null && x.OrganisationEligibleRoleId == userGroupRoleId);
+        // latest approved with in the group
+        var anyApprovedInTheGroup = user.UserAccessRolePending
+                      .FirstOrDefault(x => x.OrganisationUserGroupId != null && x.OrganisationEligibleRoleId == userGroupRoleId && x.Status == (int)UserPendingRoleStaus.Approved);
 
-        if (lastUserAccessRolePedningRequest?.Status == (int)UserPendingRoleStaus.Approved)
+        if (anyApprovedInTheGroup != null)
         {
           userGroupApprovedRoleIds.Add(userGroupRoleId);
         }
