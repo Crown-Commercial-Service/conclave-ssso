@@ -368,6 +368,7 @@ namespace CcsSso.Core.Service.External
         {
           var isPendingRequest = await _dataContext.UserAccessRolePending
             .AnyAsync(u => !u.IsDeleted && u.Status == (int)UserPendingRoleStaus.Pending
+              && u.Id != userAccessRolePendingRoleDetails.Id
               && u.UserId == userAccessRolePendingRoleDetails.UserId
               && u.OrganisationEligibleRoleId == userAccessRolePendingRoleDetails.OrganisationEligibleRoleId);
 
