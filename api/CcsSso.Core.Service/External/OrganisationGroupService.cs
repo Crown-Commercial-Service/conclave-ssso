@@ -9,15 +9,13 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
-using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
@@ -33,12 +31,15 @@ namespace CcsSso.Core.Service.External
     private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
     private readonly IOrganisationProfileService _organisationService;
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
+    private readonly ILocalCacheService _localCacheService;
+
 
     public OrganisationGroupService(IDataContext dataContext, IUserProfileHelperService userProfileHelperService,
       IAuditLoginService auditLoginService, ICcsSsoEmailService ccsSsoEmailService, IWrapperCacheService wrapperCacheService,
       ApplicationConfigurationInfo appConfigInfo, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
       IOrganisationProfileService organisationService,
-      IUserProfileRoleApprovalService userProfileRoleApprovalService)
+      IUserProfileRoleApprovalService userProfileRoleApprovalService,
+      ILocalCacheService localCacheService)
     {
       _dataContext = dataContext;
       _userProfileHelperService = userProfileHelperService;
@@ -49,6 +50,7 @@ namespace CcsSso.Core.Service.External
       _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
       _organisationService = organisationService;
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
+      _localCacheService = localCacheService;
     }
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
@@ -167,7 +169,7 @@ namespace CcsSso.Core.Service.External
         UserId = ugm.User.UserName,
         Name = $"{ugm.User.Party.Person.FirstName} {ugm.User.Party.Person.LastName}",
         IsAdmin = ugm.User.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted),
-        
+
         UserPendingRoleStatus = !isApprovalRequired ? null : getUserRolePendingStatus(ugm),
       }).ToList();
 
@@ -181,7 +183,7 @@ namespace CcsSso.Core.Service.External
           .OrderByDescending(y => y.Id)
           .FirstOrDefault(x => x.UserId == ugm.User.Id && x.OrganisationUserGroupId == ugm.OrganisationUserGroupId);
 
-      
+
       return (UserPendingRoleStaus?)(pendingRole?.Status);
     }
 
@@ -378,6 +380,29 @@ namespace CcsSso.Core.Service.External
             group.UserGroupMemberships.Add(userGroupMembership);
           }
         });
+
+        // this will be used in the success page. (Group success page only shows pending status for the added users)
+        var expiration = new TimeSpan(0, 0, 60);
+        if (addedUserNameList.Any())
+        {
+          _localCacheService.SetValue(groupId.ToString(), addedUserNameList,expiration );
+        }
+        else
+        {
+          if (removedUserNameList.Any())
+          {
+            _localCacheService.SetValue(groupId.ToString(), new List<string> { "userremoved" }, expiration);
+          }
+          else
+          {
+            _localCacheService.Remove(new string[] { groupId.ToString() });
+          }
+        }
+      }
+      else
+      {
+        _localCacheService.Remove(new string[] { groupId.ToString() });
+
       }
 
       var mfaEnableRoleExists = orgRoleInfo.Any(r => group.GroupEligibleRoles.Any(ge => ge.OrganisationEligibleRoleId == r.Id && !ge.IsDeleted && r.MfaEnable));
@@ -487,7 +512,7 @@ namespace CcsSso.Core.Service.External
     private async Task RemoveGroupRolePendingRequest(OrganisationUserGroup group)
     {
       var pendingGroupRequest = await _dataContext.UserAccessRolePending.Where(x =>
-      (x.Status == (int)UserPendingRoleStaus.Pending 
+      (x.Status == (int)UserPendingRoleStaus.Pending
       || x.Status == (int)UserPendingRoleStaus.Approved
       || x.Status == (int)UserPendingRoleStaus.Rejected) &&
       x.OrganisationUserGroupId == group.Id).ToListAsync();
@@ -535,10 +560,17 @@ namespace CcsSso.Core.Service.External
           && (x.Status == (int)UserPendingRoleStaus.Pending || x.Status == (int)UserPendingRoleStaus.Rejected))
           .ToListAsync();
 
-      var pendingRequests = pendingAndRejectedRequests.Where(x => x.Status ==(int) UserPendingRoleStaus.Pending && !x.IsDeleted);
-     
+      var pendingRequests = pendingAndRejectedRequests.Where(x => x.Status == (int)UserPendingRoleStaus.Pending && !x.IsDeleted);
+
 
       var filteredUserIds = isPendingApproval ? existingUserIds.Where(x => pendingRequests.Any(y => y.UserId == x)) : existingUserIds.Where(x => !pendingAndRejectedRequests.Any(y => y.UserId == x));
+
+      var addedUsers = _localCacheService.GetValue<List<string>>(groupId.ToString());
+      if(addedUsers!=null && addedUsers.Any())
+      {
+        var userIds = _dataContext.User.Where(x => addedUsers.Contains(x.UserName)).Select(x=>x.Id);
+        filteredUserIds = filteredUserIds.Where(x => userIds.Contains(x)).ToArray();
+      }
 
       var usersQuery = _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).Where(user => !user.IsDeleted && filteredUserIds.Contains(user.Id)).OrderBy(u => u.UserName);
 
@@ -553,7 +585,7 @@ namespace CcsSso.Core.Service.External
         GroupUser = pagedResult.Results?.Select(up => new GroupUser
         {
           UserId = up.UserName,
-          UserPendingRoleStatus = isPendingApproval? UserPendingRoleStaus.Pending: null, // pending and rejected will be shown as users doesn't have the role. 
+          UserPendingRoleStatus = isPendingApproval ? UserPendingRoleStaus.Pending : null, // pending and rejected will be shown as users doesn't have the role. 
           Name = $"{up.Party.Person.FirstName} {up.Party.Person.LastName}",
         }).ToList() ?? new List<GroupUser>()
       };
@@ -685,8 +717,8 @@ namespace CcsSso.Core.Service.External
       {
         var latestRequestOfUser = existingUsersRequests.OrderByDescending(x => x.Id).FirstOrDefault(x => x.UserId == user.Id);
 
-        if (latestRequestOfUser == null || 
-          (latestRequestOfUser.Status != (int)UserPendingRoleStaus.Pending 
+        if (latestRequestOfUser == null ||
+          (latestRequestOfUser.Status != (int)UserPendingRoleStaus.Pending
           && latestRequestOfUser.Status != (int)UserPendingRoleStaus.Approved
           && latestRequestOfUser.Status != (int)UserPendingRoleStaus.Rejected))
         {
