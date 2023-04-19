@@ -1988,88 +1988,20 @@ namespace CcsSso.Core.Service.External
       }
 
       var userProfileServiceRoleGroupResponseInfo = new UserProfileServiceRoleGroupResponseInfo();
-
       var userProfileResponseInfo = await this.GetUserAsync(userName, isDelegated, isSearchUser, delegatedOrgId);
 
       if (userProfileResponseInfo != null)
       {
         userProfileServiceRoleGroupResponseInfo = ConvertUserRoleToServiceRoleGroupResponse(userProfileResponseInfo);
-
-        List<ServiceRoleGroupInfo> serviceRoleGroupInfo = new List<ServiceRoleGroupInfo>();
-
-        var roleIds = userProfileResponseInfo.Detail.RolePermissionInfo.Select(x => x.RoleId).ToList();
-
-        var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(roleIds);
-
-        foreach (var serviceRoleGroup in serviceRoleGroups)
-        {
-          serviceRoleGroupInfo.Add(new ServiceRoleGroupInfo()
-          {
-            Id = serviceRoleGroup.Id,
-            Name = serviceRoleGroup.Name,
-            Key = serviceRoleGroup.Key,
-          });
-        }
-
+        var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(userProfileResponseInfo.Detail.RolePermissionInfo.Select(x => x.RoleId).ToList());
+        List<ServiceRoleGroupInfo> serviceRoleGroupInfo = (from serviceRoleGroup in serviceRoleGroups select new ServiceRoleGroupInfo() {
+                                        Id = serviceRoleGroup.Id,
+                                        Name = serviceRoleGroup.Name,
+                                        Key = serviceRoleGroup.Key,
+                                      }).ToList();
         userProfileServiceRoleGroupResponseInfo.Detail.ServiceRoleGroupInfo = serviceRoleGroupInfo;
-
-        var groupIds = userProfileResponseInfo.Detail.UserGroups.Select(x => x.GroupId).Distinct().ToList();
-
-        List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups = new List<GroupAccessServiceRoleGroup>();
-
-        var lastGroupRequest = await _dataContext.UserAccessRolePending.Include(u => u.User).OrderByDescending(x => x.Id).FirstOrDefaultAsync(x => x.User.UserName == userName.ToLower()
-            && x.OrganisationUserGroupId != null);
-
-        List<CcsServiceRoleGroup> userGroupsApprovalServiceRoleGroups = new();
-        if (lastGroupRequest != null && lastGroupRequest.Status != (int)UserPendingRoleStaus.Approved)
-        {
-          userGroupsApprovalServiceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(new List<int>() { lastGroupRequest.OrganisationEligibleRoleId });
-        }
-
-        foreach (var groupId in groupIds)
-        {
-          var groupInfo = await _organisationGroupService.GetServiceRoleGroupAsync(userProfileResponseInfo.OrganisationId, groupId);
-
-          if (groupInfo != null && groupInfo.ServiceRoleGroups != null && groupInfo.ServiceRoleGroups.Count > 0)
-          {
-            foreach (var serviceRoleGroup in groupInfo.ServiceRoleGroups)
-            {
-              if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroups.Any(x => x.Id == serviceRoleGroup.Id))
-              {
-                groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
-                {
-                  GroupId = groupInfo.GroupId,
-                  Group = groupInfo.GroupName,
-                });
-                continue;
-              }
-              groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
-              {
-                GroupId = groupInfo.GroupId,
-                Group = groupInfo.GroupName,
-                AccessServiceRoleGroupId = serviceRoleGroup.Id,
-                AccessServiceRoleGroupName = serviceRoleGroup.Name,
-              });
-            }
-          }
-          else
-          {
-            var userGroup = userProfileResponseInfo.Detail.UserGroups.FirstOrDefault(x => x.GroupId == groupId);
-
-            if (userGroup != null)
-            {
-              groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
-              {
-                GroupId = userGroup.GroupId,
-                Group = userGroup.Group,
-              });
-            }
-          }
-        }
-
-        userProfileServiceRoleGroupResponseInfo.Detail.UserGroups = groupAccessServiceRoleGroups;
+        await GetUserGroupDetails(userName, userProfileServiceRoleGroupResponseInfo, userProfileResponseInfo);
       }
-
       return userProfileServiceRoleGroupResponseInfo;
     }
 
@@ -2369,5 +2301,69 @@ namespace CcsSso.Core.Service.External
       }
 
     }
+
+    private async Task GetUserGroupDetails(string userName, UserProfileServiceRoleGroupResponseInfo userProfileServiceRoleGroupResponseInfo, UserProfileResponseInfo userProfileResponseInfo)
+    {
+      var groupIds = userProfileResponseInfo.Detail.UserGroups.Select(x => x.GroupId).Distinct().ToList();
+      List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups = new List<GroupAccessServiceRoleGroup>();
+
+      var lastGroupRequest = await _dataContext.UserAccessRolePending.Include(u => u.User).OrderByDescending(x => x.Id).FirstOrDefaultAsync(x => x.User.UserName == userName.ToLower()
+          && x.OrganisationUserGroupId != null);
+
+      List<CcsServiceRoleGroup> userGroupsApprovalServiceRoleGroups = new();
+      if (lastGroupRequest != null && lastGroupRequest.Status != (int)UserPendingRoleStaus.Approved)
+      {
+        userGroupsApprovalServiceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(new List<int>() { lastGroupRequest.OrganisationEligibleRoleId });
+      }
+
+      foreach (var groupId in groupIds)
+      {
+        await GetGroupAccessServiceRoleGroups(userProfileResponseInfo, groupAccessServiceRoleGroups, userGroupsApprovalServiceRoleGroups, groupId);
+      }
+
+      userProfileServiceRoleGroupResponseInfo.Detail.UserGroups = groupAccessServiceRoleGroups;
+    }
+
+    private async Task GetGroupAccessServiceRoleGroups(UserProfileResponseInfo userProfileResponseInfo, List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups, List<CcsServiceRoleGroup> userGroupsApprovalServiceRoleGroups, int groupId)
+    {
+      var groupInfo = await _organisationGroupService.GetServiceRoleGroupAsync(userProfileResponseInfo.OrganisationId, groupId);
+
+      if (groupInfo != null && groupInfo.ServiceRoleGroups != null && groupInfo.ServiceRoleGroups.Count > 0)
+      {
+        foreach (var serviceRoleGroup in groupInfo.ServiceRoleGroups)
+        {
+          if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroups.Any(x => x.Id == serviceRoleGroup.Id))
+          {
+            groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+            {
+              GroupId = groupInfo.GroupId,
+              Group = groupInfo.GroupName,
+            });
+            continue;
+          }
+          groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+          {
+            GroupId = groupInfo.GroupId,
+            Group = groupInfo.GroupName,
+            AccessServiceRoleGroupId = serviceRoleGroup.Id,
+            AccessServiceRoleGroupName = serviceRoleGroup.Name,
+          });
+        }
+      }
+      else
+      {
+        var userGroup = userProfileResponseInfo.Detail.UserGroups.FirstOrDefault(x => x.GroupId == groupId);
+
+        if (userGroup != null)
+        {
+          groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+          {
+            GroupId = userGroup.GroupId,
+            Group = userGroup.Group,
+          });
+        }
+      }
+    }
+
   }
 }
