@@ -355,8 +355,7 @@ namespace CcsSso.Security.Api
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-    {
-      app.AddLoggerMiddleware();// Registers the logger configured on the core library
+    {      
       app.UseHsts();
       app.Use(async (context, next) =>
       {
