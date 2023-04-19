@@ -188,7 +188,7 @@ namespace CcsSso.Core.Service.External
     public async Task<OrganisationGroupList> GetGroupsAsync(string ciiOrganisationId, string searchString = null)
     {
       var organisation = await _dataContext.Organisation
-       .Include(o => o.UserGroups)
+       .Include(o => o.UserGroups).ThenInclude(r => r.GroupEligibleRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
 
       if (organisation == null)
@@ -202,7 +202,12 @@ namespace CcsSso.Core.Service.External
         {
           GroupId = g.Id,
           GroupName = g.UserGroupName,
-          CreatedDate = g.CreatedOnUtc.Date.ToString(DateTimeFormat.DateFormatShortMonth)
+          CreatedDate = g.CreatedOnUtc.Date.ToString(DateTimeFormat.DateFormatShortMonth),
+          Roles = g.GroupEligibleRoles.Where(gr => !gr.IsDeleted).Select(gr => new GroupRole
+          {
+            Id = gr.OrganisationEligibleRole.Id,
+            Name = gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName
+          }).ToList()
         }).OrderBy(g => g.GroupName).ToList();
 
       return new OrganisationGroupList
@@ -625,6 +630,42 @@ namespace CcsSso.Core.Service.External
       };
 
       await this.UpdateGroupAsync(ciiOrganisationId, groupId, organisationGroupRequestInfo);
+    }
+
+    public async Task<OrganisationGroupServiceRoleGroupList> GetGroupsServiceRoleGroupAsync(string ciiOrganisationId, string searchString = null) 
+    {
+      var allGroups = await GetGroupsAsync(ciiOrganisationId, searchString);
+      List<OrganisationGroupServiceRoleGroupInfo> groupList = new();
+
+      foreach (var group in allGroups.GroupList) 
+      {
+        List<GroupServiceRoleGroup> groupServiceRoleGroups = new List<GroupServiceRoleGroup>();
+        var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(group.Roles.Select(x => x.Id).ToList());
+
+        foreach (var serviceRoleGroup in serviceRoleGroups)
+        {
+          groupServiceRoleGroups.Add(new GroupServiceRoleGroup()
+          {
+            Id = serviceRoleGroup.Id,
+            Name = serviceRoleGroup.Name,
+            Description = serviceRoleGroup.Description
+          });
+        }
+
+        groupList.Add(new OrganisationGroupServiceRoleGroupInfo() 
+        { 
+          GroupId = group.GroupId,
+          GroupName = group.GroupName,
+          CreatedDate = group.CreatedDate,
+          ServiceRoleGroups = groupServiceRoleGroups
+        });
+      }
+
+      return new OrganisationGroupServiceRoleGroupList()
+      {
+        OrganisationId = allGroups.OrganisationId,
+        GroupList = groupList
+      };
     }
 
     private static OrganisationServiceRoleGroupResponseInfo ConvertGroupRoleToServiceRoleGroupResponse(OrganisationGroupResponseInfo organisationGroupResponseInfo)
