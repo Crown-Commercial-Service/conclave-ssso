@@ -206,7 +206,8 @@ namespace CcsSso.Core.Service.External
           Roles = g.GroupEligibleRoles.Where(gr => !gr.IsDeleted).Select(gr => new GroupRole
           {
             Id = gr.OrganisationEligibleRole.Id,
-            Name = gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName
+            Name = gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
+            Description = gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleDescription,
           }).ToList()
         }).OrderBy(g => g.GroupName).ToList();
 

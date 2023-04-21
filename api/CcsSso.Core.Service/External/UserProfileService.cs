@@ -2336,7 +2336,7 @@ namespace CcsSso.Core.Service.External
       {
         foreach (var serviceRoleGroup in groupInfo.ServiceRoleGroups)
         {
-          if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroupWithStatus.Item1.Any(x => x.Id == serviceRoleGroup.Id) && userGroupsApprovalServiceRoleGroupWithStatus.Item2 != (int)UserPendingRoleStaus.Approved)
+          if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroupWithStatus != null && userGroupsApprovalServiceRoleGroupWithStatus.Item1.Any(x => x.Id == serviceRoleGroup.Id) && userGroupsApprovalServiceRoleGroupWithStatus.Item2 != (int)UserPendingRoleStaus.Approved)
           {
             groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
             {
