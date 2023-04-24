@@ -2307,24 +2307,28 @@ namespace CcsSso.Core.Service.External
       var groupIds = userProfileResponseInfo.Detail.UserGroups.Select(x => x.GroupId).Distinct().ToList();
       List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups = new List<GroupAccessServiceRoleGroup>();
 
-      var lastGroupRequest = await _dataContext.UserAccessRolePending.Include(u => u.User).OrderByDescending(x => x.Id).FirstOrDefaultAsync(x => x.User.UserName == userName.ToLower()
-          && x.OrganisationUserGroupId != null);
-
-      List<CcsServiceRoleGroup> userGroupsApprovalServiceRoleGroups = new();
-      if (lastGroupRequest != null && lastGroupRequest.Status != (int)UserPendingRoleStaus.Approved)
-      {
-        userGroupsApprovalServiceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(new List<int>() { lastGroupRequest.OrganisationEligibleRoleId });
-      }
+      var allUserRequests = await _dataContext.UserAccessRolePending.Where(x => x.User.UserName.ToLower() == userName.ToLower() && x.OrganisationUserGroupId != null).ToListAsync();
 
       foreach (var groupId in groupIds)
       {
-        await GetGroupAccessServiceRoleGroups(userProfileResponseInfo, groupAccessServiceRoleGroups, userGroupsApprovalServiceRoleGroups, groupId);
+        object userGroupsApprovalServiceRoleGroupWithStatus = null;
+        if (allUserRequests.Any())
+        {
+          List<CcsServiceRoleGroup> userGroupsApprovalServiceRoleGroups = new();
+          var lastRequestOfGroup = allUserRequests.OrderByDescending(x => x.Id).FirstOrDefault(x => x.OrganisationUserGroupId == groupId);
+          if (lastRequestOfGroup != default)
+          {
+            userGroupsApprovalServiceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(new List<int>() { lastRequestOfGroup.OrganisationEligibleRoleId });
+            userGroupsApprovalServiceRoleGroupWithStatus = new Tuple<List<CcsServiceRoleGroup>, int>(userGroupsApprovalServiceRoleGroups, lastRequestOfGroup.Status);
+          }
+        }
+        await GetGroupAccessServiceRoleGroups(userProfileResponseInfo, groupAccessServiceRoleGroups, (Tuple<List<CcsServiceRoleGroup>, int>)userGroupsApprovalServiceRoleGroupWithStatus, groupId);
       }
 
       userProfileServiceRoleGroupResponseInfo.Detail.UserGroups = groupAccessServiceRoleGroups;
     }
 
-    private async Task GetGroupAccessServiceRoleGroups(UserProfileResponseInfo userProfileResponseInfo, List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups, List<CcsServiceRoleGroup> userGroupsApprovalServiceRoleGroups, int groupId)
+    private async Task GetGroupAccessServiceRoleGroups(UserProfileResponseInfo userProfileResponseInfo, List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups, Tuple<List<CcsServiceRoleGroup>, int> userGroupsApprovalServiceRoleGroupWithStatus, int groupId)
     {
       var groupInfo = await _organisationGroupService.GetServiceRoleGroupAsync(userProfileResponseInfo.OrganisationId, groupId);
 
@@ -2332,22 +2336,28 @@ namespace CcsSso.Core.Service.External
       {
         foreach (var serviceRoleGroup in groupInfo.ServiceRoleGroups)
         {
-          if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroups.Any(x => x.Id == serviceRoleGroup.Id))
+          if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroupWithStatus != null && userGroupsApprovalServiceRoleGroupWithStatus.Item1.Any(x => x.Id == serviceRoleGroup.Id) && userGroupsApprovalServiceRoleGroupWithStatus.Item2 != (int)UserPendingRoleStaus.Approved)
           {
             groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
             {
               GroupId = groupInfo.GroupId,
               Group = groupInfo.GroupName,
+              AccessServiceRoleGroupId = serviceRoleGroup.Id,
+              AccessServiceRoleGroupName = serviceRoleGroup.Name,
+              ApprovalStatus = userGroupsApprovalServiceRoleGroupWithStatus.Item2
             });
-            continue;
           }
-          groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+          else
           {
-            GroupId = groupInfo.GroupId,
-            Group = groupInfo.GroupName,
-            AccessServiceRoleGroupId = serviceRoleGroup.Id,
-            AccessServiceRoleGroupName = serviceRoleGroup.Name,
-          });
+            groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+            {
+              GroupId = groupInfo.GroupId,
+              Group = groupInfo.GroupName,
+              AccessServiceRoleGroupId = serviceRoleGroup.Id,
+              AccessServiceRoleGroupName = serviceRoleGroup.Name,
+              ApprovalStatus = (int)UserPendingRoleStaus.Approved
+            });
+          }
         }
       }
       else

@@ -1133,6 +1133,29 @@ namespace CcsSso.ExternalApi.Controllers
       return await _organisationGroupService.GetGroupUsersPendingRequestSummary(groupId, organisationId, resultSetCriteria,isPendingApproval);
     }
 
+    /// <summary>
+    /// Get organisation groups
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/groups/servicerolegroups
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/groups/servicerolegroups")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER", "ORG_USER_SUPPORT")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation Group" })]
+    [ProducesResponseType(typeof(OrganisationGroupServiceRoleGroupList), 200)]
+    public async Task<OrganisationGroupServiceRoleGroupList> GetOrganisationAllGroupsServiceroleGroups(string organisationId, [FromQuery(Name = "search-string")] string searchString = null)
+    {
+      return await _organisationGroupService.GetGroupsServiceRoleGroupAsync(organisationId, searchString);
+    }
+
     #endregion
 
     #region Organisation IdentityProviders

@@ -28,6 +28,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public int GroupId { get; set; }
 
     public string CreatedDate { get; set; }
+
+    public List<GroupRole> Roles { get; set; }
   }
 
   public class OrganisationGroupResponseInfo : OrganisationGroupInfo
@@ -64,6 +66,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public int Id { get; set; }
 
     public string Name { get; set; }
+
+    public string Description { get; set; }
   }
 
   public class GroupServiceRoleGroup
@@ -114,5 +118,21 @@ namespace CcsSso.Core.Domain.Dtos.External
     public List<string> AddedUserIds { get; set; }
 
     public List<string> RemovedUserIds { get; set; }
+  }
+
+  public class OrganisationGroupServiceRoleGroupList
+  {
+    public string OrganisationId { get; set; }
+
+    public List<OrganisationGroupServiceRoleGroupInfo> GroupList { get; set; }
+  }
+
+  public class OrganisationGroupServiceRoleGroupInfo : OrganisationGroupNameInfo
+  {
+    public int GroupId { get; set; }
+
+    public string CreatedDate { get; set; }
+
+    public List<GroupServiceRoleGroup> ServiceRoleGroups { get; set; }
   }
 }
