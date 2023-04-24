@@ -44,6 +44,8 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class UserRequestDetail : UserRequestMain
   {
+    public int? GroupId { get; set; }
+
     public List<int> RoleIds { get; set; }
   }
 
