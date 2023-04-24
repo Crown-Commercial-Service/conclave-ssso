@@ -1144,14 +1144,14 @@ namespace CcsSso.ExternalApi.Controllers
     /// <remarks>
     /// Sample request:
     ///
-    ///     GET /organisations/1/groups
+    ///     GET /organisations/1/groups/servicerolegroups
     ///     
     /// </remarks>
     [HttpGet("{organisationId}/groups/servicerolegroups")]
     [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER", "ORG_USER_SUPPORT")]
     [OrganisationAuthorise("ORGANISATION")]
     [SwaggerOperation(Tags = new[] { "Organisation Group" })]
-    [ProducesResponseType(typeof(OrganisationGroupList), 200)]
+    [ProducesResponseType(typeof(OrganisationGroupServiceRoleGroupList), 200)]
     public async Task<OrganisationGroupServiceRoleGroupList> GetOrganisationAllGroupsServiceroleGroups(string organisationId, [FromQuery(Name = "search-string")] string searchString = null)
     {
       return await _organisationGroupService.GetGroupsServiceRoleGroupAsync(organisationId, searchString);
