@@ -37,6 +37,16 @@ namespace CcsSso.Core.DbModel.Constants
     MigrationCompleted
   }
 
+  public enum DataMigrationStatus
+  {
+    DocUploading,
+    DocUploadValidationFail,
+    Validating,
+    ValidationFail,
+    Migrating,
+    MigrationCompleted
+  }
+
   public enum UserType
   {
     Primary,
