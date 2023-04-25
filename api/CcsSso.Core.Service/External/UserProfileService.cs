@@ -9,6 +9,7 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Dtos.Domain.Models;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Constants;
@@ -40,14 +41,16 @@ namespace CcsSso.Core.Service.External
     private readonly IWrapperApiService _wrapperApiService;
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
     private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
+    private readonly IOrganisationGroupService _organisationGroupService;
 
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
       IAdaptorNotificationService adapterNotificationService, IWrapperCacheService wrapperCacheService,
       IAuditLoginService auditLoginService, IRemoteCacheService remoteCacheService,
       ICacheInvalidateService cacheInvalidateService, ICryptographyService cryptographyService,
-      ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService
-      , IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService serviceRoleGroupMapperService)
+      ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService,
+      IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
+      IOrganisationGroupService organisationGroupService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -65,6 +68,7 @@ namespace CcsSso.Core.Service.External
       _wrapperApiService = wrapperApiService;
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
       _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
+      _organisationGroupService = organisationGroupService;
     }
 
     public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo, bool isNewOrgAdmin = false)
@@ -1419,10 +1423,19 @@ namespace CcsSso.Core.Service.External
           throw new CcsSsoException(ErrorConstant.ErrorInvalidUserGroup);
         }
 
+        if (userProfileReqestInfo.Detail.RoleIds != null)
+        {
+          var duplicatesRoleIds = userProfileReqestInfo.Detail.RoleIds.GroupBy(x => x).SelectMany(g => g.Skip(1));
+          if (duplicatesRoleIds.Any())
+          {
+            throw new CcsSsoException(ErrorConstant.ErrorInvalidUserRole);
+          }
+        }
+
         if (userProfileReqestInfo.Detail.RoleIds != null && userProfileReqestInfo.Detail.RoleIds.Any(gId => !orgRoleIds.Contains(gId)))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidUserRole);
-        }
+        }        
 
         if (userProfileReqestInfo.Detail.IdentityProviderIds == null || !userProfileReqestInfo.Detail.IdentityProviderIds.Any() ||
           userProfileReqestInfo.Detail.IdentityProviderIds.Any(id => !orgIdpIds.Contains(id)))
@@ -1914,6 +1927,44 @@ namespace CcsSso.Core.Service.External
         }
 
         userProfileServiceRoleGroupResponseInfo.Detail.ServiceRoleGroupInfo = serviceRoleGroupInfo;
+
+        var groupIds = userProfileResponseInfo.Detail.UserGroups.Select(x => x.GroupId).Distinct().ToList();
+
+        List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups = new List<GroupAccessServiceRoleGroup>();
+
+        foreach (var groupId in groupIds)
+        {
+          var groupInfo = await _organisationGroupService.GetServiceRoleGroupAsync(userProfileResponseInfo.OrganisationId, groupId);
+
+          if (groupInfo != null && groupInfo.ServiceRoleGroups != null && groupInfo.ServiceRoleGroups.Count > 0)
+          {
+            foreach (var serviceRoleGroup in groupInfo.ServiceRoleGroups)
+            {
+              groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+              {
+                GroupId = groupInfo.GroupId,
+                Group = groupInfo.GroupName,
+                AccessServiceRoleGroupId = serviceRoleGroup.Id,
+                AccessServiceRoleGroupName = serviceRoleGroup.Name,
+              });
+            }
+          }
+          else
+          {
+            var userGroup = userProfileResponseInfo.Detail.UserGroups.FirstOrDefault(x => x.GroupId == groupId);
+
+            if (userGroup != null)
+            {
+              groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+              {
+                GroupId = userGroup.GroupId,
+                Group = userGroup.Group,
+              });
+            }
+          }
+        }
+
+        userProfileServiceRoleGroupResponseInfo.Detail.UserGroups = groupAccessServiceRoleGroups;
       }
 
       return userProfileServiceRoleGroupResponseInfo;
@@ -1991,16 +2042,16 @@ namespace CcsSso.Core.Service.External
         if (serviceRoleGroups.Count != serviceRoleGroupIds.Count)
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
-        }        
+        }
 
         List<OrganisationEligibleRole> organisationEligibleRoles = await _serviceRoleGroupMapperService.ServiceRoleGroupsToOrgRolesAsync(serviceRoleGroupIds, organisationId);
-        
+
         var userDomain = userProfileServiceRoleGroupEditRequestInfo?.UserName?.ToLower().Split('@')?[1];
         var orgDoamin = _dataContext.Organisation.FirstOrDefault(o => o.CiiOrganisationId == organisationId)?.DomainName?.ToLower();
 
         if (userDomain?.Trim() != orgDoamin?.Trim())
         {
-          await _serviceRoleGroupMapperService.RemoveApprovalRequiredRoleGroupOtherRolesAsync(organisationEligibleRoles);
+          await _serviceRoleGroupMapperService.RemoveApprovalRequiredRoleGroupOtherRolesAsync(organisationEligibleRoles, userProfileServiceRoleGroupEditRequestInfo?.UserName);
         }
 
         roleIds = organisationEligibleRoles.Select(x => x.Id).ToList();
@@ -2050,7 +2101,6 @@ namespace CcsSso.Core.Service.External
           Id = userProfileResponseInfo.Detail.Id,
           CanChangePassword = userProfileResponseInfo.Detail.CanChangePassword,
           IdentityProviders = userProfileResponseInfo.Detail.IdentityProviders,
-          UserGroups = userProfileResponseInfo.Detail.UserGroups,
           DelegatedOrgs = userProfileResponseInfo.Detail.DelegatedOrgs
         }
       };
@@ -2095,5 +2145,67 @@ namespace CcsSso.Core.Service.External
 
     }
     #endregion
+
+    public async Task<OrganisationJoinRequest> GetUserJoinRequestDetails(string joiningDetailsToken)
+    {
+      Dictionary<string, string> orgJoiningDetailList = DecryptTokenAndReturnDetails(joiningDetailsToken);
+      string errorCode = await ValidateJoiningRequestAsync(orgJoiningDetailList);
+
+      if (!string.IsNullOrWhiteSpace(errorCode))
+      {
+        return new OrganisationJoinRequest()
+        {
+          Email = orgJoiningDetailList["email"].Trim(),
+          ErrorCode = errorCode
+        };
+      }
+
+      return new OrganisationJoinRequest()
+      {
+        FirstName = orgJoiningDetailList["first"].Trim(),
+        LastName = orgJoiningDetailList["last"].Trim(),
+        Email = orgJoiningDetailList["email"].Trim(),
+        CiiOrgId = orgJoiningDetailList["org"].Trim(),
+        ErrorCode = errorCode
+      };
+    }
+
+    private Dictionary<string, string> DecryptTokenAndReturnDetails(string joiningDetailsToken)
+    {
+      joiningDetailsToken = joiningDetailsToken?.Replace(" ", "+");
+
+      string orgJoiningDetails = _cryptographyService.DecryptString(joiningDetailsToken, _appConfigInfo.TokenEncryptionKey);
+
+      if (string.IsNullOrWhiteSpace(orgJoiningDetails))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDetail);
+      }
+
+      Dictionary<string, string> orgJoiningDetailList = orgJoiningDetails.Split('&').Select(value => value.Split('='))
+                                                  .ToDictionary(pair => pair[0], pair => pair[1]);
+
+      return orgJoiningDetailList;
+    }
+
+    private async Task<string> ValidateJoiningRequestAsync(Dictionary<string, string> orgJoiningDetailList)
+    {
+      string errorCode = string.Empty;
+      DateTime expirationTime = Convert.ToDateTime(orgJoiningDetailList["exp"]);
+
+      if (_requestContext.CiiOrganisationId != orgJoiningDetailList["org"]?.Trim())
+      {
+        throw new ForbiddenException();
+      }
+      else if (expirationTime < DateTime.UtcNow)
+      {
+        errorCode = ErrorConstant.ErrorLinkExpired;
+      }
+      else if (await IsUserExist(orgJoiningDetailList["email"]?.Trim()))
+      {
+        errorCode = ErrorConstant.ErrorUserAlreadyExists;
+      }
+
+      return errorCode;
+    }
   }
 }

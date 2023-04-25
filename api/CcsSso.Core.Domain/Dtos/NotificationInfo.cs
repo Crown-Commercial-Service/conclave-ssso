@@ -14,5 +14,7 @@ namespace CcsSso.Core.Domain.Dtos
 
     public string FirstName { get; set; }
     public string LastName { get; set; }
+
+    public string CiiOrganisationId { get; set; }
   }
 }

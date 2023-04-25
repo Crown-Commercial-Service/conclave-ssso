@@ -16,11 +16,13 @@ namespace CcsSso.Core.Service
 
     private readonly IEmailProviderService _emaillProviderService;
     private readonly ApplicationConfigurationInfo _appConfigInfo;
+    private readonly ICryptographyService _cryptographyService;
 
-    public CcsSsoEmailService(IEmailProviderService emaillProviderService, ApplicationConfigurationInfo appConfigInfo)
+    public CcsSsoEmailService(IEmailProviderService emaillProviderService, ApplicationConfigurationInfo appConfigInfo, ICryptographyService cryptographyService)
     {
       _emaillProviderService = emaillProviderService;
       _appConfigInfo = appConfigInfo;
+      _cryptographyService = cryptographyService;
     }
 
     public async Task SendUserWelcomeEmailAsync(string email, string idpName)
@@ -97,12 +99,17 @@ namespace CcsSso.Core.Service
 
     public async Task SendOrgJoinRequestEmailAsync(OrgJoinNotificationInfo orgJoinNotificationInfo)
     {
+      string activationInfo = "first=" + orgJoinNotificationInfo.FirstName + "&last=" + orgJoinNotificationInfo.LastName + "&email=" + orgJoinNotificationInfo.Email + 
+                              "&org=" + orgJoinNotificationInfo.CiiOrganisationId + "&exp=" + DateTime.UtcNow.AddMinutes(_appConfigInfo.NewUserJoinRequest.LinkExpirationInMinutes);
+      var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.TokenEncryptionKey);
+
       var data = new Dictionary<string, dynamic>
       {
         { "firstname", orgJoinNotificationInfo.FirstName },
         { "lastname", orgJoinNotificationInfo.LastName },
         { "email", orgJoinNotificationInfo.Email },
-        { "conclaveloginlink", _appConfigInfo.ConclaveSettings.BaseUrl }
+        { "conclaveloginlink", _appConfigInfo.ConclaveSettings.BaseUrl + _appConfigInfo.ConclaveSettings.VerifyUserDetailsRoute + 
+        "?details=" + encryptedInfo}
       };
       var emailInfo = new EmailInfo()
       {

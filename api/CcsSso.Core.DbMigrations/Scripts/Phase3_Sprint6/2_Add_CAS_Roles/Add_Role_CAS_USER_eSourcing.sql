@@ -1,5 +1,4 @@
 
-
 CREATE OR REPLACE FUNCTION AddRole() RETURNS integer AS $$
 
 DECLARE serviceName text = 'eSourcing';
@@ -43,7 +42,7 @@ SELECT "Id" into RoleId From public."CcsAccessRole" WHERE "CcsAccessRoleNameKey"
 INSERT INTO public."ServiceRolePermission"(
 	"ServicePermissionId", "CcsAccessRoleId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
 	VALUES (ServicePermissionId, RoleId, 0, 0, now(), now(), false);
-	
+
 
 	RETURN 1;
 	END;
@@ -54,4 +53,3 @@ SELECT setval('"ServicePermission_Id_seq"', max("Id")) FROM "ServicePermission";
 SELECT setval('"ServiceRolePermission_Id_seq"', max("Id")) FROM "ServiceRolePermission";
 SELECT AddRole();
 DROP FUNCTION AddRole;
-

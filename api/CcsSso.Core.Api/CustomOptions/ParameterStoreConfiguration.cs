@@ -74,6 +74,7 @@ namespace CcsSso.Core.Api.CustomOptions
 
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ConclaveSettings/BaseUrl", "ConclaveSettings:BaseUrl"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ConclaveSettings/OrgRegistrationRoute", "ConclaveSettings:OrgRegistrationRoute"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ConclaveSettings/VerifyUserDetailsRoute", "ConclaveSettings:VerifyUserDetailsRoute"));
 
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "JwtTokenValidationInfo/IdamClienId", "JwtTokenValidationInfo:IdamClienId"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "JwtTokenValidationInfo/Issuer", "JwtTokenValidationInfo:Issuer"));
@@ -149,6 +150,9 @@ namespace CcsSso.Core.Api.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "LookUpApiSettings/LookUpApiUrl", "LookUpApiSettings:LookUpApiUrl"));
 
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/Enable", "UserRoleApproval:Enable"));
+      
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "TokenEncryptionKey", "TokenEncryptionKey"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "NewUserJoinRequest/LinkExpirationInMinutes", "NewUserJoinRequest:LinkExpirationInMinutes"));
 
       foreach (var configuration in configurations)
       {
