@@ -10,5 +10,7 @@ namespace CcsSso.Core.Domain.Contracts.External
     Task<DataMigrationStatusResponse> UploadDataMigrationFileAsync(IFormFile file);
 
     Task<DataMigrationStatusResponse> CheckDataMigrationStatusAsync(string fileKey);
+
+    Task<DataMigrationListResponse> GetAllAsync(ResultSetCriteria resultSetCriteria);
   }
 }

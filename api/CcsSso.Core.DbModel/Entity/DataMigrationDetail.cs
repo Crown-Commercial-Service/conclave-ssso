@@ -8,6 +8,8 @@ namespace CcsSso.Core.DbModel.Entity
   {
     public int Id { get; set; }
 
+    public string FileName { get; set; }
+
     public string FileKey { get; set; }
 
     public string FileKeyId { get; set; }

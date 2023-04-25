@@ -54,7 +54,7 @@ namespace CcsSso.Service.External
       var extension = Path.GetExtension(file.FileName);
       if (extension.ToLower() != ".csv")
       {
-        throw new CcsSsoException("INVALID_BULKUPLOAD_FILE_TYPE");
+        throw new CcsSsoException("INVALID_DATA_MIGRATION_FILE_TYPE");
       }
       var dataMigrationStatusResponse = new DataMigrationStatusResponse { ErrorDetails = new List<KeyValuePair<string, string>>() };
       var fileKeyId = Guid.NewGuid().ToString();
@@ -66,17 +66,18 @@ namespace CcsSso.Service.External
 
       DataMigrationDetail dataMigrationDetail = new DataMigrationDetail
       {
+        FileName = file.FileName,
         FileKeyId = fileKeyId,
         FileKey = fileKey,
         DocUploadId = docUploadResult.Id,
-        DataMigrationStatus = DataMigrationStatus.DocUploading,
+        DataMigrationStatus = DataMigrationStatus.Uploading,
         ValidationErrorDetails = JsonConvert.SerializeObject(new List<KeyValuePair<string, string>>())
       };
 
       _dataContext.DataMigrationDetail.Add(dataMigrationDetail);
       await _dataContext.SaveChangesAsync();
       dataMigrationStatusResponse.Id = fileKeyId;
-      dataMigrationStatusResponse.DataMigrationStatus = DataMigrationStatus.DocUploading;
+      dataMigrationStatusResponse.DataMigrationStatus = DataMigrationStatus.Uploading;
       return dataMigrationStatusResponse;
     }
 
@@ -98,13 +99,13 @@ namespace CcsSso.Service.External
         throw new ResourceNotFoundException();
       }
 
-      if (dataMigrationDetail.DataMigrationStatus == DataMigrationStatus.DocUploading)
+      if (dataMigrationDetail.DataMigrationStatus == DataMigrationStatus.Uploading)
       {
         var validationStatus = await GetValidationProcessingStatusAsync(dataMigrationDetail.FileKey, dataMigrationDetail);
         dataMigrationStatusResponse.DataMigrationStatus = validationStatus.dataMigrationStatus;
         dataMigrationStatusResponse.ErrorDetails = validationStatus.errorDetails;
       }
-      else if (dataMigrationDetail.DataMigrationStatus == DataMigrationStatus.MigrationCompleted)
+      else if (dataMigrationDetail.DataMigrationStatus == DataMigrationStatus.Completed)
       {
         DataMigrationMigrationReportDetails dataMigrationMigrationReportDetails = new()
         {
@@ -127,6 +128,50 @@ namespace CcsSso.Service.External
       return dataMigrationStatusResponse;
     }
 
+    public async Task<DataMigrationListResponse> GetAllAsync(ResultSetCriteria resultSetCriteria)
+    {
+      var dataMigration = await _dataContext.GetPagedResultAsync(_dataContext.DataMigrationDetail
+        .Where(x => !x.IsDeleted)
+        .Select(dataMigrationDetail => new DataMigrationListInfo
+        {
+          Id = dataMigrationDetail.FileKeyId,
+          FileName = dataMigrationDetail.FileName,
+          DateOfUpload = dataMigrationDetail.CreatedOnUtc,
+          Status = dataMigrationDetail.DataMigrationStatus,
+          CreatedUserId = dataMigrationDetail.CreatedUserId,
+        })
+        .OrderByDescending(o => o.Id), resultSetCriteria);
+
+      if (dataMigration.Results != null && dataMigration.Results.Count > 0)
+      {
+        var createdUserIds = dataMigration.Results.Select(x => x.CreatedUserId).ToList();
+
+        var users = await _dataContext.User
+          .Include(u => u.Party).ThenInclude(p => p.Person)
+          .Where(u => !u.IsDeleted && createdUserIds.Contains(u.Id))
+          .ToListAsync();
+
+        foreach (var dataMigrationResult in dataMigration.Results)
+        {
+          var user = users.FirstOrDefault(x => x.Id == dataMigrationResult.CreatedUserId);
+          var fName = user?.Party.Person.FirstName;
+          var lName = user?.Party.Person.LastName;
+
+          dataMigrationResult.Name = String.Join(fName, " ", lName);
+        }
+      }
+
+      var dataMigrationListResponse = new DataMigrationListResponse
+      {
+        CurrentPage = dataMigration.CurrentPage,
+        PageCount = dataMigration.PageCount,
+        RowCount = dataMigration.RowCount,
+        DataMigrationList = dataMigration.Results ?? new List<DataMigrationListInfo>()
+      };
+
+      return dataMigrationListResponse;
+    }
+
     /// <summary>
     /// Check the actual status of the file processing
     /// </summary>
@@ -142,7 +187,7 @@ namespace CcsSso.Service.External
       //errorDetails.Add(new KeyValuePair<string, string>("Invalid Value", "Email in row 1"));
       if (docUploadDetails.State == "processing")
       {
-        dataMigrationStatus = DataMigrationStatus.DocUploading;
+        dataMigrationStatus = DataMigrationStatus.Uploading;
       }
       else if (docUploadDetails.State == "safe")
       {
@@ -153,22 +198,22 @@ namespace CcsSso.Service.External
         if (!errors.Any()) // No errors
         {
           // TODO Push to DM
-          await SaveValidationStatusAsync(DataMigrationStatus.Migrating, dataMigrationDetail, errorDetails, DateTime.UtcNow);
-          dataMigrationStatus = DataMigrationStatus.Migrating;
+          await SaveValidationStatusAsync(DataMigrationStatus.Processing, dataMigrationDetail, errorDetails, DateTime.UtcNow);
+          dataMigrationStatus = DataMigrationStatus.Processing;
         }
         else
         {
           errorDetails.AddRange(errors);
-          await SaveValidationStatusAsync(DataMigrationStatus.ValidationFail, dataMigrationDetail, errorDetails);
-          dataMigrationStatus = DataMigrationStatus.ValidationFail;
+          await SaveValidationStatusAsync(DataMigrationStatus.Failed, dataMigrationDetail, errorDetails);
+          dataMigrationStatus = DataMigrationStatus.Failed;
         }
       }
       else // Not safe may be virus in file
       {
         errorDetails.Add(new KeyValuePair<string, string>("File validation failed", "Unsafe file"));
-        await SaveValidationStatusAsync(DataMigrationStatus.DocUploadValidationFail, dataMigrationDetail, errorDetails);
+        await SaveValidationStatusAsync(DataMigrationStatus.Failed, dataMigrationDetail, errorDetails);
         // TODO Delete the file
-        dataMigrationStatus = DataMigrationStatus.DocUploadValidationFail;
+        dataMigrationStatus = DataMigrationStatus.Failed;
       }
       return (dataMigrationStatus: dataMigrationStatus, errorDetails: errorDetails);
     }
@@ -199,7 +244,7 @@ namespace CcsSso.Service.External
     private async Task<List<KeyValuePair<string, string>>> ValidateUploadedFileAsync(string fileKey)
     {
       var fileContentString = await _awsS3Service.ReadObjectDataStringAsync(fileKey, _s3ConfigurationInfo.DataMigrationBucketName);
-      var errorDetails = _dataMigrationFileValidatorService.ValidateUploadedFile(fileKey, fileContentString);
+      var errorDetails = await _dataMigrationFileValidatorService.ValidateUploadedFile(fileKey, fileContentString);
       return errorDetails;
     }
 

@@ -292,5 +292,32 @@ namespace CcsSso.Shared.Domain.Helpers
       return list.Skip(skip).Take(pageSize).ToList();
     }
 
+    public static bool IsFirstNameFormatValid(string firstName)
+    {
+      if (string.IsNullOrWhiteSpace(firstName))
+      {
+        return false;
+      }
+      else
+      {
+        Regex regex = new Regex(RegexExpression.VALID_FIRSTNAME_FORMAT_REGEX);
+        Match match = regex.Match(firstName);
+        return match.Success;
+      }
+    }
+
+    public static bool IsLastNameFormatValid(string lastName)
+    {
+      if (string.IsNullOrWhiteSpace(lastName))
+      {
+        return false;
+      }
+      else
+      {
+        Regex regex = new Regex(RegexExpression.VALID_LASTNAMEL_FORMAT_REGEX);
+        Match match = regex.Match(lastName);
+        return match.Success;
+      }
+    }
   }
 }

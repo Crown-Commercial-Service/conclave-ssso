@@ -2365,5 +2365,10 @@ namespace CcsSso.Core.Service.External
       }
     }
 
+    public async Task<List<User>> GetUsersAsync()
+    {
+      var users = await _dataContext.User.Where(u => !u.IsDeleted).ToListAsync();
+      return users;
+    }
   }
 }
