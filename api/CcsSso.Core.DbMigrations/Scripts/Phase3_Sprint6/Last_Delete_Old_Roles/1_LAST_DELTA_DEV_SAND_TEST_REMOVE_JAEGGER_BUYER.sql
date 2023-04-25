@@ -94,7 +94,7 @@ orgsAffectedCount = 0;
 		IF (reportingModeOn = 'false') THEN
 			UPDATE "OrganisationEligibleRole" SET "IsDeleted" = true, "LastUpdatedOnUtc" = timezone('utc', now()) 
 			WHERE "IsDeleted" = false AND "Id" = organisationEligibleRoleId;
-	
+
 		RAISE NOTICE '-------------------Role % deleted from OrganisationEligibleRole Id: % -------------------', ccsAccessRoleNameKey, organisationEligibleRoleId;
 		END IF;
 
@@ -111,7 +111,7 @@ orgsAffectedCount = 0;
 	IF (reportingModeOn = 'false') THEN
 			DELETE FROM "CcsServiceRoleMapping" WHERE "CcsAccessRoleId" = ccsAccessRoleId;
 			GET DIAGNOSTICS roleMappingDeleteCount = ROW_COUNT;
-			
+
 			IF(roleMappingDeleteCount > 0) THEN
 				RAISE NOTICE 'Role mapping deleted from CcsServiceRoleMapping table for role id: %', ccsAccessRoleId;
 			END IF;
@@ -120,7 +120,7 @@ orgsAffectedCount = 0;
 	IF (reportingModeOn = 'false') THEN
 			DELETE FROM "AutoValidationRole" WHERE "CcsAccessRoleId" = ccsAccessRoleId;
 			GET DIAGNOSTICS autoValidationRoleDeletedCount = ROW_COUNT;
-			
+
 			IF(autoValidationRoleDeletedCount > 0) THEN
 				RAISE NOTICE 'Role deleted from AutoValidationRole table for role id: %', ccsAccessRoleId;
 			END IF;

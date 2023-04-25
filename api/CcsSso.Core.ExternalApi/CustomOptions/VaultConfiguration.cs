@@ -232,6 +232,13 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("ServiceRoleGroupSettings:Enable", serviceRoleGroupSettings.Enable.ToString());
       }
 
+      if (_secrets.Data.ContainsKey("NewUserJoinRequest"))
+      {
+        var serviceRoleGroupSettings = JsonConvert.DeserializeObject<NewUserJoinRequest>(_secrets.Data["NewUserJoinRequest"].ToString());
+        Data.Add("NewUserJoinRequest:LinkExpirationInMinutes", serviceRoleGroupSettings.LinkExpirationInMinutes.ToString());
+      }
+
+      Data.Add("TokenEncryptionKey", _secrets.Data["TokenEncryptionKey"].ToString());
     }
   }
 

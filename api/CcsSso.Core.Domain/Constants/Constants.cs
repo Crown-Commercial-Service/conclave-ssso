@@ -80,6 +80,9 @@ namespace CcsSso.Domain.Constants
     public const string ErrorUserHasValidDomain = "USER_HAS_VALID_DOMAIN";
     public const string ErrorInvalidCiiOrganisationIdOrUserId = "INVALID_CII_ORGANISATION_ID_OR_USER_ID";
 
+    public const string ErrorLinkExpired = "ERROR_LINK_EXPIRED";
+    public const string ErrorUserAlreadyExists = "ERROR_USER_ALREADY_EXISTS";
+
   }
 
   public static class VirtualContactTypeName
