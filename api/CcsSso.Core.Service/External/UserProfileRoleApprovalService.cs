@@ -1,4 +1,5 @@
 ﻿using CcsSso.Core.DbModel.Constants;
+using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.Exceptions;
@@ -13,7 +14,6 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
@@ -25,15 +25,17 @@ namespace CcsSso.Core.Service.External
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
     private readonly IUserProfileHelperService _userHelper;
     private readonly ICryptographyService _cryptographyService;
+    private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
 
     public UserProfileRoleApprovalService(IDataContext dataContext, ApplicationConfigurationInfo appConfigInfo, ICcsSsoEmailService ccsSsoEmailService,
-      IUserProfileHelperService userHelper, ICryptographyService cryptographyService)
+      IUserProfileHelperService userHelper, ICryptographyService cryptographyService, IServiceRoleGroupMapperService serviceRoleGroupMapperService)
     {
       _dataContext = dataContext;
       _appConfigInfo = appConfigInfo;
       _ccsSsoEmailService = ccsSsoEmailService;
       _userHelper = userHelper;
       _cryptographyService = cryptographyService;
+      _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
     }
 
     public async Task<bool> UpdateUserRoleStatusAsync(UserRoleApprovalEditRequest userApprovalRequest)
@@ -60,9 +62,12 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
       }
 
+      // Get all services with pending approval role
+      var serviceRoleGroupsWithApprovalRequiredRole = await _serviceRoleGroupMapperService.ServiceRoleGroupsWithApprovalRequiredRoleAsync();
+
       foreach (var pendingRoleId in pendingRoleIds)
       {
-        var pendingUserRole = await _dataContext.UserAccessRolePending
+        var pendingUserRole = await _dataContext.UserAccessRolePending.Include(x => x.OrganisationEligibleRole).ThenInclude(r => r.CcsAccessRole)
                    .FirstOrDefaultAsync(x => x.Id == pendingRoleId && !x.IsDeleted && x.Status == (int)UserPendingRoleStaus.Pending);
 
         if (pendingUserRole == null)
@@ -71,7 +76,7 @@ namespace CcsSso.Core.Service.External
         }
 
         var user = await _dataContext.User
-                  .Include(u => u.UserAccessRoles)
+                  .Include(u => u.UserAccessRoles).ThenInclude(u => u.OrganisationEligibleRole)
                   .FirstOrDefaultAsync(x => x.Id == pendingUserRole.UserId && !x.IsDeleted && x.UserType == UserType.Primary);
 
         if (user == null)
@@ -90,16 +95,40 @@ namespace CcsSso.Core.Service.External
           pendingUserRole.Status = (int)UserPendingRoleStaus.Approved;
           pendingUserRole.IsDeleted = true;
 
-          var roleAleadyExists = await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.UserId == pendingUserRole.UserId && !x.IsDeleted && x.OrganisationEligibleRoleId == pendingUserRole.OrganisationEligibleRoleId);
+          var roleAlreadyExists = await _dataContext.UserAccessRole.FirstOrDefaultAsync(x => x.UserId == pendingUserRole.UserId && !x.IsDeleted && x.OrganisationEligibleRoleId == pendingUserRole.OrganisationEligibleRoleId);
 
-          if (roleAleadyExists == null)
+          if (roleAlreadyExists == null)
           {
             user.UserAccessRoles.Add(new UserAccessRole
             {
               UserId = user.Id,
               OrganisationEligibleRoleId = pendingUserRole.OrganisationEligibleRoleId
             });
+
+            // On role approval assign normal roles of service as well
+            if (_appConfigInfo.ServiceRoleGroupSettings.Enable)
+            {
+              var serviceGroup = serviceRoleGroupsWithApprovalRequiredRole.FirstOrDefault(x => x.CcsServiceRoleMappings.Any(r => r.CcsAccessRoleId == pendingUserRole.OrganisationEligibleRole.CcsAccessRoleId));
+              var serviceMappingCcsRoleIds = serviceGroup.CcsServiceRoleMappings.Where(y => y.CcsAccessRole.ApprovalRequired == 0).Select(x => x.CcsAccessRoleId).ToList();
+
+              var allOrgEligibleRoles = await _dataContext.OrganisationEligibleRole.Include(or => or.CcsAccessRole)
+                                        .Where(x => !x.IsDeleted && x.OrganisationId == pendingUserRole.OrganisationEligibleRole.OrganisationId &&
+                                                serviceMappingCcsRoleIds.Contains(x.CcsAccessRoleId)).ToListAsync();
+              foreach (var orgRole in allOrgEligibleRoles)
+              {
+                if (!user.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == orgRole.Id && !x.IsDeleted))
+                {
+                  user.UserAccessRoles.Add(new UserAccessRole
+                  {
+                    UserId = user.Id,
+                    OrganisationEligibleRoleId = orgRole.Id
+                  });
+                }
+              }
+
+            }
           }
+
         }
 
         await _dataContext.SaveChangesAsync();
@@ -111,6 +140,11 @@ namespace CcsSso.Core.Service.External
         if (orgEligibleRole != null)
         {
           serviceName = orgEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName;
+          if (_appConfigInfo.ServiceRoleGroupSettings.Enable)
+          {
+            var roleServiceInfo = await _serviceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(new List<int>() { orgEligibleRole.CcsAccessRoleId });
+            serviceName = roleServiceInfo?.FirstOrDefault()?.Name;
+          }
         }
 
         var emailList = new List<string>() { user.UserName };
@@ -169,9 +203,10 @@ namespace CcsSso.Core.Service.External
 
       var userAccessRolePendingListResponse = userAccessRolePendingAllList.Select(u => new UserAccessRolePendingDetails()
       {
-        Status = u.Status,
+        RoleId = u.OrganisationEligibleRole.CcsAccessRole.Id,
         RoleKey = u.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
-        RoleName = u.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName
+        RoleName = u.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
+        Status = u.Status,
       }).ToList();
 
       return userAccessRolePendingListResponse;
@@ -271,6 +306,7 @@ namespace CcsSso.Core.Service.External
         {
           Id = userAccessRolePendingRoleDetails.Id,
           UserName = userAccessRoleUserDetails.User.UserName,
+          RoleId = userAccessRolePendingRoleDetails.OrganisationEligibleRole.CcsAccessRoleId,
           RoleName = userAccessRolePendingRoleDetails.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
           RoleKey = userAccessRolePendingRoleDetails.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
           Status = isLinkExpired ? (int)UserPendingRoleStaus.Expired : userAccessRolePendingRoleDetails.Status
@@ -385,11 +421,11 @@ namespace CcsSso.Core.Service.External
 
       if (rolesToSendEmail.Count > 0)
       {
-        await SenEmailForApprovalPendingRolesAsync(user, rolesToSendEmail);
+        await SendEmailForApprovalPendingRolesAsync(user, rolesToSendEmail);
       }
     }
 
-    private async Task SenEmailForApprovalPendingRolesAsync(User user, List<int> roles)
+    private async Task SendEmailForApprovalPendingRolesAsync(User user, List<int> roles)
     {
       var userAccessRolePendingList = await _dataContext.UserAccessRolePending
         .Include(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
@@ -413,6 +449,12 @@ namespace CcsSso.Core.Service.External
             var encryptedRoleApprovalInfo = _cryptographyService.EncryptString(roleApprovalInfo, _appConfigInfo.UserRoleApproval.RoleApprovalTokenEncryptionKey);
             string serviceName = userAccessRolePending.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName;
 
+            if (_appConfigInfo.ServiceRoleGroupSettings.Enable)
+            {
+              var roleServiceInfo = await _serviceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(new List<int>() { userAccessRolePending.OrganisationEligibleRole.CcsAccessRole.Id });
+              serviceName = roleServiceInfo?.FirstOrDefault()?.Name;
+            }
+
             string[] notificationEmails = roleApprovalConfiguration.NotificationEmails.Split(',');
 
             foreach (var notificationEmail in notificationEmails)
@@ -423,5 +465,66 @@ namespace CcsSso.Core.Service.External
         }
       }
     }
+
+    public async Task<List<UserServiceRoleGroupPendingDetails>> GetUserServiceRoleGroupsPendingForApprovalAsync(string userName)
+    {
+      if (!_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      List<UserServiceRoleGroupPendingDetails> userServiceRoleGroups = new List<UserServiceRoleGroupPendingDetails>();
+
+      var userRolesPendingForApproval = await this.GetUserRolesPendingForApprovalAsync(userName);
+
+      var roleIds = userRolesPendingForApproval.Select(x => x.RoleId).ToList();
+
+      var serviceRoleGroups = await _serviceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(roleIds);
+
+      foreach (var userRolePendingForApproval in userRolesPendingForApproval)
+      {
+        var serviceRoleGroup = serviceRoleGroups.FirstOrDefault(x => x.CcsServiceRoleMappings.Any(r => r.CcsAccessRoleId == userRolePendingForApproval.RoleId));
+
+        if (serviceRoleGroup != null)
+        {
+          userServiceRoleGroups.Add(new UserServiceRoleGroupPendingDetails()
+          {
+            Id = serviceRoleGroup.Id,
+            Key = serviceRoleGroup.Key,
+            Name = serviceRoleGroup.Name,
+            Status = userRolePendingForApproval.Status
+          });
+        }
+      }
+
+      return userServiceRoleGroups;
+    }
+
+    public async Task<UserAccessServiceRoleGroupPendingTokenDetails> VerifyAndReturnServiceRoleGroupApprovalTokenDetailsAsync(string token)
+    {
+      if (!_appConfigInfo.UserRoleApproval.Enable || !_appConfigInfo.ServiceRoleGroupSettings.Enable)
+      {
+        throw new InvalidOperationException();
+      }
+
+      var tokenDetails = await VerifyAndReturnRoleApprovalTokenDetailsAsync(token);
+      CcsServiceRoleGroup serviceRoleGroupDetails = new();
+
+      if (tokenDetails?.RoleId != null)
+      {
+        var serviceRoleGroups = await _serviceRoleGroupMapperService.CcsRolesToServiceRoleGroupsAsync(new List<int> { tokenDetails.RoleId });
+        serviceRoleGroupDetails = serviceRoleGroups.FirstOrDefault();
+      }
+
+      return new UserAccessServiceRoleGroupPendingTokenDetails()
+      {
+        Id = tokenDetails.Id,
+        Key = serviceRoleGroupDetails?.Key,
+        Name = serviceRoleGroupDetails?.Name,
+        UserName = tokenDetails.UserName,
+        Status = tokenDetails.Status
+      };
+    }
+
   }
 }

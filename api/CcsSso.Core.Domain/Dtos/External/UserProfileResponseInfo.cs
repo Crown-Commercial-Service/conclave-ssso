@@ -1,11 +1,7 @@
-using CcsSso.Domain.Constants;
+using CcsSso.Core.DbModel.Constants;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
-using CcsSso.Core.DbModel.Constants;
+using System.Text.Json.Serialization;
 
 namespace CcsSso.Core.Domain.Dtos.External
 {
@@ -37,18 +33,26 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   }
 
-  public class UserRequestDetail
+  public class UserRequestMain
   {
     public int Id { get; set; }
 
     public List<int> GroupIds { get; set; }
 
-    public List<int> RoleIds { get; set; }
-
     public List<int> IdentityProviderIds { get; set; }
   }
 
-  public class UserResponseDetail
+  public class UserRequestDetail : UserRequestMain
+  {
+    public List<int> RoleIds { get; set; }
+  }
+
+  public class UserServiceRoleGroupRequestDetail : UserRequestMain
+  {
+    public List<int> ServiceRoleGroupIds { get; set; }
+  }
+
+  public class UserResponseMain
   {
     public int Id { get; set; }
 
@@ -56,12 +60,21 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public bool CanChangePassword { get; set; }
 
-    public List<RolePermissionInfo> RolePermissionInfo { get; set; }
-
     public List<UserIdentityProviderInfo> IdentityProviders { get; set; }
     // #Delegated
     public UserDelegationDetails[]? DelegatedOrgs { get; set; }
   }
+
+  public class UserResponseDetail : UserResponseMain
+  {
+    public List<RolePermissionInfo> RolePermissionInfo { get; set; }
+  }
+
+  public class UserServiceRoleGroupResponseDetail : UserResponseMain
+  {
+    public List<ServiceRoleGroupInfo> ServiceRoleGroupInfo { get; set; }
+  }
+
   // #Delegated
   public class UserDelegationDetails
   {
@@ -98,9 +111,26 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string ServiceClientName { get; set; }
   }
 
+  public class ServiceRoleGroupInfo
+  {
+    [JsonPropertyOrder(-1)]
+    public int Id { get; set; }
+
+    [JsonPropertyOrder(-1)]
+    public string Name { get; set; }
+
+    [JsonPropertyOrder(-1)]
+    public string Key { get; set; }
+  }
+
   public class UserProfileEditRequestInfo : UserDetail
   {
     public UserRequestDetail Detail { get; set; }
+  }
+
+  public class UserProfileServiceRoleGroupEditRequestInfo : UserDetail
+  {
+    public UserServiceRoleGroupRequestDetail Detail { get; set; }
   }
 
   public class UserProfileResponseInfo : UserDetail
@@ -108,7 +138,12 @@ namespace CcsSso.Core.Domain.Dtos.External
     public UserResponseDetail Detail { get; set; }
   }
 
-  public class UserListInfo
+  public class UserProfileServiceRoleGroupResponseInfo : UserDetail
+  {
+    public UserServiceRoleGroupResponseDetail Detail { get; set; }
+  }
+
+  public class UserList
   {
     public string Name { get; set; }
 
@@ -125,9 +160,18 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public bool? DelegationAccepted { get; set; }
 
-    public List<RolePermissionInfo> RolePermissionInfo { get; set; }
-
     public bool IsAdmin { get; set; } = false;
+
+  }
+
+  public class UserListInfo:UserList
+  {
+    public List<RolePermissionInfo> RolePermissionInfo { get; set; }
+  }
+
+  public class UserListWithServiceRoleGroupInfo:UserList
+  {
+    public List<ServiceRoleGroupInfo> ServicePermissionInfo { get; set; }
   }
 
   public class AdminUserListInfo
@@ -146,6 +190,12 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string OrganisationId { get; set; }
 
     public List<UserListInfo> UserList { get; set; }
+  }
+
+  public class UserListWithServiceGroupRoleResponse : PaginationInfo
+  {
+    public string OrganisationId { get; set; }
+    public List<UserListWithServiceRoleGroupInfo> UserList { get; set; }
   }
 
   public class AdminUserListResponse : PaginationInfo
@@ -182,6 +232,14 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string UserName { get; set; }
     public DelegatedUserRequestDetail Detail { get; set; }
   }
+
+  public class DelegatedUserProfileServiceRoleGroupRequestInfo
+  {
+    public string UserName { get; set; }
+    public DelegatedUserServiceRoleGroupRequestDetail Detail { get; set; }
+  }
+
+
   // #Delegated
   public class DelegatedUserRequestDetail
   {
@@ -193,14 +251,27 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public DateTime EndDate { get; set; }
   }
+  public class DelegatedUserServiceRoleGroupRequestDetail
+  {
+    public string DelegatedOrgId { get; set; }
+
+    public List<int> ServiceRoleGroupIds { get; set; }
+
+    public DateTime StartDate { get; set; }
+
+    public DateTime EndDate { get; set; }
+  }
+
 
   public class UserAccessRolePendingDetails
   {
-    public int Status { get; set; }
-   
-    public string RoleName { get; set; }
-    
+    public int RoleId { get; set; }
     public string RoleKey { get; set; }
+
+    public string RoleName { get; set; }
+
+    public int Status { get; set; }
+
   }
 
   public class UserAccessRolePendingTokenDetails : UserAccessRolePendingDetails
@@ -219,4 +290,19 @@ namespace CcsSso.Core.Domain.Dtos.External
     public UserPendingRoleStaus Status { get; set; }
   }
 
+  public class UserServiceRoleGroupPendingDetails
+  {
+    public int Id { get; set; }
+
+    public string Key { get; set; }
+
+    public string Name { get; set; }
+
+    public int Status { get; set; }
+  }
+
+  public class UserAccessServiceRoleGroupPendingTokenDetails : UserServiceRoleGroupPendingDetails
+  {
+    public string UserName { get; set; }
+  }
 }
