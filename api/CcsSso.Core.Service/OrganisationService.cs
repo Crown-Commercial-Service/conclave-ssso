@@ -271,7 +271,8 @@ namespace CcsSso.Service
           Email = organisationJoinRequest.Email,
           FirstName = organisationJoinRequest.FirstName,
           LastName = organisationJoinRequest.LastName,
-          ToEmail = orgAdmin.Email
+          ToEmail = orgAdmin.Email,
+          CiiOrganisationId = organisationJoinRequest.CiiOrgId
         });
       }
     }

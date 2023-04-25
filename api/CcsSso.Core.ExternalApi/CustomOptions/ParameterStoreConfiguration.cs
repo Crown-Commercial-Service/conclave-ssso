@@ -154,6 +154,9 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserRoleApproval/UserRoleRejectedEmailTemplateId", "UserRoleApproval:UserRoleRejectedEmailTemplateId"));
 
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "ServiceRoleGroupSettings/Enable", "ServiceRoleGroupSettings:Enable"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "TokenEncryptionKey", "TokenEncryptionKey"));
+
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "NewUserJoinRequest/LinkExpirationInMinutes", "NewUserJoinRequest:LinkExpirationInMinutes"));
 
       foreach (var configuration in configurations)
       {

@@ -1,4 +1,4 @@
-﻿using Amazon.SimpleSystemsManagement.Model;
+using Amazon.SimpleSystemsManagement.Model;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
