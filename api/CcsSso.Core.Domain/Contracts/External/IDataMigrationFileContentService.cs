@@ -10,8 +10,6 @@ namespace CcsSso.Core.Domain.Contracts.External
   {
     Task<List<KeyValuePair<string, string>>> ValidateUploadedFile(string fileKey, string fileContentString);
 
-    DataMigrationResult CheckMigrationStatus(string fileContentString);
-
     List<DataMigrationFileContentRowDetails> GetFileContentObject(string fileContentString);
   }
 }

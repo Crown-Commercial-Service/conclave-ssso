@@ -59,59 +59,6 @@ namespace CcsSso.Service.External
       return errorDetails;
     }
 
-    public DataMigrationResult CheckMigrationStatus(string fileContentString)
-    {
-      var fileRows = GetFileRows(fileContentString);
-      var fileHeaders = GetFileHeaders(fileRows);
-      bool isCompleted = true;
-      List<string> organisationIdentifiers = new();
-      List<string> users = new();
-      List<string> failedUsers = new();
-      List<string> succeededUsers = new();
-
-      var statusHeaderIndex = fileHeaders.FindIndex(h => h == "Status");
-      var organisationHeaderIndex = fileHeaders.FindIndex(h => h == "identifier-id");
-      var emailHeaderIndex = fileHeaders.FindIndex(h => h == "email");
-
-      foreach (var row in fileRows.Skip(headerTitleRowCount).ToList())
-      {
-        var rowDataColumns = GetRowColumnData(row);
-
-        if (rowDataColumns.Count() != migrationFileHeaderCount || string.IsNullOrWhiteSpace(rowDataColumns[statusHeaderIndex]))
-        {
-          isCompleted = false;
-          break;
-        }
-        else
-        {
-          organisationIdentifiers.Add(rowDataColumns[organisationHeaderIndex]);
-          users.Add(rowDataColumns[emailHeaderIndex]);
-          if (rowDataColumns[statusHeaderIndex] == "Success")
-          {
-            succeededUsers.Add(rowDataColumns[emailHeaderIndex]);
-          }
-          else
-          {
-            failedUsers.Add(rowDataColumns[emailHeaderIndex]);
-          }
-        }
-      }
-
-      var totalOrganisationCount = organisationIdentifiers.Distinct().Count();
-      var totalUserCount = users.Distinct().Count();
-      var totalProceedUserCount = succeededUsers.Distinct().Count();
-      var failedUserCount = failedUsers.Distinct().Count();
-
-      return new DataMigrationResult
-      {
-        IsCompleted = isCompleted,
-        TotalOrganisationCount = totalOrganisationCount,
-        TotalUserCount = totalUserCount,
-        FailedUserCount = failedUserCount,
-        ProceededUserCount = totalProceedUserCount
-      };
-    }
-
     public List<DataMigrationFileContentRowDetails> GetFileContentObject(string fileContentString)
     {
       List<DataMigrationFileContentRowDetails> dataMigrationFileContentRowDetails = new();
@@ -120,32 +67,37 @@ namespace CcsSso.Service.External
 
       foreach (var row in fileRows.Skip(headerTitleRowCount).ToList())
       {
-        var rowDataColumns = GetRowColumnData(row);
-        if (rowDataColumns.Count() == migrationFileHeaderCount)
-        {
-          var dataMigrationFileContentRowDetail = new DataMigrationFileContentRowDetails
-          {
-            IdentifierId = rowDataColumns[0],
-            SchemeId = rowDataColumns[1],
-            OrganisationType = rowDataColumns[2],
-            EmailAddress = rowDataColumns[3],
-            DomainName = rowDataColumns[4],
-            Title = rowDataColumns[5],
-            FirstName = rowDataColumns[6],
-            LastName = rowDataColumns[7],
-            OrganisationRoles = rowDataColumns[8],
-            UserRoles = rowDataColumns[9],
-            ContactEmail = rowDataColumns[10],
-            ContactMobile = rowDataColumns[11],
-            ContactPhone = rowDataColumns[12],
-            ContactFax = rowDataColumns[13],
-            ContactSocial = rowDataColumns[14],
-          };
-          dataMigrationFileContentRowDetails.Add(dataMigrationFileContentRowDetail);
-        }
+        GetRowContentObject(dataMigrationFileContentRowDetails, row);
       }
 
       return dataMigrationFileContentRowDetails;
+    }
+
+    private void GetRowContentObject(List<DataMigrationFileContentRowDetails> dataMigrationFileContentRowDetails, string row)
+    {
+      var rowDataColumns = GetRowColumnData(row);
+      if (rowDataColumns.Count() == migrationFileHeaderCount)
+      {
+        var dataMigrationFileContentRowDetail = new DataMigrationFileContentRowDetails
+        {
+          IdentifierId = rowDataColumns[0],
+          SchemeId = rowDataColumns[1],
+          OrganisationType = rowDataColumns[2],
+          EmailAddress = rowDataColumns[3],
+          DomainName = rowDataColumns[4],
+          Title = rowDataColumns[5],
+          FirstName = rowDataColumns[6],
+          LastName = rowDataColumns[7],
+          OrganisationRoles = rowDataColumns[8],
+          UserRoles = rowDataColumns[9],
+          ContactEmail = rowDataColumns[10],
+          ContactMobile = rowDataColumns[11],
+          ContactPhone = rowDataColumns[12],
+          ContactFax = rowDataColumns[13],
+          ContactSocial = rowDataColumns[14],
+        };
+        dataMigrationFileContentRowDetails.Add(dataMigrationFileContentRowDetail);
+      }
     }
 
     private string[] GetFileRows(string fileContentString)
@@ -222,16 +174,21 @@ namespace CcsSso.Service.External
         var email = rowDataColumns[emailHeaderIndex];
         ValidateEmailAddress(errorDetails, users, fileRowNumber, email);
 
-        var firstNameHeaderIndex = fileHeaders.FindIndex(h => h == "FirstName");
-        var firstName = rowDataColumns[firstNameHeaderIndex];
-        ValidateFirstName(errorDetails, fileRowNumber, firstName);
-
-        var lastNameHeaderIndex = fileHeaders.FindIndex(h => h == "LastName");
-        var lastName = rowDataColumns[lastNameHeaderIndex];
-        ValidateLastName(errorDetails, fileRowNumber, lastName);
+        ValidateNameOfUser(fileHeaders, errorDetails, fileRowNumber, rowDataColumns);
       }
 
       return errorDetails;
+    }
+
+    private static void ValidateNameOfUser(List<string> fileHeaders, List<KeyValuePair<string, string>> errorDetails, int fileRowNumber, string[] rowDataColumns)
+    {
+      var firstNameHeaderIndex = fileHeaders.FindIndex(h => h == "FirstName");
+      var firstName = rowDataColumns[firstNameHeaderIndex];
+      ValidateFirstName(errorDetails, fileRowNumber, firstName);
+
+      var lastNameHeaderIndex = fileHeaders.FindIndex(h => h == "LastName");
+      var lastName = rowDataColumns[lastNameHeaderIndex];
+      ValidateLastName(errorDetails, fileRowNumber, lastName);
     }
 
     private static bool ValidateSchemeId(List<KeyValuePair<string, string>> errorDetails, Dtos.Domain.Models.CiiSchemeDto[] scheme, int fileRowNumber, string schemeId)
