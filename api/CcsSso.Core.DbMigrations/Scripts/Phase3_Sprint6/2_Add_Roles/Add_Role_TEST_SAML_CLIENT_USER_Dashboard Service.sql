@@ -18,6 +18,12 @@ if (clientServiceId is null) then
 	return 1;
 end if; 
 
+ IF EXISTS (SELECT "Id" FROM public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'TEST_SAML_CLIENT_USER' AND "CcsAccessRoleName" = 'SAML Client Tile' LIMIT 1) THEN
+	raise notice 'Role already exists';
+	return 1;
+ END IF;
+
+
 INSERT INTO public."ServicePermission"(
 	"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc","LastUpdatedOnUtc", "IsDeleted")
 	VALUES ('TEST_SAML_CLIENT_USER_DS', clientServiceId, 0, 0, now(), now(), false);
