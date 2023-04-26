@@ -647,10 +647,10 @@ namespace CcsSso.Core.Service.External
         {
           var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
 
-          //if (!deletingRoleIds.All(dr => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == dr)))
-          //{
-          //  throw new CcsSsoException("INVALID_ROLES_TO_DELETE");
-          //}
+          if (!deletingRoleIds.All(dr => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == dr)))
+          {
+            throw new CcsSsoException("INVALID_ROLES_TO_DELETE");
+          }
 
           var deletingOrgEligibleRoles = organisation.OrganisationEligibleRoles.Where(oer => deletingRoleIds.Contains(oer.CcsAccessRoleId)).ToList();
 
@@ -1589,10 +1589,22 @@ namespace CcsSso.Core.Service.External
         var userAccessRolesWithDeletedRoles = userAccessRolesForOrgUsers
           .Where(uar => deletingRoleIds.Contains(uar.OrganisationEligibleRole.CcsAccessRoleId)).ToList();
 
+        var allAccessRolePending = await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && u.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
         deletingOrgEligibleRoles.ForEach((deletingOrgEligibleRole) =>
         {
+          if (_applicationConfigurationInfo.UserRoleApproval.Enable)
+          {
+            var pendingRequests = allAccessRolePending.Where(x => x.OrganisationEligibleRoleId == deletingOrgEligibleRole.Id).ToList();
+            foreach (var pendingRequest in pendingRequests)
+            {
+              pendingRequest.IsDeleted = true;
+              pendingRequest.Status = (int)UserPendingRoleStaus.Removed;
+            }
+          }
+
           deletingOrgEligibleRole.IsDeleted = true;
           rolesRemoved.Append(rolesRemoved.Length > 0 ? "," + deletingOrgEligibleRole.CcsAccessRole.CcsAccessRoleName : deletingOrgEligibleRole.CcsAccessRole.CcsAccessRoleName);
+
         });
 
         orgGroupRolesWithDeletedRoles.ForEach((orgGroupRolesWithDeletedRole) =>
