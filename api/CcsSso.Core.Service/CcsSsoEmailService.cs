@@ -250,5 +250,19 @@ namespace CcsSso.Core.Service
       }
     }
 
+    public async Task SendDataMigrationValidationFailedAsync(string email, string link)
+    {
+      var data = new Dictionary<string, dynamic>
+      {
+        { "link", link }
+      };
+      var emailInfo = new EmailInfo()
+      {
+        To = email,
+        TemplateId = _appConfigInfo.DataMigrationSettings.DataMigrationValidationFailedTemplateId,
+        BodyContent = data
+      };
+      await SendEmailAsync(emailInfo);
+    }
   }
 }

@@ -165,6 +165,11 @@ namespace CcsSso.ExternalApi
             LinkExpirationInMinutes = Convert.ToInt32(Configuration["NewUserJoinRequest:LinkExpirationInMinutes"])
           },
           TokenEncryptionKey = Configuration["TokenEncryptionKey"],
+          DataMigrationSettings = new DataMigrationSettings()
+          {
+            DataMigrationValidationFailedTemplateId = Configuration["DataMigrationSettings:DataMigrationValidationFailedTemplateId"],
+            DataMigrationErrorPageUrl = Configuration["DataMigrationSettings:DataMigrationErrorPageUrl"]
+          },
         };
         return appConfigInfo;
       });

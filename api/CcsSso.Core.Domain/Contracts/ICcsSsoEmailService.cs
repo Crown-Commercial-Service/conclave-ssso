@@ -44,5 +44,7 @@ namespace CcsSso.Core.Domain.Contracts
 
     Task SendRoleApprovedEmailAsync(string email, string userName, string serviceName, string link);
     Task SendRoleRejectedEmailAsync(string email, string userName, string serviceName);
+
+    Task SendDataMigrationValidationFailedAsync(string email, string link);
   }
 }

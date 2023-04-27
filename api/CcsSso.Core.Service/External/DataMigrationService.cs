@@ -30,15 +30,22 @@ namespace CcsSso.Service.External
     private readonly IDataContext _dataContext;
     private readonly DocUploadConfig _docUploadConfig;
     private readonly IDataMigrationFileContentService _dataMigrationFileValidatorService;
-    public DataMigrationService(S3ConfigurationInfo s3ConfigurationInfo, IAwsS3Service awsS3Service, IDocUploadService docUploadService,
-      IDataContext dataContext, DocUploadConfig docUploadConfig, IDataMigrationFileContentService dataMigrationFileValidatorService)
+    private readonly ICcsSsoEmailService _ccsSsoEmailService;
+    private readonly ApplicationConfigurationInfo _appConfigInfo;
+
+    public DataMigrationService(ApplicationConfigurationInfo appConfigInfo, S3ConfigurationInfo s3ConfigurationInfo,
+      IAwsS3Service awsS3Service, IDocUploadService docUploadService, IDataContext dataContext,
+      DocUploadConfig docUploadConfig, IDataMigrationFileContentService dataMigrationFileValidatorService,
+      ICcsSsoEmailService ccsSsoEmailService)
     {
+      _appConfigInfo = appConfigInfo;
       _s3ConfigurationInfo = s3ConfigurationInfo;
       _awsS3Service = awsS3Service;
       _docUploadService = docUploadService;
       _dataContext = dataContext;
       _docUploadConfig = docUploadConfig;
       _dataMigrationFileValidatorService = dataMigrationFileValidatorService;
+      _ccsSsoEmailService = ccsSsoEmailService;
     }
 
     /// <summary>
@@ -99,7 +106,7 @@ namespace CcsSso.Service.External
 
       return dataMigrationStatusResponse;
     }
-     
+
 
     public async Task<DataMigrationListResponse> GetAllAsync(ResultSetCriteria resultSetCriteria)
     {
@@ -127,7 +134,7 @@ namespace CcsSso.Service.External
 
       return dataMigrationListResponse;
     }
-      
+
 
     /// <summary>
     /// Check the actual status of the file processing
@@ -199,7 +206,26 @@ namespace CcsSso.Service.External
     private async Task<DataMigrationStatus> SetValidationFailedStatusAsync(DataMigrationDetail dataMigrationDetail, List<KeyValuePair<string, string>> errorDetails)
     {
       await SaveValidationStatusAsync(DataMigrationStatus.Failed, dataMigrationDetail, errorDetails);
+      await SendDataMigrationValidationFailedAsync(dataMigrationDetail);
       return DataMigrationStatus.Failed;
+    }
+
+    private async Task SendDataMigrationValidationFailedAsync(DataMigrationDetail dataMigrationDetail)
+    {
+      try
+      {
+        var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.Id == dataMigrationDetail.CreatedUserId);
+        var errorPagelink = $"{_appConfigInfo.DataMigrationSettings.DataMigrationErrorPageUrl}/{dataMigrationDetail.FileKeyId}";
+        if (user != null)
+        {
+          await _ccsSsoEmailService.SendDataMigrationValidationFailedAsync(user.UserName, errorPagelink);
+        }
+      }
+      catch (Exception ex)
+      {
+        Console.Error.WriteLine($"Error sending email for data migration faild notification id: {dataMigrationDetail.FileKeyId}, error: {ex.Message}");
+        Console.Error.WriteLine(JsonConvert.SerializeObject(ex));
+      }
     }
 
     /// <summary>

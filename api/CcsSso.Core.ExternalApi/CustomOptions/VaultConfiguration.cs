@@ -260,6 +260,13 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
         Data.Add("DocUpload:SizeValidationValue", docUploadInfo.SizeValidationValue);
         Data.Add("DocUpload:TypeValidationValue", docUploadInfo.TypeValidationValue);
       }
+
+      if (_secrets.Data.ContainsKey("DataMigrationSettings"))
+      {
+        var dataMigrationSettings = JsonConvert.DeserializeObject<DataMigrationSettings>(_secrets.Data["DataMigrationSettings"].ToString());
+        Data.Add("DataMigrationSettings:DataMigrationValidationFailedTemplateId", dataMigrationSettings.DataMigrationValidationFailedTemplateId);
+        Data.Add("DataMigrationSettings:DataMigrationErrorPageUrl", dataMigrationSettings.DataMigrationErrorPageUrl);
+      }
     }
   }
 
