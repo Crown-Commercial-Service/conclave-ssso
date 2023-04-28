@@ -319,5 +319,15 @@ namespace CcsSso.Shared.Domain.Helpers
         return match.Success;
       }
     }
+
+    public static bool IsOrganisationTypeValid(string organisationType)
+    {
+      if(organisationType == "0" || organisationType == "1" || organisationType == "2")
+      {
+        return true;
+      }
+
+      return false;
+    }
   }
 }

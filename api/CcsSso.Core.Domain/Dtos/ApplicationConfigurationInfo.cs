@@ -203,6 +203,5 @@ namespace CcsSso.Domain.Dtos
   {
     public string DataMigrationValidationFailedTemplateId { get; set; }
 
-    public string DataMigrationErrorPageUrl { get; set; }
   }
 }

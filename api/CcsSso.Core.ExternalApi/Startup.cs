@@ -168,7 +168,6 @@ namespace CcsSso.ExternalApi
           DataMigrationSettings = new DataMigrationSettings()
           {
             DataMigrationValidationFailedTemplateId = Configuration["DataMigrationSettings:DataMigrationValidationFailedTemplateId"],
-            DataMigrationErrorPageUrl = Configuration["DataMigrationSettings:DataMigrationErrorPageUrl"]
           },
         };
         return appConfigInfo;

@@ -215,10 +215,9 @@ namespace CcsSso.Service.External
       try
       {
         var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.Id == dataMigrationDetail.CreatedUserId);
-        var errorPagelink = $"{_appConfigInfo.DataMigrationSettings.DataMigrationErrorPageUrl}/{dataMigrationDetail.FileKeyId}";
         if (user != null)
         {
-          await _ccsSsoEmailService.SendDataMigrationValidationFailedAsync(user.UserName, errorPagelink);
+          await _ccsSsoEmailService.SendDataMigrationValidationFailedAsync(user.UserName, dataMigrationDetail.FileKeyId);
         }
       }
       catch (Exception ex)

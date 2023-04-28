@@ -265,7 +265,6 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       {
         var dataMigrationSettings = JsonConvert.DeserializeObject<DataMigrationSettings>(_secrets.Data["DataMigrationSettings"].ToString());
         Data.Add("DataMigrationSettings:DataMigrationValidationFailedTemplateId", dataMigrationSettings.DataMigrationValidationFailedTemplateId);
-        Data.Add("DataMigrationSettings:DataMigrationErrorPageUrl", dataMigrationSettings.DataMigrationErrorPageUrl);
       }
     }
   }

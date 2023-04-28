@@ -250,11 +250,11 @@ namespace CcsSso.Core.Service
       }
     }
 
-    public async Task SendDataMigrationValidationFailedAsync(string email, string link)
+    public async Task SendDataMigrationValidationFailedAsync(string email, string id)
     {
       var data = new Dictionary<string, dynamic>
       {
-        { "link", link }
+        { "link", _appConfigInfo.ConclaveLoginUrl + "/data-migration/error" + $"?data={id}" }
       };
       var emailInfo = new EmailInfo()
       {
