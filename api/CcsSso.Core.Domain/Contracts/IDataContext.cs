@@ -87,6 +87,8 @@ namespace CcsSso.Domain.Contracts
 
     DbSet<BulkUploadDetail> BulkUploadDetail { get; set; }
 
+    DbSet<DataMigrationDetail> DataMigrationDetail { get; set; }
+
     DbSet<CountryDetails> CountryDetails { get; set; }
 
 
