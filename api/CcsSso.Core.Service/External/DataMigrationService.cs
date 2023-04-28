@@ -120,7 +120,7 @@ namespace CcsSso.Service.External
           Status = dataMigrationDetail.DataMigrationStatus,
           CreatedUserId = dataMigrationDetail.CreatedUserId,
         })
-        .OrderByDescending(o => o.Id), resultSetCriteria);
+        .OrderByDescending(o => o.DateOfUpload), resultSetCriteria);
 
       await PopulateNameOfUser(dataMigration);
 
