@@ -203,5 +203,7 @@ namespace CcsSso.Domain.Dtos
   {
     public string DataMigrationValidationFailedTemplateId { get; set; }
 
+    public int MaxFileSizeValue { get; set; }
+
   }
 }

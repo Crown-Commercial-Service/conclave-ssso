@@ -58,7 +58,7 @@ namespace CcsSso.Service.External
     /// <returns></returns>
     public async Task<DataMigrationStatusResponse> UploadDataMigrationFileAsync(IFormFile file)
     {
-      ValidateFileExtension(file);
+      ValidateFile(file);
 
       var dataMigrationStatusResponse = new DataMigrationStatusResponse { ErrorDetails = new List<KeyValuePair<string, string>>() };
       var fileKeyId = Guid.NewGuid().ToString();
@@ -269,16 +269,26 @@ namespace CcsSso.Service.External
     }
 
     /// <summary>
-    /// To validate file extension
+    /// To validate file
     /// </summary>
     /// <param name="file"></param>
     /// <exception cref="CcsSsoException"></exception>
-    private static void ValidateFileExtension(IFormFile file)
+    private void ValidateFile(IFormFile file)
     {
+      if (file == null)
+      {
+        throw new CcsSsoException("ERROR_DATA_MIGRATION_FILE_REQUIRED");
+      }
+
       var extension = Path.GetExtension(file.FileName);
       if (extension.ToLower() != ".csv")
       {
         throw new CcsSsoException("INVALID_DATA_MIGRATION_FILE_TYPE");
+      }
+
+      if (file.Length > _appConfigInfo.DataMigrationSettings.MaxFileSizeValue)
+      {
+        throw new CcsSsoException("ERROR_DATA_MIGRATION_FILE_SIZE_MAX_LIMIT");
       }
     }
 
@@ -319,7 +329,7 @@ namespace CcsSso.Service.External
           var fName = user?.Party.Person.FirstName;
           var lName = user?.Party.Person.LastName;
 
-          dataMigrationResult.Name = String.Join(fName, " ", lName);
+          dataMigrationResult.Name = String.Join(" ", fName, lName);
         }
       }
     }

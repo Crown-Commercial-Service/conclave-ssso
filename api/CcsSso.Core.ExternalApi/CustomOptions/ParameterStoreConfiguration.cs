@@ -184,6 +184,7 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "DocUpload/TypeValidationValue", "DocUpload:TypeValidationValue"));
 
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "DataMigrationSettings/DataMigrationValidationFailedTemplateId", "DataMigrationSettings:DataMigrationValidationFailedTemplateId"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "DataMigrationSettings/MaxFileSizeValue", "DataMigrationSettings:MaxFileSizeValue"));
 
       foreach (var configuration in configurations)
       {
