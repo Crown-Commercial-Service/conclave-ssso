@@ -76,6 +76,13 @@ namespace CcsSso.ExternalApi
 
         delegatedEmailExpirationHours = delegatedEmailExpirationHours == 0 ? 36 : delegatedEmailExpirationHours;
 
+        int.TryParse(Configuration["DataMigrationSettings:MaxFileSizeValue"], out int dataMigrationMaxFileSizeValue);
+
+        if (dataMigrationMaxFileSizeValue == 0)
+        {
+          dataMigrationMaxFileSizeValue = 1048576;
+        }
+
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
           ApiKey = Configuration["ApiKey"],
@@ -108,13 +115,13 @@ namespace CcsSso.ExternalApi
             UserPermissionUpdateNotificationTemplateId = Configuration["Email:UserPermissionUpdateNotificationTemplateId"],
             // #Delegated
             UserDelegatedAccessEmailTemplateId = Configuration["Email:UserDelegatedAccessEmailTemplateId"],
-            UserUpdateEmailOnlyFederatedIdpTemplateId= Configuration["Email:UserUpdateEmailOnlyFederatedIdpTemplateId"],
+            UserUpdateEmailOnlyFederatedIdpTemplateId = Configuration["Email:UserUpdateEmailOnlyFederatedIdpTemplateId"],
             UserUpdateEmailOnlyUserIdPwdTemplateId = Configuration["Email:UserUpdateEmailOnlyUserIdPwdTemplateId"],
             UserUpdateEmailBothIdpTemplateId = Configuration["Email:UserUpdateEmailBothIdpTemplateId"],
             UserConfirmEmailOnlyFederatedIdpTemplateId = Configuration["Email:UserConfirmEmailOnlyFederatedIdpTemplateId"],
             UserConfirmEmailOnlyUserIdPwdTemplateId = Configuration["Email:UserConfirmEmailOnlyUserIdPwdTemplateId"],
             UserConfirmEmailBothIdpTemplateId = Configuration["Email:UserConfirmEmailBothIdpTemplateId"],
-            UserRegistrationEmailUserIdPwdTemplateId= Configuration["Email:UserRegistrationEmailUserIdPwdTemplateId"],           
+            UserRegistrationEmailUserIdPwdTemplateId = Configuration["Email:UserRegistrationEmailUserIdPwdTemplateId"],
             SendNotificationsEnabled = sendNotificationsEnabled,
           },
           QueueUrlInfo = new QueueUrlInfo
@@ -168,6 +175,7 @@ namespace CcsSso.ExternalApi
           DataMigrationSettings = new DataMigrationSettings()
           {
             DataMigrationValidationFailedTemplateId = Configuration["DataMigrationSettings:DataMigrationValidationFailedTemplateId"],
+            MaxFileSizeValue = dataMigrationMaxFileSizeValue,
           },
         };
         return appConfigInfo;

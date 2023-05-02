@@ -263,8 +263,9 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
 
       if (_secrets.Data.ContainsKey("DataMigrationSettings"))
       {
-        var dataMigrationSettings = JsonConvert.DeserializeObject<DataMigrationSettings>(_secrets.Data["DataMigrationSettings"].ToString());
-        Data.Add("DataMigrationSettings:DataMigrationValidationFailedTemplateId", dataMigrationSettings.DataMigrationValidationFailedTemplateId);
+        var dataMigrationSettingsInfo = JsonConvert.DeserializeObject<DataMigrationSettingsInfo>(_secrets.Data["DataMigrationSettings"].ToString());
+        Data.Add("DataMigrationSettings:DataMigrationValidationFailedTemplateId", dataMigrationSettingsInfo.DataMigrationValidationFailedTemplateId);
+        Data.Add("DataMigrationSettings:MaxFileSizeValue", dataMigrationSettingsInfo.MaxFileSizeValue);
       }
     }
   }
@@ -408,6 +409,15 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
 
     public string TypeValidationValue { get; set; }
   }
+
+  public class DataMigrationSettingsInfo
+  {
+    public string DataMigrationValidationFailedTemplateId { get; set; }
+
+    public string MaxFileSizeValue { get; set; }
+
+  }
+
   public class VaultOptions
   {
     public string Address { get; set; }
