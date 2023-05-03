@@ -1,0 +1,51 @@
+name: Trufflehog Monthly Deep Scan
+
+
+on:
+  schedule:
+    - cron: "0 0 28-31 * *" 
+    
+    #This scan will run on the last day of every month
+    
+  push:
+    branches: [main, p3sprint/*, feature/*]
+jobs:
+  trufflehog-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install Trufflehog-latest
+        run: |
+          pip3 install trufflehog
+      - name: Run Trufflehog Monthly Deep Scan
+        
+        #Configure the correct git url of the repo to be scanned
+        run: |
+          trufflehog https://github.com/Crown-Commercial-Service/conclave-ssso-ui.git --regex --entropy=FALSE
+      
+      - name: Send email notification
+        uses: 
+          dawidd6/action-send-mail@v3.1.0
+        if: always()
+      
+        with: 
+         server_address: ${{ secrets.SERVER_ADDRESS }}
+         server_port: ${{ secrets.SERVER_PORT }}
+         username: ${{ secrets.USER_NAME }}
+         password: ${{ secrets.PASSWORD }}
+         subject: Git Secrets Scan Results
+         to: "rahulgandhi.jayabalan@brickendon.com,ponselvam.sakthivel@brickendon.com"
+         from: "secops@brickendon.com"
+         body: |
+           
+           Hi,
+           
+            The Trufflehog Monthly Deep Scan has completed for "${{ github.repository }}". Please review the results below:
+                      
+            Scan Job URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Scan Status: **${{ job.status }}**              
+           
+           Thank You.           
+           Brickendon SecOps
