@@ -172,7 +172,7 @@ namespace CcsSso.Core.Service.External
         UserId = ugm.User.UserName,
         Name = $"{ugm.User.Party.Person.FirstName} {ugm.User.Party.Person.LastName}",
         IsAdmin = ugm.User.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted),
-        
+
         UserPendingRoleStatus = !isApprovalRequired ? null : getUserRolePendingStatus(ugm),
       }).ToList();
 
@@ -186,7 +186,7 @@ namespace CcsSso.Core.Service.External
           .OrderByDescending(y => y.Id)
           .FirstOrDefault(x => x.UserId == ugm.User.Id && x.OrganisationUserGroupId == ugm.OrganisationUserGroupId);
 
-      
+
       return (UserPendingRoleStaus?)(pendingRole?.Status);
     }
 
@@ -422,7 +422,12 @@ namespace CcsSso.Core.Service.External
       group.MfaEnabled = mfaEnableRoleExists;
       await _dataContext.SaveChangesAsync();
 
-      await VerifyAndCreateGroupRolePendingRequest(group, ciiOrganisationId, addedUsersTupleList, addedRoleIds);
+      if (_appConfigInfo.UserRoleApproval.Enable)
+      {
+        await RemoveGroupRolesApproveRequest(groupId, removedRoleIds);
+        await RemoveGroupUsersApproveRequest(groupId, removedUsersTupleList);
+        await VerifyAndCreateGroupRolePendingRequest(group, ciiOrganisationId, addedUsersTupleList, addedRoleIds);
+      }
 
       //Log
       if (hasNameChanged)
@@ -468,7 +473,35 @@ namespace CcsSso.Core.Service.External
       await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeys.ToArray());
     }
 
+    private async Task RemoveGroupUsersApproveRequest(int groupId, List<Tuple<int, string>> removedUsersTupleList)
+    {
+      if (removedUsersTupleList != null && removedUsersTupleList.Any())
+      {
+        var removedUserIds = removedUsersTupleList.Select(x => x.Item1);
 
+        var userAccessRolePendingList = await _dataContext.UserAccessRolePending
+          .Where(x => removedUserIds.Contains(x.UserId)
+          && x.OrganisationUserGroupId == groupId).ToListAsync();
+
+        userAccessRolePendingList.ForEach(l => { l.IsDeleted = true; l.Status = (int)UserPendingRoleStaus.Removed; });
+
+        await _dataContext.SaveChangesAsync();
+      }
+    }
+
+    private async Task RemoveGroupRolesApproveRequest(int groupId, List<int> removedRoleIds)
+    {
+      if (removedRoleIds != null && removedRoleIds.Any())
+      {
+        var userAccessRolePendingList = await _dataContext.UserAccessRolePending
+          .Where(x => removedRoleIds.Contains(x.OrganisationEligibleRoleId)
+          && x.OrganisationUserGroupId == groupId).ToListAsync();
+
+        userAccessRolePendingList.ForEach(l => { l.IsDeleted = true; l.Status = (int)UserPendingRoleStaus.Removed; });
+
+        await _dataContext.SaveChangesAsync();
+      }
+    }
 
     private async Task VerifyAndCreateGroupRolePendingRequest(OrganisationUserGroup group, string ciiOrganisationId, List<Tuple<int, string>> addedUsersTupleList, List<int> addedRoleIds)
     {
@@ -511,13 +544,13 @@ namespace CcsSso.Core.Service.External
         else
         {
           // remove any pending request exists for this group
-          await RemoveGroupRolePendingRequest(group);
+          //await RemoveGroupRolePendingRequest(group);
         }
       }
       else
       {
         // remove any pending request exists for this group 
-        await RemoveGroupRolePendingRequest(group);
+        //await RemoveGroupRolePendingRequest(group);
       }
     }
 
@@ -652,7 +685,7 @@ namespace CcsSso.Core.Service.External
       };
 
       await this.UpdateGroupAsync(ciiOrganisationId, groupId, organisationGroupRequestInfo);
-    }
+    }    
 
     private static OrganisationServiceRoleGroupResponseInfo ConvertGroupRoleToServiceRoleGroupResponse(OrganisationGroupResponseInfo organisationGroupResponseInfo)
     {
@@ -712,8 +745,8 @@ namespace CcsSso.Core.Service.External
       {
         var latestRequestOfUser = existingUsersRequests.OrderByDescending(x => x.Id).FirstOrDefault(x => x.UserId == user.Id);
 
-        if (latestRequestOfUser == null || 
-          (latestRequestOfUser.Status != (int)UserPendingRoleStaus.Pending 
+        if (latestRequestOfUser == null ||
+          (latestRequestOfUser.Status != (int)UserPendingRoleStaus.Pending
           && latestRequestOfUser.Status != (int)UserPendingRoleStaus.Approved
           && latestRequestOfUser.Status != (int)UserPendingRoleStaus.Rejected))
         {
