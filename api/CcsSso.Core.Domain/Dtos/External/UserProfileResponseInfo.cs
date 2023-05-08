@@ -233,6 +233,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string AccessServiceRoleGroupName { get; set; }
 
     public string Group { get; set; }
+
+    public int ApprovalStatus { get; set; }
   }
 
 

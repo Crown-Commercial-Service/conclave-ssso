@@ -1,5 +1,4 @@
 using Amazon.SimpleSystemsManagement.Model;
-using CcsSso.Logs;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Helpers;
 using CcsSso.Shared.Services;
@@ -23,11 +22,7 @@ namespace CcsSso.Security.Api.CustomOptions
 
     public override void Load()
     {
-      LoadAsync().Wait();
-      if (Data.ContainsKey("Serilog"))
-      {
-        LogConfigurationManager.ConfigureLogs(Data["Serilog"]);
-      }
+      LoadAsync().Wait();      
     }
 
     public async Task LoadAsync()

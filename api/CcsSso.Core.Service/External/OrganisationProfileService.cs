@@ -613,80 +613,31 @@ namespace CcsSso.Core.Service.External
         .Include(er => er.OrganisationEligibleRoles)
        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
 
-      if (organisation != null)
-      {
-        organisation.RightToBuy = isBuyer;
-
-        if (rolesToAdd != null && rolesToAdd.Any())
-        {
-          var ccsAccessRoles = await _dataContext.CcsAccessRole.ToListAsync();
-
-          if (!rolesToAdd.All(ar => ccsAccessRoles.Any(r => r.Id == ar.RoleId)))
-          {
-            throw new CcsSsoException("INVALID_ROLES_TO_ADD");
-          }
-
-          if (rolesToAdd.Any(ar => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == ar.RoleId)))
-          {
-            throw new CcsSsoException("ROLE_ALREADY_EXISTS_FOR_ORGANISATION");
-          }
-
-          List<OrganisationEligibleRole> addedEligibleRoles = new List<OrganisationEligibleRole>();
-
-          rolesToAdd.ForEach((addedRole) =>
-          {
-            addedEligibleRoles.Add(new OrganisationEligibleRole
-            {
-              OrganisationId = organisation.Id,
-              CcsAccessRoleId = addedRole.RoleId
-            });
-          });
-          _dataContext.OrganisationEligibleRole.AddRange(addedEligibleRoles);
-        }
-        if (rolesToDelete != null && rolesToDelete.Any())
-        {
-          var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
-
-          if (!deletingRoleIds.All(dr => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == dr)))
-          {
-            throw new CcsSsoException("INVALID_ROLES_TO_DELETE");
-          }
-
-          var deletingOrgEligibleRoles = organisation.OrganisationEligibleRoles.Where(oer => deletingRoleIds.Contains(oer.CcsAccessRoleId)).ToList();
-
-          var orgGroupRolesWithDeletedRoles = await _dataContext.OrganisationGroupEligibleRole
-            .Where(oger => !oger.IsDeleted && oger.OrganisationEligibleRole.OrganisationId == organisation.Id && deletingRoleIds.Contains(oger.OrganisationEligibleRole.CcsAccessRoleId))
-            .ToListAsync();
-
-          var userAccessRolesWithDeletedRoles = await _dataContext.UserAccessRole
-            .Where(uar => !uar.IsDeleted && uar.OrganisationEligibleRole.OrganisationId == organisation.Id && deletingRoleIds.Contains(uar.OrganisationEligibleRole.CcsAccessRoleId))
-            .ToListAsync();
-
-          deletingOrgEligibleRoles.ForEach((deletingOrgEligibleRole) =>
-          {
-            deletingOrgEligibleRole.IsDeleted = true;
-          });
-
-          orgGroupRolesWithDeletedRoles.ForEach((orgGroupRolesWithDeletedRole) =>
-          {
-            orgGroupRolesWithDeletedRole.IsDeleted = true;
-          });
-
-          userAccessRolesWithDeletedRoles.ForEach((userAccessRolesWithDeletedRole) =>
-          {
-            userAccessRolesWithDeletedRole.IsDeleted = true;
-          });
-        }
-
-        await _dataContext.SaveChangesAsync();
-
-        // Remove service client id inmemory cache since role update
-        _localCacheService.Remove($"ORGANISATION_SERVICE_CLIENT_IDS-{ciiOrganisationId}");
-      }
-      else
+      if (organisation == null)
       {
         throw new ResourceNotFoundException();
       }
+
+      organisation.RightToBuy = isBuyer;
+
+      await ValidateRolesAndAssignToOrganisationEligibleRole(rolesToAdd, organisation);
+
+      rolesToDelete ??= new();
+      if (rolesToDelete.Any())
+      {
+        var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
+
+        if (!deletingRoleIds.All(dr => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == dr)))
+        {
+          throw new CcsSsoException("INVALID_ROLES_TO_DELETE");
+        }
+        await DeleteOrganisationEligibleRoleAndUserAccessRole(organisation, deletingRoleIds);
+      }
+
+      await _dataContext.SaveChangesAsync();
+
+      // Remove service client id inmemory cache since role update
+      _localCacheService.Remove($"ORGANISATION_SERVICE_CLIENT_IDS-{ciiOrganisationId}");
     }
 
     private void AssignPhysicalContactsToContactPoint(OrganisationAddress addressDetails, ContactPoint contactPoint)
@@ -1572,8 +1523,8 @@ namespace CcsSso.Core.Service.External
     private async Task<string> RemoveOrgRoles(List<OrganisationRole> rolesToDelete, Organisation organisation)
     {
       StringBuilder rolesRemoved = new();
-
-      if (rolesToDelete != null && rolesToDelete.Any())
+      rolesToDelete ??= new();
+      if (rolesToDelete.Any())
       {
         var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
 
@@ -2145,6 +2096,66 @@ namespace CcsSso.Core.Service.External
         }
       }
       await _dataContext.SaveChangesAsync();
+    }
+
+
+    private async Task ValidateRolesAndAssignToOrganisationEligibleRole(List<OrganisationRole> rolesToAdd, Organisation organisation)
+    {
+      rolesToAdd ??= new();
+      if (rolesToAdd.Any())
+      {
+        var ccsAccessRoles = await _dataContext.CcsAccessRole.ToListAsync();
+
+        if (!rolesToAdd.All(ar => ccsAccessRoles.Any(r => r.Id == ar.RoleId)))
+        {
+          throw new CcsSsoException("INVALID_ROLES_TO_ADD");
+        }
+
+        if (rolesToAdd.Any(ar => organisation.OrganisationEligibleRoles.Any(oer => !oer.IsDeleted && oer.CcsAccessRoleId == ar.RoleId)))
+        {
+          throw new CcsSsoException("ROLE_ALREADY_EXISTS_FOR_ORGANISATION");
+        }
+
+        List<OrganisationEligibleRole> addedEligibleRoles = new List<OrganisationEligibleRole>();
+
+        rolesToAdd.ForEach((addedRole) =>
+        {
+          addedEligibleRoles.Add(new OrganisationEligibleRole
+          {
+            OrganisationId = organisation.Id,
+            CcsAccessRoleId = addedRole.RoleId
+          });
+        });
+        _dataContext.OrganisationEligibleRole.AddRange(addedEligibleRoles);
+      }
+    }
+
+    private async Task DeleteOrganisationEligibleRoleAndUserAccessRole(Organisation organisation, List<int> deletingRoleIds)
+    {
+      var deletingOrgEligibleRoles = organisation.OrganisationEligibleRoles.Where(oer => deletingRoleIds.Contains(oer.CcsAccessRoleId)).ToList();
+
+      var orgGroupRolesWithDeletedRoles = await _dataContext.OrganisationGroupEligibleRole
+        .Where(oger => !oger.IsDeleted && oger.OrganisationEligibleRole.OrganisationId == organisation.Id && deletingRoleIds.Contains(oger.OrganisationEligibleRole.CcsAccessRoleId))
+        .ToListAsync();
+
+      var userAccessRolesWithDeletedRoles = await _dataContext.UserAccessRole
+        .Where(uar => !uar.IsDeleted && uar.OrganisationEligibleRole.OrganisationId == organisation.Id && deletingRoleIds.Contains(uar.OrganisationEligibleRole.CcsAccessRoleId))
+        .ToListAsync();
+
+      deletingOrgEligibleRoles.ForEach((deletingOrgEligibleRole) =>
+      {
+        deletingOrgEligibleRole.IsDeleted = true;
+      });
+
+      orgGroupRolesWithDeletedRoles.ForEach((orgGroupRolesWithDeletedRole) =>
+      {
+        orgGroupRolesWithDeletedRole.IsDeleted = true;
+      });
+
+      userAccessRolesWithDeletedRoles.ForEach((userAccessRolesWithDeletedRole) =>
+      {
+        userAccessRolesWithDeletedRole.IsDeleted = true;
+      });
     }
 
     #endregion
