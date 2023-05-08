@@ -28,10 +28,12 @@ namespace CcsSso.Core.Service.External
     private readonly IWrapperCacheService _wrapperCacheService;
     private readonly ApplicationConfigurationInfo _appConfigInfo;
     private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
+    private readonly IOrganisationProfileService _organisationService;
 
     public OrganisationGroupService(IDataContext dataContext, IUserProfileHelperService userProfileHelperService,
-      IAuditLoginService auditLoginService, ICcsSsoEmailService ccsSsoEmailService, IWrapperCacheService wrapperCacheService
-      , ApplicationConfigurationInfo appConfigInfo, IServiceRoleGroupMapperService serviceRoleGroupMapperService)
+      IAuditLoginService auditLoginService, ICcsSsoEmailService ccsSsoEmailService, IWrapperCacheService wrapperCacheService,
+      ApplicationConfigurationInfo appConfigInfo, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
+      IOrganisationProfileService organisationService)
     {
       _dataContext = dataContext;
       _userProfileHelperService = userProfileHelperService;
@@ -40,6 +42,7 @@ namespace CcsSso.Core.Service.External
       _wrapperCacheService = wrapperCacheService;
       _appConfigInfo = appConfigInfo;
       _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
+      _organisationService = organisationService;
     }
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
@@ -501,6 +504,14 @@ namespace CcsSso.Core.Service.External
         .ToListAsync();
 
         if (serviceRoleGroups.Count != serviceRoleGroupIds.Count)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+
+        var organisationServiceRoleGroups = await _organisationService.GetOrganisationServiceRoleGroupsAsync(ciiOrganisationId);
+        var organisationServiceRoleGroupIds = organisationServiceRoleGroups.Select(x => x.Id);
+
+        if (!serviceRoleGroupIds.All(x => organisationServiceRoleGroupIds.Contains(x)))
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
         }

@@ -55,9 +55,7 @@ namespace CcsSso.Core.Domain.Dtos.External
   public class UserResponseMain
   {
     public int Id { get; set; }
-
-    public List<GroupAccessRole> UserGroups { get; set; }
-
+    
     public bool CanChangePassword { get; set; }
 
     public List<UserIdentityProviderInfo> IdentityProviders { get; set; }
@@ -67,11 +65,15 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class UserResponseDetail : UserResponseMain
   {
+    public List<GroupAccessRole> UserGroups { get; set; }
+
     public List<RolePermissionInfo> RolePermissionInfo { get; set; }
   }
 
   public class UserServiceRoleGroupResponseDetail : UserResponseMain
   {
+    public List<GroupAccessServiceRoleGroup> UserGroups { get; set; }
+
     public List<ServiceRoleGroupInfo> ServiceRoleGroupInfo { get; set; }
   }
 
@@ -219,6 +221,18 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string ServiceClientName { get; set; }
   }
+
+  public class GroupAccessServiceRoleGroup
+  {
+    public int GroupId { get; set; }
+
+    public int AccessServiceRoleGroupId { get; set; }
+
+    public string AccessServiceRoleGroupName { get; set; }
+
+    public string Group { get; set; }
+  }
+
 
   public class UserEditResponseInfo
   {

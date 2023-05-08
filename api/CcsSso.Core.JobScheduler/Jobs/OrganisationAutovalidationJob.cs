@@ -152,7 +152,8 @@ namespace CcsSso.Core.JobScheduler
     public async Task<List<OrganisationDetail>> GetOrganisationsForAutoValidationAsync()
     {
       var organisations = await _dataContext.Organisation.Where(
-                          org => !org.IsDeleted && org.CreatedOnUtc >= TimeZoneInfo.ConvertTimeToUtc(startDate) && org.CreatedOnUtc <= TimeZoneInfo.ConvertTimeToUtc(endDate)
+                          org => org.RightToBuy == false
+                          && !org.IsDeleted && org.CreatedOnUtc >= TimeZoneInfo.ConvertTimeToUtc(startDate) && org.CreatedOnUtc <= TimeZoneInfo.ConvertTimeToUtc(endDate)
                           && !_dataContext.OrganisationAudit.Any(orgAudit => orgAudit.OrganisationId == org.Id))
                           .Select(o => new OrganisationDetail()
                           {

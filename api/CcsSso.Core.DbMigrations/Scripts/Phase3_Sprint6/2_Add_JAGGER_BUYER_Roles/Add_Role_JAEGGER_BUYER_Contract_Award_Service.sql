@@ -1,6 +1,4 @@
-
--- No need to run this script. 
- 
+-- No need to run this script.
 
 --CREATE OR REPLACE FUNCTION AddRole() RETURNS integer AS $$
 
@@ -49,4 +47,3 @@
 --SELECT setval('"ServiceRolePermission_Id_seq"', max("Id")) FROM "ServiceRolePermission";
 --SELECT AddRole();
 --DROP FUNCTION AddRole;
-
