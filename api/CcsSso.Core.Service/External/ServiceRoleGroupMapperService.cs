@@ -1,4 +1,4 @@
-﻿using CcsSso.Core.DbModel.Constants;
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.DbModel.Entity;
