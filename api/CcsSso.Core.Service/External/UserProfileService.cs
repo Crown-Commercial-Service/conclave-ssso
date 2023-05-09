@@ -139,7 +139,7 @@ namespace CcsSso.Core.Service.External
 
       // Set user groups
       var groupsWithRoleRequiredApproval = new List<KeyValuePair<int, List<int>>>();
-      if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && userProfileRequestInfo.Detail.GroupIds.Any())
+      if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && userProfileRequestInfo.Detail.GroupIds != null && userProfileRequestInfo.Detail.GroupIds.Any())
       {
         groupsWithRoleRequiredApproval = GetGroupsWithApprovalOrgRole(organisation.UserGroups, userProfileRequestInfo.Detail.GroupIds);
       }
@@ -1041,7 +1041,10 @@ namespace CcsSso.Core.Service.External
           }
         }
 
-        removedGroupIds = previousGroups.Where(x => !userProfileRequestInfo.Detail.GroupIds.Contains(x)).ToList();
+        if (userProfileRequestInfo.Detail.GroupIds != null)
+        {
+          removedGroupIds = previousGroups.Where(x => !userProfileRequestInfo.Detail.GroupIds.Contains(x)).ToList();
+        }
 
         // Set groups
         var userGroupMemberships = new List<UserGroupMembership>();
@@ -1078,7 +1081,10 @@ namespace CcsSso.Core.Service.External
         });
         user.UserAccessRoles = userAccessRoles;
 
-        removedRoleIds = previousRoles.Where(x => !userProfileRequestInfo.Detail.RoleIds.Contains(x)).ToList();
+        if (userProfileRequestInfo.Detail.RoleIds != null)
+        {
+          removedRoleIds = previousRoles.Where(x => !userProfileRequestInfo.Detail.RoleIds.Contains(x)).ToList();
+        }
 
         // Check the admin group availability in request
         var noAdminRoleGroupInRequest = userProfileRequestInfo.Detail.GroupIds == null || !userProfileRequestInfo.Detail.GroupIds.Any() ||
@@ -2428,5 +2434,10 @@ namespace CcsSso.Core.Service.External
       }
     }
 
+    public async Task<List<User>> GetUsersAsync()
+    {
+      var users = await _dataContext.User.Where(u => !u.IsDeleted).ToListAsync();
+      return users;
+    }
   }
 }

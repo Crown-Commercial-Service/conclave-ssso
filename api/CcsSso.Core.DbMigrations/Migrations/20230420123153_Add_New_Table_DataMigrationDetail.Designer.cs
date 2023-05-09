@@ -3,15 +3,17 @@ using System;
 using CcsSso.DbPersistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace CcsSso.Core.DbMigrations.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20230420123153_Add_New_Table_DataMigrationDetail")]
+    partial class Add_New_Table_DataMigrationDetail
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -415,9 +417,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("FileKeyId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FileName")
                         .HasColumnType("text");
 
                     b.Property<bool>("IsDeleted")

@@ -190,6 +190,8 @@ namespace CcsSso.DbPersistence
 
     public DbSet<BulkUploadDetail> BulkUploadDetail { get; set; }
 
+    public DbSet<DataMigrationDetail> DataMigrationDetail { get; set; }
+
     public DbSet<CountryDetails> CountryDetails { get; set; }
 
     // #Auto validation
