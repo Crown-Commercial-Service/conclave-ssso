@@ -18,6 +18,12 @@ if (clientServiceId is null) then
 	return 1;
 end if; 
 
+ IF EXISTS (SELECT "Id" FROM public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'JAEGGER_BUYER' AND "CcsAccessRoleName" = 'eSourcing buyer role to access Jagger' LIMIT 1) THEN
+	raise notice 'Role already exists';
+	return 1;
+ END IF;
+
+
 INSERT INTO public."ServicePermission"(
 	"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc","LastUpdatedOnUtc", "IsDeleted")
 	VALUES ('JAEGGER_BUYER_ES', clientServiceId, 0, 0, now(), now(), false);
