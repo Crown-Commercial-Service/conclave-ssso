@@ -387,6 +387,65 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.ToTable("CountryDetails");
                 });
 
+            modelBuilder.Entity("CcsSso.Core.DbModel.Entity.DataMigrationDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<byte[]>("ConcurrencyKey")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CreatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DataMigrationStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DocUploadId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FileKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FileKeyId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastUpdatedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("LastUpdatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("MigrationEndedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("MigrationStartedOnUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("MigrationStringContent")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ValidationErrorDetails")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DataMigrationDetail");
+                });
+
             modelBuilder.Entity("CcsSso.Core.DbModel.Entity.ExternalServiceRoleMapping", b =>
                 {
                     b.Property<int>("Id")

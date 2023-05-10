@@ -1,4 +1,5 @@
 using CcsSso.Core.Domain.Dtos.External;
+using CcsSso.DbModel.Entity;
 using CcsSso.Dtos.Domain.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -52,5 +53,7 @@ namespace CcsSso.Core.Domain.Contracts.External
     Task<UserEditResponseInfo> UpdateUserV1Async(string userName, UserProfileServiceRoleGroupEditRequestInfo userProfileServiceRoleGroupEditRequestInfo);
 
     Task<OrganisationJoinRequest> GetUserJoinRequestDetails(string joiningDetailsToken);
+
+    Task<List<User>> GetUsersAsync();
   }
 }

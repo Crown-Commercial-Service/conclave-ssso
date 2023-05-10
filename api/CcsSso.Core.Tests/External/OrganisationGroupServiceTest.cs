@@ -10,6 +10,7 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -973,9 +974,11 @@ namespace CcsSso.Core.Tests.External
       var mockRolesToServiceRoleGroupMapperService = new Mock<IServiceRoleGroupMapperService>();
       var mockOrganisationProfileService = new Mock<IOrganisationProfileService>();
       var mockUserProfileRoleApprovalService = new Mock<IUserProfileRoleApprovalService>();
-
+      var localCacheService  = new Mock<ILocalCacheService>();
+       
       var service = new OrganisationGroupService(dataContext, userProfileHelperService, mockAuditLoginService.Object, mockEmailService.Object,
-        mockCacheService.Object, applicationConfigurationInfo, mockRolesToServiceRoleGroupMapperService.Object, mockOrganisationProfileService.Object, mockUserProfileRoleApprovalService.Object);
+        mockCacheService.Object, applicationConfigurationInfo, mockRolesToServiceRoleGroupMapperService.Object, mockOrganisationProfileService.Object, mockUserProfileRoleApprovalService.Object
+        ,localCacheService.Object);
       return service;
     }
 
