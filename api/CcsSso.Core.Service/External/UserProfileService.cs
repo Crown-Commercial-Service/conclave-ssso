@@ -10,6 +10,7 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Dtos.Domain.Models;
+using CcsSso.Security.Domain.Constants;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Constants;
@@ -43,6 +44,7 @@ namespace CcsSso.Core.Service.External
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
     private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
     private readonly IOrganisationGroupService _organisationGroupService;
+    private readonly IOrganisationProfileService _organisationService;
 
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
@@ -51,7 +53,7 @@ namespace CcsSso.Core.Service.External
       ICacheInvalidateService cacheInvalidateService, ICryptographyService cryptographyService,
       ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService,
       IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
-      IOrganisationGroupService organisationGroupService)
+      IOrganisationGroupService organisationGroupService, IOrganisationProfileService organisationService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -66,6 +68,7 @@ namespace CcsSso.Core.Service.External
       _cryptographyService = cryptographyService;
       _appConfigInfo = appConfigInfo;
       _lookUpService = lookUpService;
+      _organisationService = organisationService;
       _wrapperApiService = wrapperApiService;
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
       _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
@@ -1528,7 +1531,27 @@ namespace CcsSso.Core.Service.External
       }
       var userProfileRequestInfo = await ConvertServiceRoleGroupTouserProfileRequest(userProfileRoleGroupRequestInfo);
 
-      await CreateDelegatedUserAsync(userProfileRequestInfo);
+      try
+      {
+        await CreateDelegatedUserAsync(userProfileRequestInfo);
+      }
+
+      catch (CcsSsoException ex)
+      {
+        if (ex.Message == "INVALID_ROLE")
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+        else
+        {
+          throw ex;
+        }
+      }
+      catch (Exception)
+      {
+        throw;
+      }
+
     }
 
     public async Task UpdateDelegatedUserV1Async(DelegatedUserProfileServiceRoleGroupRequestInfo userProfileRoleGroupRequestInfo)
@@ -1539,7 +1562,26 @@ namespace CcsSso.Core.Service.External
       }
       var userProfileRequestInfo = await ConvertServiceRoleGroupTouserProfileRequest(userProfileRoleGroupRequestInfo);
 
-      await UpdateDelegatedUserAsync(userProfileRequestInfo);
+      try
+      {
+        await UpdateDelegatedUserAsync(userProfileRequestInfo);
+      }
+
+      catch (CcsSsoException ex)
+      {
+        if (ex.Message == "INVALID_ROLE")
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+        else
+        {
+          throw ex;
+        }
+      }
+      catch (Exception)
+      {
+        throw;
+      }
     }
 
 
@@ -2000,11 +2042,13 @@ namespace CcsSso.Core.Service.External
       {
         userProfileServiceRoleGroupResponseInfo = ConvertUserRoleToServiceRoleGroupResponse(userProfileResponseInfo);
         var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(userProfileResponseInfo.Detail.RolePermissionInfo.Select(x => x.RoleId).ToList());
-        List<ServiceRoleGroupInfo> serviceRoleGroupInfo = (from serviceRoleGroup in serviceRoleGroups select new ServiceRoleGroupInfo() {
-                                        Id = serviceRoleGroup.Id,
-                                        Name = serviceRoleGroup.Name,
-                                        Key = serviceRoleGroup.Key,
-                                      }).ToList();
+        List<ServiceRoleGroupInfo> serviceRoleGroupInfo = (from serviceRoleGroup in serviceRoleGroups
+                                                           select new ServiceRoleGroupInfo()
+                                                           {
+                                                             Id = serviceRoleGroup.Id,
+                                                             Name = serviceRoleGroup.Name,
+                                                             Key = serviceRoleGroup.Key,
+                                                           }).ToList();
         userProfileServiceRoleGroupResponseInfo.Detail.ServiceRoleGroupInfo = serviceRoleGroupInfo;
         await GetUserGroupDetails(userName, userProfileServiceRoleGroupResponseInfo, userProfileResponseInfo);
       }
@@ -2166,6 +2210,15 @@ namespace CcsSso.Core.Service.External
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
         }
+
+        var organisationServiceRoleGroups = await _organisationService.GetOrganisationServiceRoleGroupsAsync(delegatedUserRoleGroupRequestInfo.Detail.DelegatedOrgId);
+        var organisationServiceRoleGroupIds = organisationServiceRoleGroups.Select(x => x.Id);
+
+        if (!serviceRoleGroupIds.All(x => organisationServiceRoleGroupIds.Contains(x)))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+
 
         List<OrganisationEligibleRole> organisationEligibleRoles = await _serviceRoleGroupMapperService.ServiceRoleGroupsToOrgRolesAsync(serviceRoleGroupIds, delegatedUserRoleGroupRequestInfo.Detail.DelegatedOrgId);
 
