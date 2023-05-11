@@ -1138,7 +1138,7 @@ namespace CcsSso.Core.Service.External
       //for admin roles
       if (isFromBackgroundJob)
       {
-        await AutoValidationAdminRolesForBackgroundJob(organisation, schemeIdentifier, groupId, auditEventLogs, adminUserDetails,true);
+        await AutoValidationAdminRolesForBackgroundJob(organisation, schemeIdentifier, groupId, auditEventLogs, adminUserDetails, true);
       }
       else
       {
@@ -1219,7 +1219,7 @@ namespace CcsSso.Core.Service.External
       //for admin roles
       if (isFromBackgroundJob)
       {
-        await AutoValidationAdminRolesForBackgroundJob(organisation, schemeIdentifier, groupId, auditEventLogs, adminUserDetails,false);
+        await AutoValidationAdminRolesForBackgroundJob(organisation, schemeIdentifier, groupId, auditEventLogs, adminUserDetails, false);
       }
       else
       {
@@ -1324,7 +1324,7 @@ namespace CcsSso.Core.Service.External
         roleIds = roleIds.Union(successAdminRoleIds);
       }
 
-      var defaultRoles = await _dataContext.OrganisationEligibleRole 
+      var defaultRoles = await _dataContext.OrganisationEligibleRole
             .Where(r => r.Organisation.CiiOrganisationId == ciiOrganisation && !r.IsDeleted &&
             roleIds.Contains(r.CcsAccessRoleId))
             .ToListAsync();
@@ -1589,22 +1589,10 @@ namespace CcsSso.Core.Service.External
         var userAccessRolesWithDeletedRoles = userAccessRolesForOrgUsers
           .Where(uar => deletingRoleIds.Contains(uar.OrganisationEligibleRole.CcsAccessRoleId)).ToList();
 
-        var allAccessRolePending = await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && u.Status == (int)UserPendingRoleStaus.Pending).ToListAsync();
         deletingOrgEligibleRoles.ForEach((deletingOrgEligibleRole) =>
         {
-          if (_applicationConfigurationInfo.UserRoleApproval.Enable)
-          {
-            var pendingRequests = allAccessRolePending.Where(x => x.OrganisationEligibleRoleId == deletingOrgEligibleRole.Id).ToList();
-            foreach (var pendingRequest in pendingRequests)
-            {
-              pendingRequest.IsDeleted = true;
-              pendingRequest.Status = (int)UserPendingRoleStaus.Removed;
-            }
-          }
-
           deletingOrgEligibleRole.IsDeleted = true;
           rolesRemoved.Append(rolesRemoved.Length > 0 ? "," + deletingOrgEligibleRole.CcsAccessRole.CcsAccessRoleName : deletingOrgEligibleRole.CcsAccessRole.CcsAccessRoleName);
-
         });
 
         orgGroupRolesWithDeletedRoles.ForEach((orgGroupRolesWithDeletedRole) =>
@@ -1616,6 +1604,18 @@ namespace CcsSso.Core.Service.External
         {
           userAccessRolesWithDeletedRole.IsDeleted = true;
         });
+
+        if (_applicationConfigurationInfo.UserRoleApproval.Enable)
+        {
+          var deletingOrgEligibleRoleIds = deletingOrgEligibleRoles.Select(x => x.Id);
+          var allAccessRolePending = await _dataContext.UserAccessRolePending.Where(u => deletingOrgEligibleRoleIds.Contains(u.OrganisationEligibleRoleId)).ToListAsync();
+
+          allAccessRolePending.ForEach((pendingRequest) =>
+          {
+            pendingRequest.IsDeleted = true;
+            pendingRequest.Status = (int)UserPendingRoleStaus.Removed;
+          });
+        }
       }
 
       return rolesRemoved.ToString();
@@ -1695,6 +1695,16 @@ namespace CcsSso.Core.Service.External
           }
           else
           {
+            // Check any approved and pending request are there for the user 
+            var anyExistingRoleRequest = await _dataContext.UserAccessRolePending.AnyAsync(x => x.OrganisationEligibleRoleId == organisationEligibleRoleId
+                && x.OrganisationUserGroupId == null
+                && x.UserId == adminDetails.Id
+                && (x.Status == (int)UserPendingRoleStaus.Approved));
+
+            if (anyExistingRoleRequest)
+            {
+              continue;
+            }
             await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(new UserProfileEditRequestInfo
             {
               UserName = adminDetails.UserName,
@@ -2094,30 +2104,30 @@ namespace CcsSso.Core.Service.External
       await _dataContext.SaveChangesAsync();
     }
 
-    private async Task AssignRoleToAllOrgAdmins(OrganisationEligibleRole role, List<User> allAdminsOfOrg, Organisation organisation, List<CcsServiceRoleGroup> servicesWithApprovalRequiredRole) 
+    private async Task AssignRoleToAllOrgAdmins(OrganisationEligibleRole role, List<User> allAdminsOfOrg, Organisation organisation, List<CcsServiceRoleGroup> servicesWithApprovalRequiredRole)
     {
       foreach (var adminDetails in allAdminsOfOrg)
       {
         if (!adminDetails.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == role.Id && !x.IsDeleted))
         {
           var isAdminDomainSameAsOrg = adminDetails.UserName.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower();
-          
+
           // Remove normals roles which are part of service which required role approval
           // They will be assigned together with role approval.
           if (_applicationConfigurationInfo.UserRoleApproval.Enable && _applicationConfigurationInfo.ServiceRoleGroupSettings.Enable &&
-            !isAdminDomainSameAsOrg && RoleBelongToApprovalRequiredService(role, servicesWithApprovalRequiredRole)) 
+            !isAdminDomainSameAsOrg && RoleBelongToApprovalRequiredService(role, servicesWithApprovalRequiredRole))
           {
             continue;
           }
 
-          if (!_applicationConfigurationInfo.UserRoleApproval.Enable || role.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalNotRequired || 
+          if (!_applicationConfigurationInfo.UserRoleApproval.Enable || role.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalNotRequired ||
               isAdminDomainSameAsOrg)
           {
             var defaultUserRole = new UserAccessRole
             {
               OrganisationEligibleRoleId = role.Id
             };
-            adminDetails.UserAccessRoles.Add(defaultUserRole);  
+            adminDetails.UserAccessRoles.Add(defaultUserRole);
           }
           else
           {
@@ -2155,16 +2165,16 @@ namespace CcsSso.Core.Service.External
       var orgRoles = await GetOrganisationRolesAsync(ciiOrganisationId);
       var serviceRoleGroupsEntity = await _rolesToServiceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(orgRoles.Select(x => x.RoleId).ToList());
       var serviceRoleGroups = serviceRoleGroupsEntity.Select(x => new ServiceRoleGroup
-                              {
-                                Id = x.Id,
-                                Key = x.Key,
-                                Name = x.Name,
-                                OrgTypeEligibility = x.OrgTypeEligibility,
-                                SubscriptionTypeEligibility = x.SubscriptionTypeEligibility,
-                                TradeEligibility = x.TradeEligibility,
-                                DisplayOrder = x.DisplayOrder,
-                                Description = x.Description
-                              }).ToList();
+      {
+        Id = x.Id,
+        Key = x.Key,
+        Name = x.Name,
+        OrgTypeEligibility = x.OrgTypeEligibility,
+        SubscriptionTypeEligibility = x.SubscriptionTypeEligibility,
+        TradeEligibility = x.TradeEligibility,
+        DisplayOrder = x.DisplayOrder,
+        Description = x.Description
+      }).ToList();
       return serviceRoleGroups;
     }
 
@@ -2175,7 +2185,7 @@ namespace CcsSso.Core.Service.External
         throw new InvalidOperationException();
       }
 
-      if (!ValidateCiiOrganisationID(ciiOrganisationId) || serviceRoleGroupsToAdd == null || serviceRoleGroupsToDelete == null) 
+      if (!ValidateCiiOrganisationID(ciiOrganisationId) || serviceRoleGroupsToAdd == null || serviceRoleGroupsToDelete == null)
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
       }
@@ -2189,7 +2199,7 @@ namespace CcsSso.Core.Service.External
       await UpdateOrganisationEligibleRolesAsync(ciiOrganisationId, isBuyer, addRoles, deleteRoles);
     }
 
-    public async Task UpdateOrgAutoValidServiceRoleGroupsAsync(string ciiOrganisationId, RoleEligibleTradeType newOrgType, List<int> serviceRoleGroupsToAdd, List<int> serviceRoleGroupsToDelete, List<int> serviceRoleGroupsToAutoValid, string? companyHouseId) 
+    public async Task UpdateOrgAutoValidServiceRoleGroupsAsync(string ciiOrganisationId, RoleEligibleTradeType newOrgType, List<int> serviceRoleGroupsToAdd, List<int> serviceRoleGroupsToDelete, List<int> serviceRoleGroupsToAutoValid, string? companyHouseId)
     {
       if (!_applicationConfigurationInfo.ServiceRoleGroupSettings.Enable)
       {
@@ -2212,13 +2222,13 @@ namespace CcsSso.Core.Service.External
       await UpdateOrgAutoValidationEligibleRolesAsync(ciiOrganisationId, newOrgType, addRoles, deleteRoles, autoValidRoles, companyHouseId);
     }
 
-    private static bool RoleBelongToApprovalRequiredService(OrganisationEligibleRole role, List<CcsServiceRoleGroup> servicesWithApprovalRequiredRole) 
+    private static bool RoleBelongToApprovalRequiredService(OrganisationEligibleRole role, List<CcsServiceRoleGroup> servicesWithApprovalRequiredRole)
     {
       foreach (var approvalRoleService in servicesWithApprovalRequiredRole)
       {
         var removeRoles = approvalRoleService.CcsServiceRoleMappings.Where(x => x.CcsAccessRole.ApprovalRequired != 1).Select(x => x.CcsAccessRoleId).ToList();
         // Return true for normal role that belongs to approval required service 
-        if (removeRoles.Any(x => x == role.CcsAccessRoleId)) 
+        if (removeRoles.Any(x => x == role.CcsAccessRoleId))
         {
           return true;
         }

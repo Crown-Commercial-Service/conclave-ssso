@@ -1,4 +1,4 @@
-﻿using CcsSso.Core.DbModel.Constants;
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.DbModel.Entity;
@@ -117,14 +117,14 @@ namespace CcsSso.Core.Service.External
     {
       var serviceRoleGroups = await _dataContext.CcsServiceRoleGroup
         .Include(g => g.CcsServiceRoleMappings).ThenInclude(g => g.CcsAccessRole)
-        .Where(x => !x.IsDeleted && x.CcsServiceRoleMappings.Any(y => y.CcsAccessRole.ApprovalRequired == 1)).ToListAsync();
+        .Where(x => !x.IsDeleted && x.CcsServiceRoleMappings.Any(y => y.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired)).ToListAsync();
 
       return serviceRoleGroups;
     }
 
     // This method will remove roles that are part of approval required Service Role Group but it self not required approval
     // This normal roles will be assigned together with approval required role, once it is approved.
-    public async Task RemoveApprovalRequiredRoleGroupOtherRolesAsync(List<OrganisationEligibleRole> organisationEligibleRoles, string userName)
+    public async Task RemoveApprovalRequiredRoleGroupOtherRolesAsync(List<OrganisationEligibleRole> organisationEligibleRoles, string userName) 
     {
       var servicesWithApprovalRequiredRole = await ServiceRoleGroupsWithApprovalRequiredRoleAsync();
       var userExistingRoles = await _dataContext.User
@@ -137,7 +137,7 @@ namespace CcsSso.Core.Service.External
         // All roles of approval required service will be assigned once approval required role is approved.
         var removeRoles = approvalRoleService.CcsServiceRoleMappings.Where(x => x.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalNotRequired).Select(x => x.CcsAccessRoleId).ToList();
 
-        foreach (var removeRole in removeRoles)
+        foreach (var removeRole in removeRoles) 
         {
           if (!userExistingRoles.Any(u => u.UserAccessRoles.Any(a => !a.IsDeleted && a.OrganisationEligibleRole.CcsAccessRoleId == removeRole)))
           {
