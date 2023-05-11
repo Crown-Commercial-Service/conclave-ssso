@@ -352,7 +352,7 @@ namespace CcsSso.Core.Service.External
     // #Delegated
     public async Task<UserProfileResponseInfo> GetUserAsync(string userName, bool isDelegated = false, bool isSearchUser = false, string delegatedOrgId = "")
     {
-            User user = null;
+      User user = null;
 
       _userHelper.ValidateUserName(userName);
 
@@ -377,7 +377,7 @@ namespace CcsSso.Core.Service.External
                && u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId
                && !u.IsDeleted
                && u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date);
-               
+
         // If searching for user to delegate in organisation and already exist
         if (isSearchUser && user != default)
         {
@@ -395,33 +395,33 @@ namespace CcsSso.Core.Service.External
         user = users.SingleOrDefault(u => u.UserType == DbModel.Constants.UserType.Primary);
       }
 
-            var userDelegatedOrgs = users.Where(u => u.UserType == DbModel.Constants.UserType.Delegation &&
-                              !u.IsDeleted &&
-                              u.DelegationStartDate.Value.Date <= DateTime.UtcNow.Date &&
-                              u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date &&
-                              (!string.IsNullOrWhiteSpace(delegatedOrgId) || u.DelegationAccepted) &&
-                              ((isDelegated && string.IsNullOrWhiteSpace(delegatedOrgId)) || u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId)
-                              )
-                              .Select(u => new UserDelegationDetails
-                              {
-                                DelegatedOrgId = u.Party.Person.Organisation.CiiOrganisationId,
-                                DelegatedOrgName = u.Party.Person.Organisation.LegalName,
-                                StartDate = u.DelegationStartDate,
-                                EndDate = u.DelegationEndDate,
-                                DelegationAccepted = u.DelegationAccepted
-                              }).ToArray();
-           
-            if (user != null)
+      var userDelegatedOrgs = users.Where(u => u.UserType == DbModel.Constants.UserType.Delegation &&
+                        !u.IsDeleted &&
+                        u.DelegationStartDate.Value.Date <= DateTime.UtcNow.Date &&
+                        u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date &&
+                        (!string.IsNullOrWhiteSpace(delegatedOrgId) || u.DelegationAccepted) &&
+                        ((isDelegated && string.IsNullOrWhiteSpace(delegatedOrgId)) || u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId)
+                        )
+                        .Select(u => new UserDelegationDetails
+                        {
+                          DelegatedOrgId = u.Party.Person.Organisation.CiiOrganisationId,
+                          DelegatedOrgName = u.Party.Person.Organisation.LegalName,
+                          StartDate = u.DelegationStartDate,
+                          EndDate = u.DelegationEndDate,
+                          DelegationAccepted = u.DelegationAccepted
+                        }).ToArray();
+
+      if (user != null)
       {
-                var userProfileInfo = new UserProfileResponseInfo
+        var userProfileInfo = new UserProfileResponseInfo
         {
           UserName = user.UserName,
           OrganisationId = user.Party.Person.Organisation.CiiOrganisationId,
           OriginOrganisationName = isDelegated ? (user.UserType == DbModel.Constants.UserType.Primary ? user.Party.Person.Organisation.LegalName : user.OriginOrganization?.LegalName) : default,
           FirstName = user.Party.Person.FirstName,
           LastName = (isDelegated || !string.IsNullOrWhiteSpace(delegatedOrgId)) && !user.DelegationAccepted ?
-                       user.Party.Person.LastName.Substring(0, 1).PadRight(user.Party.Person.LastName.Length, '*') :
-                       user.Party.Person.LastName,
+               user.Party.Person.LastName.Substring(0, 1).PadRight(user.Party.Person.LastName.Length, '*') :
+               user.Party.Person.LastName,
           MfaEnabled = user.MfaEnabled,
           Title = Enum.GetName(typeof(UserTitle), user.UserTitle),
           AccountVerified = user.AccountVerified,
@@ -575,8 +575,8 @@ namespace CcsSso.Core.Service.External
     }
     public async Task<UserListResponse> GetUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria, UserFilterCriteria userFilterCriteria)
     {
-          
-            var apiKey = _appConfigInfo.ApiKey;
+
+      var apiKey = _appConfigInfo.ApiKey;
       var apiKeyInRequest = _requestContext.apiKey;
 
       if (apiKeyInRequest != null)
@@ -654,8 +654,8 @@ namespace CcsSso.Core.Service.External
         userQuery = userQuery.Where(u => u.AccountVerified && !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
 
 
-       // Delegated and delegated expired conditions
-       if (isDelegatedOnly)
+      // Delegated and delegated expired conditions
+      if (isDelegatedOnly)
         userQuery = userQuery.Where(u => isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date <= DateTime.UtcNow.Date :
                               u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date);
 
@@ -685,42 +685,42 @@ namespace CcsSso.Core.Service.External
 
       userQuery = userQuery.OrderBy(u => u.Party.Person.FirstName).ThenBy(u => u.Party.Person.LastName);
 
-            var groupadminUsers = await _organisationGroupService.GetGroupAdminUsersAsync(organisationId);
-            var userPagedInfo = await _dataContext.GetPagedResultAsync(userQuery, resultSetCriteria);
+      var groupadminUsers = await _organisationGroupService.GetGroupAdminUsersAsync(organisationId);
+      var userPagedInfo = await _dataContext.GetPagedResultAsync(userQuery, resultSetCriteria);
 
-            var userListResponse = new UserListResponse
-            {
-                OrganisationId = organisationId,
-                CurrentPage = userPagedInfo.CurrentPage,
-                PageCount = userPagedInfo.PageCount,
-                RowCount = userPagedInfo.RowCount,
-                UserList = userPagedInfo.Results != null ? userPagedInfo.Results.Select(up => new UserListInfo
-                {
-                    Name = isDelegatedOnly && !up.DelegationAccepted ? $"{up.Party.Person.FirstName} " +
-                           $"{up.Party.Person.LastName.Substring(0, 1).PadRight(up.Party.Person.LastName.Length, '*')}" :
-                           $"{up.Party.Person.FirstName} {up.Party.Person.LastName}",
-                    UserName = up.UserName,
-                    // Delegation specific fields
-                    StartDate = isDelegatedOnly ? up.DelegationStartDate : default,
-                    EndDate = isDelegatedOnly ? up.DelegationEndDate : default,
-                    RemainingDays = !isDelegatedOnly || isDelegatedExpiredOnly || up.DelegationStartDate is null ? 0 : Convert.ToInt32((up.DelegationEndDate.Value - up.DelegationStartDate.Value).Days),
-                    OriginOrganisation = !isDelegatedOnly ? default : up.OriginOrganization?.LegalName,
-                    DelegationAccepted = !isDelegatedOnly ? default : up.DelegationAccepted,
-                    RolePermissionInfo = !isDelegatedOnly ? default : up.UserAccessRoles.Select(uar => new RolePermissionInfo
-                    {
-                        RoleId = uar.OrganisationEligibleRole.Id,
-                        RoleKey = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
-                        RoleName = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
-                    }).ToList(),
-                    IsAdmin = up.UserAccessRoles.Any(x => !x.IsDeleted && x.OrganisationEligibleRoleId == orgAdminAccessRoleId && !x.OrganisationEligibleRole.IsDeleted) || groupadminUsers.Any(x=>x.Id==up.Id),
-                }).ToList() : new List<UserListInfo>()
+      var userListResponse = new UserListResponse
+      {
+        OrganisationId = organisationId,
+        CurrentPage = userPagedInfo.CurrentPage,
+        PageCount = userPagedInfo.PageCount,
+        RowCount = userPagedInfo.RowCount,
+        UserList = userPagedInfo.Results != null ? userPagedInfo.Results.Select(up => new UserListInfo
+        {
+          Name = isDelegatedOnly && !up.DelegationAccepted ? $"{up.Party.Person.FirstName} " +
+                   $"{up.Party.Person.LastName.Substring(0, 1).PadRight(up.Party.Person.LastName.Length, '*')}" :
+                   $"{up.Party.Person.FirstName} {up.Party.Person.LastName}",
+          UserName = up.UserName,
+          // Delegation specific fields
+          StartDate = isDelegatedOnly ? up.DelegationStartDate : default,
+          EndDate = isDelegatedOnly ? up.DelegationEndDate : default,
+          RemainingDays = !isDelegatedOnly || isDelegatedExpiredOnly || up.DelegationStartDate is null ? 0 : Convert.ToInt32((up.DelegationEndDate.Value - up.DelegationStartDate.Value).Days),
+          OriginOrganisation = !isDelegatedOnly ? default : up.OriginOrganization?.LegalName,
+          DelegationAccepted = !isDelegatedOnly ? default : up.DelegationAccepted,
+          RolePermissionInfo = !isDelegatedOnly ? default : up.UserAccessRoles.Select(uar => new RolePermissionInfo
+          {
+            RoleId = uar.OrganisationEligibleRole.Id,
+            RoleKey = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
+            RoleName = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
+          }).ToList(),
+          IsAdmin = up.UserAccessRoles.Any(x => !x.IsDeleted && x.OrganisationEligibleRoleId == orgAdminAccessRoleId && !x.OrganisationEligibleRole.IsDeleted) || groupadminUsers.Any(x => x.Id == up.Id),
+        }).ToList() : new List<UserListInfo>()
       };
 
       return userListResponse;
     }
 
 
-        public async Task<AdminUserListResponse> GetAdminUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria)
+    public async Task<AdminUserListResponse> GetAdminUsersAsync(string organisationId, ResultSetCriteria resultSetCriteria)
     {
       if (!await _dataContext.Organisation.AnyAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId))
       {
@@ -878,53 +878,54 @@ namespace CcsSso.Core.Service.External
       await _dataContext.SaveChangesAsync();
     }
 
-        public async Task<UserEditResponseInfo> UpdateUserAsync(string userName, UserProfileEditRequestInfo userProfileRequestInfo)
-        {
-            var isRegisteredInIdam = false;
-            _userHelper.ValidateUserName(userName);
+    public async Task<UserEditResponseInfo> UpdateUserAsync(string userName, UserProfileEditRequestInfo userProfileRequestInfo)
+    {
+      var isRegisteredInIdam = false;
+      _userHelper.ValidateUserName(userName);
 
-            if (userName != userProfileRequestInfo.UserName)
-            {
-                throw new CcsSsoException(ErrorConstant.ErrorInvalidUserId);
-            }
+      if (userName != userProfileRequestInfo.UserName)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserId);
+      }
 
-            var organisation = await _dataContext.Organisation
-              .Include(o => o.UserGroups).ThenInclude(ug => ug.GroupEligibleRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
-              .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
-              .Include(o => o.OrganisationEligibleIdentityProviders)
-              .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == userProfileRequestInfo.OrganisationId);
+      var organisation = await _dataContext.Organisation
+        .Include(o => o.UserGroups).ThenInclude(ug => ug.GroupEligibleRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
+        .Include(o => o.OrganisationEligibleRoles).ThenInclude(or => or.CcsAccessRole)
+        .Include(o => o.OrganisationEligibleIdentityProviders)
+        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == userProfileRequestInfo.OrganisationId);
 
-            if (organisation == null)
-            {
-                throw new ResourceNotFoundException();
-            }
-            var isUserDomainValid = userName?.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower();
-            var user = await _dataContext.User
-              .Include(u => u.Party).ThenInclude(p => p.Person)
-              .Include(u => u.UserGroupMemberships)
-              .Include(u => u.UserAccessRoles)
-              .Include(u => u.UserIdentityProviders).ThenInclude(uidp => uidp.OrganisationEligibleIdentityProvider).ThenInclude(oidp => oidp.IdentityProvider)
-              .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName && u.UserType == DbModel.Constants.UserType.Primary);
+      if (organisation == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+      var isUserDomainValid = userName?.ToLower().Split('@')?[1] == organisation.DomainName?.ToLower();
+      var user = await _dataContext.User
+        .Include(u => u.Party).ThenInclude(p => p.Person)
+        .Include(u => u.UserGroupMemberships)
+        .Include(u => u.UserAccessRoles)
+        .Include(u => u.UserIdentityProviders).ThenInclude(uidp => uidp.OrganisationEligibleIdentityProvider).ThenInclude(oidp => oidp.IdentityProvider)
+        .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName && u.UserType == DbModel.Constants.UserType.Primary);
 
-            if (user == null)
-            {
-                throw new ResourceNotFoundException();
-            }
+      if (user == null)
+      {
+        throw new ResourceNotFoundException();
+      }
 
-            bool isMyProfile = _requestContext.UserId == user.Id;
+      bool isMyProfile = _requestContext.UserId == user.Id;
 
-            Validate(userProfileRequestInfo, isMyProfile, organisation);
-            bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
+      Validate(userProfileRequestInfo, isMyProfile, organisation);
+      bool mfaFlagChanged = user.MfaEnabled != userProfileRequestInfo.MfaEnabled;
 
-            var UserAccessRole = (from u in _dataContext.User
-                                  join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
-                                  join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
-                                  join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
-                            where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
-                            select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
+      var UserAccessRole = (from u in _dataContext.User
+                            join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
+                            join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
+                            join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
+                            where u.UserName == userName && ((cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+                              || u.UserGroupMemberships.Any(x => !x.IsDeleted && x.OrganisationUserGroup.GroupEligibleRoles.Any(y => !y.IsDeleted && y.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)))
+                            select new { er.CcsAccessRole.CcsAccessRoleNameKey, u.UserGroupMemberships }).FirstOrDefault();
 
       bool isAdminUser = false;
-      if (UserAccessRole != null && UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+      if (UserAccessRole != null && ((UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey) || (UserAccessRole.UserGroupMemberships.Any(x => !x.IsDeleted && x.OrganisationUserGroup.GroupEligibleRoles.Any(y => !y.IsDeleted && y.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)))))
       {
         isAdminUser = true;
       }
