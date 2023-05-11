@@ -926,11 +926,12 @@ namespace CcsSso.Core.Service.External
                             join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
                             join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
                             join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
-                            where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
-                            select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
+                            where u.UserName == userName && ((cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+                              || u.UserGroupMemberships.Any(x => !x.IsDeleted && x.OrganisationUserGroup.GroupEligibleRoles.Any(y => !y.IsDeleted && y.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)))
+                            select new { er.CcsAccessRole.CcsAccessRoleNameKey, u.UserGroupMemberships }).FirstOrDefault();
 
       bool isAdminUser = false;
-      if (UserAccessRole != null && UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+      if (UserAccessRole != null && ((UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey) || (UserAccessRole.UserGroupMemberships.Any(x => !x.IsDeleted && x.OrganisationUserGroup.GroupEligibleRoles.Any(y => !y.IsDeleted && y.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)))))
       {
         isAdminUser = true;
       }
