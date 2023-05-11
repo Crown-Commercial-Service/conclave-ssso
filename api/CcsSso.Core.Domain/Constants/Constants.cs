@@ -83,6 +83,8 @@ namespace CcsSso.Domain.Constants
     public const string ErrorLinkExpired = "ERROR_LINK_EXPIRED";
     public const string ErrorUserAlreadyExists = "ERROR_USER_ALREADY_EXISTS";
 
+    public const string ErrorUserRoleAlreadyExists = "ERROR_USER_ROLE_ALREADY_EXISTS";
+
   }
 
   public static class VirtualContactTypeName

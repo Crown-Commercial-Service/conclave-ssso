@@ -1100,6 +1100,40 @@ namespace CcsSso.ExternalApi.Controllers
     {
       await _organisationGroupService.UpdateServiceRoleGroupAsync(organisationId, groupId, organisationServiceRoleGroupRequestInfo);
     }
+
+    /// <summary>
+    /// Get organisation group users and their role approval status
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/groups/1/groupusers
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/groups/{groupId}/groupusers")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation Group" })]
+    [ProducesResponseType(typeof(GroupUserListResponse), 200)]
+    public async Task<GroupUserListResponse> GetGroupUsersPendingRequestSummary(string organisationId, int groupId,
+      [FromQuery] ResultSetCriteria resultSetCriteria,
+      [FromQuery(Name = "is-pending-approval")] bool isPendingApproval = false)
+    {
+      resultSetCriteria ??= new ResultSetCriteria
+      {
+        CurrentPage = 1,
+        PageSize = 10
+      };
+      resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
+      resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
+
+      return await _organisationGroupService.GetGroupUsersPendingRequestSummary(groupId, organisationId, resultSetCriteria,isPendingApproval);
+    }
+
     #endregion
 
     #region Organisation IdentityProviders
@@ -1431,7 +1465,7 @@ namespace CcsSso.ExternalApi.Controllers
     [HttpPost("{ciiOrganisationId}/autovalidationjob")]
     [SwaggerOperation(Tags = new[] { "AutoValidation" })]
     [ProducesResponseType(typeof(string), 200)]
-    public async Task<Tuple<bool,string>> AutovalidationJob(string ciiOrganisationId)
+    public async Task<Tuple<bool, string>> AutovalidationJob(string ciiOrganisationId)
     {
       return await _organisationService.AutoValidateOrganisationJob(ciiOrganisationId);
     }
