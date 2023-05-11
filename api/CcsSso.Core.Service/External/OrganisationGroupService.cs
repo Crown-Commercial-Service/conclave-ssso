@@ -1,3 +1,4 @@
+using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
@@ -8,13 +9,16 @@ using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
@@ -29,11 +33,16 @@ namespace CcsSso.Core.Service.External
     private readonly ApplicationConfigurationInfo _appConfigInfo;
     private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
     private readonly IOrganisationProfileService _organisationService;
+    private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
+    private readonly ILocalCacheService _localCacheService;
+
 
     public OrganisationGroupService(IDataContext dataContext, IUserProfileHelperService userProfileHelperService,
       IAuditLoginService auditLoginService, ICcsSsoEmailService ccsSsoEmailService, IWrapperCacheService wrapperCacheService,
       ApplicationConfigurationInfo appConfigInfo, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
-      IOrganisationProfileService organisationService)
+      IOrganisationProfileService organisationService,
+      IUserProfileRoleApprovalService userProfileRoleApprovalService,
+      ILocalCacheService localCacheService)
     {
       _dataContext = dataContext;
       _userProfileHelperService = userProfileHelperService;
@@ -43,6 +52,8 @@ namespace CcsSso.Core.Service.External
       _appConfigInfo = appConfigInfo;
       _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
       _organisationService = organisationService;
+      _userProfileRoleApprovalService = userProfileRoleApprovalService;
+      _localCacheService = localCacheService;
     }
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
@@ -116,6 +127,8 @@ namespace CcsSso.Core.Service.External
 
       await _dataContext.SaveChangesAsync();
 
+      await RemoveGroupRolePendingRequest(group);
+
       // Log
       await _auditLoginService.CreateLogAsync(AuditLogEvent.GroupeDelete, AuditLogApplication.ManageGroup, $"GroupId:{group.Id}, GroupName:{group.UserGroupName}, OrganisationId:{ciiOrganisationId}");
 
@@ -149,16 +162,32 @@ namespace CcsSso.Core.Service.External
         {
           Id = gr.OrganisationEligibleRole.Id,
           Name = gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName
-        }).ToList(),
-        Users = group.UserGroupMemberships.Where(ugm => !ugm.IsDeleted).Select(ugm => new GroupUser
-        {
-          UserId = ugm.User.UserName,
-          Name = $"{ugm.User.Party.Person.FirstName} {ugm.User.Party.Person.LastName}",
-          IsAdmin = ugm.User.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted)
         }).ToList()
+
       };
+      var isApprovalRequired = group.GroupEligibleRoles.Any(x => !x.OrganisationEligibleRole.IsDeleted && x.OrganisationEligibleRole.CcsAccessRole.ApprovalRequired == 1);
+
+      organisationGroupResponseInfo.Users = group.UserGroupMemberships.Where(ugm => !ugm.IsDeleted).Select(ugm => new GroupUser
+      {
+        UserId = ugm.User.UserName,
+        Name = $"{ugm.User.Party.Person.FirstName} {ugm.User.Party.Person.LastName}",
+        IsAdmin = ugm.User.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted),
+
+        UserPendingRoleStatus = !isApprovalRequired ? null : getUserRolePendingStatus(ugm),
+      }).ToList();
 
       return organisationGroupResponseInfo;
+    }
+
+    private UserPendingRoleStaus? getUserRolePendingStatus(UserGroupMembership ugm)
+    {
+      // return _dataContext.UserAccessRolePending.OrderByDescending(y => y.Id).FirstOrDefault(x => !x.IsDeleted && x.UserId == ugm.User.Id && x.Status == (int)UserPendingRoleStaus.Pending) != null;
+      var pendingRole = _dataContext.UserAccessRolePending
+          .OrderByDescending(y => y.Id)
+          .FirstOrDefault(x => x.UserId == ugm.User.Id && x.OrganisationUserGroupId == ugm.OrganisationUserGroupId);
+
+
+      return (UserPendingRoleStaus?)(pendingRole?.Status);
     }
 
     public async Task<OrganisationGroupList> GetGroupsAsync(string ciiOrganisationId, string searchString = null)
@@ -191,7 +220,7 @@ namespace CcsSso.Core.Service.External
     public async Task UpdateGroupAsync(string ciiOrganisationId, int groupId, OrganisationGroupRequestInfo organisationGroupRequestInfo)
     {
       var group = await _dataContext.OrganisationUserGroup
-        .Include(g => g.GroupEligibleRoles).ThenInclude(r => r.OrganisationEligibleRole)
+        .Include(g => g.GroupEligibleRoles).ThenInclude(r => r.OrganisationEligibleRole).ThenInclude(x => x.CcsAccessRole)
         .Include(g => g.UserGroupMemberships).ThenInclude(ugm => ugm.User)
         .FirstOrDefaultAsync(g => !g.IsDeleted && g.Id == groupId && g.Organisation.CiiOrganisationId == ciiOrganisationId);
 
@@ -294,7 +323,6 @@ namespace CcsSso.Core.Service.External
                   OrganisationUserGroupId = groupId,
                   OrganisationEligibleRoleId = addedRoleId
                 };
-
                 group.GroupEligibleRoles.Add(groupAccess);
               }
             });
@@ -349,11 +377,33 @@ namespace CcsSso.Core.Service.External
               UserId = addedUserId,
               OrganisationUserGroupId = group.Id
             };
-
             addedUsersTupleList.Add(new Tuple<int, string>(addedUserId, addedUserName)); // for logs
             group.UserGroupMemberships.Add(userGroupMembership);
           }
         });
+
+        // this will be used in the success page. (Group success page only shows pending status for the added users)
+        var expiration = new TimeSpan(0, 0, 60);
+        if (addedUserNameList.Any())
+        {
+          _localCacheService.SetValue(groupId.ToString(), addedUserNameList, expiration);
+        }
+        else
+        {
+          if (removedUserNameList.Any())
+          {
+            _localCacheService.SetValue(groupId.ToString(), new List<string> { "userremoved" }, expiration);
+          }
+          else
+          {
+            _localCacheService.Remove(new string[] { groupId.ToString() });
+          }
+        }
+      }
+      else
+      {
+        _localCacheService.Remove(new string[] { groupId.ToString() });
+
       }
 
       var mfaEnableRoleExists = orgRoleInfo.Any(r => group.GroupEligibleRoles.Any(ge => ge.OrganisationEligibleRoleId == r.Id && !ge.IsDeleted && r.MfaEnable));
@@ -371,6 +421,13 @@ namespace CcsSso.Core.Service.External
       // This field should not let be updated manually as it consumes in user screen to decide mfa enable/disable
       group.MfaEnabled = mfaEnableRoleExists;
       await _dataContext.SaveChangesAsync();
+
+      if (_appConfigInfo.UserRoleApproval.Enable)
+      {
+        await RemoveGroupRolesApproveRequest(groupId, removedRoleIds);
+        await RemoveGroupUsersApproveRequest(groupId, removedUsersTupleList);
+        await VerifyAndCreateGroupRolePendingRequest(group, ciiOrganisationId, addedUsersTupleList, addedRoleIds);
+      }
 
       //Log
       if (hasNameChanged)
@@ -415,6 +472,156 @@ namespace CcsSso.Core.Service.External
       invalidatingCacheKeys.AddRange(existingUserNames.Select(existUserName => $"{CacheKeyConstant.User}-{existUserName}"));
       await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeys.ToArray());
     }
+
+    private async Task RemoveGroupUsersApproveRequest(int groupId, List<Tuple<int, string>> removedUsersTupleList)
+    {
+      if (removedUsersTupleList != null && removedUsersTupleList.Any())
+      {
+        var removedUserIds = removedUsersTupleList.Select(x => x.Item1);
+
+        var userAccessRolePendingList = await _dataContext.UserAccessRolePending
+          .Where(x => removedUserIds.Contains(x.UserId)
+          && x.OrganisationUserGroupId == groupId).ToListAsync();
+
+        userAccessRolePendingList.ForEach(l => { l.IsDeleted = true; l.Status = (int)UserPendingRoleStaus.Removed; });
+
+        await _dataContext.SaveChangesAsync();
+      }
+    }
+
+    private async Task RemoveGroupRolesApproveRequest(int groupId, List<int> removedRoleIds)
+    {
+      if (removedRoleIds != null && removedRoleIds.Any())
+      {
+        var userAccessRolePendingList = await _dataContext.UserAccessRolePending
+          .Where(x => removedRoleIds.Contains(x.OrganisationEligibleRoleId)
+          && x.OrganisationUserGroupId == groupId).ToListAsync();
+
+        userAccessRolePendingList.ForEach(l => { l.IsDeleted = true; l.Status = (int)UserPendingRoleStaus.Removed; });
+
+        await _dataContext.SaveChangesAsync();
+      }
+    }
+
+    private async Task VerifyAndCreateGroupRolePendingRequest(OrganisationUserGroup group, string ciiOrganisationId, List<Tuple<int, string>> addedUsersTupleList, List<int> addedRoleIds)
+    {
+      if (!_appConfigInfo.UserRoleApproval.Enable)
+      {
+        return;
+      }
+      var org = await _dataContext.Organisation.FirstOrDefaultAsync(x => x.CiiOrganisationId == ciiOrganisationId);
+      var orgDomain = org?.DomainName?.ToLower();
+
+      List<User> newAddedUsers = new();
+      if (group.GroupEligibleRoles.Any(x => !x.IsDeleted && addedRoleIds.Contains(x.OrganisationEligibleRoleId) &&
+        x.OrganisationEligibleRole.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired))
+      {
+        newAddedUsers = group.UserGroupMemberships.Where(x => !x.IsDeleted).Select(ugm => ugm.User).ToList();
+      }
+      else
+      {
+        newAddedUsers = group.UserGroupMemberships.Where(x => !x.IsDeleted).Select(ugm => ugm.User).Where(u => addedUsersTupleList.Select(x => x.Item1).Contains(u.Id)).ToList();
+      }
+      var userHasInValidDomain = newAddedUsers.Where(user => user.UserName.ToLower().Split('@')?[1] != orgDomain).ToList();
+
+      if (userHasInValidDomain.Any())
+      {
+        //await RemoveGroupRolePendingRequest(group, userHasInValidDomain);
+
+        List<int> approvalRequiredRoles = new();
+        foreach (var role in group.GroupEligibleRoles.Where(x => !x.IsDeleted))
+        {
+          if (role.OrganisationEligibleRole.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired)
+          {
+            approvalRequiredRoles.Add(role.OrganisationEligibleRoleId);
+          }
+        }
+
+        if (approvalRequiredRoles.Any())
+        {
+          await GeneratePendingRequests(group, userHasInValidDomain, approvalRequiredRoles);
+        }
+        else
+        {
+          // remove any pending request exists for this group
+          //await RemoveGroupRolePendingRequest(group);
+        }
+      }
+      else
+      {
+        // remove any pending request exists for this group 
+        //await RemoveGroupRolePendingRequest(group);
+      }
+    }
+
+    private async Task RemoveGroupRolePendingRequest(OrganisationUserGroup group)
+    {
+      var pendingGroupRequest = await _dataContext.UserAccessRolePending.Where(x =>
+      (x.Status == (int)UserPendingRoleStaus.Pending
+      || x.Status == (int)UserPendingRoleStaus.Approved
+      || x.Status == (int)UserPendingRoleStaus.Rejected) &&
+      x.OrganisationUserGroupId == group.Id).ToListAsync();
+
+      foreach (var pendingRequest in pendingGroupRequest)
+      {
+        pendingRequest.IsDeleted = true;
+        pendingRequest.Status = (int)UserPendingRoleStaus.Removed;
+      }
+      await _dataContext.SaveChangesAsync();
+    }
+
+    public async Task<GroupUserListResponse> GetGroupUsersPendingRequestSummary(int groupId, string ciiOrgId, ResultSetCriteria resultSetCriteria, bool isPendingApproval)
+    {
+      var group = await _dataContext.OrganisationUserGroup
+          .Include(g => g.UserGroupMemberships).ThenInclude(ugm => ugm.User)
+          .FirstOrDefaultAsync(g => !g.IsDeleted && g.Id == groupId && g.Organisation.CiiOrganisationId == ciiOrgId);
+
+      if (group == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+
+      var existingUserIds = group.UserGroupMemberships.Where(x => !x.IsDeleted).Select(ugm => ugm.UserId);
+
+      var pendingAndRejectedRequests = await _dataContext.UserAccessRolePending
+          .Where(x => existingUserIds.Contains(x.UserId) && x.OrganisationUserGroupId == groupId
+          && (x.Status == (int)UserPendingRoleStaus.Pending || x.Status == (int)UserPendingRoleStaus.Rejected))
+          .ToListAsync();
+
+      var pendingRequests = pendingAndRejectedRequests.Where(x => x.Status == (int)UserPendingRoleStaus.Pending && !x.IsDeleted);
+
+
+      var filteredUserIds = isPendingApproval ? existingUserIds.Where(x => pendingRequests.Any(y => y.UserId == x)) : existingUserIds.Where(x => !pendingAndRejectedRequests.Any(y => y.UserId == x));
+
+      var addedUsers = _localCacheService.GetValue<List<string>>(groupId.ToString());
+      if (addedUsers != null && addedUsers.Any())
+      {
+        var userIds = _dataContext.User.Where(x => addedUsers.Contains(x.UserName)).Select(x => x.Id);
+        filteredUserIds = filteredUserIds.Where(x => userIds.Contains(x)).ToArray();
+      }
+
+      var usersQuery = _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).Where(user => !user.IsDeleted && filteredUserIds.Contains(user.Id)).OrderBy(u => u.UserName);
+
+      var pagedResult = await _dataContext.GetPagedResultAsync(usersQuery, resultSetCriteria);
+
+      var groupUserListResponse = new GroupUserListResponse
+      {
+        groupId = groupId,
+        CurrentPage = pagedResult.CurrentPage,
+        PageCount = pagedResult.PageCount,
+        RowCount = pagedResult.RowCount,
+        GroupUser = pagedResult.Results?.Select(up => new GroupUser
+        {
+          UserId = up.UserName,
+          UserPendingRoleStatus = isPendingApproval ? UserPendingRoleStaus.Pending : null, // pending and rejected will be shown as users doesn't have the role. 
+          Name = $"{up.Party.Person.FirstName} {up.Party.Person.LastName}",
+        }).ToList() ?? new List<GroupUser>()
+      };
+
+      return groupUserListResponse;
+    }
+
+
 
     public async Task<OrganisationServiceRoleGroupResponseInfo> GetServiceRoleGroupAsync(string ciiOrganisationId, int groupId)
     {
@@ -478,7 +685,7 @@ namespace CcsSso.Core.Service.External
       };
 
       await this.UpdateGroupAsync(ciiOrganisationId, groupId, organisationGroupRequestInfo);
-    }
+    }    
 
     private static OrganisationServiceRoleGroupResponseInfo ConvertGroupRoleToServiceRoleGroupResponse(OrganisationGroupResponseInfo organisationGroupResponseInfo)
     {
@@ -527,5 +734,35 @@ namespace CcsSso.Core.Service.External
 
       return roleIds;
     }
+
+    private async Task GeneratePendingRequests(OrganisationUserGroup group, List<User> userHasInValidDomain, List<int> approvalRequiredRoles)
+    {
+      var existingUsersRequests = await _dataContext.UserAccessRolePending.Where(x => approvalRequiredRoles.Contains(x.OrganisationEligibleRoleId)
+                    && x.OrganisationUserGroupId == group.Id
+                    && userHasInValidDomain.Select(u => u.Id).Contains(x.UserId)).ToListAsync();
+
+      foreach (var user in userHasInValidDomain)
+      {
+        var latestRequestOfUser = existingUsersRequests.OrderByDescending(x => x.Id).FirstOrDefault(x => x.UserId == user.Id);
+
+        if (latestRequestOfUser == null ||
+          (latestRequestOfUser.Status != (int)UserPendingRoleStaus.Pending
+          && latestRequestOfUser.Status != (int)UserPendingRoleStaus.Approved
+          && latestRequestOfUser.Status != (int)UserPendingRoleStaus.Rejected))
+        {
+          await _userProfileRoleApprovalService.CreateUserRolesPendingForApprovalAsync(new UserProfileEditRequestInfo
+          {
+            UserName = user.UserName,
+            OrganisationId = group.Organisation.CiiOrganisationId,
+            Detail = new UserRequestDetail
+            {
+              GroupId = group.Id,
+              RoleIds = approvalRequiredRoles
+            }
+          }, sendEmailNotification: false);
+        }
+      }
+    }
+
   }
 }

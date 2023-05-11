@@ -1,0 +1,140 @@
+using CcsSso.Core.PPONScheduler.Jobs;
+using CcsSso.Core.PPONScheduler.Model;
+using CcsSso.DbPersistence;
+using CcsSso.Domain.Contracts;
+using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Services;
+using Microsoft.EntityFrameworkCore;
+using CcsSso.Shared.Domain.Contexts;
+using CcsSso.Core.PPONScheduler.Service.Contracts;
+using CcsSso.Core.PPONScheduler.Service;
+using CcsSso.Service;
+using CcsSso.Core.Service;
+using CcsSso.Core.Domain.Contracts;
+
+namespace CcsSso.Core.PPONScheduler
+{
+  public class Program
+  {
+    private static bool vaultEnabled;
+
+    public static void Main(string[] args)
+    {
+      CreateHostBuilder(args).Build().Run();
+    }
+
+    public static IHostBuilder CreateHostBuilder(string[] args)
+    {
+      return Host.CreateDefaultBuilder(args)
+      .ConfigureAppConfiguration((hostingContext, config) =>
+      {
+        PopulateAppConfiguration(config);
+      })
+
+      .ConfigureServices((hostContext, services) =>
+      {
+        PPONAppSettings appSettings = GetConfigurationDetails(hostContext);
+        ConfigureHttpClients(services, appSettings);
+        ConfigureModels(services, appSettings);
+        ConfigureServices(services, appSettings);
+        ConfigureContexts(services, appSettings);
+        ConfigureJobs(services);
+      });
+    }
+
+    private static void PopulateAppConfiguration(IConfigurationBuilder config)
+    {
+      var configBuilder = new ConfigurationBuilder()
+                              .AddJsonFile("appsettings.json", optional: false)
+                              .Build();
+
+      var builtConfig = config.Build();
+      vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
+
+      if (!vaultEnabled)
+      {
+        config.AddJsonFile("appsecrets.json", optional: false, reloadOnChange: true);
+      }
+    }
+
+    private static void ConfigureModels(IServiceCollection services, PPONAppSettings appSettings)
+    {
+      services.AddSingleton(s =>
+      {
+        Dtos.Domain.Models.CiiConfig ciiConfigInfo = new Dtos.Domain.Models.CiiConfig()
+        {
+          url = appSettings.CiiSettings.Url,
+          token = appSettings.CiiSettings.Token
+        };
+        return ciiConfigInfo;
+      });
+    }
+
+    private static void ConfigureJobs(IServiceCollection services)
+    {
+      services.AddHostedService<OneTimePPONJob>();
+      services.AddHostedService<PPONJob>();
+    }
+
+    private static void ConfigureContexts(IServiceCollection services, PPONAppSettings appSettings)
+    {
+      services.AddScoped(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
+      services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(appSettings.DbConnection));
+    }
+
+    private static void ConfigureServices(IServiceCollection services, PPONAppSettings appSettings)
+    {
+      services.AddSingleton(s => appSettings);
+
+      services.AddScoped<IAuditLoginService, AuditLoginService>();
+      services.AddScoped<ICiiService, CiiService>();
+      services.AddScoped<IDateTimeService, DateTimeService>();
+      services.AddScoped<IPPONService, PPONService>();
+    }
+
+    private static void ConfigureHttpClients(IServiceCollection services, PPONAppSettings appSettings)
+    {
+      services.AddHttpClient("PPONApi", c =>
+      {
+        c.BaseAddress = new Uri(appSettings.PPONApiSettings.Url);
+        c.DefaultRequestHeaders.Add("x-api-key", appSettings.PPONApiSettings.Key);
+      });
+      services.AddHttpClient("CiiApi", c =>
+      {
+        c.BaseAddress = new Uri(appSettings.CiiSettings.Url);
+        c.DefaultRequestHeaders.Add("x-api-key", appSettings.CiiSettings.Token);
+      });
+    }
+
+    private static PPONAppSettings GetConfigurationDetails(HostBuilderContext hostContext)
+    {
+      ScheduleJob scheduleJob;
+      OneTimeJob oneTimeJob;
+      CiiSettings ciiSettings;
+      ApiSettings pPONApiSettings;
+
+      string dbConnection;
+
+      var config = hostContext.Configuration;
+      dbConnection = config["DbConnection"];
+
+      ciiSettings = config.GetSection("CIIApi").Get<CiiSettings>();
+      pPONApiSettings = config.GetSection("PPONApi").Get<ApiSettings>();
+
+      scheduleJob = config.GetSection("ScheduleJob").Get<ScheduleJob>();
+      oneTimeJob = config.GetSection("OneTimeJob").Get<OneTimeJob>();
+
+      var appSettings = new PPONAppSettings()
+      {
+        DbConnection = dbConnection,
+        CiiSettings = ciiSettings,
+        PPONApiSettings = pPONApiSettings,
+        ScheduleJobSettings = scheduleJob,
+        OneTimeJobSettings = oneTimeJob,
+      };
+
+      return appSettings;
+    }
+  }
+}
+
