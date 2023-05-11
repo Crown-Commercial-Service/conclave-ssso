@@ -100,7 +100,7 @@ namespace CcsSso.Core.PPONScheduler.Service
     private async Task<List<Organisation>> GetRegisteredOrgsByDateAsync(DateTime untilDateTime)
     {
       var result = await _dataContext.Organisation.Where(
-                        org => !org.IsDeleted).ToListAsync();
+                        org => !org.IsDeleted && org.IsActivated).ToListAsync();
 
       return result.Where(org => org.CreatedOnUtc > untilDateTime)
                     .Select(o =>
@@ -118,7 +118,7 @@ namespace CcsSso.Core.PPONScheduler.Service
     private async Task<List<Organisation>> GetRegisteredOrgsByDateAsync(DateTime startDate, DateTime endDate)
     {
       return await _dataContext.Organisation.Where(
-                                  org => !org.IsDeleted
+                                  org => !org.IsDeleted && org.IsActivated
                                   && org.CreatedOnUtc >= TimeZoneInfo.ConvertTimeToUtc(startDate) && org.CreatedOnUtc <= TimeZoneInfo.ConvertTimeToUtc(endDate))
                   .Select(o => new Organisation
                   {
