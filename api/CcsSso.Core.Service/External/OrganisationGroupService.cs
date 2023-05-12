@@ -369,36 +369,6 @@ namespace CcsSso.Core.Service.External
             });
           }
         }
-
-        //var anyRoleRequiredApproval = false;
-
-        //if (addedRoleIds.Any())
-        //{
-        //  //var orgRoles = _dataContext.OrganisationEligibleRole.Include(x => x.CcsAccessRole).Where(y => y.OrganisationId == group.OrganisationId && !y.IsDeleted);
-        //  //anyRoleRequiredApproval = orgRoles.Any(x=>addedRoleIds.Contains(x.Id) && x.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired);
-
-        //  anyRoleRequiredApproval = _dataContext.OrganisationEligibleRole.Include(x => x.CcsAccessRole).Any(y => y.OrganisationId == group.OrganisationId && !y.IsDeleted && addedRoleIds.Contains(y.Id) 
-        //  && y.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired);
-
-        //  //group.GroupEligibleRoles.Any(x => !x.IsDeleted 
-        //  //                                                      && addedRoleIds.Contains(x.OrganisationEligibleRoleId) &&
-        //  //                                                       x.OrganisationEligibleRole.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired);
-        //}
-
-
-        //var expiration = new TimeSpan(0, 0, 60);
-        //// remove role and add roles where added roles may need approval 
-        //// or no roles are removed but new roles are added which may need approval.
-        //// text added in the list to avoid selecting a user from the group success page summary api call 
-        //if ((organisationGroupRequestInfo.RoleInfo.RemovedRoleIds != null && !anyRoleRequiredApproval) || !anyRoleRequiredApproval)
-        //{
-        //  _localCacheService.SetValue(groupId.ToString(), new List<string> { "userremoved" }, expiration);
-        //}
-        //else
-        //{
-        //  _localCacheService.Remove(new string[] { groupId.ToString() });
-        //}
-
       }
 
 
@@ -464,7 +434,6 @@ namespace CcsSso.Core.Service.External
         }
         else
         {
-          //if (removedUserNameList.Any() || organisationGroupRequestInfo.RoleInfo.RemovedRoleIds != null)
           if (removedUserNameList.Any())
           {
             _localCacheService.SetValue(groupId.ToString(), new List<string> { "-1"}, expiration);
