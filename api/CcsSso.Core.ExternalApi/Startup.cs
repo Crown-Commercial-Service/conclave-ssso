@@ -160,6 +160,12 @@ namespace CcsSso.ExternalApi
           {
             Enable = Convert.ToBoolean(Configuration["ServiceRoleGroupSettings:Enable"])
           },
+          NotificationApiSettings = new NotificationApiSettings()
+          {
+            Enable = Convert.ToBoolean(Configuration["NotificationApiSettings:Enable"]),
+            Url = Configuration["NotificationApiSettings:Url"],
+            ApiKey = Configuration["NotificationApiSettings:ApiKey"]
+          },
           NewUserJoinRequest = new NewUserJoinRequest()
           {
             LinkExpirationInMinutes = Convert.ToInt32(Configuration["NewUserJoinRequest:LinkExpirationInMinutes"])
@@ -207,6 +213,7 @@ namespace CcsSso.ExternalApi
         return sqsConfiguration;
       });
       services.AddSingleton<IAwsSqsService, AwsSqsService>();
+      services.AddSingleton<INotificationApiService, NotificationApiService>();
       services.AddSingleton<IEmailProviderService, EmailProviderService>();
       services.AddSingleton<ICcsSsoEmailService, CcsSsoEmailService>();
       services.AddDbContext<DataContext>(options => options.UseNpgsql(Configuration["DbConnection"]));
@@ -262,6 +269,11 @@ namespace CcsSso.ExternalApi
       {
         c.BaseAddress = new Uri(Configuration["LookUpApiSettings:LookUpApiUrl"]);
         c.DefaultRequestHeaders.Add("X-API-Key", Configuration["LookUpApiSettings:LookUpApiKey"]);
+      });
+      services.AddHttpClient("NotificationApi", c =>
+      {
+        c.BaseAddress = new Uri(Configuration["NotificationApiSettings:Url"]);
+        c.DefaultRequestHeaders.Add("X-API-Key", Configuration["NotificationApiSettings:ApiKey"]);
       });
       services.AddSwaggerGen(c =>
       {
