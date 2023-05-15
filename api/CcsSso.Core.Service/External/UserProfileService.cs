@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace CcsSso.Core.Service.External
 {
@@ -45,15 +46,16 @@ namespace CcsSso.Core.Service.External
     private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
     private readonly IOrganisationGroupService _organisationGroupService;
     private readonly IOrganisationProfileService _organisationService;
+        private readonly ILogger<UserProfileService> _logger;
 
-    public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
+        public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
       IAdaptorNotificationService adapterNotificationService, IWrapperCacheService wrapperCacheService,
       IAuditLoginService auditLoginService, IRemoteCacheService remoteCacheService,
       ICacheInvalidateService cacheInvalidateService, ICryptographyService cryptographyService,
       ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService,
       IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
-      IOrganisationGroupService organisationGroupService, IOrganisationProfileService organisationService)
+      IOrganisationGroupService organisationGroupService, IOrganisationProfileService organisationService, ILogger<UserProfileService> logger)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -73,7 +75,8 @@ namespace CcsSso.Core.Service.External
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
       _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
       _organisationGroupService = organisationGroupService;
-    }
+            _logger = logger;
+        }
 
     public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo, bool isNewOrgAdmin = false)
     {
@@ -1872,8 +1875,10 @@ namespace CcsSso.Core.Service.External
       acceptanceToken = acceptanceToken?.Replace(" ", "+");
       // Decrept token
       string delegationActivationDetails = _cryptographyService.DecryptString(acceptanceToken, _appConfigInfo.DelegationEmailTokenEncryptionKey);
+            _logger.LogInformation(delegationActivationDetails);
+            Console.WriteLine($"EXTERNAL-API-LOGS:- CheckingExpirydate : {delegationActivationDetails}");
 
-      if (string.IsNullOrWhiteSpace(delegationActivationDetails))
+            if (string.IsNullOrWhiteSpace(delegationActivationDetails))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegation);
       }
@@ -1885,9 +1890,15 @@ namespace CcsSso.Core.Service.External
       string ciiOrganisationId = delegationDetails["org"];
       DateTime expirationTime = Convert.ToDateTime(delegationDetails["exp"]);
 
-      if (expirationTime < DateTime.UtcNow)
+            _logger.LogInformation(userName + ciiOrganisationId + expirationTime);
+            Console.WriteLine($"EXTERNAL-API-LOGS:- CheckingExpirydate : {expirationTime}");
+
+            if (expirationTime < DateTime.UtcNow)
       {
-        throw new CcsSsoException(ErrorConstant.ErrorActivationLinkExpired);
+                _logger.LogInformation("ExpiredError" + expirationTime);
+                Console.WriteLine($"EXTERNAL-API-LOGS:- ExpiredError : {expirationTime}");
+
+                throw new CcsSsoException(ErrorConstant.ErrorActivationLinkExpired);
       }
 
       // get organisation actual id from ciiorganisation id
@@ -1921,8 +1932,12 @@ namespace CcsSso.Core.Service.External
 
       existingDelegatedUserDetails.DelegationAccepted = true;
 
-      try
-      {
+            _logger.LogInformation("DelegateAccepted" + expirationTime);
+            Console.WriteLine($"EXTERNAL-API-LOGS:- DelegateAccepted : {expirationTime}");
+
+
+            try
+            {
         //remove redis cache token
         await _remoteCacheService.RemoveAsync(userName + "-" + organisation.CiiOrganisationId);
 
@@ -1962,8 +1977,10 @@ namespace CcsSso.Core.Service.External
       string activationInfo = "usr=" + userName + "&org=" + orgId + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegationEmailExpirationHours);
       var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
 
+            _logger.LogInformation(activationInfo);
+            Console.WriteLine($"EXTERNAL-API-LOGS:- CheckingExpirydate : {activationInfo}");
 
-      if (string.IsNullOrWhiteSpace(encryptedInfo))
+            if (string.IsNullOrWhiteSpace(encryptedInfo))
       {
         throw new CcsSsoException(ErrorConstant.ErrorSendingActivationLink);
       }
