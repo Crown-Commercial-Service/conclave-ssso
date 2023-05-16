@@ -372,7 +372,7 @@ namespace CcsSso.ExternalApi.Controllers
     [ProducesResponseType(typeof(bool), 200)]
     public async Task ResenedActivationLink([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "delegated-organisation-id")] string organisationId)
     {
-      await _userProfileService.SendUserDelegatedAccessEmailAsync(userId, organisationId);
+      await _userProfileService.SendUserDelegatedAccessEmailAsync(userId, organisationId, isLogEnable: true);
     }
 
     #endregion

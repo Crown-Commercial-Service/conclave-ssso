@@ -45,6 +45,7 @@ namespace CcsSso.Core.Service.External
     private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
     private readonly IOrganisationGroupService _organisationGroupService;
     private readonly IOrganisationProfileService _organisationService;
+    private readonly IDelegationAuditEventService _delegationAuditEventService;
 
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
@@ -53,7 +54,8 @@ namespace CcsSso.Core.Service.External
       ICacheInvalidateService cacheInvalidateService, ICryptographyService cryptographyService,
       ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService,
       IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
-      IOrganisationGroupService organisationGroupService, IOrganisationProfileService organisationService)
+      IOrganisationGroupService organisationGroupService, IOrganisationProfileService organisationService,
+      IDelegationAuditEventService delegationAuditEventService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -73,6 +75,7 @@ namespace CcsSso.Core.Service.External
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
       _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
       _organisationGroupService = organisationGroupService;
+      _delegationAuditEventService = delegationAuditEventService;
     }
 
     public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo, bool isNewOrgAdmin = false)
@@ -1207,7 +1210,7 @@ namespace CcsSso.Core.Service.External
                           || !adminRoleAvailability;
     }
 
-    private async Task<bool> UpdateIdamRecords(string userName, UserProfileEditRequestInfo userProfileRequestInfo, User user, (bool,bool,bool) mfaAndSignInFlags)
+    private async Task<bool> UpdateIdamRecords(string userName, UserProfileEditRequestInfo userProfileRequestInfo, User user, (bool, bool, bool) mfaAndSignInFlags)
     {
       bool mfaFlagChanged = mfaAndSignInFlags.Item1;
       bool isPreviouslyUserNamePwdConnectionIncluded = mfaAndSignInFlags.Item2;
@@ -1247,7 +1250,7 @@ namespace CcsSso.Core.Service.External
       return isRegisteredInIdam;
     }
 
-    
+
     private async Task<(List<UserAccessRole>, List<int>)> GetUserAccessRoles(UserProfileEditRequestInfo userProfileRequestInfo, Organisation organisation, bool isUserDomainValid, List<int> previousRoles)
     {
       var userAccessRoles = new List<UserAccessRole>();
@@ -1721,6 +1724,8 @@ namespace CcsSso.Core.Service.External
         // Send delegation activation email
         await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName);
 
+        await CreateDelegatedUserEventLog(userProfileRequestInfo);
+
         // Log
         //await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelegated, AuditLogApplication.ManageUserAccount, $"UserId:{existingUserPrimaryDetails.Id}," + " " +
         //          $"UserRoleIds:{string.Join(",", userAccessRoles.Select(r => r.OrganisationEligibleRoleId))}");
@@ -1850,6 +1855,8 @@ namespace CcsSso.Core.Service.External
       try
       {
         await _dataContext.SaveChangesAsync();
+
+        await CreateTerminationOfDelegatedAccessEventLog();
       }
       catch (Exception ex)
       {
@@ -1925,16 +1932,17 @@ namespace CcsSso.Core.Service.External
       {
         //remove redis cache token
         await _remoteCacheService.RemoveAsync(userName + "-" + organisation.CiiOrganisationId);
-
         await _dataContext.SaveChangesAsync();
+
+        await CreateActivationOfDelegationEventLog(existingDelegatedUserDetails);
       }
       catch (Exception ex)
       {
         Console.Write(ex);
       }
     }
-
-    public async Task SendUserDelegatedAccessEmailAsync(string userName, string orgId, string orgName = "")
+        
+    public async Task SendUserDelegatedAccessEmailAsync(string userName, string orgId, string orgName = "", bool isLogEnable = false)
     {
       _userHelper.ValidateUserName(userName);
 
@@ -1973,8 +1981,12 @@ namespace CcsSso.Core.Service.External
 
       // Send the delegation email
       await _ccsSsoEmailService.SendUserDelegatedAccessEmailAsync(userName, orgName, encryptedInfo);
-    }
 
+      if (isLogEnable)
+      {
+        await CreateResendActivationLinkEventLog();
+      }
+    }
 
     private void ValidateDelegateUserDetails(Organisation organisation, DelegatedUserProfileRequestInfo userProfileRequestInfo, bool isUpdated = false)
     {
@@ -2483,6 +2495,78 @@ namespace CcsSso.Core.Service.External
     {
       var users = await _dataContext.User.Where(u => !u.IsDeleted).ToListAsync();
       return users;
+    }
+
+    private async Task CreateResendActivationLinkEventLog()
+    {
+      var user = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
+      await CreateDelegationEventLog(user, DelegationAuditEventType.ResendActivationLink);
+    }
+
+    private async Task CreateTerminationOfDelegatedAccessEventLog()
+    {
+      var user = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
+      await CreateDelegationEventLog(user, DelegationAuditEventType.TerminationOfDelegatedAccess);
+    }
+
+    private async Task CreateActivationOfDelegationEventLog(User user)
+    {
+      await CreateDelegationEventLog(user, DelegationAuditEventType.ActivationOfDelegation);
+    }
+
+    private async Task CreateDelegationEventLog(User user, DelegationAuditEventType delegationAuditEventType)
+    {
+      List<DelegationAuditEventInfo> auditEventLogs = new();
+
+      Guid groupId = Guid.NewGuid();
+
+      DelegationAuditEventInfo auditEventLog = CreateDelegationEventLogObject(user, groupId);
+
+      auditEventLog.EventType = delegationAuditEventType.ToString();
+
+      auditEventLogs.Add(auditEventLog);
+
+      await _delegationAuditEventService.CreateDelegationAuditEventsAsync(auditEventLogs);
+    }
+
+    private static DelegationAuditEventInfo CreateDelegationEventLogObject(User user, Guid groupId)
+    {
+      return new DelegationAuditEventInfo
+      {
+        GroupId = groupId,
+        UserId = user.Id,
+        ActionedBy = DelegationAuditActionBy.Admin.ToString(),
+        ActionedByUserName = user.UserName,
+        ActionedByFirstName = user.Party.Person.FirstName,
+        ActionedByLastName = user.Party.Person.LastName,
+      };
+    }
+
+    private async Task CreateDelegatedUserEventLog(DelegatedUserProfileRequestInfo userProfileRequestInfo)
+    {
+      List<DelegationAuditEventInfo> auditEventLogs = new();
+      Guid groupId = Guid.NewGuid();
+      var user = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
+
+      DelegationAuditEventInfo auditEventLog = CreateDelegationEventLogObject(user, groupId);
+
+      auditEventLogs.Add(GetSetupOfDelegationEventLog(auditEventLog));
+      auditEventLogs.Add(GetDelegationRoleAssignedEventLog(auditEventLog));
+
+      await _delegationAuditEventService.CreateDelegationAuditEventsAsync(auditEventLogs);
+    }
+
+    private static DelegationAuditEventInfo GetSetupOfDelegationEventLog(DelegationAuditEventInfo auditEventLog)
+    {
+      auditEventLog.EventType = DelegationAuditEventType.SetupOfDelegation.ToString();
+      return auditEventLog;
+    }
+
+    private static DelegationAuditEventInfo GetDelegationRoleAssignedEventLog(DelegationAuditEventInfo auditEventLog)
+    {
+      auditEventLog.Roles = "";
+      auditEventLog.EventType = DelegationAuditEventType.RoleAssigned.ToString();
+      return auditEventLog;
     }
   }
 }
