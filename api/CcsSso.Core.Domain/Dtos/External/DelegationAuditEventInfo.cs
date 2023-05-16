@@ -39,8 +39,6 @@ namespace CcsSso.Core.Domain.Dtos.External
   {
     public Guid GroupId { get; set; }
 
-    public int UserId { get; set; }
-
     public DateTime? PreviousDelegationStartDate { get; set; }
 
     public DateTime? PreviousDelegationEndDate { get; set; }

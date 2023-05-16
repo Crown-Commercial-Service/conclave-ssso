@@ -16,10 +16,14 @@ namespace CcsSso.ExternalApi.Controllers
   {
     private readonly IUserProfileService _userProfileService;
     private readonly IUserContactService _contactService;
-    public UserProfileController(IUserContactService contactService, IUserProfileService userProfileService)
+    private readonly IDelegationAuditEventService _delegationAuditEventService;
+
+    public UserProfileController(IUserContactService contactService, IUserProfileService userProfileService,
+      IDelegationAuditEventService delegationAuditEventService)
     {
       _contactService = contactService;
       _userProfileService = userProfileService;
+      _delegationAuditEventService = delegationAuditEventService;
     }
 
     #region User profile
@@ -666,7 +670,6 @@ namespace CcsSso.ExternalApi.Controllers
       return await _userProfileService.UpdateUserV1Async(userId, userProfileServiceRoleGroupEditRequestInfo);
     }
 
-
     [HttpPost("v1/delegate-user")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
     [OrganisationAuthorise("DELEGATION")]
@@ -685,6 +688,24 @@ namespace CcsSso.ExternalApi.Controllers
     public async Task UpdateDelegatedUserV1(DelegatedUserProfileServiceRoleGroupRequestInfo userProfileServiceRoleGroupRequestInfo)
     {
       await _userProfileService.UpdateDelegatedUserV1Async(userProfileServiceRoleGroupRequestInfo);
+    }
+
+    [HttpGet("v1/delegate-user-auditevents")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR")]
+    [OrganisationAuthorise("DELEGATION")]
+    [SwaggerOperation(Tags = new[] { "User" })]
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task<DelegationAuditEventInfoListResponse> GetDelegationAuditEventsList([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "delegated-organisation-id")] string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
+    {
+      resultSetCriteria ??= new ResultSetCriteria
+      {
+        CurrentPage = 1,
+        PageSize = 10
+      };
+      resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
+      resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
+
+      return await _delegationAuditEventService.GetDelegationAuditEventsListAsync(userId, organisationId, resultSetCriteria);
     }
 
     /// <summary>

@@ -10,5 +10,7 @@ namespace CcsSso.Core.Domain.Contracts.External
   public interface IDelegationAuditEventService
   {
     Task CreateDelegationAuditEventsAsync(List<DelegationAuditEventInfo> delegationAuditEventInfoList);
+
+    Task<DelegationAuditEventInfoListResponse> GetDelegationAuditEventsListAsync(string userName, string organisationId, ResultSetCriteria resultSetCriteria);
   }
 }
