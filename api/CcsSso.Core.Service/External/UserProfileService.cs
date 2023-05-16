@@ -1188,23 +1188,16 @@ namespace CcsSso.Core.Service.External
     private static void CheckAdminRoles(UserProfileEditRequestInfo userProfileRequestInfo, Organisation organisation, out bool noAdminRoleGroupInRequest, out bool noAdminRoleInRequest)
     {
       // Check the admin group availability in request
-      var adminGroupAvailability = organisation.UserGroups.Any(g => !g.IsDeleted
-                                                                    && userProfileRequestInfo.Detail.GroupIds.Contains(g.Id)
-                                                                    && g.GroupEligibleRoles.Any(gr => gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey));
-
-      noAdminRoleGroupInRequest = userProfileRequestInfo.Detail.GroupIds == null
-                              || !userProfileRequestInfo.Detail.GroupIds.Any()
-                              || !adminGroupAvailability;
-
+      noAdminRoleGroupInRequest = userProfileRequestInfo.Detail.GroupIds == null || !userProfileRequestInfo.Detail.GroupIds.Any() ||
+        !organisation.UserGroups.Any(g => !g.IsDeleted
+       && userProfileRequestInfo.Detail.GroupIds.Contains(g.Id)
+       && g.GroupEligibleRoles.Any(gr => gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey));
 
       // Check the admin role availability in request
-      var adminRoleAvailability = organisation.OrganisationEligibleRoles.Any(or => !or.IsDeleted
+      noAdminRoleInRequest = userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() ||
+        !organisation.OrganisationEligibleRoles.Any(or => !or.IsDeleted
           && userProfileRequestInfo.Detail.RoleIds.Contains(or.Id)
           && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey);
-
-      noAdminRoleInRequest = userProfileRequestInfo.Detail.RoleIds == null
-                          || !userProfileRequestInfo.Detail.RoleIds.Any()
-                          || !adminRoleAvailability;
     }
 
     private async Task<bool> UpdateIdamRecords(string userName, UserProfileEditRequestInfo userProfileRequestInfo, User user, (bool,bool,bool) mfaAndSignInFlags)
