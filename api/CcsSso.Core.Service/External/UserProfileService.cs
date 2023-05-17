@@ -1969,7 +1969,8 @@ namespace CcsSso.Core.Service.External
         orgName = user.Party.Person.Organisation.LegalName;
       }
 
-      string activationInfo = "usr=" + userName + "&org=" + orgId + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegationEmailExpirationHours);
+      var delegationLinkExpiryDate = DateTime.UtcNow.AddHours(_appConfigInfo.DelegationEmailExpirationHours);
+      string activationInfo = "usr=" + userName + "&org=" + orgId + "&exp=" + delegationLinkExpiryDate;
       var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
 
 
@@ -1988,6 +1989,8 @@ namespace CcsSso.Core.Service.External
       {
         await CreateResendActivationLinkEventLog(user);
       }
+
+      await UpdateDelegationLinkExpiryDate(userName, orgName, delegationLinkExpiryDate);
     }
 
     private void ValidateDelegateUserDetails(Organisation organisation, DelegatedUserProfileRequestInfo userProfileRequestInfo, bool isUpdated = false)
@@ -2644,6 +2647,24 @@ namespace CcsSso.Core.Service.External
       auditEventLog.PreviousDelegationEndDate = existingDelegatedUserDetails.DelegationEndDate.Value.Date;
       auditEventLog.EventType = DelegationAuditEventType.StartDateChange.ToString();
       return auditEventLog;
+    }
+
+    private async Task UpdateDelegationLinkExpiryDate(string userName, string ciiOrganisationId, DateTime delegationLinkExpiryDate)
+    {
+      var user = await _dataContext.User
+        .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(pr => pr.Organisation)
+        .Where(u => !u.IsDeleted && u.UserName == userName && u.UserType == DbModel.Constants.UserType.Delegation
+               && u.Party.Person.Organisation.CiiOrganisationId == ciiOrganisationId)
+        .SingleOrDefaultAsync();
+
+      if (user == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+
+      user.DelegationLinkExpiryOnUtc = delegationLinkExpiryDate;
+
+      await _dataContext.SaveChangesAsync();
     }
   }
 }
