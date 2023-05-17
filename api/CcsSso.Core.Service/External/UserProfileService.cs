@@ -1724,7 +1724,7 @@ namespace CcsSso.Core.Service.External
         // Send delegation activation email
         await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName);
 
-        await CreateDelegatedUserEventLog(userProfileRequestInfo);
+        await CreateDelegatedUserEventLog(userProfileRequestInfo, party.User);
 
         // Log
         //await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelegated, AuditLogApplication.ManageUserAccount, $"UserId:{existingUserPrimaryDetails.Id}," + " " +
@@ -1775,6 +1775,9 @@ namespace CcsSso.Core.Service.External
       List<int> requestRoles = userProfileRequestInfo.Detail.RoleIds.OrderBy(e => e).ToList();
       var hasRolesNotChanged = Enumerable.SequenceEqual(requestRoles, existingDelegatedUserDetails.UserAccessRoles.
                                Select(ur => ur.OrganisationEligibleRoleId).OrderBy(e => e));
+
+      //updating delegation audit log for updating delegated user access
+      await UpdateDelegatedUserEventLog(userProfileRequestInfo, existingDelegatedUserDetails);
 
       if (!hasRolesNotChanged)
       {
@@ -1856,7 +1859,7 @@ namespace CcsSso.Core.Service.External
       {
         await _dataContext.SaveChangesAsync();
 
-        await CreateTerminationOfDelegatedAccessEventLog();
+        await CreateTerminationOfDelegatedAccessEventLog(user);
       }
       catch (Exception ex)
       {
@@ -1951,21 +1954,20 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidCiiOrganisationId);
       }
 
-      if (string.IsNullOrWhiteSpace(orgName))
-      {
-        var user = await _dataContext.User
+      var user = await _dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(pr => pr.Organisation)
         .Where(u => !u.IsDeleted && u.UserName == userName && u.UserType == DbModel.Constants.UserType.Delegation
                && u.Party.Person.Organisation.CiiOrganisationId == orgId
                && !u.DelegationAccepted).SingleOrDefaultAsync();
 
-        if (user == null)
-        {
-          throw new ResourceNotFoundException();
-        }
+      if (user == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+      if (string.IsNullOrWhiteSpace(orgName))
+      {        
         orgName = user.Party.Person.Organisation.LegalName;
       }
-
 
       string activationInfo = "usr=" + userName + "&org=" + orgId + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegationEmailExpirationHours);
       var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
@@ -1984,7 +1986,7 @@ namespace CcsSso.Core.Service.External
 
       if (isLogEnable)
       {
-        await CreateResendActivationLinkEventLog();
+        await CreateResendActivationLinkEventLog(user);
       }
     }
 
@@ -2497,15 +2499,13 @@ namespace CcsSso.Core.Service.External
       return users;
     }
 
-    private async Task CreateResendActivationLinkEventLog()
-    {
-      var user = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
+    private async Task CreateResendActivationLinkEventLog(User user)
+    {      
       await CreateDelegationEventLog(user, DelegationAuditEventType.ResendActivationLink);
     }
 
-    private async Task CreateTerminationOfDelegatedAccessEventLog()
-    {
-      var user = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
+    private async Task CreateTerminationOfDelegatedAccessEventLog(User user)
+    {      
       await CreateDelegationEventLog(user, DelegationAuditEventType.TerminationOfDelegatedAccess);
     }
 
@@ -2517,55 +2517,132 @@ namespace CcsSso.Core.Service.External
     private async Task CreateDelegationEventLog(User user, DelegationAuditEventType delegationAuditEventType)
     {
       List<DelegationAuditEventInfo> auditEventLogs = new();
-
       Guid groupId = Guid.NewGuid();
-
-      DelegationAuditEventInfo auditEventLog = CreateDelegationEventLogObject(user, groupId);
+      DelegationAuditEventInfo auditEventLog = new();
+      if (delegationAuditEventType == DelegationAuditEventType.ActivationOfDelegation)
+      {
+        auditEventLog = CreateDelegationEventLogObject(user, user, groupId);
+      }
+      else
+      {
+        var actionedBy = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
+        auditEventLog = CreateDelegationEventLogObject(user, actionedBy, groupId);
+      }
 
       auditEventLog.EventType = delegationAuditEventType.ToString();
-
       auditEventLogs.Add(auditEventLog);
-
       await _delegationAuditEventService.CreateDelegationAuditEventsAsync(auditEventLogs);
     }
 
-    private static DelegationAuditEventInfo CreateDelegationEventLogObject(User user, Guid groupId)
+    private static DelegationAuditEventInfo CreateDelegationEventLogObject(User user, User actioneBy, Guid groupId)
     {
       return new DelegationAuditEventInfo
       {
         GroupId = groupId,
         UserId = user.Id,
         ActionedBy = DelegationAuditActionBy.Admin.ToString(),
-        ActionedByUserName = user.UserName,
-        ActionedByFirstName = user.Party.Person.FirstName,
-        ActionedByLastName = user.Party.Person.LastName,
+        ActionedByUserName = actioneBy.UserName,
+        ActionedByFirstName = actioneBy.Party.Person.FirstName,
+        ActionedByLastName = actioneBy.Party.Person.LastName,
       };
     }
 
-    private async Task CreateDelegatedUserEventLog(DelegatedUserProfileRequestInfo userProfileRequestInfo)
+    private async Task<List<int>> GetCcsSsiRoleId(List<int> roles)
+    {
+      var ccsRoleIds = await _dataContext.OrganisationEligibleRole.Where(orgRole => roles.Any(roleid => roleid == orgRole.Id)).Select(x => x.CcsAccessRoleId).ToListAsync();
+      return ccsRoleIds;
+    }
+    private async Task CreateDelegatedUserEventLog(DelegatedUserProfileRequestInfo userProfileRequestInfo, User user)
     {
       List<DelegationAuditEventInfo> auditEventLogs = new();
       Guid groupId = Guid.NewGuid();
-      var user = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
+      var actionedBy = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
 
-      DelegationAuditEventInfo auditEventLog = CreateDelegationEventLogObject(user, groupId);
+      DelegationAuditEventInfo auditSetupEventLog = CreateDelegationEventLogObject(user, actionedBy, groupId);
+      auditEventLogs.Add(GetSetupOfDelegationEventLog(auditSetupEventLog, userProfileRequestInfo));
 
-      auditEventLogs.Add(GetSetupOfDelegationEventLog(auditEventLog));
-      auditEventLogs.Add(GetDelegationRoleAssignedEventLog(auditEventLog));
+      if(userProfileRequestInfo?.Detail?.RoleIds?.Count > 0)
+      {
+        DelegationAuditEventInfo auditRoleAssignedEventLog = CreateDelegationEventLogObject(user, actionedBy, groupId);
+        List<int> assingedRoles = await GetCcsSsiRoleId(userProfileRequestInfo.Detail.RoleIds);
+        auditEventLogs.Add(GetDelegationRoleAssignedEventLog(auditRoleAssignedEventLog, assingedRoles));
+      }
 
       await _delegationAuditEventService.CreateDelegationAuditEventsAsync(auditEventLogs);
     }
 
-    private static DelegationAuditEventInfo GetSetupOfDelegationEventLog(DelegationAuditEventInfo auditEventLog)
+    private async Task UpdateDelegatedUserEventLog(DelegatedUserProfileRequestInfo userProfileRequestInfo, User existingDelegatedUserDetails)
+    {
+      List<DelegationAuditEventInfo> auditEventLogs = new();
+      Guid groupId = Guid.NewGuid();
+      var actionedBy = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
+      
+      //Audit log for assigning of role
+      List<int> assignedRoles = (from role in userProfileRequestInfo.Detail.RoleIds where !(from oldRoleId in existingDelegatedUserDetails.UserAccessRoles select oldRoleId.OrganisationEligibleRoleId).Contains(role) select role).ToList();
+      if (assignedRoles?.Count > 0)
+      {
+        DelegationAuditEventInfo auditRoleAssignedEventLog = CreateDelegationEventLogObject(existingDelegatedUserDetails, actionedBy, groupId);
+        List<int> assingedCcsRoles = await GetCcsSsiRoleId(assignedRoles);
+        auditEventLogs.Add(GetDelegationRoleAssignedEventLog(auditRoleAssignedEventLog, assingedCcsRoles));
+      }
+      //Audit log for unassigning of role
+      List<int> unAssignedRoles = (from role in existingDelegatedUserDetails.UserAccessRoles where !(from newRoleId in userProfileRequestInfo.Detail.RoleIds select newRoleId).ToList().Contains(role.OrganisationEligibleRoleId) select role.OrganisationEligibleRoleId).ToList();
+      if (unAssignedRoles?.Count > 0)
+      {
+        DelegationAuditEventInfo auditRoleUnassignedEventLog = CreateDelegationEventLogObject(existingDelegatedUserDetails, actionedBy, groupId);
+        List<int> unAssingedCcsRoles = await GetCcsSsiRoleId(unAssignedRoles);
+        auditEventLogs.Add(GetDelegationRoleUnassignedEventLog(auditRoleUnassignedEventLog, unAssingedCcsRoles));
+      }
+      //Audit log for changing start date
+      if (!existingDelegatedUserDetails.DelegationStartDate.Value.Date.Equals(userProfileRequestInfo.Detail.StartDate.Date))
+      {
+        DelegationAuditEventInfo auditStartDateChangeEventLog = CreateDelegationEventLogObject(existingDelegatedUserDetails, actionedBy, groupId);
+        auditEventLogs.Add(GetDelegationStartDateChangedEventLog(auditStartDateChangeEventLog, userProfileRequestInfo, existingDelegatedUserDetails));
+      }
+      //Audit log for changing end date
+      if (!existingDelegatedUserDetails.DelegationEndDate.Value.Date.Equals(userProfileRequestInfo.Detail.EndDate.Date))
+      {
+        DelegationAuditEventInfo auditEndDateChangeEventLog = CreateDelegationEventLogObject(existingDelegatedUserDetails, actionedBy, groupId);
+        auditEventLogs.Add(GetDelegationEndDateChangedEventLog(auditEndDateChangeEventLog, userProfileRequestInfo, existingDelegatedUserDetails));
+      }
+      await _delegationAuditEventService.CreateDelegationAuditEventsAsync(auditEventLogs);
+    }
+
+    private static DelegationAuditEventInfo GetSetupOfDelegationEventLog(DelegationAuditEventInfo auditEventLog, DelegatedUserProfileRequestInfo userProfileRequestInfo)
     {
       auditEventLog.EventType = DelegationAuditEventType.SetupOfDelegation.ToString();
+      auditEventLog.NewDelegationStartDate = userProfileRequestInfo.Detail.StartDate;
+      auditEventLog.NewDelegationEndDate = userProfileRequestInfo.Detail.EndDate;
       return auditEventLog;
     }
 
-    private static DelegationAuditEventInfo GetDelegationRoleAssignedEventLog(DelegationAuditEventInfo auditEventLog)
+    private static DelegationAuditEventInfo GetDelegationRoleAssignedEventLog(DelegationAuditEventInfo auditEventLog, List<int> rolesAssigned)
     {
-      auditEventLog.Roles = "";
+      auditEventLog.Roles = string.Join(",", rolesAssigned);
       auditEventLog.EventType = DelegationAuditEventType.RoleAssigned.ToString();
+      return auditEventLog;
+    }
+
+    private static DelegationAuditEventInfo GetDelegationRoleUnassignedEventLog(DelegationAuditEventInfo auditEventLog, List<int> rolesUnassigned)
+    {
+      auditEventLog.Roles = string.Join(",", rolesUnassigned);
+      auditEventLog.EventType = DelegationAuditEventType.RoleUnassigned.ToString();
+      return auditEventLog;
+    }
+
+    private static DelegationAuditEventInfo GetDelegationStartDateChangedEventLog(DelegationAuditEventInfo auditEventLog, DelegatedUserProfileRequestInfo userProfileRequestInfo, User existingDelegatedUserDetails)
+    {
+      auditEventLog.NewDelegationStartDate = userProfileRequestInfo.Detail.StartDate.Date;
+      auditEventLog.PreviousDelegationStartDate = existingDelegatedUserDetails.DelegationStartDate.Value.Date;
+      auditEventLog.EventType = DelegationAuditEventType.StartDateChange.ToString();
+      return auditEventLog;
+    }
+
+    private static DelegationAuditEventInfo GetDelegationEndDateChangedEventLog(DelegationAuditEventInfo auditEventLog, DelegatedUserProfileRequestInfo userProfileRequestInfo, User existingDelegatedUserDetails)
+    {
+      auditEventLog.NewDelegationEndDate = userProfileRequestInfo.Detail.EndDate.Date;
+      auditEventLog.PreviousDelegationEndDate = existingDelegatedUserDetails.DelegationEndDate.Value.Date;
+      auditEventLog.EventType = DelegationAuditEventType.StartDateChange.ToString();
       return auditEventLog;
     }
   }
