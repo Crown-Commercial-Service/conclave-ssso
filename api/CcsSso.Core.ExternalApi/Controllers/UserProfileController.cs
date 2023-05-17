@@ -695,7 +695,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("DELEGATION")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task<DelegationAuditEventInfoListResponse> GetDelegationAuditEventsList([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "delegated-organisation-id")] string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
+    public async Task<DelegationAuditEventoServiceRoleGroupInfListResponse> GetDelegationAuditEventsList([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "delegated-organisation-id")] string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
     {
       resultSetCriteria ??= new ResultSetCriteria
       {

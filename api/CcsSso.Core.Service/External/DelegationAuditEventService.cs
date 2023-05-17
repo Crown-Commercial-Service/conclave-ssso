@@ -67,7 +67,7 @@ namespace CcsSso.Core.Service.External
 
     }
 
-    public async Task<DelegationAuditEventInfoListResponse> GetDelegationAuditEventsListAsync(string userName, string organisationId, ResultSetCriteria resultSetCriteria)
+    public async Task<DelegationAuditEventoServiceRoleGroupInfListResponse> GetDelegationAuditEventsListAsync(string userName, string organisationId, ResultSetCriteria resultSetCriteria)
     {
       _userHelper.ValidateUserName(userName);
 
@@ -87,23 +87,23 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidUserDelegation);
       }
 
-      var auditLogs = await GetDelegationAuditLogs(typeof(DelegationAuditEventServiceRoleGroupResponseInfo), user.Id);
+      var auditLogs = await GetDelegationAuditLogs(user.Id);
 
       int pageCount;
       var result = UtilityHelper.GetPagedResult(auditLogs, resultSetCriteria.CurrentPage, resultSetCriteria.PageSize, out pageCount);
 
-      return new DelegationAuditEventInfoListResponse
+      return new DelegationAuditEventoServiceRoleGroupInfListResponse
       {
         CurrentPage = resultSetCriteria.CurrentPage,
         PageCount = pageCount,
         RowCount = auditLogs.Count,
-        DelegationAuditEventList = result.Cast<DelegationAuditEventResponseInfo>().ToList() ?? new List<DelegationAuditEventResponseInfo>()
+        DelegationAuditEventServiceRoleGroupList = result.Cast<DelegationAuditEventServiceRoleGroupResponseInfo>().ToList() ?? new List<DelegationAuditEventServiceRoleGroupResponseInfo>()
       };
     }
 
-    private async Task<List<dynamic>> GetDelegationAuditLogs(Type type, int userId)
+    private async Task<List<DelegationAuditEventServiceRoleGroupResponseInfo>> GetDelegationAuditLogs(int userId)
     {
-      List<dynamic> auditEventInfos = new();
+      List<DelegationAuditEventServiceRoleGroupResponseInfo> auditEventInfos = new();
 
       var auditEvents = await _dataContext.DelegationAuditEvent
         .Where(c => c.UserId == userId)
@@ -121,47 +121,10 @@ namespace CcsSso.Core.Service.External
 
       foreach (var auditEvent in auditEvents)
       {
-        if (type == typeof(DelegationAuditEventResponseInfo))
-        {
-          auditEventInfos.AddRange(GetDelegationRoleLogs(auditEvent, allRoles).ToList());
-        }
-        else if (type == typeof(DelegationAuditEventServiceRoleGroupResponseInfo))
-        {
-          auditEventInfos.AddRange(await GetDelegationServiceRoleGroupLogs(auditEvent, allRoles));
-        }
+        auditEventInfos.AddRange(await GetDelegationServiceRoleGroupLogs(auditEvent, allRoles));
       }
 
       auditEventInfos = auditEventInfos.OrderByDescending(x => x.ActionedOnUtc).ToList();
-      return auditEventInfos;
-    }
-
-    private static List<DelegationAuditEventResponseInfo> GetDelegationRoleLogs(DelegationAuditEvent auditEvent, List<OrganisationRole> allRoles)
-    {
-      var auditEventInfos = new List<DelegationAuditEventResponseInfo>();
-
-      var auditEventInfo = GetDelegationAuditEventInfo(auditEvent);
-
-      if (auditEvent.EventType == DelegationAuditEventType.RoleAssigned.ToString() || auditEvent.EventType == DelegationAuditEventType.RoleUnassigned.ToString())
-      {
-        var roles = auditEvent.Roles.Split(",");
-
-        foreach (var role in roles)
-        {
-          var roleInfo = allRoles.FirstOrDefault(x => Convert.ToString(x.RoleId) == role);
-          if (roleInfo != null)
-          {
-            auditEventInfo.Role = role;
-            auditEventInfo.RoleKey = roleInfo?.RoleKey;
-            auditEventInfo.ServiceName = roleInfo?.ServiceName;
-            auditEventInfos.Add(auditEventInfo);
-          }
-        }
-      }
-      else
-      {
-        auditEventInfos.Add(auditEventInfo);
-      }
-
       return auditEventInfos;
     }
 

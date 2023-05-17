@@ -1990,7 +1990,7 @@ namespace CcsSso.Core.Service.External
         await CreateResendActivationLinkEventLog(user);
       }
 
-      await UpdateDelegationLinkExpiryDate(userName, orgName, delegationLinkExpiryDate);
+      await UpdateDelegationLinkExpiryDate(userName, orgId, delegationLinkExpiryDate);
     }
 
     private void ValidateDelegateUserDetails(Organisation organisation, DelegatedUserProfileRequestInfo userProfileRequestInfo, bool isUpdated = false)
