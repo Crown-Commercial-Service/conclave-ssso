@@ -2638,7 +2638,7 @@ namespace CcsSso.Core.Service.External
     {
       auditEventLog.NewDelegationEndDate = userProfileRequestInfo.Detail.EndDate.Date;
       auditEventLog.PreviousDelegationEndDate = existingDelegatedUserDetails.DelegationEndDate.Value.Date;
-      auditEventLog.EventType = DelegationAuditEventType.StartDateChange.ToString();
+      auditEventLog.EventType = DelegationAuditEventType.EndDateChange.ToString();
       return auditEventLog;
     }
 
