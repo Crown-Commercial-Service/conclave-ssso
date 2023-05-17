@@ -10,6 +10,7 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Dtos.Domain.Models;
+using CcsSso.Security.Domain.Constants;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Constants;
@@ -43,6 +44,7 @@ namespace CcsSso.Core.Service.External
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
     private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
     private readonly IOrganisationGroupService _organisationGroupService;
+    private readonly IOrganisationProfileService _organisationService;
 
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
@@ -51,7 +53,7 @@ namespace CcsSso.Core.Service.External
       ICacheInvalidateService cacheInvalidateService, ICryptographyService cryptographyService,
       ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService,
       IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
-      IOrganisationGroupService organisationGroupService)
+      IOrganisationGroupService organisationGroupService, IOrganisationProfileService organisationService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -66,6 +68,7 @@ namespace CcsSso.Core.Service.External
       _cryptographyService = cryptographyService;
       _appConfigInfo = appConfigInfo;
       _lookUpService = lookUpService;
+      _organisationService = organisationService;
       _wrapperApiService = wrapperApiService;
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
       _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
@@ -393,20 +396,20 @@ namespace CcsSso.Core.Service.External
       }
 
       var userDelegatedOrgs = users.Where(u => u.UserType == DbModel.Constants.UserType.Delegation &&
-                              !u.IsDeleted &&
-                              u.DelegationStartDate.Value.Date <= DateTime.UtcNow.Date &&
-                              u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date &&
-                              (!string.IsNullOrWhiteSpace(delegatedOrgId) || u.DelegationAccepted) &&
-                              ((isDelegated && string.IsNullOrWhiteSpace(delegatedOrgId)) || u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId)
-                              )
-                              .Select(u => new UserDelegationDetails
-                              {
-                                DelegatedOrgId = u.Party.Person.Organisation.CiiOrganisationId,
-                                DelegatedOrgName = u.Party.Person.Organisation.LegalName,
-                                StartDate = u.DelegationStartDate,
-                                EndDate = u.DelegationEndDate,
-                                DelegationAccepted = u.DelegationAccepted
-                              }).ToArray();
+                        !u.IsDeleted &&
+                        u.DelegationStartDate.Value.Date <= DateTime.UtcNow.Date &&
+                        u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date &&
+                        (!string.IsNullOrWhiteSpace(delegatedOrgId) || u.DelegationAccepted) &&
+                        ((isDelegated && string.IsNullOrWhiteSpace(delegatedOrgId)) || u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId)
+                        )
+                        .Select(u => new UserDelegationDetails
+                        {
+                          DelegatedOrgId = u.Party.Person.Organisation.CiiOrganisationId,
+                          DelegatedOrgName = u.Party.Person.Organisation.LegalName,
+                          StartDate = u.DelegationStartDate,
+                          EndDate = u.DelegationEndDate,
+                          DelegationAccepted = u.DelegationAccepted
+                        }).ToArray();
 
       if (user != null)
       {
@@ -417,8 +420,8 @@ namespace CcsSso.Core.Service.External
           OriginOrganisationName = isDelegated ? (user.UserType == DbModel.Constants.UserType.Primary ? user.Party.Person.Organisation.LegalName : user.OriginOrganization?.LegalName) : default,
           FirstName = user.Party.Person.FirstName,
           LastName = (isDelegated || !string.IsNullOrWhiteSpace(delegatedOrgId)) && !user.DelegationAccepted ?
-                       user.Party.Person.LastName.Substring(0, 1).PadRight(user.Party.Person.LastName.Length, '*') :
-                       user.Party.Person.LastName,
+               user.Party.Person.LastName.Substring(0, 1).PadRight(user.Party.Person.LastName.Length, '*') :
+               user.Party.Person.LastName,
           MfaEnabled = user.MfaEnabled,
           Title = Enum.GetName(typeof(UserTitle), user.UserTitle),
           AccountVerified = user.AccountVerified,
@@ -459,36 +462,18 @@ namespace CcsSso.Core.Service.External
 
           foreach (var userGroupMembership in user.UserGroupMemberships)
           {
-            if (!userGroupMembership.IsDeleted && userGroupMembership.OrganisationUserGroup.GroupEligibleRoles != null)
+            if (userGroupMembership.IsDeleted || userGroupMembership.OrganisationUserGroup.GroupEligibleRoles == null)
             {
-              if (userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Any(x => !x.IsDeleted))
-              {
-                // For every role in the group populate the group role info
-                foreach (var groupAccess in userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Where(x => !x.IsDeleted))
-                {
-                  if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroups.Any(x => x.CcsServiceRoleMappings.Any(m => m.CcsAccessRoleId == groupAccess.OrganisationEligibleRole.CcsAccessRoleId)))
-                  {
-                    PopulateUserGroupWithoutRole(userProfileInfo, userGroupMembership);
-                    continue;
-                  }
-
-                  var groupAccessRole = new GroupAccessRole
-                  {
-                    GroupId = userGroupMembership.OrganisationUserGroup.Id,
-                    Group = userGroupMembership.OrganisationUserGroup.UserGroupName,
-                    AccessRoleName = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
-                    AccessRole = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
-                    ServiceClientId = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceClientId,
-                    ServiceClientName = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName
-                  };
-
-                  userProfileInfo.Detail.UserGroups.Add(groupAccessRole);
-                }
-              }
-              else // If group doesnt have a role then just send the group with empty role
-              {
-                PopulateUserGroupWithoutRole(userProfileInfo, userGroupMembership);
-              }
+              continue;
+            }
+            if (userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Any(x => !x.IsDeleted))
+            {
+              // For every role in the group populate the group role info
+              PopulateGroupRoleInfo(userProfileInfo, userGroupsApprovalServiceRoleGroups, userGroupMembership);
+            }
+            else // If group doesnt have a role then just send the group with empty role
+            {
+              PopulateUserGroupWithoutRole(userProfileInfo, userGroupMembership);
             }
           }
         }
@@ -497,6 +482,30 @@ namespace CcsSso.Core.Service.External
       }
 
       throw new ResourceNotFoundException();
+    }
+
+    private void PopulateGroupRoleInfo(UserProfileResponseInfo userProfileInfo, List<CcsServiceRoleGroup> userGroupsApprovalServiceRoleGroups, UserGroupMembership userGroupMembership)
+    {
+      foreach (var groupAccess in userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Where(x => !x.IsDeleted))
+      {
+        if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroups.Any(x => x.CcsServiceRoleMappings.Any(m => m.CcsAccessRoleId == groupAccess.OrganisationEligibleRole.CcsAccessRoleId)))
+        {
+          PopulateUserGroupWithoutRole(userProfileInfo, userGroupMembership);
+          continue;
+        }
+
+        var groupAccessRole = new GroupAccessRole
+        {
+          GroupId = userGroupMembership.OrganisationUserGroup.Id,
+          Group = userGroupMembership.OrganisationUserGroup.UserGroupName,
+          AccessRoleName = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
+          AccessRole = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
+          ServiceClientId = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceClientId,
+          ServiceClientName = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName
+        };
+
+        userProfileInfo.Detail.UserGroups.Add(groupAccessRole);
+      }
     }
 
     private static void PopulateUserGroupWithoutRole(UserProfileResponseInfo userProfileInfo, UserGroupMembership userGroupMembership)
@@ -646,9 +655,9 @@ namespace CcsSso.Core.Service.External
         userQuery = userQuery.Where(u => u.Id != _requestContext.UserId);
       // #Autovalidation
       if (isAdmin && userFilterCriteria.includeUnverifiedAdmin)
-        userQuery = userQuery.Where(u => u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && !u.IsDeleted);
+        userQuery = userQuery.Where(u => !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
       else if (isAdmin)
-        userQuery = userQuery.Where(u => u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && u.AccountVerified && !u.IsDeleted);
+        userQuery = userQuery.Where(u => u.AccountVerified && !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
 
 
       // Delegated and delegated expired conditions
@@ -682,7 +691,7 @@ namespace CcsSso.Core.Service.External
 
       userQuery = userQuery.OrderBy(u => u.Party.Person.FirstName).ThenBy(u => u.Party.Person.LastName);
 
-
+      var groupadminUsers = await _organisationGroupService.GetGroupAdminUsersAsync(organisationId);
       var userPagedInfo = await _dataContext.GetPagedResultAsync(userQuery, resultSetCriteria);
 
       var userListResponse = new UserListResponse
@@ -709,7 +718,7 @@ namespace CcsSso.Core.Service.External
             RoleKey = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
             RoleName = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
           }).ToList(),
-          IsAdmin = up.UserAccessRoles.Any(x => !x.IsDeleted && x.OrganisationEligibleRoleId == orgAdminAccessRoleId && !x.OrganisationEligibleRole.IsDeleted),
+          IsAdmin = up.UserAccessRoles.Any(x => !x.IsDeleted && x.OrganisationEligibleRoleId == orgAdminAccessRoleId && !x.OrganisationEligibleRole.IsDeleted) || groupadminUsers.Any(x => x.Id == up.Id),
         }).ToList() : new List<UserListInfo>()
       };
 
@@ -917,11 +926,12 @@ namespace CcsSso.Core.Service.External
                             join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
                             join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
                             join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
-                            where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
-                            select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
+                            where u.UserName == userName && ((cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+                              || u.UserGroupMemberships.Any(x => !x.IsDeleted && x.OrganisationUserGroup.GroupEligibleRoles.Any(y => !y.IsDeleted && y.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)))
+                            select new { er.CcsAccessRole.CcsAccessRoleNameKey, u.UserGroupMemberships }).FirstOrDefault();
 
       bool isAdminUser = false;
-      if (UserAccessRole != null && UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+      if (UserAccessRole != null && ((UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey) || (UserAccessRole.UserGroupMemberships.Any(x => !x.IsDeleted && x.OrganisationUserGroup.GroupEligibleRoles.Any(y => !y.IsDeleted && y.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)))))
       {
         isAdminUser = true;
       }
@@ -969,7 +979,7 @@ namespace CcsSso.Core.Service.External
       var removedGroupIds = new List<int>();
       var removedRoleIds = new List<int>();
 
-      if (!isMyProfile || isAdminUser == true)
+      if (!isMyProfile || isAdminUser)
       {
         user.UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title);
         requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
@@ -993,12 +1003,7 @@ namespace CcsSso.Core.Service.External
                                         .ToListAsync();
 
           isUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName));
-          // isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
         }
-        //if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
-        //{
-        //  throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
-        //}
 
         //mfa flag has removed
         if (!userProfileRequestInfo.MfaEnabled && isUserNamePwdConnectionIncluded)
@@ -1023,6 +1028,7 @@ namespace CcsSso.Core.Service.External
         }
 
         user.MfaEnabled = userProfileRequestInfo.MfaEnabled;
+
         if (mfaFlagChanged)
         {
           hasProfileInfoChanged = true;
@@ -1055,27 +1061,9 @@ namespace CcsSso.Core.Service.External
         user.UserGroupMemberships = userGroupMemberships;
 
         // Set user roles
-        var userAccessRoles = new List<UserAccessRole>();
+        var (userAccessRoles, tempUserAccessRoleRequiredApproval) = await GetUserAccessRoles(userProfileRequestInfo, organisation, isUserDomainValid, previousRoles);
 
-        var ccsAccessRoleRequiredApproval = await _dataContext.CcsAccessRole.Where(x => x.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired).ToListAsync();
-
-        userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
-        {
-          var ccsAccessRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.Id == roleId)?.CcsAccessRoleId;
-          var isRoleRequiredApproval = ccsAccessRoleId != null && ccsAccessRoleRequiredApproval != null && ccsAccessRoleRequiredApproval.Any(x => x.Id == ccsAccessRoleId);
-
-          if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && isRoleRequiredApproval && !previousRoles.Any(x => x == roleId))
-          {
-            userAccessRoleRequiredApproval.Add(roleId);
-          }
-          else
-          {
-            userAccessRoles.Add(new UserAccessRole
-            {
-              OrganisationEligibleRoleId = roleId
-            });
-          }
-        });
+        userAccessRoleRequiredApproval = tempUserAccessRoleRequiredApproval;
         user.UserAccessRoles = userAccessRoles;
 
         if (userProfileRequestInfo.Detail.RoleIds != null)
@@ -1083,17 +1071,10 @@ namespace CcsSso.Core.Service.External
           removedRoleIds = previousRoles.Where(x => !userProfileRequestInfo.Detail.RoleIds.Contains(x)).ToList();
         }
 
-        // Check the admin group availability in request
-        var noAdminRoleGroupInRequest = userProfileRequestInfo.Detail.GroupIds == null || !userProfileRequestInfo.Detail.GroupIds.Any() ||
-          !organisation.UserGroups.Any(g => !g.IsDeleted
-         && userProfileRequestInfo.Detail.GroupIds.Contains(g.Id)
-         && g.GroupEligibleRoles.Any(gr => gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey));
+        // Check the admin group and role availability in request
 
-        // Check the admin role availability in request
-        var noAdminRoleInRequest = userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() ||
-          !organisation.OrganisationEligibleRoles.Any(or => !or.IsDeleted
-            && userProfileRequestInfo.Detail.RoleIds.Contains(or.Id)
-            && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey);
+        bool noAdminRoleGroupInRequest, noAdminRoleInRequest;
+        CheckAdminRoles(userProfileRequestInfo, organisation, out noAdminRoleGroupInRequest, out noAdminRoleInRequest);
 
         if (noAdminRoleGroupInRequest && noAdminRoleInRequest && await IsOrganisationOnlyAdminAsync(user, userName))
         {
@@ -1139,35 +1120,7 @@ namespace CcsSso.Core.Service.External
           user.UserIdentityProviders.AddRange(newUserIdentityProviderList);
         }
 
-        if (isPreviouslyUserNamePwdConnectionIncluded && !isUserNamePwdConnectionIncluded) // Conclave connection removed
-        {
-          await _idamService.DeleteUserInIdamAsync(userName);
-        }
-        else if (!isPreviouslyUserNamePwdConnectionIncluded && isUserNamePwdConnectionIncluded)  // Conclave connection added
-        {
-          SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
-          {
-            Email = userName,
-            UserName = userName,
-            FirstName = userProfileRequestInfo.FirstName,
-            LastName = userProfileRequestInfo.LastName,
-            MfaEnabled = user.MfaEnabled,
-            SendUserRegistrationEmail = userProfileRequestInfo.SendUserRegistrationEmail
-          };
-
-          await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
-          isRegisteredInIdam = true;
-        }
-        else if (mfaFlagChanged)
-        {
-          SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
-          {
-            Email = userName,
-            MfaEnabled = user.MfaEnabled
-          };
-
-          await _idamService.UpdateUserMfaInIdamAsync(securityApiUserInfo);
-        }
+        isRegisteredInIdam = await UpdateIdamRecords(userName, userProfileRequestInfo, user, (mfaFlagChanged, isPreviouslyUserNamePwdConnectionIncluded, isUserNamePwdConnectionIncluded));
       }
 
       await _dataContext.SaveChangesAsync();
@@ -1230,6 +1183,89 @@ namespace CcsSso.Core.Service.External
         UserId = userName,
         IsRegisteredInIdam = isRegisteredInIdam
       };
+    }
+
+    private static void CheckAdminRoles(UserProfileEditRequestInfo userProfileRequestInfo, Organisation organisation, out bool noAdminRoleGroupInRequest, out bool noAdminRoleInRequest)
+    {
+      // Check the admin group availability in request
+      noAdminRoleGroupInRequest = userProfileRequestInfo.Detail.GroupIds == null || !userProfileRequestInfo.Detail.GroupIds.Any() ||
+        !organisation.UserGroups.Any(g => !g.IsDeleted
+       && userProfileRequestInfo.Detail.GroupIds.Contains(g.Id)
+       && g.GroupEligibleRoles.Any(gr => gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey));
+
+      // Check the admin role availability in request
+      noAdminRoleInRequest = userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() ||
+        !organisation.OrganisationEligibleRoles.Any(or => !or.IsDeleted
+          && userProfileRequestInfo.Detail.RoleIds.Contains(or.Id)
+          && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey);
+    }
+
+    private async Task<bool> UpdateIdamRecords(string userName, UserProfileEditRequestInfo userProfileRequestInfo, User user, (bool,bool,bool) mfaAndSignInFlags)
+    {
+      bool mfaFlagChanged = mfaAndSignInFlags.Item1;
+      bool isPreviouslyUserNamePwdConnectionIncluded = mfaAndSignInFlags.Item2;
+      bool isUserNamePwdConnectionIncluded = mfaAndSignInFlags.Item3;
+      bool isRegisteredInIdam = false;
+
+      if (isPreviouslyUserNamePwdConnectionIncluded && !isUserNamePwdConnectionIncluded) // Conclave connection removed
+      {
+        await _idamService.DeleteUserInIdamAsync(userName);
+      }
+      else if (!isPreviouslyUserNamePwdConnectionIncluded && isUserNamePwdConnectionIncluded)  // Conclave connection added
+      {
+        SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+        {
+          Email = userName,
+          UserName = userName,
+          FirstName = userProfileRequestInfo.FirstName,
+          LastName = userProfileRequestInfo.LastName,
+          MfaEnabled = user.MfaEnabled,
+          SendUserRegistrationEmail = userProfileRequestInfo.SendUserRegistrationEmail
+        };
+
+        await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
+        isRegisteredInIdam = true;
+      }
+      else if (mfaFlagChanged)
+      {
+        SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+        {
+          Email = userName,
+          MfaEnabled = user.MfaEnabled
+        };
+
+        await _idamService.UpdateUserMfaInIdamAsync(securityApiUserInfo);
+      }
+
+      return isRegisteredInIdam;
+    }
+
+    
+    private async Task<(List<UserAccessRole>, List<int>)> GetUserAccessRoles(UserProfileEditRequestInfo userProfileRequestInfo, Organisation organisation, bool isUserDomainValid, List<int> previousRoles)
+    {
+      var userAccessRoles = new List<UserAccessRole>();
+      var userAccessRoleRequiredApproval = new List<int>();
+
+      var ccsAccessRoleRequiredApproval = await _dataContext.CcsAccessRole.Where(x => x.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired).ToListAsync();
+
+      userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
+      {
+        var ccsAccessRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.Id == roleId)?.CcsAccessRoleId;
+        var isRoleRequiredApproval = ccsAccessRoleId != null && ccsAccessRoleRequiredApproval != null && ccsAccessRoleRequiredApproval.Any(x => x.Id == ccsAccessRoleId);
+
+        if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && isRoleRequiredApproval && !previousRoles.Any(x => x == roleId))
+        {
+          userAccessRoleRequiredApproval.Add(roleId);
+        }
+        else
+        {
+          userAccessRoles.Add(new UserAccessRole
+          {
+            OrganisationEligibleRoleId = roleId
+          });
+        }
+      });
+      return (userAccessRoles, userAccessRoleRequiredApproval);
     }
 
     public async Task ResetUserPasswodAsync(string userName, string? component)
@@ -1528,7 +1564,27 @@ namespace CcsSso.Core.Service.External
       }
       var userProfileRequestInfo = await ConvertServiceRoleGroupTouserProfileRequest(userProfileRoleGroupRequestInfo);
 
-      await CreateDelegatedUserAsync(userProfileRequestInfo);
+      try
+      {
+        await CreateDelegatedUserAsync(userProfileRequestInfo);
+      }
+
+      catch (CcsSsoException ex)
+      {
+        if (ex.Message == "INVALID_ROLE")
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+        else
+        {
+          throw ex;
+        }
+      }
+      catch (Exception)
+      {
+        throw;
+      }
+
     }
 
     public async Task UpdateDelegatedUserV1Async(DelegatedUserProfileServiceRoleGroupRequestInfo userProfileRoleGroupRequestInfo)
@@ -1539,7 +1595,26 @@ namespace CcsSso.Core.Service.External
       }
       var userProfileRequestInfo = await ConvertServiceRoleGroupTouserProfileRequest(userProfileRoleGroupRequestInfo);
 
-      await UpdateDelegatedUserAsync(userProfileRequestInfo);
+      try
+      {
+        await UpdateDelegatedUserAsync(userProfileRequestInfo);
+      }
+
+      catch (CcsSsoException ex)
+      {
+        if (ex.Message == "INVALID_ROLE")
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+        else
+        {
+          throw ex;
+        }
+      }
+      catch (Exception)
+      {
+        throw;
+      }
     }
 
 
@@ -2000,11 +2075,13 @@ namespace CcsSso.Core.Service.External
       {
         userProfileServiceRoleGroupResponseInfo = ConvertUserRoleToServiceRoleGroupResponse(userProfileResponseInfo);
         var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(userProfileResponseInfo.Detail.RolePermissionInfo.Select(x => x.RoleId).ToList());
-        List<ServiceRoleGroupInfo> serviceRoleGroupInfo = (from serviceRoleGroup in serviceRoleGroups select new ServiceRoleGroupInfo() {
-                                        Id = serviceRoleGroup.Id,
-                                        Name = serviceRoleGroup.Name,
-                                        Key = serviceRoleGroup.Key,
-                                      }).ToList();
+        List<ServiceRoleGroupInfo> serviceRoleGroupInfo = (from serviceRoleGroup in serviceRoleGroups
+                                                           select new ServiceRoleGroupInfo()
+                                                           {
+                                                             Id = serviceRoleGroup.Id,
+                                                             Name = serviceRoleGroup.Name,
+                                                             Key = serviceRoleGroup.Key,
+                                                           }).ToList();
         userProfileServiceRoleGroupResponseInfo.Detail.ServiceRoleGroupInfo = serviceRoleGroupInfo;
         await GetUserGroupDetails(userName, userProfileServiceRoleGroupResponseInfo, userProfileResponseInfo);
       }
@@ -2166,6 +2243,15 @@ namespace CcsSso.Core.Service.External
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
         }
+
+        var organisationServiceRoleGroups = await _organisationService.GetOrganisationServiceRoleGroupsAsync(delegatedUserRoleGroupRequestInfo.Detail.DelegatedOrgId);
+        var organisationServiceRoleGroupIds = organisationServiceRoleGroups.Select(x => x.Id);
+
+        if (!serviceRoleGroupIds.All(x => organisationServiceRoleGroupIds.Contains(x)))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+
 
         List<OrganisationEligibleRole> organisationEligibleRoles = await _serviceRoleGroupMapperService.ServiceRoleGroupsToOrgRolesAsync(serviceRoleGroupIds, delegatedUserRoleGroupRequestInfo.Detail.DelegatedOrgId);
 
@@ -2342,28 +2428,7 @@ namespace CcsSso.Core.Service.External
       {
         foreach (var serviceRoleGroup in groupInfo.ServiceRoleGroups)
         {
-          if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroupWithStatus != null && userGroupsApprovalServiceRoleGroupWithStatus.Item1.Any(x => x.Id == serviceRoleGroup.Id) && userGroupsApprovalServiceRoleGroupWithStatus.Item2 != (int)UserPendingRoleStaus.Approved)
-          {
-            groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
-            {
-              GroupId = groupInfo.GroupId,
-              Group = groupInfo.GroupName,
-              AccessServiceRoleGroupId = serviceRoleGroup.Id,
-              AccessServiceRoleGroupName = serviceRoleGroup.Name,
-              ApprovalStatus = userGroupsApprovalServiceRoleGroupWithStatus.Item2
-            });
-          }
-          else
-          {
-            groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
-            {
-              GroupId = groupInfo.GroupId,
-              Group = groupInfo.GroupName,
-              AccessServiceRoleGroupId = serviceRoleGroup.Id,
-              AccessServiceRoleGroupName = serviceRoleGroup.Name,
-              ApprovalStatus = (int)UserPendingRoleStaus.Approved
-            });
-          }
+          PopulateGroupAccessServiceRoleGroups(groupAccessServiceRoleGroups, userGroupsApprovalServiceRoleGroupWithStatus, groupInfo, serviceRoleGroup);
         }
       }
       else
@@ -2378,6 +2443,32 @@ namespace CcsSso.Core.Service.External
             Group = userGroup.Group,
           });
         }
+      }
+    }
+
+    private void PopulateGroupAccessServiceRoleGroups(List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups, Tuple<List<CcsServiceRoleGroup>, int> userGroupsApprovalServiceRoleGroupWithStatus, OrganisationServiceRoleGroupResponseInfo groupInfo, GroupServiceRoleGroup serviceRoleGroup)
+    {
+      if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroupWithStatus != null && userGroupsApprovalServiceRoleGroupWithStatus.Item1.Any(x => x.Id == serviceRoleGroup.Id) && userGroupsApprovalServiceRoleGroupWithStatus.Item2 != (int)UserPendingRoleStaus.Approved)
+      {
+        groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+        {
+          GroupId = groupInfo.GroupId,
+          Group = groupInfo.GroupName,
+          AccessServiceRoleGroupId = serviceRoleGroup.Id,
+          AccessServiceRoleGroupName = serviceRoleGroup.Name,
+          ApprovalStatus = userGroupsApprovalServiceRoleGroupWithStatus.Item2
+        });
+      }
+      else
+      {
+        groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+        {
+          GroupId = groupInfo.GroupId,
+          Group = groupInfo.GroupName,
+          AccessServiceRoleGroupId = serviceRoleGroup.Id,
+          AccessServiceRoleGroupName = serviceRoleGroup.Name,
+          ApprovalStatus = (int)UserPendingRoleStaus.Approved
+        });
       }
     }
 
