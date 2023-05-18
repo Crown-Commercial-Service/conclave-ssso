@@ -74,7 +74,7 @@ namespace CcsSso.ExternalApi
         }
         // #Delegated
 
-        delegatedEmailExpirationInMinutes = delegatedEmailExpirationInMinutes == 0 ? 36 : delegatedEmailExpirationInMinutes;
+        delegatedEmailExpirationInMinutes = delegatedEmailExpirationInMinutes == 0 ? 2160 : delegatedEmailExpirationInMinutes;
 
         int.TryParse(Configuration["DataMigrationSettings:MaxFileSizeValue"], out int dataMigrationMaxFileSizeValue);
 
