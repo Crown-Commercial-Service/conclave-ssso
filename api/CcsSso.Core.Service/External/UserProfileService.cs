@@ -558,6 +558,7 @@ namespace CcsSso.Core.Service.External
 
         userlist.Add(new UserListWithServiceRoleGroupInfo
         {
+          Id = user.Id,
           RemainingDays = user.RemainingDays,
           OriginOrganisation = user.OriginOrganisation,
           UserName = user.UserName,
@@ -710,6 +711,7 @@ namespace CcsSso.Core.Service.External
                    $"{up.Party.Person.LastName.Substring(0, 1).PadRight(up.Party.Person.LastName.Length, '*')}" :
                    $"{up.Party.Person.FirstName} {up.Party.Person.LastName}",
           UserName = up.UserName,
+          Id = up.Id,
           // Delegation specific fields
           StartDate = isDelegatedOnly ? up.DelegationStartDate : default,
           EndDate = isDelegatedOnly ? up.DelegationEndDate : default,

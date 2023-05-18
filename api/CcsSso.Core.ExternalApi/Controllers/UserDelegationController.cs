@@ -203,7 +203,7 @@ namespace CcsSso.ExternalApi.Controllers
     [OrganisationAuthorise("DELEGATION")]
     [SwaggerOperation(Tags = new[] { "User" })]
     [ProducesResponseType(typeof(void), 200)]
-    public async Task<DelegationAuditEventoServiceRoleGroupInfListResponse> GetDelegationAuditEventsList([FromQuery(Name = "user-id")] string userId, [FromQuery(Name = "delegated-organisation-id")] string organisationId, [FromQuery] ResultSetCriteria resultSetCriteria)
+    public async Task<DelegationAuditEventoServiceRoleGroupInfListResponse> GetDelegationAuditEventsList([FromQuery(Name = "id")] int userId, [FromQuery] ResultSetCriteria resultSetCriteria)
     {
       resultSetCriteria ??= new ResultSetCriteria
       {
@@ -213,7 +213,7 @@ namespace CcsSso.ExternalApi.Controllers
       resultSetCriteria.CurrentPage = resultSetCriteria.CurrentPage <= 0 ? 1 : resultSetCriteria.CurrentPage;
       resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
 
-      return await _delegationAuditEventService.GetDelegationAuditEventsListAsync(userId, organisationId, resultSetCriteria);
+      return await _delegationAuditEventService.GetDelegationAuditEventsListAsync(userId, resultSetCriteria);
     }
     #endregion
 

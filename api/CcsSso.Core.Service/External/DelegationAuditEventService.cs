@@ -69,19 +69,11 @@ namespace CcsSso.Core.Service.External
 
     }
 
-    public async Task<DelegationAuditEventoServiceRoleGroupInfListResponse> GetDelegationAuditEventsListAsync(string userName, string organisationId, ResultSetCriteria resultSetCriteria)
+    public async Task<DelegationAuditEventoServiceRoleGroupInfListResponse> GetDelegationAuditEventsListAsync(int userId, ResultSetCriteria resultSetCriteria)
     {
-      _userHelper.ValidateUserName(userName);
-      if (string.IsNullOrWhiteSpace(organisationId))
-      {
-        throw new CcsSsoException(ErrorConstant.ErrorOrganisationIdRequired);
-      }
-
       var user = await _dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation)
-        .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName &&
-        u.UserType == UserType.Delegation &&
-        u.Party.Person.Organisation.CiiOrganisationId == organisationId);
+        .FirstOrDefaultAsync(u => u.Id == userId && u.UserType == UserType.Delegation);
 
       if (user == null)
       {

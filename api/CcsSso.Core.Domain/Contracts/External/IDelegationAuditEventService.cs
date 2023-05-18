@@ -11,6 +11,6 @@ namespace CcsSso.Core.Domain.Contracts.External
   {
     Task CreateDelegationAuditEventsAsync(List<DelegationAuditEventInfo> delegationAuditEventInfoList);
 
-    Task<DelegationAuditEventoServiceRoleGroupInfListResponse> GetDelegationAuditEventsListAsync(string userName, string organisationId, ResultSetCriteria resultSetCriteria);
+    Task<DelegationAuditEventoServiceRoleGroupInfListResponse> GetDelegationAuditEventsListAsync(int userId, ResultSetCriteria resultSetCriteria);
   }
 }
