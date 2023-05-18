@@ -1970,7 +1970,7 @@ namespace CcsSso.Core.Service.External
         orgName = user.Party.Person.Organisation.LegalName;
       }
 
-      var delegationLinkExpiryDate = DateTime.UtcNow.AddHours(_appConfigInfo.DelegationEmailExpirationHours);
+      var delegationLinkExpiryDate = DateTime.UtcNow.AddMinutes(_appConfigInfo.DelegationEmailExpirationInMinutes);
       string activationInfo = "usr=" + userName + "&org=" + orgId + "&exp=" + delegationLinkExpiryDate;
       var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
 
@@ -1981,7 +1981,7 @@ namespace CcsSso.Core.Service.External
       }
       // add username and token in redish cache with 36 hours expiry, if exist then replace
       await _remoteCacheService.SetValueAsync<string>(userName + "-" + orgId, encryptedInfo,
-            new TimeSpan(_appConfigInfo.DelegationEmailExpirationHours, 0, 0));
+            new TimeSpan(_appConfigInfo.DelegationEmailExpirationInMinutes, 0, 0));
 
       // Send the delegation email
       await _ccsSsoEmailService.SendUserDelegatedAccessEmailAsync(userName, orgName, encryptedInfo);
