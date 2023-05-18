@@ -115,7 +115,6 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
       {
         user.Party.IsDeleted = true;
         user.Party.Person.IsDeleted = true;
-        user.DelegationEndDate = _dateTimeService.GetUTCNow();
         user.LastUpdatedOnUtc = _dateTimeService.GetUTCNow();
         
         if (user.UserAccessRoles != null)
