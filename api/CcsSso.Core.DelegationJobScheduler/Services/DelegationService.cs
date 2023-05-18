@@ -145,7 +145,8 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
           GroupId = groupId,
           UserId = user.Id,
           EventType = eventType.ToString(),
-          ActionedOnUtc = _dateTimeService.GetUTCNow()
+          ActionedOnUtc = _dateTimeService.GetUTCNow(),
+          ActionedBy = DelegationAuditActionBy.Job.ToString()
         };
 
         if (eventType == DelegationAuditEventType.ActivationLinkExpiry)
