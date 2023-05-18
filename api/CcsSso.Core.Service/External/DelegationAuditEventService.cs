@@ -23,16 +23,18 @@ namespace CcsSso.Core.Service.External
     private readonly IServiceRoleGroupMapperService _rolesToServiceRoleGroupMapperService;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private readonly IUserProfileHelperService _userHelper;
+    private readonly IExternalHelperService _externalHelperService;
 
     public DelegationAuditEventService(IDataContext dataContext, IDateTimeService dateTimeService,
       IServiceRoleGroupMapperService rolesToServiceRoleGroupMapperService, ApplicationConfigurationInfo applicationConfigurationInfo,
-      IUserProfileHelperService userHelper)
+      IUserProfileHelperService userHelper,IExternalHelperService externalHelperService)
     {
       _dataContext = dataContext;
       _dateTimeService = dateTimeService;
       _rolesToServiceRoleGroupMapperService = rolesToServiceRoleGroupMapperService;
       _applicationConfigurationInfo = applicationConfigurationInfo;
       _userHelper = userHelper;
+      _externalHelperService = externalHelperService;
     }
 
     public async Task CreateDelegationAuditEventsAsync(List<DelegationAuditEventInfo> delegationAuditEventInfoList)
@@ -70,7 +72,6 @@ namespace CcsSso.Core.Service.External
     public async Task<DelegationAuditEventoServiceRoleGroupInfListResponse> GetDelegationAuditEventsListAsync(string userName, string organisationId, ResultSetCriteria resultSetCriteria)
     {
       _userHelper.ValidateUserName(userName);
-
       if (string.IsNullOrWhiteSpace(organisationId))
       {
         throw new CcsSsoException(ErrorConstant.ErrorOrganisationIdRequired);
@@ -88,10 +89,8 @@ namespace CcsSso.Core.Service.External
       }
 
       var auditLogs = await GetDelegationAuditLogs(user.Id);
-
       int pageCount;
       var result = UtilityHelper.GetPagedResult(auditLogs, resultSetCriteria.CurrentPage, resultSetCriteria.PageSize, out pageCount);
-
       return new DelegationAuditEventoServiceRoleGroupInfListResponse
       {
         CurrentPage = resultSetCriteria.CurrentPage,
@@ -109,15 +108,8 @@ namespace CcsSso.Core.Service.External
         .Where(c => c.UserId == userId)
         .ToListAsync();
 
-      var allRoles = await _dataContext.CcsAccessRole.Where(r => !r.IsDeleted)
-                          .Include(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
-                          .Select(i => new OrganisationRole
-                          {
-                            RoleId = i.Id,
-                            RoleName = i.CcsAccessRoleName,
-                            RoleKey = i.CcsAccessRoleNameKey,
-                            ServiceName = i.ServiceRolePermissions.FirstOrDefault().ServicePermission.CcsService.ServiceName,
-                          }).ToListAsync();
+      
+      var allRoles =await _externalHelperService.GetCcsAccessRoles();
 
       foreach (var auditEvent in auditEvents)
       {
@@ -153,8 +145,6 @@ namespace CcsSso.Core.Service.External
     {
       var auditEventInfos = new List<DelegationAuditEventServiceRoleGroupResponseInfo>();
 
-      var auditEventInfo = GetDelegationAuditEventServiceRoleGroupInfo(auditEvent);
-
       if (auditEvent.EventType == DelegationAuditEventType.RoleAssigned.ToString() || auditEvent.EventType == DelegationAuditEventType.RoleUnassigned.ToString())
       {
         var roleIds = auditEvent.Roles.Split(",");
@@ -164,6 +154,7 @@ namespace CcsSso.Core.Service.External
 
         foreach (var service in services)
         {
+          var auditEventInfo = GetDelegationAuditEventServiceRoleGroupInfo(auditEvent);
           auditEventInfo.Name = service.Name;
           auditEventInfo.Key = service.Key;
           auditEventInfos.Add(auditEventInfo);
@@ -171,6 +162,7 @@ namespace CcsSso.Core.Service.External
       }
       else
       {
+        var auditEventInfo = GetDelegationAuditEventServiceRoleGroupInfo(auditEvent);
         auditEventInfos.Add(auditEventInfo);
       }
 

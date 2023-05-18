@@ -258,7 +258,7 @@ namespace CcsSso.Api
       services.AddScoped<IServiceRoleGroupMapperService, ServiceRoleGroupMapperService>();
       services.AddScoped<IOrganisationGroupService, OrganisationGroupService>();
       services.AddScoped<IDelegationAuditEventService, DelegationAuditEventService>();
-
+      services.AddScoped<IExternalHelperService, ExternalHelperService>();
       services.AddHttpContextAccessor();
 
       services.AddHttpClient("CiiApi", c =>

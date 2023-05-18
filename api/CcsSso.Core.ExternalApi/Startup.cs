@@ -302,6 +302,7 @@ namespace CcsSso.ExternalApi
       services.AddScoped<IDataMigrationFileContentService, DataMigrationFileContentService>();
       services.AddScoped<IDataMigrationService, DataMigrationService>();
       services.AddScoped<IDelegationAuditEventService, DelegationAuditEventService>();
+      services.AddScoped<IExternalHelperService, ExternalHelperService>();
       services.AddHttpClient();
       services.AddHttpContextAccessor();
       

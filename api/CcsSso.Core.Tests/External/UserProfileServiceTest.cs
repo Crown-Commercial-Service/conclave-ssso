@@ -845,7 +845,6 @@ namespace CcsSso.Core.Tests.External
       mockIdamService ??= new Mock<IIdamService>();
       IUserProfileHelperService userProfileHelperService = new UserProfileHelperService();
       requestContext ??= new RequestContext();
-
       mockEmailService ??= new Mock<ICcsSsoEmailService>();
       Mock<IAdaptorNotificationService> mockAdapterNotificationService = new Mock<IAdaptorNotificationService>();
       var mockWrapperCacheService = new Mock<IWrapperCacheService>();
