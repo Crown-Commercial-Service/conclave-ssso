@@ -178,31 +178,101 @@ namespace CcsSso.ExternalApi.Controllers
       await _userProfileService.SendUserDelegatedAccessEmailAsync(userId, organisationId, isLogEnable: true);
     }
 
+    /// <summary>
+    /// Allows admin to delegate other org user to represent org
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_SERVICE, INVALID_USER_ID, ERROR_USER_ID_TOO_LONG, ERROR_ORGANISATION_ID_REQUIRED, 
+    /// INVALID_CII_ORGANISATION_ID, INVALID_ROLE, INVALID_DETAILS, INVALID_USER_DELEGATION_PRIMARY_DETAILS, INVALID_USER_DELEGATION, 
+    /// INVALID_USER_DELEGATION_SAME_ORG, ERROR_SENDING_ACTIVATION_LINK
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    /// POST v1/delegate-user
+    /// {
+    ///   "userName": "",
+    ///   "detail": {
+    ///     "delegatedOrgId": "",
+    ///     "serviceRoleGroupIds": [
+    ///       0
+    ///     ],
+    ///     "startDate": "",
+    ///     "endDate": ""
+    ///   }
+    /// }
+    /// </remarks>
     [HttpPost("v1/delegate-user")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
     [OrganisationAuthorise("DELEGATION")]
     [SwaggerOperation(Tags = new[] { "User" })]
-    [ProducesResponseType(typeof(bool), 200)]
+    [ProducesResponseType(typeof(void), 200)]
     public async Task CreateDelegatedUserV1(DelegatedUserProfileServiceRoleGroupRequestInfo userProfileRequestInfo)
     {
       await _userProfileService.CreateDelegatedUserV1Async(userProfileRequestInfo);
     }
 
+    /// <summary>
+    /// Allows admin to update user delegation details
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Not found</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_SERVICE, INVALID_USER_ID, ERROR_USER_ID_TOO_LONG, ERROR_ORGANISATION_ID_REQUIRED, INVALID_ROLE, 
+    /// INVALID_DETAILS, INVALID_USER_DELEGATION
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    /// PUT v1/delegate-user
+    /// {
+    ///   "userName": "",
+    ///   "detail": {
+    ///     "delegatedOrgId": "",
+    ///     "serviceRoleGroupIds": [
+    ///       0
+    ///     ],
+    ///     "startDate": "",
+    ///     "endDate": ""
+    ///   }
+    /// }
+    /// </remarks>
     [HttpPut("v1/delegate-user")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
     [OrganisationAuthorise("DELEGATION")]
     [SwaggerOperation(Tags = new[] { "User" })]
-    [ProducesResponseType(typeof(bool), 200)]
+    [ProducesResponseType(typeof(void), 200)]
     public async Task UpdateDelegatedUserV1(DelegatedUserProfileServiceRoleGroupRequestInfo userProfileServiceRoleGroupRequestInfo)
     {
       await _userProfileService.UpdateDelegatedUserV1Async(userProfileServiceRoleGroupRequestInfo);
     }
 
+    /// <summary>
+    /// Returns user's delegation audit events
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="400">Bad request.
+    /// Error Codes: INVALID_USER_DELEGATION
+    /// </response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    /// GET v1/delegate-user-auditevents?id=1&PageSize=1&CurrentPage=1
+    /// 
+    /// </remarks>
     [HttpGet("v1/delegate-user-auditevents")]
     [ClaimAuthorise("ORG_ADMINISTRATOR")]
     [OrganisationAuthorise("DELEGATION")]
     [SwaggerOperation(Tags = new[] { "User" })]
-    [ProducesResponseType(typeof(void), 200)]
+    [ProducesResponseType(typeof(DelegationAuditEventoServiceRoleGroupInfListResponse), 200)]
     public async Task<DelegationAuditEventoServiceRoleGroupInfListResponse> GetDelegationAuditEventsList([FromQuery(Name = "id")] int userId, [FromQuery] ResultSetCriteria resultSetCriteria)
     {
       resultSetCriteria ??= new ResultSetCriteria
