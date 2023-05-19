@@ -717,9 +717,7 @@ namespace CcsSso.Core.Service.External
         }
         return true;
       }
-      catch (ArgumentException)
-      {
-      }
+      catch (ArgumentException) { }
       return false;
     }
 
@@ -837,7 +835,7 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
-      User actionedBy = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
+      User actionedBy = await GetActionedBy();
 
       if (organisation.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier)
       {
@@ -928,7 +926,7 @@ namespace CcsSso.Core.Service.External
         bool isOrgTypeSwitched = organisation.SupplierBuyerType != (int)newOrgType;
         bool autoValidationSuccess = false;
         bool alreadyVerifiedBuyer = false;
-        User actionedBy = await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
+        User actionedBy = await GetActionedBy();
 
         if (isOrgTypeSwitched && organisation.RightToBuy != true && newOrgType != RoleEligibleTradeType.Supplier)
         {
@@ -2248,6 +2246,9 @@ namespace CcsSso.Core.Service.External
     }
 
     #endregion
-
+    private async Task<User> GetActionedBy()
+    {
+      return await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
+    }
   }
 }
