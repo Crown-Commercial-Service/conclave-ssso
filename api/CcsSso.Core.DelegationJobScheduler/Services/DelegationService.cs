@@ -18,10 +18,10 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
     private readonly IDateTimeService _dateTimeService;
     private readonly ILogger<IDelegationService> _logger;
 
-    public DelegationService(IServiceScopeFactory factory, IDateTimeService dateTimeService, ILogger<IDelegationService> logger, IDelegationAuditEventService delegationAuditEventService)
+    public DelegationService(IServiceScopeFactory factory, IDateTimeService dateTimeService, ILogger<IDelegationService> logger)
     {
       _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
-      _delegationAuditEventService = delegationAuditEventService;
+      _delegationAuditEventService = factory.CreateScope().ServiceProvider.GetRequiredService<IDelegationAuditEventService>();
       _dateTimeService = dateTimeService;
       _logger = logger;
     }

@@ -114,6 +114,7 @@ namespace CcsSso.Core.DelegationJobScheduler
       services.AddScoped<IServiceRoleGroupMapperService, ServiceRoleGroupMapperService>();
 
       services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
+      services.AddScoped<IExternalHelperService, ExternalHelperService>();
       services.AddScoped<IDelegationAuditEventService, DelegationAuditEventService>();
       services.AddScoped<IDelegationService, DelegationService>();
     }
