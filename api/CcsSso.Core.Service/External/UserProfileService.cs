@@ -2545,9 +2545,9 @@ namespace CcsSso.Core.Service.External
         GroupId = groupId,
         UserId = user.Id,
         ActionedBy = DelegationAuditActionBy.Admin.ToString(),
-        ActionedByUserName = actioneBy.UserName,
-        ActionedByFirstName = actioneBy.Party.Person.FirstName,
-        ActionedByLastName = actioneBy.Party.Person.LastName,
+        ActionedByUserName = actioneBy?.UserName,
+        ActionedByFirstName = actioneBy?.Party.Person.FirstName,
+        ActionedByLastName = actioneBy?.Party.Person.LastName,
       };
     }
 
