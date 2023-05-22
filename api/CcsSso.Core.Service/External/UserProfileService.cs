@@ -1791,6 +1791,10 @@ namespace CcsSso.Core.Service.External
 
       if (!existingDelegatedUserDetails.DelegationStartDate.Value.Date.Equals(userProfileRequestInfo.Detail.StartDate.Date))
       {
+        if(userProfileRequestInfo.Detail.StartDate.Date == DateTime.UtcNow.Date)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
+        }
         existingDelegatedUserDetails.DelegationStartDate = userProfileRequestInfo.Detail.StartDate;
       }
 
