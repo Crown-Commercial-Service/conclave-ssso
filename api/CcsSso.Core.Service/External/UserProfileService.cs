@@ -1791,6 +1791,10 @@ namespace CcsSso.Core.Service.External
 
       if (!existingDelegatedUserDetails.DelegationStartDate.Value.Date.Equals(userProfileRequestInfo.Detail.StartDate.Date))
       {
+        if(userProfileRequestInfo.Detail.StartDate.Date == DateTime.UtcNow.Date)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
+        }
         existingDelegatedUserDetails.DelegationStartDate = userProfileRequestInfo.Detail.StartDate;
       }
 
@@ -2017,7 +2021,6 @@ namespace CcsSso.Core.Service.External
       // date validations, in update case don't validate start date less then today
       if (userProfileRequestInfo.Detail.StartDate == default || userProfileRequestInfo.Detail.EndDate == default ||
           (isUpdated ? false : userProfileRequestInfo.Detail.StartDate.Date < DateTime.UtcNow.Date) ||
-          (isUpdated ? true : userProfileRequestInfo.Detail.StartDate.Date <= DateTime.UtcNow.Date) ||
           userProfileRequestInfo.Detail.EndDate.Date < userProfileRequestInfo.Detail.StartDate.Date.AddDays(1) ||
           userProfileRequestInfo.Detail.EndDate.Date > userProfileRequestInfo.Detail.StartDate.Date.AddDays(365) ||
           userProfileRequestInfo.Detail.StartDate.Date > userProfileRequestInfo.Detail.EndDate.Date)
