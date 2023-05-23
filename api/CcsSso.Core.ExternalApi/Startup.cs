@@ -59,7 +59,7 @@ namespace CcsSso.ExternalApi
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
         bool.TryParse(Configuration["EnableUserAccessTokenFix"], out bool enableUserAccessTokenFix);
         // #Delegated
-        int.TryParse(Configuration["UserDelegation:DelegationEmailExpirationHours"], out int delegatedEmailExpirationHours);
+        int.TryParse(Configuration["UserDelegation:DelegationEmailExpirationInMinutes"], out int delegatedEmailExpirationInMinutes);
 
         var globalServiceRoles = Configuration.GetSection("ExternalServiceDefaultRoles:GlobalServiceDefaultRoles").Get<List<string>>();
         var scopedServiceRoles = Configuration.GetSection("ExternalServiceDefaultRoles:ScopedServiceDefaultRoles").Get<List<string>>();
@@ -74,7 +74,7 @@ namespace CcsSso.ExternalApi
         }
         // #Delegated
 
-        delegatedEmailExpirationHours = delegatedEmailExpirationHours == 0 ? 36 : delegatedEmailExpirationHours;
+        delegatedEmailExpirationInMinutes = delegatedEmailExpirationInMinutes == 0 ? 2160 : delegatedEmailExpirationInMinutes;
 
         int.TryParse(Configuration["DataMigrationSettings:MaxFileSizeValue"], out int dataMigrationMaxFileSizeValue);
 
@@ -92,7 +92,7 @@ namespace CcsSso.ExternalApi
           InMemoryCacheExpirationInMinutes = inMemoryCacheExpirationInMinutes,
           DashboardServiceClientId = Configuration["DashboardServiceClientId"],
           // #Delegated
-          DelegationEmailExpirationHours = delegatedEmailExpirationHours,
+          DelegationEmailExpirationInMinutes = delegatedEmailExpirationInMinutes,
           DelegationEmailTokenEncryptionKey = Configuration["UserDelegation:DelegationEmailTokenEncryptionKey"],
           DelegationExcludeRoles = Configuration.GetSection("UserDelegation:DelegationExcludeRoles").Get<string[]>(),
           JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
@@ -301,6 +301,8 @@ namespace CcsSso.ExternalApi
       services.AddScoped<IDocUploadService, DocUploadService>();
       services.AddScoped<IDataMigrationFileContentService, DataMigrationFileContentService>();
       services.AddScoped<IDataMigrationService, DataMigrationService>();
+      services.AddScoped<IDelegationAuditEventService, DelegationAuditEventService>();
+      services.AddScoped<IExternalHelperService, ExternalHelperService>();
       services.AddHttpClient();
       services.AddHttpContextAccessor();
       
