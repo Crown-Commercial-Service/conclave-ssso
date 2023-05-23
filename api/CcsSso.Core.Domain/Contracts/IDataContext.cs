@@ -111,6 +111,8 @@ namespace CcsSso.Domain.Contracts
 
     DbSet<CcsServiceRoleMapping> CcsServiceRoleMapping { get; set; }
 
+    DbSet<DelegationAuditEvent> DelegationAuditEvent { get; set; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
   }
 }

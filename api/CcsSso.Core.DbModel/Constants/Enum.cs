@@ -116,4 +116,24 @@ namespace CcsSso.Core.DbModel.Constants
     Removed,
     Expired
   }
+
+  public enum DelegationAuditActionBy
+  {
+    Admin,
+    Job
+  }
+
+  public enum DelegationAuditEventType
+  {
+    SetupOfDelegation,
+    RoleAssigned,
+    RoleUnassigned,
+    ActivationOfDelegation,
+    ActivationLinkExpiry,
+    StartDateChange,
+    EndDateChange,
+    ResendActivationLink,
+    ExpiryOfDelegationAccess,
+    TerminationOfDelegatedAccess
+  }
 }
