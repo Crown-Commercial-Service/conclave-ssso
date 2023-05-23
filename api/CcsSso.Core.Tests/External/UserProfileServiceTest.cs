@@ -845,7 +845,6 @@ namespace CcsSso.Core.Tests.External
       mockIdamService ??= new Mock<IIdamService>();
       IUserProfileHelperService userProfileHelperService = new UserProfileHelperService();
       requestContext ??= new RequestContext();
-
       mockEmailService ??= new Mock<ICcsSsoEmailService>();
       Mock<IAdaptorNotificationService> mockAdapterNotificationService = new Mock<IAdaptorNotificationService>();
       var mockWrapperCacheService = new Mock<IWrapperCacheService>();
@@ -860,11 +859,13 @@ namespace CcsSso.Core.Tests.External
       var mockServiceRoleGroupMapperService = new Mock<IServiceRoleGroupMapperService>();
       var mockOrganisationGroupService = new Mock<IOrganisationGroupService>();
       var mockOrganisationProfileService = new Mock<IOrganisationProfileService>();
+      var mockDelegationAuditEventService = new Mock<IDelegationAuditEventService>();
 
       var service = new UserProfileService(dataContext, userProfileHelperService, requestContext, mockIdamService.Object,
  mockEmailService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object, mockAuditLoginService.Object, mockRemoteCacheService.Object,
  mockCacheInvalidateService.Object, mockCryptographyService.Object, mockApplicationConfigurationInfo.Object, mockLookUpService.Object, mockWrapperApiService.Object,
- mockUserProfileRoleApprovalService.Object, mockServiceRoleGroupMapperService.Object, mockOrganisationGroupService.Object, mockOrganisationProfileService.Object);
+ mockUserProfileRoleApprovalService.Object, mockServiceRoleGroupMapperService.Object, mockOrganisationGroupService.Object, mockOrganisationProfileService.Object,
+ mockDelegationAuditEventService.Object);
       return service;
     }
 

@@ -126,7 +126,7 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "ExternalServiceDefaultRoles/GlobalServiceDefaultRoles", "ExternalServiceDefaultRoles:GlobalServiceDefaultRoles"));
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "ExternalServiceDefaultRoles/ScopedServiceDefaultRoles", "ExternalServiceDefaultRoles:ScopedServiceDefaultRoles"));
 
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserDelegation/DelegationEmailExpirationHours", "UserDelegation:DelegationEmailExpirationHours"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserDelegation/DelegationEmailExpirationInMinutes", "UserDelegation:DelegationEmailExpirationInMinutes"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserDelegation/DelegationEmailTokenEncryptionKey", "UserDelegation:DelegationEmailTokenEncryptionKey"));
       
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "UserDelegation/DelegationExcludeRoles", "UserDelegation:DelegationExcludeRoles"));

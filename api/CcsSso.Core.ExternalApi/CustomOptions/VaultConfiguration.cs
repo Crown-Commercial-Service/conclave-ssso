@@ -166,7 +166,7 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       if (_secrets.Data.ContainsKey("UserDelegation"))
       {
         var userDelegationInfo = JsonConvert.DeserializeObject<UserDelegation>(_secrets.Data["UserDelegation"].ToString());
-        Data.Add("UserDelegation:DelegationEmailExpirationHours", userDelegationInfo.DelegationEmailExpirationHours.ToString());
+        Data.Add("UserDelegation:DelegationEmailExpirationInMinutes", userDelegationInfo.DelegationEmailExpirationInMinutes.ToString());
         Data.Add("UserDelegation:DelegationEmailTokenEncryptionKey", userDelegationInfo.DelegationEmailTokenEncryptionKey);
         
         int index = 0;
@@ -375,7 +375,7 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
   // #Delegated
   public class UserDelegation
   {
-    public int DelegationEmailExpirationHours { get; set; }
+    public int DelegationEmailExpirationInMinutes { get; set; }
 
     public string DelegationEmailTokenEncryptionKey { get; set; }
 

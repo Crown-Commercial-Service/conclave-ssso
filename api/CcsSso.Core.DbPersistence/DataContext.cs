@@ -210,6 +210,8 @@ namespace CcsSso.DbPersistence
 
     public DbSet<CcsServiceRoleMapping> CcsServiceRoleMapping { get; set; }
 
+    public DbSet<DelegationAuditEvent> DelegationAuditEvent { get; set; }
+
     public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
       ValidateEntities();

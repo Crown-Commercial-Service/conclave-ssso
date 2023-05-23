@@ -44,7 +44,7 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task AcceptDelegationAsync(string acceptanceToken);
 
-    Task SendUserDelegatedAccessEmailAsync(string userName, string orgId = "", string orgName = "");
+    Task SendUserDelegatedAccessEmailAsync(string userName, string orgId = "", string orgName = "", bool isLogEnable = false);
 
     Task<UserProfileServiceRoleGroupResponseInfo> GetUserV1Async(string userName, bool isDelegated = false, bool isSearchUser = false, string delegatedOrgId = "");
 
