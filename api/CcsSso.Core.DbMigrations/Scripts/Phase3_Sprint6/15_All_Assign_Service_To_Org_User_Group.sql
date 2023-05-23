@@ -133,6 +133,7 @@ SELECT Assign_Service_To_Org_User_Group('FP_USER','Fleet Portal User','FP_USER',
 
 SELECT Assign_Service_To_Org_User_Group('CAT_USER','Contract Award Service (CAS) - add service','CAT_USER','Contract Award Service (CAS) - add to dashboard');
 SELECT Assign_Service_To_Org_User_Group('CAT_USER','Contract Award Service (CAS) - add service','CAT_USER','Contract Award Service role to create buyer in Jagger');
+SELECT Assign_Service_To_Org_User_Group('CAT_USER','Contract Award Service (CAS) - add service','CAT_USER','Contract Award Service role to merge buyer via Jaggaer');
 
 SELECT Assign_Service_To_Org_User_Group('JAEGGER_BUYER','eSourcing Service as a buyer','JAEGGER_BUYER','eSourcing  buyer role for CAS -Optional');
 SELECT Assign_Service_To_Org_User_Group('JAEGGER_BUYER','eSourcing Service as a buyer','JAEGGER_BUYER','eSourcing Tile for Buyer User');
