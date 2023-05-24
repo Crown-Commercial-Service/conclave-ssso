@@ -1954,7 +1954,6 @@ namespace CcsSso.Core.Service.External
 
     public async Task SendUserDelegatedAccessEmailAsync(string userName, string orgId, string orgName = "", bool isLogEnable = false)
     {
-      string serviceNames = null;
       _userHelper.ValidateUserName(userName);
 
       if (string.IsNullOrWhiteSpace(orgId))
@@ -1977,7 +1976,7 @@ namespace CcsSso.Core.Service.External
         orgName = user.Party.Person.Organisation.LegalName;
       }
 
-      serviceNames = await GetServiceNames(user.Id);
+      string serviceNames = await GetUserServiceNames(user.Id);
       var delegationLinkExpiryDate = DateTime.UtcNow.AddMinutes(_appConfigInfo.DelegationEmailExpirationInMinutes);
       string activationInfo = "usr=" + userName + "&org=" + orgId + "&exp=" + delegationLinkExpiryDate;
       var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
@@ -2610,7 +2609,7 @@ namespace CcsSso.Core.Service.External
     private async Task UpdateDelegatedUserRolesEventLog(DelegatedUserProfileRequestInfo userProfileRequestInfo, User existingDelegatedUserDetails, List<DelegationAuditEventInfo> auditEventLogs, Guid groupId)
     {
       var actionedBy = await GetActionedBy();
-      
+
       List<int> assignedRoles = (from role in userProfileRequestInfo.Detail.RoleIds where !(from oldRoleId in existingDelegatedUserDetails.UserAccessRoles select oldRoleId.OrganisationEligibleRoleId).Contains(role) select role).ToList();
       if (assignedRoles?.Count > 0)
       {
@@ -2618,7 +2617,7 @@ namespace CcsSso.Core.Service.External
         List<int> assingedCcsRoles = await GetCcsSsiRoleId(assignedRoles);
         auditEventLogs.Add(GetDelegationRoleAssignedEventLog(auditRoleAssignedEventLog, assingedCcsRoles));
       }
-      
+
       List<int> unAssignedRoles = (from role in existingDelegatedUserDetails.UserAccessRoles where !(from newRoleId in userProfileRequestInfo.Detail.RoleIds select newRoleId).ToList().Contains(role.OrganisationEligibleRoleId) select role.OrganisationEligibleRoleId).ToList();
       if (unAssignedRoles?.Count > 0)
       {
@@ -2688,7 +2687,7 @@ namespace CcsSso.Core.Service.External
     {
       return await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
     }
-    private async Task<string> GetServiceNames(int userId)
+    private async Task<string> GetUserServiceNames(int userId)
     {
       string serviceNames = null;
       var user = _dataContext.User.Include(x => (x.UserAccessRoles.Where(ur => !ur.IsDeleted))).Where(y => !y.IsDeleted && y.Id == userId).FirstOrDefault(); ;
