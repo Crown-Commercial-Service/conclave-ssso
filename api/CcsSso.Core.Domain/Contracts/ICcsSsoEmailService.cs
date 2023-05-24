@@ -33,7 +33,7 @@ namespace CcsSso.Core.Domain.Contracts
 
     Task SendOrgJoinRequestEmailAsync(OrgJoinNotificationInfo orgJoinNotificationInfo);
     // #Delegated
-    Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string encryptedInfo);
+    Task SendUserDelegatedAccessEmailAsync(string email, string serviceNames, string orgName, string encryptedInfo);
     // #Auto validation
     Task SendOrgPendingVerificationEmailToCCSAdminAsync(string email, string orgName);
 
