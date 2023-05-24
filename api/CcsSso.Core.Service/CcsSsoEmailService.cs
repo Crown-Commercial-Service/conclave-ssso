@@ -155,11 +155,12 @@ namespace CcsSso.Core.Service
     }
 
     // #Delegated
-    public async Task SendUserDelegatedAccessEmailAsync(string email, string orgName, string encryptedCode)
+    public async Task SendUserDelegatedAccessEmailAsync(string email, string serviceNames, string orgName, string encryptedCode)
     {
       var data = new Dictionary<string, dynamic>
                       {
                         { "orgName", orgName},
+                         { "serviceNames", serviceNames },
                         { "link", _appConfigInfo.ConclaveLoginUrl + "/delegated-user-activation" + $"?activationcode={encryptedCode}" }
                       };
       var emailInfo = new EmailInfo()
