@@ -47,6 +47,8 @@ namespace CcsSso.Domain.Dtos
 
     public ServiceRoleGroupSettings ServiceRoleGroupSettings { get; set; }
 
+    public NotificationApiSettings NotificationApiSettings { get; set; }
+
     public string TokenEncryptionKey { get; set; }
 
     public NewUserJoinRequest NewUserJoinRequest { get; set; }
@@ -185,6 +187,15 @@ namespace CcsSso.Domain.Dtos
     public string UserRoleApprovedEmailTemplateId { get; set; }
 
     public string UserRoleRejectedEmailTemplateId { get; set; }
+  }
+
+  public class NotificationApiSettings
+  {
+    public bool Enable { get; set; } = false;
+
+    public string ApiKey { get; set; }
+
+    public string Url { get; set; }
   }
 
   public class ServiceRoleGroupSettings

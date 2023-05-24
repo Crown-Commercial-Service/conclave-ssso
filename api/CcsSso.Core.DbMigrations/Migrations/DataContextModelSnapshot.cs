@@ -1889,6 +1889,9 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.Property<int>("OrganisationEligibleRoleId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("OrganisationUserGroupId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("SendEmailNotification")
                         .HasColumnType("boolean");
 
@@ -1901,6 +1904,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrganisationEligibleRoleId");
+
+                    b.HasIndex("OrganisationUserGroupId");
 
                     b.HasIndex("UserId");
 
@@ -2603,6 +2608,10 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CcsSso.DbModel.Entity.OrganisationUserGroup", "OrganisationUserGroup")
+                        .WithMany()
+                        .HasForeignKey("OrganisationUserGroupId");
+
                     b.HasOne("CcsSso.DbModel.Entity.User", "User")
                         .WithMany("UserAccessRolePending")
                         .HasForeignKey("UserId")
@@ -2610,6 +2619,8 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .IsRequired();
 
                     b.Navigation("OrganisationEligibleRole");
+
+                    b.Navigation("OrganisationUserGroup");
 
                     b.Navigation("User");
                 });

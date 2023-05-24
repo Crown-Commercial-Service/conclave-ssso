@@ -14,10 +14,12 @@ namespace CcsSso.Core.Domain.Contracts
 
     // #Auto validation
     Task SendUserConfirmEmailOnlyUserIdPwdAsync(string email, string activationlink, string ccsMsg);
+    Task SendUserConfirmEmailOnlyUserIdPwdAsync(string email, string activationlink, string ccsMsg, bool isUserInAuth0);
     Task SendUserConfirmEmailOnlyFederatedIdpAsync(string email, string idpName);
     Task SendUserConfirmEmailBothIdpAsync(string email, string idpName, string activationlink);
-    Task SendUserRegistrationEmailUserIdPwdAsync(string email, string activationlink);
+    Task SendUserConfirmEmailBothIdpAsync(string email, string idpName, string activationlink, bool isUserInAuth0);
 
+    Task SendUserRegistrationEmailUserIdPwdAsync(string email, string activationlink);
 
     Task SendOrgProfileUpdateEmailAsync(string email);
 
