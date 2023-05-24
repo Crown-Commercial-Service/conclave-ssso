@@ -2593,14 +2593,12 @@ namespace CcsSso.Core.Service.External
     private async Task UpdateDelegatedUserDatesEventLog(DelegatedUserProfileRequestInfo userProfileRequestInfo, User existingDelegatedUserDetails, List<DelegationAuditEventInfo> auditEventLogs, Guid groupId)
     {
       var actionedBy = await GetActionedBy();
-      //Audit log for changing start date
       if (!existingDelegatedUserDetails.DelegationStartDate.Value.Date.Equals(userProfileRequestInfo.Detail.StartDate.Date))
       {
         DelegationAuditEventInfo auditStartDateChangeEventLog = CreateDelegationEventLogObject(existingDelegatedUserDetails, actionedBy, groupId);
         auditEventLogs.Add(GetDelegationStartDateChangedEventLog(auditStartDateChangeEventLog, userProfileRequestInfo, existingDelegatedUserDetails));
       }
-      //Audit log for changing end date
-      if (!existingDelegatedUserDetails.DelegationEndDate.Value.Date.Equals(userProfileRequestInfo.Detail.EndDate.Date))
+      if (!existingDelegatedUserDetails.DelegationEndDate.Value.Date.Equals(userProfileRequestInfo.Detail.EndDate.Date))
       {
         DelegationAuditEventInfo auditEndDateChangeEventLog = CreateDelegationEventLogObject(existingDelegatedUserDetails, actionedBy, groupId);
         auditEventLogs.Add(GetDelegationEndDateChangedEventLog(auditEndDateChangeEventLog, userProfileRequestInfo, existingDelegatedUserDetails));
@@ -2609,17 +2607,16 @@ namespace CcsSso.Core.Service.External
     private async Task UpdateDelegatedUserRolesEventLog(DelegatedUserProfileRequestInfo userProfileRequestInfo, User existingDelegatedUserDetails, List<DelegationAuditEventInfo> auditEventLogs, Guid groupId)
     {
       var actionedBy = await GetActionedBy();
-
-      //Audit log for assigning of role
-      List<int> assignedRoles = (from role in userProfileRequestInfo.Detail.RoleIds where !(from oldRoleId in existingDelegatedUserDetails.UserAccessRoles select oldRoleId.OrganisationEligibleRoleId).Contains(role) select role).ToList();
+      
+      List<int> assignedRoles = (from role in userProfileRequestInfo.Detail.RoleIds where !(from oldRoleId in existingDelegatedUserDetails.UserAccessRoles select oldRoleId.OrganisationEligibleRoleId).Contains(role) select role).ToList();
       if (assignedRoles?.Count > 0)
       {
         DelegationAuditEventInfo auditRoleAssignedEventLog = CreateDelegationEventLogObject(existingDelegatedUserDetails, actionedBy, groupId);
         List<int> assingedCcsRoles = await GetCcsSsiRoleId(assignedRoles);
         auditEventLogs.Add(GetDelegationRoleAssignedEventLog(auditRoleAssignedEventLog, assingedCcsRoles));
       }
-      //Audit log for unassigning of role
-      List<int> unAssignedRoles = (from role in existingDelegatedUserDetails.UserAccessRoles where !(from newRoleId in userProfileRequestInfo.Detail.RoleIds select newRoleId).ToList().Contains(role.OrganisationEligibleRoleId) select role.OrganisationEligibleRoleId).ToList();
+      
+      List<int> unAssignedRoles = (from role in existingDelegatedUserDetails.UserAccessRoles where !(from newRoleId in userProfileRequestInfo.Detail.RoleIds select newRoleId).ToList().Contains(role.OrganisationEligibleRoleId) select role.OrganisationEligibleRoleId).ToList();
       if (unAssignedRoles?.Count > 0)
       {
         DelegationAuditEventInfo auditRoleUnassignedEventLog = CreateDelegationEventLogObject(existingDelegatedUserDetails, actionedBy, groupId);
