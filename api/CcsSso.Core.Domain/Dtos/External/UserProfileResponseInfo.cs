@@ -39,6 +39,8 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public List<int> GroupIds { get; set; }
 
+    public int GroupType { get; set; }
+        
     public List<int> IdentityProviderIds { get; set; }
   }
 
@@ -46,7 +48,7 @@ namespace CcsSso.Core.Domain.Dtos.External
   {
     public int? GroupId { get; set; }
 
-    public List<int> RoleIds { get; set; }
+        public List<int> RoleIds { get; set; }
   }
 
   public class UserServiceRoleGroupRequestDetail : UserRequestMain
@@ -214,6 +216,8 @@ namespace CcsSso.Core.Domain.Dtos.External
   {
     public int GroupId { get; set; }
 
+    public int GroupType { get; set; }
+
     public string AccessRole { get; set; }
 
     public string AccessRoleName { get; set; }
@@ -228,6 +232,8 @@ namespace CcsSso.Core.Domain.Dtos.External
   public class GroupAccessServiceRoleGroup
   {
     public int GroupId { get; set; }
+
+    public int GroupType { get; set; }
 
     public int AccessServiceRoleGroupId { get; set; }
 

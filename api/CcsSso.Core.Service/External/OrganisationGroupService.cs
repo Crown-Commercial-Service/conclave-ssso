@@ -154,6 +154,7 @@ namespace CcsSso.Core.Service.External
         MfaEnabled = group.MfaEnabled,
         OrganisationId = ciiOrganisationId,
         GroupName = group.UserGroupName,
+        GroupType = group.GroupType,
         CreatedDate = group.CreatedOnUtc.Date.ToString(DateTimeFormat.DateFormatShortMonth),
         Roles = group.GroupEligibleRoles.Where(gr => !gr.IsDeleted).Select(gr => new GroupRole
         {
@@ -204,6 +205,7 @@ namespace CcsSso.Core.Service.External
         {
           GroupId = g.Id,
           GroupName = g.UserGroupName,
+          GroupType = g.GroupType,
           CreatedDate = g.CreatedOnUtc.Date.ToString(DateTimeFormat.DateFormatShortMonth),
           Roles = g.GroupEligibleRoles.Where(gr => !gr.IsDeleted).Select(gr => new GroupRole
           {
@@ -686,6 +688,7 @@ namespace CcsSso.Core.Service.External
       var groupUserListResponse = new GroupUserListResponse
       {
         groupId = groupId,
+        GroupType = group.GroupType, 
         CurrentPage = pagedResult.CurrentPage,
         PageCount = pagedResult.PageCount,
         RowCount = pagedResult.RowCount,
@@ -791,6 +794,7 @@ namespace CcsSso.Core.Service.External
         {
           GroupId = group.GroupId,
           GroupName = group.GroupName,
+          GroupType = group.GroupType,
           CreatedDate = group.CreatedDate,
           ServiceRoleGroups = groupServiceRoleGroups
         });
@@ -808,6 +812,7 @@ namespace CcsSso.Core.Service.External
       return new OrganisationServiceRoleGroupResponseInfo
       {
         GroupId = organisationGroupResponseInfo.GroupId,
+        GroupType = organisationGroupResponseInfo.GroupType,
         MfaEnabled = organisationGroupResponseInfo.MfaEnabled,
         OrganisationId = organisationGroupResponseInfo.OrganisationId,
         GroupName = organisationGroupResponseInfo.GroupName,
@@ -873,6 +878,7 @@ namespace CcsSso.Core.Service.External
             Detail = new UserRequestDetail
             {
               GroupId = group.Id,
+              GroupType = group.GroupType,
               RoleIds = approvalRequiredRoles
             }
           }, sendEmailNotification: false);
