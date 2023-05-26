@@ -504,6 +504,7 @@ namespace CcsSso.Core.Service.External
         {
           GroupId = userGroupMembership.OrganisationUserGroup.Id,
           Group = userGroupMembership.OrganisationUserGroup.UserGroupName,
+          GroupType = userGroupMembership.OrganisationUserGroup.GroupType,
           AccessRoleName = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
           AccessRole = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
           ServiceClientId = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceClientId,
@@ -520,6 +521,7 @@ namespace CcsSso.Core.Service.External
       {
         GroupId = userGroupMembership.OrganisationUserGroup.Id,
         Group = userGroupMembership.OrganisationUserGroup.UserGroupName,
+        GroupType= userGroupMembership.OrganisationUserGroup.GroupType,
         AccessRoleName = string.Empty,
         AccessRole = string.Empty,
       };
@@ -1063,7 +1065,7 @@ namespace CcsSso.Core.Service.External
         {
           userGroupMemberships.Add(new UserGroupMembership
           {
-            OrganisationUserGroupId = groupId
+            OrganisationUserGroupId = groupId    
           });
         });
         user.UserGroupMemberships = userGroupMemberships;
@@ -2150,7 +2152,7 @@ namespace CcsSso.Core.Service.External
 
       var serviceRoleGroupIds = userProfileServiceRoleGroupEditRequestInfo?.Detail?.ServiceRoleGroupIds;
       var organisationId = userProfileServiceRoleGroupEditRequestInfo?.OrganisationId;
-
+      
 
       userName = userName?.ToLower();
       userProfileServiceRoleGroupEditRequestInfo.UserName = userProfileServiceRoleGroupEditRequestInfo.UserName?.ToLower();
@@ -2471,6 +2473,7 @@ namespace CcsSso.Core.Service.External
           groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
           {
             GroupId = userGroup.GroupId,
+            GroupType = userGroup.GroupType,
             Group = userGroup.Group,
           });
         }
@@ -2485,6 +2488,7 @@ namespace CcsSso.Core.Service.External
         {
           GroupId = groupInfo.GroupId,
           Group = groupInfo.GroupName,
+          GroupType = groupInfo.GroupType,
           AccessServiceRoleGroupId = serviceRoleGroup.Id,
           AccessServiceRoleGroupName = serviceRoleGroup.Name,
           ApprovalStatus = userGroupsApprovalServiceRoleGroupWithStatus.Item2
@@ -2496,6 +2500,7 @@ namespace CcsSso.Core.Service.External
         {
           GroupId = groupInfo.GroupId,
           Group = groupInfo.GroupName,
+          GroupType = groupInfo.GroupType,
           AccessServiceRoleGroupId = serviceRoleGroup.Id,
           AccessServiceRoleGroupName = serviceRoleGroup.Name,
           ApprovalStatus = (int)UserPendingRoleStaus.Approved
