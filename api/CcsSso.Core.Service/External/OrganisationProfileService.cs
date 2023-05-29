@@ -2257,27 +2257,36 @@ namespace CcsSso.Core.Service.External
     /// <param name="userId"></param>
     /// <returns></returns>
     public async Task ActivateOrganisationByUser(string userId)
-    {
+    {      
       User user = await _dataContext.User
           .Include(u => u.UserAccessRoles).ThenInclude(u => u.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
           .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation)
           .Include(u => u.UserGroupMemberships).ThenInclude(ugm => ugm.OrganisationUserGroup).ThenInclude(ug => ug.GroupEligibleRoles)
-          .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName.ToLower() == userId.ToLower());
+          .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName.ToLower() == userId.ToLower() && u.UserType == UserType.Primary);
 
+      if(user == null)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserId);
+      }
       var ciiOrganisationId = user?.Party?.Person?.Organisation?.CiiOrganisationId;
       if (ciiOrganisationId != null)
       {
-        var organisation = await _dataContext.Organisation
-            .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId && !o.IsActivated);
-        if (organisation != null)
+        await ActivateOrganisation(user, ciiOrganisationId);
+      }
+    }
+
+    private async Task ActivateOrganisation(User user, string ciiOrganisationId)
+    {
+      var organisation = await _dataContext.Organisation
+                  .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId && !o.IsActivated);
+      if (organisation != null)
+      {
+        var isAdminFromGroup = user.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey));
+        var isAdminFromProfile = user.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted);
+        if (isAdminFromProfile || isAdminFromGroup)
         {
-          var isAdminFromGroup = user.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey));
-          var isAdminFromProfile = user.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted);
-          if (isAdminFromProfile || isAdminFromGroup)
-          {
-            organisation.IsActivated = true;
-            await _dataContext.SaveChangesAsync();
-          }
+          organisation.IsActivated = true;
+          await _dataContext.SaveChangesAsync();
         }
       }
     }
