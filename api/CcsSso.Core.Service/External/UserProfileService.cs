@@ -667,7 +667,7 @@ namespace CcsSso.Core.Service.External
 
       // Delegated and delegated expired conditions
       if (isDelegatedOnly)
-        userQuery = userQuery.Where(u => isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date <= DateTime.UtcNow.Date :
+        userQuery = userQuery.Where(u => isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date < DateTime.UtcNow.Date :
                               u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date);
 
 
@@ -841,7 +841,7 @@ namespace CcsSso.Core.Service.External
 
         if (user.UserType == DbModel.Constants.UserType.Delegation)
         {
-          user.DelegationEndDate = DateTime.UtcNow;
+          user.DelegationEndDate = DateTime.UtcNow.Date;
         }
       }
 
@@ -1703,8 +1703,8 @@ namespace CcsSso.Core.Service.External
           //}).ToList(),
           MfaEnabled = existingUserPrimaryDetails.MfaEnabled,
           CcsServiceId = existingUserPrimaryDetails.CcsServiceId,
-          DelegationStartDate = userProfileRequestInfo.Detail.StartDate,
-          DelegationEndDate = userProfileRequestInfo.Detail.EndDate,
+          DelegationStartDate = userProfileRequestInfo.Detail.StartDate.Date,
+          DelegationEndDate = userProfileRequestInfo.Detail.EndDate.Date,
           UserType = DbModel.Constants.UserType.Delegation,
           OriginOrganizationId = existingUserPrimaryDetails.Party.Person.Organisation.Id
         }
@@ -1800,7 +1800,7 @@ namespace CcsSso.Core.Service.External
 
       if (!existingDelegatedUserDetails.DelegationEndDate.Value.Date.Equals(userProfileRequestInfo.Detail.EndDate.Date))
       {
-        existingDelegatedUserDetails.DelegationEndDate = userProfileRequestInfo.Detail.EndDate;
+        existingDelegatedUserDetails.DelegationEndDate = userProfileRequestInfo.Detail.EndDate.Date;
       }
 
       try
@@ -1850,7 +1850,7 @@ namespace CcsSso.Core.Service.External
       user.IsDeleted = true;
       user.Party.IsDeleted = true;
       user.Party.Person.IsDeleted = true;
-      user.DelegationEndDate = DateTime.UtcNow;
+      user.DelegationEndDate = DateTime.UtcNow.Date;
 
       if (user.UserAccessRoles != null)
       {
@@ -2628,8 +2628,8 @@ namespace CcsSso.Core.Service.External
     private static DelegationAuditEventInfo GetSetupOfDelegationEventLog(DelegationAuditEventInfo auditEventLog, DelegatedUserProfileRequestInfo userProfileRequestInfo)
     {
       auditEventLog.EventType = DelegationAuditEventType.SetupOfDelegation.ToString();
-      auditEventLog.NewDelegationStartDate = userProfileRequestInfo.Detail.StartDate;
-      auditEventLog.NewDelegationEndDate = userProfileRequestInfo.Detail.EndDate;
+      auditEventLog.NewDelegationStartDate = userProfileRequestInfo.Detail.StartDate.Date;
+      auditEventLog.NewDelegationEndDate = userProfileRequestInfo.Detail.EndDate.Date;
       return auditEventLog;
     }
 
