@@ -136,4 +136,10 @@ namespace CcsSso.Core.DbModel.Constants
     ExpiryOfDelegationAccess,
     TerminationOfDelegatedAccess
   }
+
+  public enum GroupType
+  {
+    Other,
+    Admin
+  }
 }

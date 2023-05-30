@@ -152,6 +152,14 @@ namespace CcsSso.ExternalApi.Controllers
       await _organisationService.UpdateOrganisationAsync(organisationId, organisationProfileInfo);
     }
 
+    [HttpPost("activation-by-user/{userId}")]
+    [SwaggerOperation(Tags = new[] { "Organisation" })]
+    [ProducesResponseType(typeof(void), 200)]
+    public async Task ActivateOrganisationByUser(string userId)
+    {
+      await _organisationService.ActivateOrganisationByUser(userId);
+    }
+
     #endregion
 
     #region Organisation Contacts

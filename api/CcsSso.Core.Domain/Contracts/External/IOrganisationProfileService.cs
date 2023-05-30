@@ -45,5 +45,7 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task UpdateOrgAutoValidServiceRoleGroupsAsync(string ciiOrganisationId, RoleEligibleTradeType orgType, List<int> serviceRoleGroupsToAdd, List<int> serviceRoleGroupsToDelete, List<int> serviceRoleGroupsToAutoValid, string? companyHouseId);
 
+    Task ActivateOrganisationByUser(string userId);
+
   }
 }
