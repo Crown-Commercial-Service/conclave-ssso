@@ -365,16 +365,16 @@ namespace CcsSso.Service
     }
         public async Task OrganisationAdminGroup(OrganisationRegistrationDto organisationRegistrationDto, string ciiOrgId)
         {
-            var Organisation = await _dataContext.Organisation.Include(o => o.UserGroups).FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrgId);
-            var IsDefaultAdminGroup = await _dataContext.OrganisationUserGroup.AnyAsync(x => x.OrganisationId == Organisation.Id && x.GroupType == (int)GroupType.Admin && !x.IsDeleted);
+            var organisation = await _dataContext.Organisation.Include(o => o.UserGroups).FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrgId);
+            var isDefaultAdminGroupExists = await _dataContext.OrganisationUserGroup.AnyAsync(x => x.OrganisationId == organisation.Id && x.GroupType == (int)GroupType.Admin && !x.IsDeleted);
 
-            if (!IsDefaultAdminGroup)
+            if (!isDefaultAdminGroupExists)
             {
                 var group = new OrganisationUserGroup
                 {
-                    OrganisationId = Organisation.Id,
-                    UserGroupName = "Organisation Administrators",
-                    UserGroupNameKey = "ORGANISATION_ADMINISTRATORS",
+                    OrganisationId = organisation.Id,
+                    UserGroupName = Contstant.DefaultAdminUserGroupName,
+                    UserGroupNameKey = Contstant.DefaultAdminUserGroupNameKey,
                     GroupType = (int)GroupType.Admin
                 };
                 _dataContext.OrganisationUserGroup.Add(group);

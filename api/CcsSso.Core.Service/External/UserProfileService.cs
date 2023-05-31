@@ -229,7 +229,7 @@ namespace CcsSso.Core.Service.External
       await _dataContext.SaveChangesAsync();
       if(isNewOrgAdmin==true)
       {
-          await AddUserToDefaultGroup(organisation.Id, party.User.Id);
+          await AddUserToDefaultAdminGroup(organisation.Id, party.User.Id);
       }
 
       if (userAccessRoleRequiredApproval.Any())
@@ -359,17 +359,17 @@ namespace CcsSso.Core.Service.External
         IsRegisteredInIdam = isRegisteredInIdam
       };
     }
-    private async Task AddUserToDefaultGroup(int ciiOrgId, int UserId)
+    private async Task AddUserToDefaultAdminGroup(int ciiOrgId, int UserId)
     {
-        var DefaultAdminGroup = await _dataContext.OrganisationUserGroup.FirstOrDefaultAsync(x => x.OrganisationId == ciiOrgId && x.GroupType == (int)GroupType.Admin && !x.IsDeleted);
-        if (DefaultAdminGroup != null)
+        var defaultAdminGroup = await _dataContext.OrganisationUserGroup.FirstOrDefaultAsync(x => x.OrganisationId == ciiOrgId && x.GroupType == (int)GroupType.Admin && !x.IsDeleted);
+        if (defaultAdminGroup != null)
         {
-           var UserGroupMembership = new UserGroupMembership
+           var userGroupMembership = new UserGroupMembership
            {
               UserId = UserId,
-              OrganisationUserGroupId = DefaultAdminGroup.Id
+              OrganisationUserGroupId = defaultAdminGroup.Id
            };
-           _dataContext.UserGroupMembership.Add(UserGroupMembership);
+           _dataContext.UserGroupMembership.Add(userGroupMembership);
            await _dataContext.SaveChangesAsync();
         }
     }
