@@ -359,9 +359,9 @@ namespace CcsSso.Core.Service.External
         IsRegisteredInIdam = isRegisteredInIdam
       };
     }
-    private async Task AddUserToDefaultAdminGroup(int ciiOrgId, int userId)
+    private async Task AddUserToDefaultAdminGroup(int orgId, int userId)
     {
-        var defaultAdminGroup = await _dataContext.OrganisationUserGroup.FirstOrDefaultAsync(x => x.OrganisationId == ciiOrgId && x.GroupType == (int)GroupType.Admin && !x.IsDeleted);
+        var defaultAdminGroup = await _dataContext.OrganisationUserGroup.FirstOrDefaultAsync(x => x.OrganisationId == orgId && x.GroupType == (int)GroupType.Admin && !x.IsDeleted);
         if (defaultAdminGroup != null)
         {
            var userGroupMembership = new UserGroupMembership
