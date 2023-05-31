@@ -1396,6 +1396,7 @@ namespace CcsSso.Core.Service.External
         .Include(u => u.UserIdentityProviders)
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation)
         .Include(u => u.UserAccessRoles)
+        .Include(u => u.UserGroupMemberships)
         .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
 
       if (user == null)
@@ -1439,6 +1440,15 @@ namespace CcsSso.Core.Service.External
         UserId = user.Id,
         OrganisationEligibleRoleId = organisationAdminAccessRole.Id
       });
+
+      var adminGroupId = await _organisationService.GetOrganisationGroupTypeAdminGroupDetailsAsync(user.Party.Person.Organisation.CiiOrganisationId);
+      if (adminGroupId != null)
+      {
+        user.UserGroupMemberships.Add(new UserGroupMembership
+        {
+          OrganisationUserGroupId = adminGroupId.Id
+        });
+      }
 
       await _dataContext.SaveChangesAsync();
 
