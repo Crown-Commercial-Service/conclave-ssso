@@ -3,15 +3,17 @@ using System;
 using CcsSso.DbPersistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace CcsSso.Core.DbMigrations.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20230523120702_DelegationEmailNotificationLog")]
+    partial class DelegationEmailNotificationLog
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1545,9 +1547,6 @@ namespace CcsSso.Core.DbMigrations.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("CreatedUserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("GroupType")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")

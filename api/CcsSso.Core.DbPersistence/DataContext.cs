@@ -209,6 +209,7 @@ namespace CcsSso.DbPersistence
     public DbSet<CcsServiceRoleGroup> CcsServiceRoleGroup { get; set; }
 
     public DbSet<CcsServiceRoleMapping> CcsServiceRoleMapping { get; set; }
+    public DbSet<DelegationEmailNotificationLog> DelegationEmailNotificationLog { get; set; }
 
     public DbSet<DelegationAuditEvent> DelegationAuditEvent { get; set; }
 
