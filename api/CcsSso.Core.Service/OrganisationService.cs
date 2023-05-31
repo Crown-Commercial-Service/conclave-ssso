@@ -3,6 +3,7 @@ using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Core.Domain.Dtos.External;
+using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
@@ -354,14 +355,32 @@ namespace CcsSso.Service
         };
 
         await _organisationProfileService.CreateOrganisationAsync(organisationProfileInfo);
-      }
+        await OrganisationAdminGroup(organisationRegistrationDto, ciiOrgId);
+        }
       catch (Exception)
       {
         await _ciiService.DeleteOrgAsync(ciiOrgId);
         throw;
       }
     }
+        public async Task OrganisationAdminGroup(OrganisationRegistrationDto organisationRegistrationDto, string ciiOrgId)
+        {
+            var organisation = await _dataContext.Organisation.Include(o => o.UserGroups).FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrgId);
+            var isDefaultAdminGroupExists = await _dataContext.OrganisationUserGroup.AnyAsync(x => x.OrganisationId == organisation.Id && x.GroupType == (int)GroupType.Admin && !x.IsDeleted);
 
+            if (!isDefaultAdminGroupExists)
+            {
+                var group = new OrganisationUserGroup
+                {
+                    OrganisationId = organisation.Id,
+                    UserGroupName = Contstant.DefaultAdminUserGroupName,
+                    UserGroupNameKey = Contstant.DefaultAdminUserGroupNameKey,
+                    GroupType = (int)GroupType.Admin
+                };
+                _dataContext.OrganisationUserGroup.Add(group);
+                await _dataContext.SaveChangesAsync();
+            }
+        }
     /// <summary>
     /// Create organisation admin user using wrapper
     /// If failed delete org records from CII and DB
