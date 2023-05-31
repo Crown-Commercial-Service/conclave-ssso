@@ -34,7 +34,7 @@ jobs:
          server_port: ${{ secrets.SERVER_PORT }}
          username: ${{ secrets.USER_NAME }}
          password: ${{ secrets.PASSWORD }}
-         subject: Git Secrets Scan Results
+         subject: Trufflehog Monthly Deep Scan Results
          to: "rahulgandhi.jayabalan@brickendon.com,ponselvam.sakthivel@brickendon.com"
          from: "secops@brickendon.com"
          body: |
