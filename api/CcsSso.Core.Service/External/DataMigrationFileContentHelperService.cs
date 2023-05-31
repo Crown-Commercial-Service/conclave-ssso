@@ -163,16 +163,16 @@ namespace CcsSso.Service.External
     {
       ValidateForRequired(fileHeaders, errorDetails, fileRowNumber, rowDataColumns);
 
-      var schemeIdHeaderIndex = fileHeaders.FindIndex(h => h == "SchemeId");
-      var schemeId = rowDataColumns[schemeIdHeaderIndex];
-      var isValidSchemeId = ValidateSchemeId(errorDetails, fileRowNumber, schemeId);
+      //var schemeIdHeaderIndex = fileHeaders.FindIndex(h => h == "SchemeId");
+      //var schemeId = rowDataColumns[schemeIdHeaderIndex];
+      //var isValidSchemeId = ValidateSchemeId(errorDetails, fileRowNumber, schemeId);
 
-      var identifierIdHeaderIndex = fileHeaders.FindIndex(h => h == "IdentifierId");
-      var identifierId = rowDataColumns[identifierIdHeaderIndex];
-      if (!string.IsNullOrWhiteSpace(identifierId) && isValidSchemeId)
-      {
-        await ValidateIdentifierId(errorDetails, fileRowNumber, schemeId, identifierId);
-      }
+      //var identifierIdHeaderIndex = fileHeaders.FindIndex(h => h == "IdentifierId");
+      //var identifierId = rowDataColumns[identifierIdHeaderIndex];
+      //if (!string.IsNullOrWhiteSpace(identifierId) && isValidSchemeId)
+      //{
+      //  await ValidateIdentifierId(errorDetails, fileRowNumber, schemeId, identifierId);
+      //}
 
       ValidateOrganisationType(fileHeaders, errorDetails, fileRowNumber, rowDataColumns);
 
