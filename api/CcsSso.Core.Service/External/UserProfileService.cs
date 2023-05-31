@@ -48,6 +48,7 @@ namespace CcsSso.Core.Service.External
     private readonly IOrganisationProfileService _organisationService;
     private readonly IDelegationAuditEventService _delegationAuditEventService;
     private readonly IServiceRoleGroupMapperService _rolesToServiceRoleGroupMapperService;
+    private readonly IExternalHelperService _externalHelperService;
 
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
@@ -57,7 +58,7 @@ namespace CcsSso.Core.Service.External
       ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService,
       IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
       IOrganisationGroupService organisationGroupService, IOrganisationProfileService organisationService,
-      IDelegationAuditEventService delegationAuditEventService, IServiceRoleGroupMapperService rolesToServiceRoleGroupMapperService)
+      IDelegationAuditEventService delegationAuditEventService, IServiceRoleGroupMapperService rolesToServiceRoleGroupMapperService, IExternalHelperService externalHelperService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -79,6 +80,7 @@ namespace CcsSso.Core.Service.External
       _organisationGroupService = organisationGroupService;
       _delegationAuditEventService = delegationAuditEventService;
       _rolesToServiceRoleGroupMapperService = rolesToServiceRoleGroupMapperService;
+      _externalHelperService = externalHelperService;
     }
 
     public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo, bool isNewOrgAdmin = false)
@@ -662,8 +664,7 @@ namespace CcsSso.Core.Service.External
         }
       }
 
-      var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
-      .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisation.Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+      var orgAdminAccessRoleId = await _externalHelperService.GetOrganisationAdminAccessRoleId(organisation.Id);
 
 
       var userTypeSearch = isDelegatedOnly ? DbModel.Constants.UserType.Delegation : DbModel.Constants.UserType.Primary;
@@ -762,8 +763,7 @@ namespace CcsSso.Core.Service.External
       }
       var Id = (await _dataContext.Organisation.FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == organisationId)).Id;
 
-      var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
-      .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == Id && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+      var orgAdminAccessRoleId = await _externalHelperService.GetOrganisationAdminAccessRoleId(Id);
 
       var userPagedInfo = await _dataContext.GetPagedResultAsync(_dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person)
@@ -1485,8 +1485,7 @@ namespace CcsSso.Core.Service.External
     {
       int organisationId = user.Party.Person.OrganisationId;
 
-      var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
-        .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisationId && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+      var orgAdminAccessRoleId = await _externalHelperService.GetOrganisationAdminAccessRoleId(organisationId);
 
       // Check any admin role user available for org other than this user
       var anyAdminRoleExists = await _dataContext.User

@@ -9,6 +9,7 @@ namespace CcsSso.Domain.Constants
     public const string DefaultUserRoleNameKey = "ORG_DEFAULT_USER";
     public const string DefaultAdminUserGroupName = "Organisation Administrators";
     public const string DefaultAdminUserGroupNameKey = "ORGANISATION_ADMINISTRATORS";
+    public const string FleetPortalUserRoleNameKey = "FP_USER";
   }
 
   public static class ErrorConstant
@@ -56,6 +57,7 @@ namespace CcsSso.Domain.Constants
     public const string ErrorCannotDeleteLastOrgAdmin = "ERROR_CANNOT_DELETE_LAST_ADMIN_OF_ORGANISATION";
     public const string ErrorCannotRemoveAdminRoleGroupLastOrgAdmin = "ERROR_CANNOT_REMOVE_ADMIN_ROLE_OR_GROUP_OF_LAST_ADMIN";
     public const string ErrorInvalidGroupName = "INVALID_GROUP_NAME";
+    public const string ErrorCannotDeleteAdminGroup = "ERROR_CANNOT_DELETE_ADMIN_GROUP";
     public const string ErrorInvalidRoleInfo = "INVALID_ROLE_INFO";
     public const string ErrorInvalidUserInfo = "INVALID_USER_INFO";
     public const string ErrorInvalidContactType = "INVALID_CONTACT_TYPE";
@@ -71,6 +73,9 @@ namespace CcsSso.Domain.Constants
     public const string ErrorMfaFlagForInvalidConnection = "MFA_ENABLED_INVALID_CONNECTION";
     public const string ErrorInvalidStatusInfo = "INVALID_STATUS_INFO";
     public const string ErrorInvalidService = "INVALID_SERVICE";
+    public const string ErrorCannotRemoveMyProfile = "ERROR_INVALID_USER_REMOVE_FROM_GROUP";
+    public const string ErrorCannotAddMyProfile = "ERROR_CANNOT_ADD_MYPROFILE_USER";
+    public const string ErrorInvalidGroupMFA = "ERROR_INVALID_GROUP_MFA";
 
     // #Delegated
     public const string ErrorInvalidUserDelegationPrimaryDetails = "INVALID_USER_DELEGATION_PRIMARY_DETAILS";
