@@ -34,7 +34,7 @@ namespace CcsSso.Core.Service.External
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
     private readonly ILocalCacheService _localCacheService;
     private readonly RequestContext _requestContext;
-    private readonly IExternalOrgHelperService _externalOrgHelperService;
+    private readonly IExternalHelperService _externalOrgHelperService;
 
 
     public OrganisationGroupService(IDataContext dataContext, IUserProfileHelperService userProfileHelperService,
@@ -42,7 +42,7 @@ namespace CcsSso.Core.Service.External
       ApplicationConfigurationInfo appConfigInfo, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
       IOrganisationProfileService organisationService,
       IUserProfileRoleApprovalService userProfileRoleApprovalService,
-      ILocalCacheService localCacheService, RequestContext requestContext, IExternalOrgHelperService externalOrgHelperService)
+      ILocalCacheService localCacheService, RequestContext requestContext, IExternalHelperService externalOrgHelperService)
     {
       _dataContext = dataContext;
       _userProfileHelperService = userProfileHelperService;
@@ -125,7 +125,7 @@ namespace CcsSso.Core.Service.External
       }
 
       if (group.GroupType == (int)GroupType.Admin)
-      { 
+      {
         throw new CcsSsoException(ErrorConstant.ErrorCannotDeleteAdminGroup);
       }
       group.IsDeleted = true;
@@ -418,7 +418,7 @@ namespace CcsSso.Core.Service.External
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidUserInfo);
         }
-        
+
         // Remove user group membership
         removedUserNameList = removedUserNameList.Distinct().ToList(); // Remove duplicates
         group.UserGroupMemberships.RemoveAll(ugm => removedUserNameList.Contains(ugm.User.UserName));
@@ -959,7 +959,7 @@ namespace CcsSso.Core.Service.External
       {
         if (user.UserAccessRoles != null)
         {
-          var adminAccessRoleInfo = user.UserAccessRoles.FirstOrDefault(uar => !uar.IsDeleted 
+          var adminAccessRoleInfo = user.UserAccessRoles.FirstOrDefault(uar => !uar.IsDeleted
            && uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey);
           if (adminAccessRoleInfo != null)
           {
@@ -1000,19 +1000,15 @@ namespace CcsSso.Core.Service.External
 
     private async Task CheckInvalidRoleInfo(List<int> roleIds)
     {
-      var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(roleIds);
-      if (serviceRoleGroups != null)
+      var ccsRolekey = await _dataContext.OrganisationEligibleRole.Where(orgRole => !orgRole.IsDeleted && roleIds.Any(roleid => roleid == orgRole.Id)).Select(x => x.CcsAccessRole.CcsAccessRoleNameKey).Distinct().ToListAsync();
+      if (ccsRolekey.Contains(Contstant.OrgAdminRoleNameKey) || ccsRolekey.Contains(Contstant.FleetPortalUserRoleNameKey))
       {
-        if (serviceRoleGroups.Any(x => x.Key == Contstant.OrgAdminRoleNameKey || x.Key == Contstant.FleetPortalUserRoleNameKey))
-        {
-          throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
-        }
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
       }
-
     }
     private async Task CheckInvalidAdminGroupNameInfo(OrganisationGroupRequestInfo organisationGroupRequestInfo)
     {
-      if (organisationGroupRequestInfo.GroupType == (int)GroupType.Admin && (organisationGroupRequestInfo.GroupName != null 
+      if (organisationGroupRequestInfo.GroupType == (int)GroupType.Admin && (organisationGroupRequestInfo.GroupName != null
         || !String.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName)))
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidUserGroup);

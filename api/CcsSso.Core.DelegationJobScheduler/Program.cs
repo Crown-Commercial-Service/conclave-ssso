@@ -154,8 +154,6 @@ namespace CcsSso.Core.DelegationJobScheduler
       services.AddScoped<IDelegationAuditEventService, DelegationAuditEventService>();
       services.AddScoped<IDelegationService, DelegationService>();
       services.AddScoped<IDelegationExpiryNotificationService, DelegationExpiryNotificationService>();
-      services.AddScoped<IExternalOrgHelperService, ExternalOrgHelperService>();
-
     }
 
     private static DelegationAppSettings GetAWSConfiguration()

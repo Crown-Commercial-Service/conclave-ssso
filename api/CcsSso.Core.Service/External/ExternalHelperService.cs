@@ -33,5 +33,13 @@ namespace CcsSso.Core.Service.External
                           }).ToListAsync();
       return allRoles;
     }
+    public async Task<int> GetOrganisationAdminAccessRoleId(int organisationId)
+    {
+      var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
+          .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisationId
+           && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)).Id;
+      return orgAdminAccessRoleId;
+    }
+
   }
 }

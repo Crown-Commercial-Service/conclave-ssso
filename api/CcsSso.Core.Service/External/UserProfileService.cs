@@ -48,7 +48,7 @@ namespace CcsSso.Core.Service.External
     private readonly IOrganisationProfileService _organisationService;
     private readonly IDelegationAuditEventService _delegationAuditEventService;
     private readonly IServiceRoleGroupMapperService _rolesToServiceRoleGroupMapperService;
-    private readonly IExternalOrgHelperService _externalOrgHelperService;
+    private readonly IExternalHelperService _externalOrgHelperService;
 
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
@@ -58,7 +58,7 @@ namespace CcsSso.Core.Service.External
       ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService,
       IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
       IOrganisationGroupService organisationGroupService, IOrganisationProfileService organisationService,
-      IDelegationAuditEventService delegationAuditEventService, IServiceRoleGroupMapperService rolesToServiceRoleGroupMapperService,IExternalOrgHelperService externalOrgHelperService)
+      IDelegationAuditEventService delegationAuditEventService, IServiceRoleGroupMapperService rolesToServiceRoleGroupMapperService, IExternalHelperService externalOrgHelperService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
