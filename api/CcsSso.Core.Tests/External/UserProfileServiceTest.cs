@@ -861,13 +861,13 @@ namespace CcsSso.Core.Tests.External
       var mockOrganisationProfileService = new Mock<IOrganisationProfileService>();
       var mockDelegationAuditEventService = new Mock<IDelegationAuditEventService>();
       var mockrolesToServiceRoleGroupMapperService = new Mock<IServiceRoleGroupMapperService>();
-      var externalOrgHelperService=new Mock<IExternalHelperService>();
+      var externalHelperService=new Mock<IExternalHelperService>();
 
       var service = new UserProfileService(dataContext, userProfileHelperService, requestContext, mockIdamService.Object,
  mockEmailService.Object, mockAdapterNotificationService.Object, mockWrapperCacheService.Object, mockAuditLoginService.Object, mockRemoteCacheService.Object,
  mockCacheInvalidateService.Object, mockCryptographyService.Object, mockApplicationConfigurationInfo.Object, mockLookUpService.Object, mockWrapperApiService.Object,
  mockUserProfileRoleApprovalService.Object, mockServiceRoleGroupMapperService.Object, mockOrganisationGroupService.Object, mockOrganisationProfileService.Object,
- mockDelegationAuditEventService.Object, mockrolesToServiceRoleGroupMapperService.Object,externalOrgHelperService.Object);
+ mockDelegationAuditEventService.Object, mockrolesToServiceRoleGroupMapperService.Object, externalHelperService.Object);
       return service;
     }
 

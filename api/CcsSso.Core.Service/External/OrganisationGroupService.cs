@@ -34,7 +34,7 @@ namespace CcsSso.Core.Service.External
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
     private readonly ILocalCacheService _localCacheService;
     private readonly RequestContext _requestContext;
-    private readonly IExternalHelperService _externalOrgHelperService;
+    private readonly IExternalHelperService _externalHelperService;
 
 
     public OrganisationGroupService(IDataContext dataContext, IUserProfileHelperService userProfileHelperService,
@@ -42,7 +42,7 @@ namespace CcsSso.Core.Service.External
       ApplicationConfigurationInfo appConfigInfo, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
       IOrganisationProfileService organisationService,
       IUserProfileRoleApprovalService userProfileRoleApprovalService,
-      ILocalCacheService localCacheService, RequestContext requestContext, IExternalHelperService externalOrgHelperService)
+      ILocalCacheService localCacheService, RequestContext requestContext, IExternalHelperService externalHelperService)
     {
       _dataContext = dataContext;
       _userProfileHelperService = userProfileHelperService;
@@ -55,7 +55,7 @@ namespace CcsSso.Core.Service.External
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
       _localCacheService = localCacheService;
       _requestContext = requestContext;
-      _externalOrgHelperService = externalOrgHelperService;
+      _externalHelperService = externalHelperService;
     }
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
@@ -930,7 +930,7 @@ namespace CcsSso.Core.Service.External
 
     private async Task ModifyUserRoles(OrganisationGroupRequestInfo organisationGroupRequestInfo, int organisationId)
     {
-      var orgAdminAccessRoleId =await _externalOrgHelperService.GetOrganisationAdminAccessRoleId(organisationId);
+      var orgAdminAccessRoleId =await _externalHelperService.GetOrganisationAdminAccessRoleId(organisationId);
       if (organisationGroupRequestInfo.UserInfo?.AddedUserIds.Count > 0)
       {
         await AddAdminRole(organisationGroupRequestInfo, orgAdminAccessRoleId, organisationId);
