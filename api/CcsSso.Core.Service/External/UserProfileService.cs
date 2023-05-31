@@ -200,6 +200,8 @@ namespace CcsSso.Core.Service.External
         }
       }
 
+      await SyncAdminRoleWithDefaultAdminGroupAsync(organisation, userGroupMemberships, userAccessRoles, isUserCreate: true);
+
       var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(p => p.PartyTypeName == PartyTypeName.User)).Id;
 
       var party = new Party
@@ -1150,6 +1152,8 @@ namespace CcsSso.Core.Service.External
 
         isRegisteredInIdam = await UpdateIdamRecords(userName, userProfileRequestInfo, user, (mfaFlagChanged, isPreviouslyUserNamePwdConnectionIncluded, isUserNamePwdConnectionIncluded));
       }
+
+      await SyncAdminRoleWithDefaultAdminGroupAsync(organisation, user.UserGroupMemberships, user.UserAccessRoles, isUserCreate: false);
 
       await _dataContext.SaveChangesAsync();
 
@@ -2722,6 +2726,34 @@ namespace CcsSso.Core.Service.External
         serviceNames = string.Join(", ", services.Distinct().Select(x => x.Name).ToList());
       }
       return serviceNames;
+    }
+
+    private async Task SyncAdminRoleWithDefaultAdminGroupAsync(Organisation organisation, List<UserGroupMembership> userGroupMemberships, List<UserAccessRole> userAccessRoles, bool isUserCreate)
+    {
+      // Set user groups
+      var adminRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey).Id;
+      var adminGroupId = await _organisationService.GetOrganisationGroupTypeAdminGroupDetailsAsync(organisation.CiiOrganisationId);
+
+      // user type admin and default admin group not passed then assign to admin group
+      if (userAccessRoles.Any(x => x.OrganisationEligibleRoleId == adminRoleId) && !userGroupMemberships.Any(g => g.OrganisationUserGroupId == adminGroupId.Id))
+      {
+        userGroupMemberships.Add(new UserGroupMembership
+        {
+          OrganisationUserGroupId = adminGroupId.Id
+        });
+      }
+      // default admin group passed but user type admin not passed then add admin role
+      else if (isUserCreate && !userAccessRoles.Any(x => x.OrganisationEligibleRoleId == adminRoleId) && userGroupMemberships.Any(g => g.OrganisationUserGroupId == adminGroupId.Id))
+      {
+        userAccessRoles.Add(new UserAccessRole
+        {
+          OrganisationEligibleRoleId = adminRoleId
+        });
+      }
+      else if (!isUserCreate && !userAccessRoles.Any(x => x.OrganisationEligibleRoleId == adminRoleId) && userGroupMemberships.Any(g => g.OrganisationUserGroupId == adminGroupId.Id))
+      {
+        userGroupMemberships.Remove(userGroupMemberships.First(x => x.OrganisationUserGroupId == adminGroupId.Id));
+      }
     }
   }
 }
