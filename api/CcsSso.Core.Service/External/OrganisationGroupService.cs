@@ -11,6 +11,7 @@ using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
+using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -32,6 +33,8 @@ namespace CcsSso.Core.Service.External
     private readonly IOrganisationProfileService _organisationService;
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
     private readonly ILocalCacheService _localCacheService;
+    private readonly RequestContext _requestContext;
+    private readonly IExternalOrgHelperService _externalOrgHelperService;
 
 
     public OrganisationGroupService(IDataContext dataContext, IUserProfileHelperService userProfileHelperService,
@@ -39,7 +42,7 @@ namespace CcsSso.Core.Service.External
       ApplicationConfigurationInfo appConfigInfo, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
       IOrganisationProfileService organisationService,
       IUserProfileRoleApprovalService userProfileRoleApprovalService,
-      ILocalCacheService localCacheService)
+      ILocalCacheService localCacheService, RequestContext requestContext, IExternalOrgHelperService externalOrgHelperService)
     {
       _dataContext = dataContext;
       _userProfileHelperService = userProfileHelperService;
@@ -51,6 +54,8 @@ namespace CcsSso.Core.Service.External
       _organisationService = organisationService;
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
       _localCacheService = localCacheService;
+      _requestContext = requestContext;
+      _externalOrgHelperService = externalOrgHelperService;
     }
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
@@ -93,6 +98,7 @@ namespace CcsSso.Core.Service.External
       {
         OrganisationId = organisation.Id,
         UserGroupName = organisationGroupNameInfo.GroupName.Trim(),
+        GroupType = organisationGroupNameInfo.GroupType,
         UserGroupNameKey = organisationGroupNameInfo.GroupName.Trim().ToUpper()
       };
 
@@ -118,6 +124,10 @@ namespace CcsSso.Core.Service.External
         throw new ResourceNotFoundException();
       }
 
+      if (group.GroupType == (int)GroupType.Admin)
+      { 
+        throw new CcsSsoException(ErrorConstant.ErrorCannotDeleteAdminGroup);
+      }
       group.IsDeleted = true;
       group.GroupEligibleRoles.ForEach((groupRoles) => { groupRoles.IsDeleted = true; });
       group.UserGroupMemberships.ForEach((groupMembership) => { groupMembership.IsDeleted = true; });
@@ -213,7 +223,7 @@ namespace CcsSso.Core.Service.External
             Name = gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
             Description = gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleDescription,
           }).ToList()
-        }).OrderBy(g => g.GroupName).ToList();
+        }).OrderByDescending(g => g.GroupType).ThenBy(g => g.GroupName).ToList();
 
       return new OrganisationGroupList
       {
@@ -305,6 +315,7 @@ namespace CcsSso.Core.Service.External
 
       if (!string.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName))
       {
+        await CheckInvalidAdminGroupNameInfo(organisationGroupRequestInfo);
 
         if (await _dataContext.OrganisationUserGroup.AnyAsync(oug => !oug.IsDeleted && oug.Organisation.CiiOrganisationId == ciiOrganisationId
           && oug.Id != groupId && oug.UserGroupName == organisationGroupRequestInfo.GroupName))
@@ -345,6 +356,11 @@ namespace CcsSso.Core.Service.External
         }
         else
         {
+          await CheckInvalidAdminGroupRoleInfo(organisationGroupRequestInfo);
+
+          var roleIds = organisationGroupRequestInfo.RoleInfo.AddedRoleIds.Concat(organisationGroupRequestInfo.RoleInfo.RemovedRoleIds);
+          await CheckInvalidRoleInfo(roleIds.ToList());
+
           // Remove roles
           if (organisationGroupRequestInfo.RoleInfo.RemovedRoleIds != null)
           {
@@ -402,7 +418,7 @@ namespace CcsSso.Core.Service.External
         {
           throw new CcsSsoException(ErrorConstant.ErrorInvalidUserInfo);
         }
-
+        
         // Remove user group membership
         removedUserNameList = removedUserNameList.Distinct().ToList(); // Remove duplicates
         group.UserGroupMemberships.RemoveAll(ugm => removedUserNameList.Contains(ugm.User.UserName));
@@ -484,6 +500,8 @@ namespace CcsSso.Core.Service.External
       }
       // This field should not let be updated manually as it consumes in user screen to decide mfa enable/disable
       group.MfaEnabled = mfaEnableRoleExists;
+      await CheckMFAForGroup(organisationGroupRequestInfo, group.MfaEnabled);
+
       await _dataContext.SaveChangesAsync();
 
       if (_appConfigInfo.UserRoleApproval.Enable)
@@ -492,7 +510,18 @@ namespace CcsSso.Core.Service.External
         await RemoveGroupUsersApproveRequest(groupId, removedUsersTupleList);
         await VerifyAndCreateGroupRolePendingRequest(group, ciiOrganisationId, addedUsersTupleList, addedRoleIds);
       }
-
+      //Modifying user roles while added in AdminGroup
+      if (organisationGroupRequestInfo.UserInfo != null)
+      {
+        var addedUserList = organisationGroupRequestInfo.UserInfo.AddedUserIds == null ? new List<string>() : organisationGroupRequestInfo.UserInfo?.AddedUserIds;
+        var removedUserList = organisationGroupRequestInfo.UserInfo.RemovedUserIds == null ? new List<string>() : organisationGroupRequestInfo.UserInfo?.RemovedUserIds;
+        var modifieduserslist = addedUserList.Concat(removedUserList);
+        if (modifieduserslist?.Count() > 0 && organisationGroupRequestInfo.GroupType == (int)GroupType.Admin)
+        {
+          await ModifyUserRoles(organisationGroupRequestInfo, group.OrganisationId);
+          await _dataContext.SaveChangesAsync();
+        }
+      }
       //Log
       if (hasNameChanged)
       {
@@ -535,6 +564,18 @@ namespace CcsSso.Core.Service.External
       invalidatingCacheKeys.AddRange(changedUsersNameList.Select(changedUserName => $"{CacheKeyConstant.User}-{changedUserName}"));
       invalidatingCacheKeys.AddRange(existingUserNames.Select(existUserName => $"{CacheKeyConstant.User}-{existUserName}"));
       await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeys.ToArray());
+    }
+
+    private async Task CheckMFAForGroup(OrganisationGroupRequestInfo organisationGroupRequestInfo, bool mfaEnableRoleExists)
+    {
+      if (organisationGroupRequestInfo.GroupType == (int)GroupType.Admin && !mfaEnableRoleExists)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupMFA);
+      }
+      else if (organisationGroupRequestInfo.GroupType == (int)GroupType.Other && mfaEnableRoleExists)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidGroupMFA);
+      }
     }
 
     private async Task RemoveGroupUsersApproveRequest(int groupId, List<Tuple<int, string>> removedUsersTupleList)
@@ -688,7 +729,7 @@ namespace CcsSso.Core.Service.External
       var groupUserListResponse = new GroupUserListResponse
       {
         groupId = groupId,
-        GroupType = group.GroupType, 
+        GroupType = group.GroupType,
         CurrentPage = pagedResult.CurrentPage,
         PageCount = pagedResult.PageCount,
         RowCount = pagedResult.RowCount,
@@ -757,6 +798,7 @@ namespace CcsSso.Core.Service.External
       OrganisationGroupRequestInfo organisationGroupRequestInfo = new OrganisationGroupRequestInfo()
       {
         GroupName = organisationServiceRoleGroupRequestInfo.GroupName,
+        GroupType = organisationServiceRoleGroupRequestInfo.GroupType,
         UserInfo = organisationServiceRoleGroupRequestInfo.UserInfo,
         RoleInfo = new OrganisationGroupRolePatchInfo()
         {
@@ -886,5 +928,115 @@ namespace CcsSso.Core.Service.External
       }
     }
 
+    private async Task ModifyUserRoles(OrganisationGroupRequestInfo organisationGroupRequestInfo, int organisationId)
+    {
+      var orgAdminAccessRoleId =await _externalOrgHelperService.GetOrganisationAdminAccessRoleId(organisationId);
+      if (organisationGroupRequestInfo.UserInfo?.AddedUserIds.Count > 0)
+      {
+        await AddAdminRole(organisationGroupRequestInfo, orgAdminAccessRoleId, organisationId);
+      }
+      if (organisationGroupRequestInfo.UserInfo?.RemovedUserIds.Count > 0)
+      {
+        await RemoveAdminRole(organisationGroupRequestInfo, organisationId);
+      }
+    }
+
+    private async Task RemoveAdminRole(OrganisationGroupRequestInfo organisationGroupRequestInfo, int organisationId)
+    {
+      var groupUpdatingUsers = await GetUsers(organisationGroupRequestInfo.UserInfo.RemovedUserIds, organisationId);
+
+      if (groupUpdatingUsers == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+      //Cannot remove myprofile from the admin group 
+      if (groupUpdatingUsers.Any(x => x.Id == _requestContext.UserId))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorCannotRemoveMyProfile);
+      }
+      // Remove the admin access role from the user
+      foreach (var user in groupUpdatingUsers)
+      {
+        if (user.UserAccessRoles != null)
+        {
+          var adminAccessRoleInfo = user.UserAccessRoles.FirstOrDefault(uar => !uar.IsDeleted 
+           && uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey);
+          if (adminAccessRoleInfo != null)
+          {
+            adminAccessRoleInfo.IsDeleted = true;
+          }
+        }
+      }
+    }
+
+    private async Task AddAdminRole(OrganisationGroupRequestInfo organisationGroupRequestInfo, int orgRoleId, int organisationId)
+    {
+      var groupUpdatingUsers = await GetUsers(organisationGroupRequestInfo.UserInfo.AddedUserIds, organisationId);
+      if (groupUpdatingUsers == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+      if (groupUpdatingUsers.Any(x => x.Id == _requestContext.UserId))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorCannotAddMyProfile);
+      }
+      foreach (var user in groupUpdatingUsers)
+      {
+        if (user.UserAccessRoles == null)
+        {
+          user.UserAccessRoles = new List<UserAccessRole>();
+        }
+        if (user.UserAccessRoles.Any(x => x.OrganisationEligibleRoleId == orgRoleId && !x.IsDeleted))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
+        }
+        user.UserAccessRoles.Add(new UserAccessRole
+        {
+          UserId = user.Id,
+          OrganisationEligibleRoleId = orgRoleId
+        }); ;
+      }
+    }
+
+    private async Task CheckInvalidRoleInfo(List<int> roleIds)
+    {
+      var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(roleIds);
+      if (serviceRoleGroups != null)
+      {
+        if (serviceRoleGroups.Any(x => x.Key == Contstant.OrgAdminRoleNameKey || x.Key == Contstant.FleetPortalUserRoleNameKey))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidRoleInfo);
+        }
+      }
+
+    }
+    private async Task CheckInvalidAdminGroupNameInfo(OrganisationGroupRequestInfo organisationGroupRequestInfo)
+    {
+      if (organisationGroupRequestInfo.GroupType == (int)GroupType.Admin && (organisationGroupRequestInfo.GroupName != null 
+        || !String.IsNullOrWhiteSpace(organisationGroupRequestInfo.GroupName)))
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserGroup);
+      }
+    }
+    private async Task CheckInvalidAdminGroupRoleInfo(OrganisationGroupRequestInfo organisationGroupRequestInfo)
+    {
+      var roleIds = organisationGroupRequestInfo.RoleInfo?.AddedRoleIds.Concat(organisationGroupRequestInfo.RoleInfo.RemovedRoleIds).ToList();
+      if (organisationGroupRequestInfo.GroupType == (int)GroupType.Admin && roleIds?.Count > 0)
+      {
+        throw new CcsSsoException(ErrorConstant.ErrorInvalidUserGroup);
+      }
+    }
+    private async Task<List<User>> GetUsers(List<string> UserIds , int organisationId)
+    {
+      var users = await _dataContext.User
+       .Include(u => u.UserAccessRoles).ThenInclude(uar => uar.OrganisationEligibleRole).ThenInclude(oer => oer.CcsAccessRole)
+       .Where(u => !u.IsDeleted && u.Party.Person.OrganisationId == organisationId
+        && UserIds.Contains(u.UserName))
+       .ToListAsync();
+      return users;
+    }
+
   }
 }
+
+
