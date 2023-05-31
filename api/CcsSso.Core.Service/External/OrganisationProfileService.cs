@@ -2290,5 +2290,17 @@ namespace CcsSso.Core.Service.External
         }
       }
     }
+
+    public async Task<OrganisationUserGroup> GetOrganisationGroupTypeAdminGroupDetailsAsync(string ciiOrganisationId)
+    {
+      OrganisationUserGroup adminGroupDetails = new();
+      var organisation = await _dataContext.Organisation.Include(o => o.UserGroups.Where(x => x.GroupType == (int)GroupType.Admin)).FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId && o.IsActivated);
+
+      if (organisation != null && organisation.UserGroups != null)
+      {
+        adminGroupDetails = organisation.UserGroups.FirstOrDefault(x => x.GroupType == (int)GroupType.Admin && !x.IsDeleted);
+      }
+      return adminGroupDetails;
+    }
   }
 }
