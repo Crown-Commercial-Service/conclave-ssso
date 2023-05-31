@@ -229,6 +229,10 @@ namespace CcsSso.Core.Service.External
       _dataContext.Party.Add(party);
 
       await _dataContext.SaveChangesAsync();
+      if(isNewOrgAdmin==true)
+      {
+          await AddUserToDefaultAdminGroup(organisation.Id, party.User.Id);
+      }
 
       if (userAccessRoleRequiredApproval.Any())
       {
@@ -356,6 +360,20 @@ namespace CcsSso.Core.Service.External
         UserId = party.User.UserName,
         IsRegisteredInIdam = isRegisteredInIdam
       };
+    }
+    private async Task AddUserToDefaultAdminGroup(int orgId, int userId)
+    {
+        var defaultAdminGroup = await _dataContext.OrganisationUserGroup.FirstOrDefaultAsync(x => x.OrganisationId == orgId && x.GroupType == (int)GroupType.Admin && !x.IsDeleted);
+        if (defaultAdminGroup != null)
+        {
+           var userGroupMembership = new UserGroupMembership
+           {
+              UserId = userId,
+              OrganisationUserGroupId = defaultAdminGroup.Id
+           };
+           _dataContext.UserGroupMembership.Add(userGroupMembership);
+           await _dataContext.SaveChangesAsync();
+        }
     }
     // #Delegated
     public async Task<UserProfileResponseInfo> GetUserAsync(string userName, bool isDelegated = false, bool isSearchUser = false, string delegatedOrgId = "")

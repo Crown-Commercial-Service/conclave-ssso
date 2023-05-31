@@ -7,6 +7,8 @@ namespace CcsSso.Domain.Constants
     public const string ConclaveIdamConnectionName = "Username-Password-Authentication";
     public const string OrgAdminRoleNameKey = "ORG_ADMINISTRATOR";
     public const string DefaultUserRoleNameKey = "ORG_DEFAULT_USER";
+    public const string DefaultAdminUserGroupName = "Organisation Administrators";
+    public const string DefaultAdminUserGroupNameKey = "ORGANISATION_ADMINISTRATORS";
     public const string FleetPortalUserRoleNameKey = "FP_USER";
   }
 
