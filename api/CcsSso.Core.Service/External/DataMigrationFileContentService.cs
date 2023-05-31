@@ -21,7 +21,7 @@ namespace CcsSso.Service.External
     private readonly IUserProfileService _userProfileService;
     private readonly ICiiService _ciiService;
     private IReadOnlyList<string> validHeaders = new List<string> { "IdentifierId", "SchemeId", "OrganisationType", "EmailAddress", "DomainName", "Title", "FirstName", "LastName", "OrganisationRoles", "UserRoles", "ContactEmail", "ContactMobile", "ContactPhone", "ContactFax", "ContactSocial" };
-    private IReadOnlyList<string> requiredHeaders = new List<string> { "IdentifierId", "SchemeId", "OrganisationType", "EmailAddress", "FirstName", "LastName", "UserRoles" };
+    private IReadOnlyList<string> requiredHeaders = new List<string> { "OrganisationType", "EmailAddress", "FirstName", "LastName", "UserRoles" };
     private const int migrationFileHeaderCount = 15;
     private const int headerTitleRowCount = 2;
     private List<User> users = null;

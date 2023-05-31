@@ -10,6 +10,7 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
+using CcsSso.Dtos.Domain.Models;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
@@ -43,13 +44,14 @@ namespace CcsSso.Core.Service.External
     private readonly IOrganisationAuditEventService _organisationAuditEventService;
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
     private readonly IServiceRoleGroupMapperService _rolesToServiceRoleGroupMapperService;
+    private readonly IExternalHelperService _externalHelperService;
 
     public OrganisationProfileService(IDataContext dataContext, IContactsHelperService contactsHelper, ICcsSsoEmailService ccsSsoEmailService,
       ICiiService ciiService, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ILocalCacheService localCacheService,
       ApplicationConfigurationInfo applicationConfigurationInfo, RequestContext requestContext, IIdamService idamService, IRemoteCacheService remoteCacheService,
       ILookUpService lookUpService, IOrganisationAuditService organisationAuditService, IOrganisationAuditEventService organisationAuditEventService,
-      IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService rolesToRoleServiceMapperService)
+      IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService rolesToRoleServiceMapperService, IExternalHelperService externalHelperService)
     {
       _dataContext = dataContext;
       _contactsHelper = contactsHelper;
@@ -67,6 +69,7 @@ namespace CcsSso.Core.Service.External
       _organisationAuditEventService = organisationAuditEventService;
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
       _rolesToServiceRoleGroupMapperService = rolesToRoleServiceMapperService;
+      _externalHelperService = externalHelperService;
     }
 
     /// <summary>
@@ -173,11 +176,33 @@ namespace CcsSso.Core.Service.External
       }
 
       await _dataContext.SaveChangesAsync();
+      await OrganisationAdminGroup(organisation.CiiOrganisationId);
 
       // Notify the adapter
       await _adapterNotificationService.NotifyOrganisationChangeAsync(OperationType.Create, organisation.CiiOrganisationId);
 
       return organisation.CiiOrganisationId;
+    }
+
+    public async Task OrganisationAdminGroup(string ciiOrgId)
+    {
+      var organisation = await _dataContext.Organisation.Include(o => o.UserGroups).FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrgId);
+      var isDefaultAdminGroupExists = await _dataContext.OrganisationUserGroup.AnyAsync(x => x.OrganisationId == organisation.Id && x.GroupType == (int)GroupType.Admin && !x.IsDeleted);
+      var addedRoleId = await _externalHelperService.GetOrganisationAdminAccessRoleId(organisation.Id);
+      if (!isDefaultAdminGroupExists)
+      {
+        var group = new OrganisationUserGroup
+        {
+          OrganisationId = organisation.Id,
+          UserGroupName = Contstant.DefaultAdminUserGroupName,
+          UserGroupNameKey = Contstant.DefaultAdminUserGroupNameKey,
+          GroupType = (int)GroupType.Admin,
+          GroupEligibleRoles = new List<OrganisationGroupEligibleRole>
+                    { new OrganisationGroupEligibleRole {OrganisationEligibleRoleId = addedRoleId}}
+        };
+        _dataContext.OrganisationUserGroup.Add(group);
+        await _dataContext.SaveChangesAsync();
+      }
     }
 
     //Deletion has commented out since its not going to be exposed via the api at the moment
@@ -2257,14 +2282,14 @@ namespace CcsSso.Core.Service.External
     /// <param name="userId"></param>
     /// <returns></returns>
     public async Task ActivateOrganisationByUser(string userId)
-    {      
+    {
       User user = await _dataContext.User
           .Include(u => u.UserAccessRoles).ThenInclude(u => u.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
           .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation)
           .Include(u => u.UserGroupMemberships).ThenInclude(ugm => ugm.OrganisationUserGroup).ThenInclude(ug => ug.GroupEligibleRoles)
           .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName.ToLower() == userId.ToLower() && u.UserType == UserType.Primary);
 
-      if(user == null)
+      if (user == null)
       {
         throw new CcsSsoException(ErrorConstant.ErrorInvalidUserId);
       }
@@ -2289,6 +2314,18 @@ namespace CcsSso.Core.Service.External
           await _dataContext.SaveChangesAsync();
         }
       }
+    }
+
+    public async Task<OrganisationUserGroup> GetOrganisationGroupTypeAdminGroupDetailsAsync(string ciiOrganisationId)
+    {
+      OrganisationUserGroup adminGroupDetails = new();
+      var organisation = await _dataContext.Organisation.Include(o => o.UserGroups.Where(x => x.GroupType == (int)GroupType.Admin)).FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId && o.IsActivated);
+
+      if (organisation != null && organisation.UserGroups != null)
+      {
+        adminGroupDetails = organisation.UserGroups.FirstOrDefault(x => x.GroupType == (int)GroupType.Admin && !x.IsDeleted);
+      }
+      return adminGroupDetails;
     }
   }
 }
