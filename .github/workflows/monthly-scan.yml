@@ -8,7 +8,8 @@ on:
     #This scan will run on the last day of every month
     
   push:
-    branches: [main, p3sprint/*, feature/*]
+    branches-ignore: 
+    - '*'
 jobs:
   trufflehog-scan:
     runs-on: ubuntu-latest
