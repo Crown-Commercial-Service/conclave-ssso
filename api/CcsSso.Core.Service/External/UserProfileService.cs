@@ -2732,27 +2732,27 @@ namespace CcsSso.Core.Service.External
     {
       // Set user groups
       var adminRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey).Id;
-      var adminGroupId = await _organisationService.GetOrganisationGroupTypeAdminGroupDetailsAsync(organisation.CiiOrganisationId);
+      var adminGroup = await _organisationService.GetOrganisationGroupTypeAdminGroupDetailsAsync(organisation.CiiOrganisationId);
 
       // user type admin and default admin group not passed then assign to admin group
-      if (userAccessRoles.Any(x => x.OrganisationEligibleRoleId == adminRoleId) && !userGroupMemberships.Any(g => g.OrganisationUserGroupId == adminGroupId.Id))
+      if (userAccessRoles.Any(x => x.OrganisationEligibleRoleId == adminRoleId) && !userGroupMemberships.Any(g => g.OrganisationUserGroupId == adminGroup.Id))
       {
         userGroupMemberships.Add(new UserGroupMembership
         {
-          OrganisationUserGroupId = adminGroupId.Id
+          OrganisationUserGroupId = adminGroup.Id
         });
       }
       // default admin group passed but user type admin not passed then add admin role
-      else if (isUserCreate && !userAccessRoles.Any(x => x.OrganisationEligibleRoleId == adminRoleId) && userGroupMemberships.Any(g => g.OrganisationUserGroupId == adminGroupId.Id))
+      else if (isUserCreate && !userAccessRoles.Any(x => x.OrganisationEligibleRoleId == adminRoleId) && userGroupMemberships.Any(g => g.OrganisationUserGroupId == adminGroup.Id))
       {
         userAccessRoles.Add(new UserAccessRole
         {
           OrganisationEligibleRoleId = adminRoleId
         });
       }
-      else if (!isUserCreate && !userAccessRoles.Any(x => x.OrganisationEligibleRoleId == adminRoleId) && userGroupMemberships.Any(g => g.OrganisationUserGroupId == adminGroupId.Id))
+      else if (!isUserCreate && !userAccessRoles.Any(x => x.OrganisationEligibleRoleId == adminRoleId) && userGroupMemberships.Any(g => g.OrganisationUserGroupId == adminGroup.Id))
       {
-        userGroupMemberships.Remove(userGroupMemberships.First(x => x.OrganisationUserGroupId == adminGroupId.Id));
+        userGroupMemberships.Remove(userGroupMemberships.First(x => x.OrganisationUserGroupId == adminGroup.Id));
       }
     }
   }
