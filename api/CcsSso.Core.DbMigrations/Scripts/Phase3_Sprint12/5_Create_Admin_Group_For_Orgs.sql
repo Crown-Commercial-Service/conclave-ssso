@@ -3,6 +3,7 @@ CREATE OR REPLACE FUNCTION Create_Admin_Group_For_Orgs(
 		ccsAccessRoleName text
 	) RETURNS integer AS $$
 
+DECLARE reportMode boolean = true;
 DECLARE fromDate timestamp = '2023-04-01 00:00';
 DECLARE toDate timestamp = '2023-05-30 23:59';
 
@@ -69,19 +70,22 @@ LOOP
         THEN
             RAISE NOTICE 'Organisation Admin Group not found';
             
-            INSERT INTO public."OrganisationUserGroup"(
-            "OrganisationId", "UserGroupNameKey", "UserGroupName", "MfaEnabled", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "GroupType")
-            VALUES (OrganisationId, 'ORGANISATION_ADMINISTRATORS', 'Organisation Administrators', true, 0, 0, now(), now(), false, 1);
-            
-            SELECT "Id" INTO organisationAdminGroupId 
-            FROM public."OrganisationUserGroup"
-            WHERE "IsDeleted" = false AND "OrganisationId" = organisationId
-            AND "GroupType" = 1;
-            
-            RAISE NOTICE 'Organisation Admin Group Id: %', organisationAdminGroupId;
+            IF NOT reportMode THEN	
 
-            createdGroupCount = createdGroupCount + 1;
+                INSERT INTO public."OrganisationUserGroup"(
+                "OrganisationId", "UserGroupNameKey", "UserGroupName", "MfaEnabled", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted", "GroupType")
+                VALUES (OrganisationId, 'ORGANISATION_ADMINISTRATORS', 'Organisation Administrators', true, 0, 0, now(), now(), false, 1);
             
+                SELECT "Id" INTO organisationAdminGroupId 
+                FROM public."OrganisationUserGroup"
+                WHERE "IsDeleted" = false AND "OrganisationId" = organisationId
+                AND "GroupType" = 1;
+            
+                RAISE NOTICE 'Organisation Admin Group Id: %', organisationAdminGroupId;
+
+                createdGroupCount = createdGroupCount + 1;
+            
+            END IF;
         END IF;               
         
         SELECT "Id" INTO organisationAdminGroupEligibleRoleId 
@@ -96,21 +100,24 @@ LOOP
         THEN
             RAISE NOTICE 'Organisation Admin Group Role not found';
             
-            INSERT INTO public."OrganisationGroupEligibleRole"(
-            "OrganisationUserGroupId", "OrganisationEligibleRoleId", "CreatedUserId", "LastUpdatedUserId", 
-                "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
-            VALUES (organisationAdminGroupId, organisationEligibleRoleId, 0, 0, now(), now(), false);
-            
-            SELECT "Id" INTO organisationAdminGroupEligibleRoleId 
-            FROM public."OrganisationGroupEligibleRole"
-            WHERE "IsDeleted" = false 
-            AND "OrganisationUserGroupId" = organisationAdminGroupId         
-            AND "OrganisationEligibleRoleId" = organisationEligibleRoleId;
+            IF NOT reportMode THEN
 
-            RAISE NOTICE 'Organisation Admin Group Role Id: %', organisationAdminGroupEligibleRoleId;
-
-            roleAssignToGroupCount = roleAssignToGroupCount + 1;
+                INSERT INTO public."OrganisationGroupEligibleRole"(
+                "OrganisationUserGroupId", "OrganisationEligibleRoleId", "CreatedUserId", "LastUpdatedUserId", 
+                    "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+                VALUES (organisationAdminGroupId, organisationEligibleRoleId, 0, 0, now(), now(), false);
             
+                SELECT "Id" INTO organisationAdminGroupEligibleRoleId 
+                FROM public."OrganisationGroupEligibleRole"
+                WHERE "IsDeleted" = false 
+                AND "OrganisationUserGroupId" = organisationAdminGroupId         
+                AND "OrganisationEligibleRoleId" = organisationEligibleRoleId;
+
+                RAISE NOTICE 'Organisation Admin Group Role Id: %', organisationAdminGroupEligibleRoleId;
+
+                roleAssignToGroupCount = roleAssignToGroupCount + 1;
+
+            END IF;
         END IF;  
         
         FOR userId IN SELECT "UserId" 
@@ -128,15 +135,19 @@ LOOP
                            WHERE "IsDeleted" = false AND "UserId" = userId 
                            AND "OrganisationUserGroupId" = organisationAdminGroupId)
             THEN
-                               
-                INSERT INTO public."UserGroupMembership"(
-                "OrganisationUserGroupId", "UserId", "MembershipStartDate", "MembershipEndDate",
-                    "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
-                VALUES (organisationAdminGroupId, userId, now(), now(), 0, 0, now(), now(), false);
                 
-                RAISE NOTICE 'Add user to admin group';
+                IF NOT reportMode THEN
+
+                    INSERT INTO public."UserGroupMembership"(
+                    "OrganisationUserGroupId", "UserId", "MembershipStartDate", "MembershipEndDate",
+                        "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc", "IsDeleted")
+                    VALUES (organisationAdminGroupId, userId, now(), now(), 0, 0, now(), now(), false);
                 
-                userAssignToGroupCount = userAssignToGroupCount + 1;
+                    RAISE NOTICE 'Add user to admin group';
+                
+                    userAssignToGroupCount = userAssignToGroupCount + 1;
+
+                END IF;
             END IF;  
 
         END LOOP;
