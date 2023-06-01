@@ -1441,12 +1441,12 @@ namespace CcsSso.Core.Service.External
         OrganisationEligibleRoleId = organisationAdminAccessRole.Id
       });
 
-      var adminGroupId = await _organisationService.GetOrganisationGroupTypeAdminGroupDetailsAsync(user.Party.Person.Organisation.CiiOrganisationId);
-      if (adminGroupId != null)
+      var adminGroup = await _organisationService.GetOrganisationGroupTypeAdminGroupDetailsAsync(user.Party.Person.Organisation.CiiOrganisationId);
+      if (adminGroup != null)
       {
         user.UserGroupMemberships.Add(new UserGroupMembership
         {
-          OrganisationUserGroupId = adminGroupId.Id
+          OrganisationUserGroupId = adminGroup.Id
         });
       }
 
