@@ -302,7 +302,7 @@ namespace CcsSso.Service
         OrganisationLegalName = user.Party.Person.Organisation.LegalName,
         CiiOrganisationId = user.Party.Person.Organisation.CiiOrganisationId,
         IsAdmin = user.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted)
-                  || user.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger =>!ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))
+                  || user.UserGroupMemberships.Any(ugm => !ugm.IsDeleted && ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))
       }).OrderBy(u => u.Name), resultSetCriteria);
 
       var orgUserListResponse = new OrganisationUserListResponse
