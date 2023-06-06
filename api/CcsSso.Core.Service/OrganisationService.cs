@@ -36,7 +36,7 @@ namespace CcsSso.Service
     private readonly ICcsSsoEmailService _ccsSsoEmailService;
     private readonly IUserProfileHelperService _userProfileHelperService;
     private readonly ApplicationConfigurationInfo _appConfigInfo;
-        
+
     public OrganisationService(IDataContext dataContext, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ICiiService ciiService, IOrganisationProfileService organisationProfileService,
       IUserProfileService userProfileService, IOrganisationContactService organisationContactService,
@@ -278,52 +278,52 @@ namespace CcsSso.Service
       }
     }
 
-        public async Task<OrganisationUserListResponse> GetUsersAsync(string name, ResultSetCriteria resultSetCriteria)
-        {
-            name = name?.ToLower();
-            var users = await _dataContext.GetPagedResultAsync(_dataContext.User
-            .Include(c => c.Party)
-            .ThenInclude(x => x.Person)
-            .ThenInclude(o => o.Organisation)
-            .Include(ua => ua.UserAccessRoles).ThenInclude(oe => oe.OrganisationEligibleRole).ThenInclude(c => c.CcsAccessRole).Where(u=>!u.IsDeleted)
-            .Include(u => u.UserGroupMemberships).ThenInclude(ugm => ugm.OrganisationUserGroup).ThenInclude(ug => ug.GroupEligibleRoles)
-            .ThenInclude(ger => ger.OrganisationEligibleRole).ThenInclude(oer => oer.CcsAccessRole)
-            .Where(u => u.IsDeleted == false
-           // #Delegated only return primary users
-           && u.UserType == Core.DbModel.Constants.UserType.Primary
-           && (_requestContext.UserId != 0 && u.Party.Person.Organisation.CiiOrganisationId != _requestContext.CiiOrganisationId) &&
-            (string.IsNullOrEmpty(name) || u.UserName.Contains(name) || (u.Party.Person.FirstName + " " + u.Party.Person.LastName).ToLower().Contains(name) || u.Party.Person.Organisation.LegalName.ToLower().Contains(name)) &&
-            u.Party.Person.Organisation.IsDeleted == false).Select(user => new OrganisationUserDto
-            {
-                Id = user.Id,
-                UserName = user.UserName,
-                Name = user.Party.Person.FirstName + " " + user.Party.Person.LastName,
-                OrganisationId = user.Party.Person.Organisation.Id,
-                OrganisationLegalName = user.Party.Person.Organisation.LegalName,
-                CiiOrganisationId = user.Party.Person.Organisation.CiiOrganisationId,
-                IsAdmin = user.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted)
-                        || user.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger =>!ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))
-            }).OrderBy(u => u.Name), resultSetCriteria);
+    public async Task<OrganisationUserListResponse> GetUsersAsync(string name, ResultSetCriteria resultSetCriteria)
+    {
+      name = name?.ToLower();
+      var users = await _dataContext.GetPagedResultAsync(_dataContext.User
+      .Include(c => c.Party)
+      .ThenInclude(x => x.Person)
+      .ThenInclude(o => o.Organisation)
+      .Include(ua => ua.UserAccessRoles).ThenInclude(oe => oe.OrganisationEligibleRole).ThenInclude(c => c.CcsAccessRole).Where(u=>!u.IsDeleted)
+      .Include(u => u.UserGroupMemberships).ThenInclude(ugm => ugm.OrganisationUserGroup).ThenInclude(ug => ug.GroupEligibleRoles)
+      .ThenInclude(ger => ger.OrganisationEligibleRole).ThenInclude(oer => oer.CcsAccessRole)
+      .Where(u => u.IsDeleted == false
+     // #Delegated only return primary users
+     && u.UserType == Core.DbModel.Constants.UserType.Primary
+     && (_requestContext.UserId != 0 && u.Party.Person.Organisation.CiiOrganisationId != _requestContext.CiiOrganisationId) &&
+      (string.IsNullOrEmpty(name) || u.UserName.Contains(name) || (u.Party.Person.FirstName + " " + u.Party.Person.LastName).ToLower().Contains(name) || u.Party.Person.Organisation.LegalName.ToLower().Contains(name)) &&
+      u.Party.Person.Organisation.IsDeleted == false).Select(user => new OrganisationUserDto
+      {
+        Id = user.Id,
+        UserName = user.UserName,
+        Name = user.Party.Person.FirstName + " " + user.Party.Person.LastName,
+        OrganisationId = user.Party.Person.Organisation.Id,
+        OrganisationLegalName = user.Party.Person.Organisation.LegalName,
+        CiiOrganisationId = user.Party.Person.Organisation.CiiOrganisationId,
+        IsAdmin = user.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted)
+                  || user.UserGroupMemberships.Any(ugm => !ugm.IsDeleted && ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))
+      }).OrderBy(u => u.Name), resultSetCriteria);
 
-            var orgUserListResponse = new OrganisationUserListResponse
-            {
-                CurrentPage = users.CurrentPage,
-                PageCount = users.PageCount,
-                RowCount = users.RowCount,
-                OrgUserList = users.Results ?? new List<OrganisationUserDto>()
-            };
+      var orgUserListResponse = new OrganisationUserListResponse
+      {
+        CurrentPage = users.CurrentPage,
+        PageCount = users.PageCount,
+        RowCount = users.RowCount,
+        OrgUserList = users.Results ?? new List<OrganisationUserDto>()
+      };
 
-            return orgUserListResponse;
-        }
+      return orgUserListResponse;
+    }
 
-        /// <summary>
-        /// Create organisation in DB using wrapper
-        /// If failed delete the CII record
-        /// </summary>
-        /// <param name="organisationRegistrationDto"></param>
-        /// <param name="ciiOrgId"></param>
-        /// <returns></returns>
-        private async Task CreateOrganisationAsync(OrganisationRegistrationDto organisationRegistrationDto, string ciiOrgId)
+    /// <summary>
+    /// Create organisation in DB using wrapper
+    /// If failed delete the CII record
+    /// </summary>
+    /// <param name="organisationRegistrationDto"></param>
+    /// <param name="ciiOrgId"></param>
+    /// <returns></returns>
+    private async Task CreateOrganisationAsync(OrganisationRegistrationDto organisationRegistrationDto, string ciiOrgId)
     {
       try
       {
@@ -355,32 +355,14 @@ namespace CcsSso.Service
         };
 
         await _organisationProfileService.CreateOrganisationAsync(organisationProfileInfo);
-        await OrganisationAdminGroup(organisationRegistrationDto, ciiOrgId);
-        }
+      }
       catch (Exception)
       {
         await _ciiService.DeleteOrgAsync(ciiOrgId);
         throw;
       }
     }
-        public async Task OrganisationAdminGroup(OrganisationRegistrationDto organisationRegistrationDto, string ciiOrgId)
-        {
-            var organisation = await _dataContext.Organisation.Include(o => o.UserGroups).FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrgId);
-            var isDefaultAdminGroupExists = await _dataContext.OrganisationUserGroup.AnyAsync(x => x.OrganisationId == organisation.Id && x.GroupType == (int)GroupType.Admin && !x.IsDeleted);
 
-            if (!isDefaultAdminGroupExists)
-            {
-                var group = new OrganisationUserGroup
-                {
-                    OrganisationId = organisation.Id,
-                    UserGroupName = Contstant.DefaultAdminUserGroupName,
-                    UserGroupNameKey = Contstant.DefaultAdminUserGroupNameKey,
-                    GroupType = (int)GroupType.Admin
-                };
-                _dataContext.OrganisationUserGroup.Add(group);
-                await _dataContext.SaveChangesAsync();
-            }
-        }
     /// <summary>
     /// Create organisation admin user using wrapper
     /// If failed delete org records from CII and DB

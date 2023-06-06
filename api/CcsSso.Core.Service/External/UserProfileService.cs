@@ -200,6 +200,8 @@ namespace CcsSso.Core.Service.External
         }
       }
 
+      await SyncAdminRoleWithDefaultAdminGroupAsync(organisation, userGroupMemberships, userAccessRoles, isUserCreate: true);
+
       var partyTypeId = (await _dataContext.PartyType.FirstOrDefaultAsync(p => p.PartyTypeName == PartyTypeName.User)).Id;
 
       var party = new Party
@@ -1151,6 +1153,8 @@ namespace CcsSso.Core.Service.External
         isRegisteredInIdam = await UpdateIdamRecords(userName, userProfileRequestInfo, user, (mfaFlagChanged, isPreviouslyUserNamePwdConnectionIncluded, isUserNamePwdConnectionIncluded));
       }
 
+      await SyncAdminRoleWithDefaultAdminGroupAsync(organisation, user.UserGroupMemberships, user.UserAccessRoles, isUserCreate: false);
+
       await _dataContext.SaveChangesAsync();
 
       if (_appConfigInfo.UserRoleApproval.Enable)
@@ -1392,6 +1396,7 @@ namespace CcsSso.Core.Service.External
         .Include(u => u.UserIdentityProviders)
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation)
         .Include(u => u.UserAccessRoles)
+        .Include(u => u.UserGroupMemberships)
         .FirstOrDefaultAsync(u => !u.IsDeleted && u.UserName == userName);
 
       if (user == null)
@@ -1435,6 +1440,15 @@ namespace CcsSso.Core.Service.External
         UserId = user.Id,
         OrganisationEligibleRoleId = organisationAdminAccessRole.Id
       });
+
+      var adminGroup = await _organisationService.GetOrganisationGroupTypeAdminGroupDetailsAsync(user.Party.Person.Organisation.CiiOrganisationId);
+      if (adminGroup != null)
+      {
+        user.UserGroupMemberships.Add(new UserGroupMembership
+        {
+          OrganisationUserGroupId = adminGroup.Id
+        });
+      }
 
       await _dataContext.SaveChangesAsync();
 
@@ -2722,6 +2736,34 @@ namespace CcsSso.Core.Service.External
         serviceNames = string.Join(", ", services.Distinct().Select(x => x.Name).ToList());
       }
       return serviceNames;
+    }
+
+    private async Task SyncAdminRoleWithDefaultAdminGroupAsync(Organisation organisation, List<UserGroupMembership> userGroupMemberships, List<UserAccessRole> userAccessRoles, bool isUserCreate)
+    {
+      // Set user groups
+      var adminRoleId = organisation.OrganisationEligibleRoles.First(or => or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey).Id;
+      var adminGroup = await _organisationService.GetOrganisationGroupTypeAdminGroupDetailsAsync(organisation.CiiOrganisationId);
+
+      // user type admin and default admin group not passed then assign to admin group
+      if (userAccessRoles.Any(x => x.OrganisationEligibleRoleId == adminRoleId) && !userGroupMemberships.Any(g => g.OrganisationUserGroupId == adminGroup.Id))
+      {
+        userGroupMemberships.Add(new UserGroupMembership
+        {
+          OrganisationUserGroupId = adminGroup.Id
+        });
+      }
+      // default admin group passed but user type admin not passed then add admin role
+      else if (isUserCreate && !userAccessRoles.Any(x => x.OrganisationEligibleRoleId == adminRoleId) && userGroupMemberships.Any(g => g.OrganisationUserGroupId == adminGroup.Id))
+      {
+        userAccessRoles.Add(new UserAccessRole
+        {
+          OrganisationEligibleRoleId = adminRoleId
+        });
+      }
+      else if (!isUserCreate && !userAccessRoles.Any(x => x.OrganisationEligibleRoleId == adminRoleId) && userGroupMemberships.Any(g => g.OrganisationUserGroupId == adminGroup.Id))
+      {
+        userGroupMemberships.Remove(userGroupMemberships.First(x => x.OrganisationUserGroupId == adminGroup.Id));
+      }
     }
   }
 }

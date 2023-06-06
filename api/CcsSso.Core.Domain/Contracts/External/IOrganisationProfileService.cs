@@ -47,5 +47,6 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task ActivateOrganisationByUser(string userId);
 
+    Task<OrganisationUserGroup> GetOrganisationGroupTypeAdminGroupDetailsAsync(string ciiOrganisationId);
   }
 }
