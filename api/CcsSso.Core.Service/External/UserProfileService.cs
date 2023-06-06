@@ -692,9 +692,8 @@ namespace CcsSso.Core.Service.External
 
       // Delegated and delegated expired conditions
       if (isDelegatedOnly)
-        userQuery = userQuery.Where(u => isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date < DateTime.UtcNow.Date :
-                              u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date);
-
+        userQuery = userQuery.Where(u => isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date <= DateTime.UtcNow.Date && u.IsDeleted :
+                              u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date && !u.IsDeleted);
 
       if (!string.IsNullOrWhiteSpace(searchString))
       {
