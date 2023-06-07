@@ -7,7 +7,7 @@ IF NOT EXISTS (SELECT "Id" FROM "CcsServiceRoleGroup" WHERE "Key" = 'CAS_USER_GR
 	INSERT INTO public."CcsServiceRoleGroup"(
 		"Key", "Name", "Description", "OrgTypeEligibility", "SubscriptionTypeEligibility", "TradeEligibility","DisplayOrder","MfaEnabled", 
 		"DefaultEligibility", "ApprovalRequired","CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc", "LastUpdatedOnUtc","IsDeleted")
-		VALUES ('CAS_USER_GROUP','Contract Award Service', 'Find and contract suitable suppliers for your procurement project, and ask them about the services they can provide. Progress to one stage further competition.', 2, 1, 1,1, false, null,0,0,0,now(),now(),false);
+		VALUES ('CAS_USER_GROUP','Contract Award Service', 'Find and contact suitable suppliers for your procurement project, and ask them about the services they can provide. Progress to one stage further competition.', 2, 1, 1,1, false, null,0,0,0,now(),now(),false);
 END IF;
 
 IF NOT EXISTS (SELECT "Id" FROM "CcsServiceRoleGroup" WHERE "Key" = 'FP_USER_GROUP') THEN

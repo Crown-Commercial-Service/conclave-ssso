@@ -256,6 +256,8 @@ namespace CcsSso.Core.Service.External
         }
       }
 
+      string userAuth0Id = null;
+
       if (isConclaveConnectionIncluded)
       {
         SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
@@ -271,7 +273,7 @@ namespace CcsSso.Core.Service.External
 
         try
         {
-          await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
+          userAuth0Id = await _idamService.RegisterUserInIdamGetAuthIdAsync(securityApiUserInfo);
           isRegisteredInIdam = true;
         }
         catch (Exception)
@@ -312,10 +314,15 @@ namespace CcsSso.Core.Service.External
 
         if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)
         {
-          var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+          var activationlink = "";
+          if (!_appConfigInfo.NotificationApiSettings.Enable)
+          {
+            activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+          }
+
           var listOfIdpName = eligibleIdentityProviders.Where(idp => idp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName).Select(y => y.IdentityProvider.IdpName);
 
-          await _ccsSsoEmailService.SendUserConfirmEmailBothIdpAsync(party.User.UserName, string.Join(",", listOfIdpName), activationlink);
+          await _ccsSsoEmailService.SendUserConfirmEmailBothIdpAsync(party.User.UserName, string.Join(",", listOfIdpName), activationlink, userAuth0Id != null);
 
         }
 
@@ -331,8 +338,25 @@ namespace CcsSso.Core.Service.External
           string ccsMsg = (isNewOrgAdmin && !isAutovalidationSuccess && organisation.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier) ?
                           "Please note that notification has been sent to CCS to verify the buyer status of your Organisation. " +
                           "You will be informed within the next 24 to 72 hours" : string.Empty;
-          var activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
-          await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink), ccsMsg);
+
+          var activationlink = "";
+          Console.WriteLine($"RateLimitCheck: _appConfigInfo.NotificationApiSettings.Enable value- {_appConfigInfo.NotificationApiSettings.Enable}");
+          if (!_appConfigInfo.NotificationApiSettings.Enable)
+          {
+            try
+            {
+              activationlink = await _idamService.GetActivationEmailVerificationLink(userName);
+
+            }
+            catch (Exception ex)
+            {
+              Console.WriteLine($"RateLimitCheck: Exception while calling activation link method call- {ex.Message}");
+
+              throw;
+            }
+          }
+
+          await _ccsSsoEmailService.SendUserConfirmEmailOnlyUserIdPwdAsync(party.User.UserName, string.Join(",", activationlink), ccsMsg, userAuth0Id != null);
         }
       }
 
