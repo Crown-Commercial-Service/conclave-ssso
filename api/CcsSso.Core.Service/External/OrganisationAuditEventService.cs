@@ -22,14 +22,16 @@ namespace CcsSso.Core.Service.External
     private readonly IDateTimeService _dateTimeService;
     private readonly IServiceRoleGroupMapperService _rolesToServiceRoleGroupMapperService;
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
+    private readonly IExternalHelperService _externalHelperService;
 
     public OrganisationAuditEventService(IDataContext dataContext, IDateTimeService dateTimeService, IServiceRoleGroupMapperService rolesToServiceRoleGroupMapperService,
-      ApplicationConfigurationInfo applicationConfigurationInfo)
+      ApplicationConfigurationInfo applicationConfigurationInfo,IExternalHelperService externalHelperService)
     {
       _dataContext = dataContext;
       _dateTimeService = dateTimeService;
       _rolesToServiceRoleGroupMapperService = rolesToServiceRoleGroupMapperService;
       _applicationConfigurationInfo = applicationConfigurationInfo;
+      _externalHelperService = externalHelperService;
     }
 
     /// <summary>
@@ -103,15 +105,7 @@ namespace CcsSso.Core.Service.External
         .Where(c => c.Organisation.CiiOrganisationId == ciiOrganisationId)
         .ToListAsync();
 
-      var allRoles = await _dataContext.CcsAccessRole.Where(r => !r.IsDeleted)
-                          .Include(or => or.ServiceRolePermissions).ThenInclude(sr => sr.ServicePermission).ThenInclude(sr => sr.CcsService)
-                          .Select(i => new OrganisationRole
-                          {
-                            RoleId = i.Id,
-                            RoleName = i.CcsAccessRoleName,
-                            RoleKey = i.CcsAccessRoleNameKey,
-                            ServiceName = i.ServiceRolePermissions.FirstOrDefault().ServicePermission.CcsService.ServiceName,
-                          }).ToListAsync();
+      var allRoles = await _externalHelperService.GetCcsAccessRoles();
 
         foreach (var auditEvent in auditEvents)
         {

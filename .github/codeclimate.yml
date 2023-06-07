@@ -1,0 +1,45 @@
+version: "2"
+checks:
+  argument-count:
+    enabled: true
+  complex-logic:
+    enabled: true
+  file-lines:
+    enabled: false
+  method-complexity:
+    enabled: true
+    config:
+      threshold: 20
+  method-count:
+    enabled: false
+  method-lines:
+    enabled: false
+  nested-control-flow:
+    enabled: true
+  return-statements:
+    enabled: true
+  similar-code:
+    enabled: false
+  identical-code:
+    enabled: true
+
+exclude_patterns:
+- "config/"
+- "db/"
+- "dist/"
+- "features/"
+- "**/node_modules/"
+- "script/"
+- "**/spec/"
+- "**/test/"
+- "**/tests/"
+- "Tests/"
+- "**/vendor/"
+- "**/*_test.go"
+- "**/*.d.ts"
+- "**/CcsSso.Security.DbMigrations/"
+- "**/CcsSso.Security.Tests/"
+- "**/CcsSso.Adaptor.DbMigration/"
+- "**/CcsSso.Adaptor.Tests/"
+- "**/CcsSso.Core.DbMigrations/"
+- "**/CcsSso.Core.Tests/"

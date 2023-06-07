@@ -1,5 +1,4 @@
 using CcsSso.Core.DbModel.Constants;
-using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.ExternalApi.Authorisation;
@@ -1132,6 +1131,29 @@ namespace CcsSso.ExternalApi.Controllers
       resultSetCriteria.PageSize = resultSetCriteria.PageSize <= 0 ? 10 : resultSetCriteria.PageSize;
 
       return await _organisationGroupService.GetGroupUsersPendingRequestSummary(groupId, organisationId, resultSetCriteria,isPendingApproval);
+    }
+
+    /// <summary>
+    /// Get organisation groups
+    /// </summary>
+    /// <response  code="200">Ok</response>
+    /// <response  code="401">Unauthorised</response>
+    /// <response  code="403">Forbidden</response>
+    /// <response  code="404">Resource not found</response>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     GET /organisations/1/groups/servicerolegroups
+    ///     
+    /// </remarks>
+    [HttpGet("{organisationId}/groups/servicerolegroups")]
+    [ClaimAuthorise("ORG_ADMINISTRATOR", "ORG_DEFAULT_USER", "ORG_USER_SUPPORT")]
+    [OrganisationAuthorise("ORGANISATION")]
+    [SwaggerOperation(Tags = new[] { "Organisation Group" })]
+    [ProducesResponseType(typeof(OrganisationGroupServiceRoleGroupList), 200)]
+    public async Task<OrganisationGroupServiceRoleGroupList> GetOrganisationAllGroupsServiceroleGroups(string organisationId, [FromQuery(Name = "search-string")] string searchString = null)
+    {
+      return await _organisationGroupService.GetGroupsServiceRoleGroupAsync(organisationId, searchString);
     }
 
     #endregion

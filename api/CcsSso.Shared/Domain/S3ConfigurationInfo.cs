@@ -20,6 +20,12 @@ namespace CcsSso.Shared.Domain
 
     public string BulkUploadFolderName { get; set; }
 
+    public string DataMigrationBucketName { get; set; }
+
+    public string DataMigrationTemplateFolderName { get; set; }
+
+    public string DataMigrationFolderName { get; set; }
+
     public int FileAccessExpirationInHours { get; set; }
   }
 }

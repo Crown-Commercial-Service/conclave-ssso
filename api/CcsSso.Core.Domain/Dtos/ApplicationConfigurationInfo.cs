@@ -32,7 +32,7 @@ namespace CcsSso.Domain.Dtos
 
     public int BulkUploadMaxUserCount { get; set; }
     // #Delegated
-    public int DelegationEmailExpirationHours { get; set; }
+    public int DelegationEmailExpirationInMinutes { get; set; }
 
     public string DelegationEmailTokenEncryptionKey { get; set; }
 
@@ -52,6 +52,8 @@ namespace CcsSso.Domain.Dtos
     public string TokenEncryptionKey { get; set; }
 
     public NewUserJoinRequest NewUserJoinRequest { get; set; }
+
+    public DataMigrationSettings DataMigrationSettings { get; set; }
   }
 
   public class ServiceDefaultRoleInfo
@@ -206,5 +208,13 @@ namespace CcsSso.Domain.Dtos
   public class NewUserJoinRequest
   {
     public int LinkExpirationInMinutes { get; set; }
+  }
+
+  public class DataMigrationSettings
+  {
+    public string DataMigrationValidationFailedTemplateId { get; set; }
+
+    public int MaxFileSizeValue { get; set; }
+
   }
 }

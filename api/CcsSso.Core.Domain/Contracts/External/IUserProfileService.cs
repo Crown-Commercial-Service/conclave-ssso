@@ -1,4 +1,5 @@
 using CcsSso.Core.Domain.Dtos.External;
+using CcsSso.DbModel.Entity;
 using CcsSso.Dtos.Domain.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -43,7 +44,7 @@ namespace CcsSso.Core.Domain.Contracts.External
 
     Task AcceptDelegationAsync(string acceptanceToken);
 
-    Task SendUserDelegatedAccessEmailAsync(string userName, string orgId = "", string orgName = "");
+    Task SendUserDelegatedAccessEmailAsync(string userName, string orgId = "", string orgName = "", bool isLogEnable = false);
 
     Task<UserProfileServiceRoleGroupResponseInfo> GetUserV1Async(string userName, bool isDelegated = false, bool isSearchUser = false, string delegatedOrgId = "");
 
@@ -52,5 +53,7 @@ namespace CcsSso.Core.Domain.Contracts.External
     Task<UserEditResponseInfo> UpdateUserV1Async(string userName, UserProfileServiceRoleGroupEditRequestInfo userProfileServiceRoleGroupEditRequestInfo);
 
     Task<OrganisationJoinRequest> GetUserJoinRequestDetails(string joiningDetailsToken);
+
+    Task<List<User>> GetUsersAsync();
   }
 }

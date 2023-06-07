@@ -46,7 +46,7 @@ namespace CcsSso.Service
       if (!string.IsNullOrEmpty(token))
       {
         client.DefaultRequestHeaders.Add("Authorization", token);
-      }
+      }      
       //var body = JsonConvert.SerializeObject(model);
       var response = await client.PutAsync($"identities/organisations/{ciiOrganisationId}/schemes/{scheme}/identifiers/{identifier}", new StringContent("", System.Text.Encoding.UTF8, "application/json"));
       if (response.IsSuccessStatusCode)

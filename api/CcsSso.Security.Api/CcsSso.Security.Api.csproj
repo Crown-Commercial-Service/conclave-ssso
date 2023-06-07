@@ -34,7 +34,6 @@
   <ItemGroup>
     <ProjectReference Include="..\CcsSso.Security.DbPersistence\CcsSso.Security.DbPersistence.csproj" />
     <ProjectReference Include="..\CcsSso.Security.Domain\CcsSso.Security.Domain.csproj" />
-    <ProjectReference Include="..\CcsSso.Security.Logs\CcsSso.Security.Logs.csproj" />
     <ProjectReference Include="..\CcsSso.Security.Services\CcsSso.Security.Services.csproj" />
     <ProjectReference Include="..\CcsSso.Shared.Cache\CcsSso.Shared.Cache.csproj" />
     <ProjectReference Include="..\CcsSso.Shared.Logger\CcsSso.Shared.Logger.csproj" />

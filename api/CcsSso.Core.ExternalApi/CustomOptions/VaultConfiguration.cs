@@ -166,7 +166,7 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       if (_secrets.Data.ContainsKey("UserDelegation"))
       {
         var userDelegationInfo = JsonConvert.DeserializeObject<UserDelegation>(_secrets.Data["UserDelegation"].ToString());
-        Data.Add("UserDelegation:DelegationEmailExpirationHours", userDelegationInfo.DelegationEmailExpirationHours.ToString());
+        Data.Add("UserDelegation:DelegationEmailExpirationInMinutes", userDelegationInfo.DelegationEmailExpirationInMinutes.ToString());
         Data.Add("UserDelegation:DelegationEmailTokenEncryptionKey", userDelegationInfo.DelegationEmailTokenEncryptionKey);
         
         int index = 0;
@@ -247,6 +247,34 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
       }
 
       Data.Add("TokenEncryptionKey", _secrets.Data["TokenEncryptionKey"].ToString());
+
+      if (_secrets.Data.ContainsKey("S3ConfigurationInfo"))
+      {
+        var s3ConfigInfo = JsonConvert.DeserializeObject<S3ConfigurationInfoVault>(_secrets.Data["S3ConfigurationInfo"].ToString());
+        Data.Add("S3ConfigurationInfo:AccessKeyId", s3ConfigInfo.AccessKeyId);
+        Data.Add("S3ConfigurationInfo:AccessSecretKey", s3ConfigInfo.AccessSecretKey);
+        Data.Add("S3ConfigurationInfo:ServiceUrl", s3ConfigInfo.ServiceUrl);
+        Data.Add("S3ConfigurationInfo:DataMigrationBucketName", s3ConfigInfo.DataMigrationBucketName);
+        Data.Add("S3ConfigurationInfo:DataMigrationFolderName", s3ConfigInfo.DataMigrationFolderName);
+        Data.Add("S3ConfigurationInfo:DataMigrationTemplateFolderName", s3ConfigInfo.DataMigrationTemplateFolderName);
+        Data.Add("S3ConfigurationInfo:FileAccessExpirationInHours", s3ConfigInfo.FileAccessExpirationInHours);
+      }
+
+      if (_secrets.Data.ContainsKey("DocUpload"))
+      {
+        var docUploadInfo = JsonConvert.DeserializeObject<DocUploadInfo>(_secrets.Data["DocUpload"].ToString());
+        Data.Add("DocUpload:Url", docUploadInfo.Url);
+        Data.Add("DocUpload:Token", docUploadInfo.Token);
+        Data.Add("DocUpload:SizeValidationValue", docUploadInfo.SizeValidationValue);
+        Data.Add("DocUpload:TypeValidationValue", docUploadInfo.TypeValidationValue);
+      }
+
+      if (_secrets.Data.ContainsKey("DataMigrationSettings"))
+      {
+        var dataMigrationSettingsInfo = JsonConvert.DeserializeObject<DataMigrationSettingsInfo>(_secrets.Data["DataMigrationSettings"].ToString());
+        Data.Add("DataMigrationSettings:DataMigrationValidationFailedTemplateId", dataMigrationSettingsInfo.DataMigrationValidationFailedTemplateId);
+        Data.Add("DataMigrationSettings:MaxFileSizeValue", dataMigrationSettingsInfo.MaxFileSizeValue);
+      }
     }
   }
 
@@ -355,11 +383,47 @@ namespace CcsSso.ExternalApi.Api.CustomOptions
   // #Delegated
   public class UserDelegation
   {
-    public int DelegationEmailExpirationHours { get; set; }
+    public int DelegationEmailExpirationInMinutes { get; set; }
 
     public string DelegationEmailTokenEncryptionKey { get; set; }
 
     public string[] DelegationExcludeRoles { get; set; }
+  }
+
+  public class S3ConfigurationInfoVault
+  {
+    public string AccessKeyId { get; set; }
+
+    public string AccessSecretKey { get; set; }
+
+    public string ServiceUrl { get; set; }
+
+    public string DataMigrationBucketName { get; set; }
+
+    public string DataMigrationTemplateFolderName { get; set; }
+
+    public string DataMigrationFolderName { get; set; }
+
+    public string FileAccessExpirationInHours { get; set; }
+  }
+
+  public class DocUploadInfo
+  {
+    public string Url { get; set; }
+
+    public string Token { get; set; }
+
+    public string SizeValidationValue { get; set; }
+
+    public string TypeValidationValue { get; set; }
+  }
+
+  public class DataMigrationSettingsInfo
+  {
+    public string DataMigrationValidationFailedTemplateId { get; set; }
+
+    public string MaxFileSizeValue { get; set; }
+
   }
 
   public class VaultOptions

@@ -10,6 +10,7 @@ using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Dtos.Domain.Models;
+using CcsSso.Security.Domain.Constants;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Constants;
@@ -20,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
@@ -43,6 +45,8 @@ namespace CcsSso.Core.Service.External
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
     private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
     private readonly IOrganisationGroupService _organisationGroupService;
+    private readonly IOrganisationProfileService _organisationService;
+    private readonly IDelegationAuditEventService _delegationAuditEventService;
 
     public UserProfileService(IDataContext dataContext, IUserProfileHelperService userHelper,
       RequestContext requestContext, IIdamService idamService, ICcsSsoEmailService ccsSsoEmailService,
@@ -51,7 +55,8 @@ namespace CcsSso.Core.Service.External
       ICacheInvalidateService cacheInvalidateService, ICryptographyService cryptographyService,
       ApplicationConfigurationInfo appConfigInfo, ILookUpService lookUpService, IWrapperApiService wrapperApiService,
       IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
-      IOrganisationGroupService organisationGroupService)
+      IOrganisationGroupService organisationGroupService, IOrganisationProfileService organisationService,
+      IDelegationAuditEventService delegationAuditEventService)
     {
       _dataContext = dataContext;
       _userHelper = userHelper;
@@ -66,10 +71,12 @@ namespace CcsSso.Core.Service.External
       _cryptographyService = cryptographyService;
       _appConfigInfo = appConfigInfo;
       _lookUpService = lookUpService;
+      _organisationService = organisationService;
       _wrapperApiService = wrapperApiService;
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
       _serviceRoleGroupMapperService = serviceRoleGroupMapperService;
       _organisationGroupService = organisationGroupService;
+      _delegationAuditEventService = delegationAuditEventService;
     }
 
     public async Task<UserEditResponseInfo> CreateUserAsync(UserProfileEditRequestInfo userProfileRequestInfo, bool isNewOrgAdmin = false)
@@ -417,20 +424,20 @@ namespace CcsSso.Core.Service.External
       }
 
       var userDelegatedOrgs = users.Where(u => u.UserType == DbModel.Constants.UserType.Delegation &&
-                              !u.IsDeleted &&
-                              u.DelegationStartDate.Value.Date <= DateTime.UtcNow.Date &&
-                              u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date &&
-                              (!string.IsNullOrWhiteSpace(delegatedOrgId) || u.DelegationAccepted) &&
-                              ((isDelegated && string.IsNullOrWhiteSpace(delegatedOrgId)) || u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId)
-                              )
-                              .Select(u => new UserDelegationDetails
-                              {
-                                DelegatedOrgId = u.Party.Person.Organisation.CiiOrganisationId,
-                                DelegatedOrgName = u.Party.Person.Organisation.LegalName,
-                                StartDate = u.DelegationStartDate,
-                                EndDate = u.DelegationEndDate,
-                                DelegationAccepted = u.DelegationAccepted
-                              }).ToArray();
+                        !u.IsDeleted &&
+                        u.DelegationStartDate.Value.Date <= DateTime.UtcNow.Date &&
+                        u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date &&
+                        (!string.IsNullOrWhiteSpace(delegatedOrgId) || u.DelegationAccepted) &&
+                        ((isDelegated && string.IsNullOrWhiteSpace(delegatedOrgId)) || u.Party.Person.Organisation.CiiOrganisationId == delegatedOrgId)
+                        )
+                        .Select(u => new UserDelegationDetails
+                        {
+                          DelegatedOrgId = u.Party.Person.Organisation.CiiOrganisationId,
+                          DelegatedOrgName = u.Party.Person.Organisation.LegalName,
+                          StartDate = u.DelegationStartDate,
+                          EndDate = u.DelegationEndDate,
+                          DelegationAccepted = u.DelegationAccepted
+                        }).ToArray();
 
       if (user != null)
       {
@@ -441,8 +448,8 @@ namespace CcsSso.Core.Service.External
           OriginOrganisationName = isDelegated ? (user.UserType == DbModel.Constants.UserType.Primary ? user.Party.Person.Organisation.LegalName : user.OriginOrganization?.LegalName) : default,
           FirstName = user.Party.Person.FirstName,
           LastName = (isDelegated || !string.IsNullOrWhiteSpace(delegatedOrgId)) && !user.DelegationAccepted ?
-                       user.Party.Person.LastName.Substring(0, 1).PadRight(user.Party.Person.LastName.Length, '*') :
-                       user.Party.Person.LastName,
+               user.Party.Person.LastName.Substring(0, 1).PadRight(user.Party.Person.LastName.Length, '*') :
+               user.Party.Person.LastName,
           MfaEnabled = user.MfaEnabled,
           Title = Enum.GetName(typeof(UserTitle), user.UserTitle),
           AccountVerified = user.AccountVerified,
@@ -483,36 +490,18 @@ namespace CcsSso.Core.Service.External
 
           foreach (var userGroupMembership in user.UserGroupMemberships)
           {
-            if (!userGroupMembership.IsDeleted && userGroupMembership.OrganisationUserGroup.GroupEligibleRoles != null)
+            if (userGroupMembership.IsDeleted || userGroupMembership.OrganisationUserGroup.GroupEligibleRoles == null)
             {
-              if (userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Any(x => !x.IsDeleted))
-              {
-                // For every role in the group populate the group role info
-                foreach (var groupAccess in userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Where(x => !x.IsDeleted))
-                {
-                  if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroups.Any(x => x.CcsServiceRoleMappings.Any(m => m.CcsAccessRoleId == groupAccess.OrganisationEligibleRole.CcsAccessRoleId)))
-                  {
-                    PopulateUserGroupWithoutRole(userProfileInfo, userGroupMembership);
-                    continue;
-                  }
-
-                  var groupAccessRole = new GroupAccessRole
-                  {
-                    GroupId = userGroupMembership.OrganisationUserGroup.Id,
-                    Group = userGroupMembership.OrganisationUserGroup.UserGroupName,
-                    AccessRoleName = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
-                    AccessRole = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
-                    ServiceClientId = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceClientId,
-                    ServiceClientName = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName
-                  };
-
-                  userProfileInfo.Detail.UserGroups.Add(groupAccessRole);
-                }
-              }
-              else // If group doesnt have a role then just send the group with empty role
-              {
-                PopulateUserGroupWithoutRole(userProfileInfo, userGroupMembership);
-              }
+              continue;
+            }
+            if (userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Any(x => !x.IsDeleted))
+            {
+              // For every role in the group populate the group role info
+              PopulateGroupRoleInfo(userProfileInfo, userGroupsApprovalServiceRoleGroups, userGroupMembership);
+            }
+            else // If group doesnt have a role then just send the group with empty role
+            {
+              PopulateUserGroupWithoutRole(userProfileInfo, userGroupMembership);
             }
           }
         }
@@ -521,6 +510,30 @@ namespace CcsSso.Core.Service.External
       }
 
       throw new ResourceNotFoundException();
+    }
+
+    private void PopulateGroupRoleInfo(UserProfileResponseInfo userProfileInfo, List<CcsServiceRoleGroup> userGroupsApprovalServiceRoleGroups, UserGroupMembership userGroupMembership)
+    {
+      foreach (var groupAccess in userGroupMembership.OrganisationUserGroup.GroupEligibleRoles.Where(x => !x.IsDeleted))
+      {
+        if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroups.Any(x => x.CcsServiceRoleMappings.Any(m => m.CcsAccessRoleId == groupAccess.OrganisationEligibleRole.CcsAccessRoleId)))
+        {
+          PopulateUserGroupWithoutRole(userProfileInfo, userGroupMembership);
+          continue;
+        }
+
+        var groupAccessRole = new GroupAccessRole
+        {
+          GroupId = userGroupMembership.OrganisationUserGroup.Id,
+          Group = userGroupMembership.OrganisationUserGroup.UserGroupName,
+          AccessRoleName = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
+          AccessRole = groupAccess.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
+          ServiceClientId = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceClientId,
+          ServiceClientName = groupAccess.OrganisationEligibleRole.CcsAccessRole.ServiceRolePermissions.FirstOrDefault()?.ServicePermission.CcsService.ServiceName
+        };
+
+        userProfileInfo.Detail.UserGroups.Add(groupAccessRole);
+      }
     }
 
     private static void PopulateUserGroupWithoutRole(UserProfileResponseInfo userProfileInfo, UserGroupMembership userGroupMembership)
@@ -569,6 +582,7 @@ namespace CcsSso.Core.Service.External
 
         userlist.Add(new UserListWithServiceRoleGroupInfo
         {
+          Id = user.Id,
           RemainingDays = user.RemainingDays,
           OriginOrganisation = user.OriginOrganisation,
           UserName = user.UserName,
@@ -670,14 +684,14 @@ namespace CcsSso.Core.Service.External
         userQuery = userQuery.Where(u => u.Id != _requestContext.UserId);
       // #Autovalidation
       if (isAdmin && userFilterCriteria.includeUnverifiedAdmin)
-        userQuery = userQuery.Where(u => u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && !u.IsDeleted);
+        userQuery = userQuery.Where(u => !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
       else if (isAdmin)
-        userQuery = userQuery.Where(u => u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) && u.AccountVerified && !u.IsDeleted);
+        userQuery = userQuery.Where(u => u.AccountVerified && !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
 
 
       // Delegated and delegated expired conditions
       if (isDelegatedOnly)
-        userQuery = userQuery.Where(u => isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date <= DateTime.UtcNow.Date :
+        userQuery = userQuery.Where(u => isDelegatedExpiredOnly ? u.DelegationEndDate.Value.Date < DateTime.UtcNow.Date :
                               u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date);
 
 
@@ -706,7 +720,7 @@ namespace CcsSso.Core.Service.External
 
       userQuery = userQuery.OrderBy(u => u.Party.Person.FirstName).ThenBy(u => u.Party.Person.LastName);
 
-
+      var groupadminUsers = await _organisationGroupService.GetGroupAdminUsersAsync(organisationId);
       var userPagedInfo = await _dataContext.GetPagedResultAsync(userQuery, resultSetCriteria);
 
       var userListResponse = new UserListResponse
@@ -721,6 +735,7 @@ namespace CcsSso.Core.Service.External
                    $"{up.Party.Person.LastName.Substring(0, 1).PadRight(up.Party.Person.LastName.Length, '*')}" :
                    $"{up.Party.Person.FirstName} {up.Party.Person.LastName}",
           UserName = up.UserName,
+          Id = up.Id,
           // Delegation specific fields
           StartDate = isDelegatedOnly ? up.DelegationStartDate : default,
           EndDate = isDelegatedOnly ? up.DelegationEndDate : default,
@@ -733,7 +748,7 @@ namespace CcsSso.Core.Service.External
             RoleKey = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey,
             RoleName = uar.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
           }).ToList(),
-          IsAdmin = up.UserAccessRoles.Any(x => !x.IsDeleted && x.OrganisationEligibleRoleId == orgAdminAccessRoleId && !x.OrganisationEligibleRole.IsDeleted),
+          IsAdmin = up.UserAccessRoles.Any(x => !x.IsDeleted && x.OrganisationEligibleRoleId == orgAdminAccessRoleId && !x.OrganisationEligibleRole.IsDeleted) || groupadminUsers.Any(x => x.Id == up.Id),
         }).ToList() : new List<UserListInfo>()
       };
 
@@ -850,7 +865,7 @@ namespace CcsSso.Core.Service.External
 
         if (user.UserType == DbModel.Constants.UserType.Delegation)
         {
-          user.DelegationEndDate = DateTime.UtcNow;
+          user.DelegationEndDate = DateTime.UtcNow.Date;
         }
       }
 
@@ -941,11 +956,12 @@ namespace CcsSso.Core.Service.External
                             join ua in _dataContext.UserAccessRole on u.Id equals ua.UserId
                             join er in _dataContext.OrganisationEligibleRole on ua.OrganisationEligibleRoleId equals er.Id
                             join cr in _dataContext.CcsAccessRole on er.CcsAccessRoleId equals cr.Id
-                            where (u.UserName == userName && cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
-                            select new { er.CcsAccessRole.CcsAccessRoleNameKey }).FirstOrDefault();
+                            where u.UserName == userName && ((cr.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+                              || u.UserGroupMemberships.Any(x => !x.IsDeleted && x.OrganisationUserGroup.GroupEligibleRoles.Any(y => !y.IsDeleted && y.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)))
+                            select new { er.CcsAccessRole.CcsAccessRoleNameKey, u.UserGroupMemberships }).FirstOrDefault();
 
       bool isAdminUser = false;
-      if (UserAccessRole != null && UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)
+      if (UserAccessRole != null && ((UserAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey) || (UserAccessRole.UserGroupMemberships.Any(x => !x.IsDeleted && x.OrganisationUserGroup.GroupEligibleRoles.Any(y => !y.IsDeleted && y.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)))))
       {
         isAdminUser = true;
       }
@@ -993,7 +1009,7 @@ namespace CcsSso.Core.Service.External
       var removedGroupIds = new List<int>();
       var removedRoleIds = new List<int>();
 
-      if (!isMyProfile || isAdminUser == true)
+      if (!isMyProfile || isAdminUser)
       {
         user.UserTitle = (int)Enum.Parse(typeof(UserTitle), string.IsNullOrWhiteSpace(userProfileRequestInfo.Title) ? "Unspecified" : userProfileRequestInfo.Title);
         requestGroups = userProfileRequestInfo.Detail.GroupIds == null ? new List<int>() : userProfileRequestInfo.Detail.GroupIds.OrderBy(e => e).ToList();
@@ -1017,12 +1033,7 @@ namespace CcsSso.Core.Service.External
                                         .ToListAsync();
 
           isUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName));
-          // isNonUserNamePwdConnectionIncluded = userProfileRequestInfo.Detail.IdentityProviderIds.Any(id => elegibleIdentityProviders.Any(oidp => oidp.Id == id && oidp.IdentityProvider.IdpConnectionName != Contstant.ConclaveIdamConnectionName));
         }
-        //if (userProfileRequestInfo.MfaEnabled && isNonUserNamePwdConnectionIncluded)
-        //{
-        //  throw new CcsSsoException(ErrorConstant.ErrorMfaFlagForInvalidConnection);
-        //}
 
         //mfa flag has removed
         if (!userProfileRequestInfo.MfaEnabled && isUserNamePwdConnectionIncluded)
@@ -1047,6 +1058,7 @@ namespace CcsSso.Core.Service.External
         }
 
         user.MfaEnabled = userProfileRequestInfo.MfaEnabled;
+
         if (mfaFlagChanged)
         {
           hasProfileInfoChanged = true;
@@ -1079,27 +1091,9 @@ namespace CcsSso.Core.Service.External
         user.UserGroupMemberships = userGroupMemberships;
 
         // Set user roles
-        var userAccessRoles = new List<UserAccessRole>();
+        var (userAccessRoles, tempUserAccessRoleRequiredApproval) = await GetUserAccessRoles(userProfileRequestInfo, organisation, isUserDomainValid, previousRoles);
 
-        var ccsAccessRoleRequiredApproval = await _dataContext.CcsAccessRole.Where(x => x.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired).ToListAsync();
-
-        userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
-        {
-          var ccsAccessRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.Id == roleId)?.CcsAccessRoleId;
-          var isRoleRequiredApproval = ccsAccessRoleId != null && ccsAccessRoleRequiredApproval != null && ccsAccessRoleRequiredApproval.Any(x => x.Id == ccsAccessRoleId);
-
-          if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && isRoleRequiredApproval && !previousRoles.Any(x => x == roleId))
-          {
-            userAccessRoleRequiredApproval.Add(roleId);
-          }
-          else
-          {
-            userAccessRoles.Add(new UserAccessRole
-            {
-              OrganisationEligibleRoleId = roleId
-            });
-          }
-        });
+        userAccessRoleRequiredApproval = tempUserAccessRoleRequiredApproval;
         user.UserAccessRoles = userAccessRoles;
 
         if (userProfileRequestInfo.Detail.RoleIds != null)
@@ -1107,17 +1101,10 @@ namespace CcsSso.Core.Service.External
           removedRoleIds = previousRoles.Where(x => !userProfileRequestInfo.Detail.RoleIds.Contains(x)).ToList();
         }
 
-        // Check the admin group availability in request
-        var noAdminRoleGroupInRequest = userProfileRequestInfo.Detail.GroupIds == null || !userProfileRequestInfo.Detail.GroupIds.Any() ||
-          !organisation.UserGroups.Any(g => !g.IsDeleted
-         && userProfileRequestInfo.Detail.GroupIds.Contains(g.Id)
-         && g.GroupEligibleRoles.Any(gr => gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey));
+        // Check the admin group and role availability in request
 
-        // Check the admin role availability in request
-        var noAdminRoleInRequest = userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() ||
-          !organisation.OrganisationEligibleRoles.Any(or => !or.IsDeleted
-            && userProfileRequestInfo.Detail.RoleIds.Contains(or.Id)
-            && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey);
+        bool noAdminRoleGroupInRequest, noAdminRoleInRequest;
+        CheckAdminRoles(userProfileRequestInfo, organisation, out noAdminRoleGroupInRequest, out noAdminRoleInRequest);
 
         if (noAdminRoleGroupInRequest && noAdminRoleInRequest && await IsOrganisationOnlyAdminAsync(user, userName))
         {
@@ -1163,35 +1150,7 @@ namespace CcsSso.Core.Service.External
           user.UserIdentityProviders.AddRange(newUserIdentityProviderList);
         }
 
-        if (isPreviouslyUserNamePwdConnectionIncluded && !isUserNamePwdConnectionIncluded) // Conclave connection removed
-        {
-          await _idamService.DeleteUserInIdamAsync(userName);
-        }
-        else if (!isPreviouslyUserNamePwdConnectionIncluded && isUserNamePwdConnectionIncluded)  // Conclave connection added
-        {
-          SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
-          {
-            Email = userName,
-            UserName = userName,
-            FirstName = userProfileRequestInfo.FirstName,
-            LastName = userProfileRequestInfo.LastName,
-            MfaEnabled = user.MfaEnabled,
-            SendUserRegistrationEmail = userProfileRequestInfo.SendUserRegistrationEmail
-          };
-
-          await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
-          isRegisteredInIdam = true;
-        }
-        else if (mfaFlagChanged)
-        {
-          SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
-          {
-            Email = userName,
-            MfaEnabled = user.MfaEnabled
-          };
-
-          await _idamService.UpdateUserMfaInIdamAsync(securityApiUserInfo);
-        }
+        isRegisteredInIdam = await UpdateIdamRecords(userName, userProfileRequestInfo, user, (mfaFlagChanged, isPreviouslyUserNamePwdConnectionIncluded, isUserNamePwdConnectionIncluded));
       }
 
       await _dataContext.SaveChangesAsync();
@@ -1254,6 +1213,89 @@ namespace CcsSso.Core.Service.External
         UserId = userName,
         IsRegisteredInIdam = isRegisteredInIdam
       };
+    }
+
+    private static void CheckAdminRoles(UserProfileEditRequestInfo userProfileRequestInfo, Organisation organisation, out bool noAdminRoleGroupInRequest, out bool noAdminRoleInRequest)
+    {
+      // Check the admin group availability in request
+      noAdminRoleGroupInRequest = userProfileRequestInfo.Detail.GroupIds == null || !userProfileRequestInfo.Detail.GroupIds.Any() ||
+        !organisation.UserGroups.Any(g => !g.IsDeleted
+       && userProfileRequestInfo.Detail.GroupIds.Contains(g.Id)
+       && g.GroupEligibleRoles.Any(gr => gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey));
+
+      // Check the admin role availability in request
+      noAdminRoleInRequest = userProfileRequestInfo.Detail.RoleIds == null || !userProfileRequestInfo.Detail.RoleIds.Any() ||
+        !organisation.OrganisationEligibleRoles.Any(or => !or.IsDeleted
+          && userProfileRequestInfo.Detail.RoleIds.Contains(or.Id)
+          && or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey);
+    }
+
+    private async Task<bool> UpdateIdamRecords(string userName, UserProfileEditRequestInfo userProfileRequestInfo, User user, (bool, bool, bool) mfaAndSignInFlags)
+    {
+      bool mfaFlagChanged = mfaAndSignInFlags.Item1;
+      bool isPreviouslyUserNamePwdConnectionIncluded = mfaAndSignInFlags.Item2;
+      bool isUserNamePwdConnectionIncluded = mfaAndSignInFlags.Item3;
+      bool isRegisteredInIdam = false;
+
+      if (isPreviouslyUserNamePwdConnectionIncluded && !isUserNamePwdConnectionIncluded) // Conclave connection removed
+      {
+        await _idamService.DeleteUserInIdamAsync(userName);
+      }
+      else if (!isPreviouslyUserNamePwdConnectionIncluded && isUserNamePwdConnectionIncluded)  // Conclave connection added
+      {
+        SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+        {
+          Email = userName,
+          UserName = userName,
+          FirstName = userProfileRequestInfo.FirstName,
+          LastName = userProfileRequestInfo.LastName,
+          MfaEnabled = user.MfaEnabled,
+          SendUserRegistrationEmail = userProfileRequestInfo.SendUserRegistrationEmail
+        };
+
+        await _idamService.RegisterUserInIdamAsync(securityApiUserInfo);
+        isRegisteredInIdam = true;
+      }
+      else if (mfaFlagChanged)
+      {
+        SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+        {
+          Email = userName,
+          MfaEnabled = user.MfaEnabled
+        };
+
+        await _idamService.UpdateUserMfaInIdamAsync(securityApiUserInfo);
+      }
+
+      return isRegisteredInIdam;
+    }
+
+
+    private async Task<(List<UserAccessRole>, List<int>)> GetUserAccessRoles(UserProfileEditRequestInfo userProfileRequestInfo, Organisation organisation, bool isUserDomainValid, List<int> previousRoles)
+    {
+      var userAccessRoles = new List<UserAccessRole>();
+      var userAccessRoleRequiredApproval = new List<int>();
+
+      var ccsAccessRoleRequiredApproval = await _dataContext.CcsAccessRole.Where(x => x.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired).ToListAsync();
+
+      userProfileRequestInfo.Detail.RoleIds?.ForEach((roleId) =>
+      {
+        var ccsAccessRoleId = organisation.OrganisationEligibleRoles.FirstOrDefault(x => x.Id == roleId)?.CcsAccessRoleId;
+        var isRoleRequiredApproval = ccsAccessRoleId != null && ccsAccessRoleRequiredApproval != null && ccsAccessRoleRequiredApproval.Any(x => x.Id == ccsAccessRoleId);
+
+        if (_appConfigInfo.UserRoleApproval.Enable && !isUserDomainValid && isRoleRequiredApproval && !previousRoles.Any(x => x == roleId))
+        {
+          userAccessRoleRequiredApproval.Add(roleId);
+        }
+        else
+        {
+          userAccessRoles.Add(new UserAccessRole
+          {
+            OrganisationEligibleRoleId = roleId
+          });
+        }
+      });
+      return (userAccessRoles, userAccessRoleRequiredApproval);
     }
 
     public async Task ResetUserPasswodAsync(string userName, string? component)
@@ -1552,7 +1594,27 @@ namespace CcsSso.Core.Service.External
       }
       var userProfileRequestInfo = await ConvertServiceRoleGroupTouserProfileRequest(userProfileRoleGroupRequestInfo);
 
-      await CreateDelegatedUserAsync(userProfileRequestInfo);
+      try
+      {
+        await CreateDelegatedUserAsync(userProfileRequestInfo);
+      }
+
+      catch (CcsSsoException ex)
+      {
+        if (ex.Message == "INVALID_ROLE")
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+        else
+        {
+          throw ex;
+        }
+      }
+      catch (Exception)
+      {
+        throw;
+      }
+
     }
 
     public async Task UpdateDelegatedUserV1Async(DelegatedUserProfileServiceRoleGroupRequestInfo userProfileRoleGroupRequestInfo)
@@ -1563,7 +1625,26 @@ namespace CcsSso.Core.Service.External
       }
       var userProfileRequestInfo = await ConvertServiceRoleGroupTouserProfileRequest(userProfileRoleGroupRequestInfo);
 
-      await UpdateDelegatedUserAsync(userProfileRequestInfo);
+      try
+      {
+        await UpdateDelegatedUserAsync(userProfileRequestInfo);
+      }
+
+      catch (CcsSsoException ex)
+      {
+        if (ex.Message == "INVALID_ROLE")
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+        else
+        {
+          throw ex;
+        }
+      }
+      catch (Exception)
+      {
+        throw;
+      }
     }
 
 
@@ -1646,8 +1727,8 @@ namespace CcsSso.Core.Service.External
           //}).ToList(),
           MfaEnabled = existingUserPrimaryDetails.MfaEnabled,
           CcsServiceId = existingUserPrimaryDetails.CcsServiceId,
-          DelegationStartDate = userProfileRequestInfo.Detail.StartDate,
-          DelegationEndDate = userProfileRequestInfo.Detail.EndDate,
+          DelegationStartDate = userProfileRequestInfo.Detail.StartDate.Date,
+          DelegationEndDate = userProfileRequestInfo.Detail.EndDate.Date,
           UserType = DbModel.Constants.UserType.Delegation,
           OriginOrganizationId = existingUserPrimaryDetails.Party.Person.Organisation.Id
         }
@@ -1662,6 +1743,8 @@ namespace CcsSso.Core.Service.External
 
         // Send delegation activation email
         await SendUserDelegatedAccessEmailAsync(existingUserPrimaryDetails.UserName, organisation.CiiOrganisationId, organisation.LegalName);
+
+        await CreateDelegatedUserEventLog(userProfileRequestInfo, party.User);
 
         // Log
         //await _auditLoginService.CreateLogAsync(AuditLogEvent.UserDelegated, AuditLogApplication.ManageUserAccount, $"UserId:{existingUserPrimaryDetails.Id}," + " " +
@@ -1713,6 +1796,9 @@ namespace CcsSso.Core.Service.External
       var hasRolesNotChanged = Enumerable.SequenceEqual(requestRoles, existingDelegatedUserDetails.UserAccessRoles.
                                Select(ur => ur.OrganisationEligibleRoleId).OrderBy(e => e));
 
+      //updating delegation audit log for updating delegated user access
+      await UpdateDelegatedUserEventLog(userProfileRequestInfo, existingDelegatedUserDetails);
+
       if (!hasRolesNotChanged)
       {
         // Set user roles
@@ -1727,9 +1813,18 @@ namespace CcsSso.Core.Service.External
         existingDelegatedUserDetails.UserAccessRoles = userAccessRoles;
       }
 
+      if (!existingDelegatedUserDetails.DelegationStartDate.Value.Date.Equals(userProfileRequestInfo.Detail.StartDate.Date))
+      {
+        if(userProfileRequestInfo.Detail.StartDate.Date == DateTime.UtcNow.Date)
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidDetails);
+        }
+        existingDelegatedUserDetails.DelegationStartDate = userProfileRequestInfo.Detail.StartDate;
+      }
+
       if (!existingDelegatedUserDetails.DelegationEndDate.Value.Date.Equals(userProfileRequestInfo.Detail.EndDate.Date))
       {
-        existingDelegatedUserDetails.DelegationEndDate = userProfileRequestInfo.Detail.EndDate;
+        existingDelegatedUserDetails.DelegationEndDate = userProfileRequestInfo.Detail.EndDate.Date;
       }
 
       try
@@ -1779,7 +1874,7 @@ namespace CcsSso.Core.Service.External
       user.IsDeleted = true;
       user.Party.IsDeleted = true;
       user.Party.Person.IsDeleted = true;
-      user.DelegationEndDate = DateTime.UtcNow;
+      user.DelegationEndDate = DateTime.UtcNow.Date;
 
       if (user.UserAccessRoles != null)
       {
@@ -1792,6 +1887,8 @@ namespace CcsSso.Core.Service.External
       try
       {
         await _dataContext.SaveChangesAsync();
+
+        await CreateTerminationOfDelegatedAccessEventLog(user);
       }
       catch (Exception ex)
       {
@@ -1867,8 +1964,9 @@ namespace CcsSso.Core.Service.External
       {
         //remove redis cache token
         await _remoteCacheService.RemoveAsync(userName + "-" + organisation.CiiOrganisationId);
-
         await _dataContext.SaveChangesAsync();
+
+        await CreateActivationOfDelegationEventLog(existingDelegatedUserDetails);
       }
       catch (Exception ex)
       {
@@ -1876,7 +1974,7 @@ namespace CcsSso.Core.Service.External
       }
     }
 
-    public async Task SendUserDelegatedAccessEmailAsync(string userName, string orgId, string orgName = "")
+    public async Task SendUserDelegatedAccessEmailAsync(string userName, string orgId, string orgName = "", bool isLogEnable = false)
     {
       _userHelper.ValidateUserName(userName);
 
@@ -1885,23 +1983,23 @@ namespace CcsSso.Core.Service.External
         throw new CcsSsoException(ErrorConstant.ErrorInvalidCiiOrganisationId);
       }
 
-      if (string.IsNullOrWhiteSpace(orgName))
-      {
-        var user = await _dataContext.User
+      var user = await _dataContext.User
         .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(pr => pr.Organisation)
         .Where(u => !u.IsDeleted && u.UserName == userName && u.UserType == DbModel.Constants.UserType.Delegation
                && u.Party.Person.Organisation.CiiOrganisationId == orgId
                && !u.DelegationAccepted).SingleOrDefaultAsync();
 
-        if (user == null)
-        {
-          throw new ResourceNotFoundException();
-        }
+      if (user == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+      if (string.IsNullOrWhiteSpace(orgName))
+      {
         orgName = user.Party.Person.Organisation.LegalName;
       }
 
-
-      string activationInfo = "usr=" + userName + "&org=" + orgId + "&exp=" + DateTime.UtcNow.AddHours(_appConfigInfo.DelegationEmailExpirationHours);
+      var delegationLinkExpiryDate = DateTime.UtcNow.AddMinutes(_appConfigInfo.DelegationEmailExpirationInMinutes);
+      string activationInfo = "usr=" + userName + "&org=" + orgId + "&exp=" + delegationLinkExpiryDate;
       var encryptedInfo = _cryptographyService.EncryptString(activationInfo, _appConfigInfo.DelegationEmailTokenEncryptionKey);
 
 
@@ -1911,12 +2009,18 @@ namespace CcsSso.Core.Service.External
       }
       // add username and token in redish cache with 36 hours expiry, if exist then replace
       await _remoteCacheService.SetValueAsync<string>(userName + "-" + orgId, encryptedInfo,
-            new TimeSpan(_appConfigInfo.DelegationEmailExpirationHours, 0, 0));
+            new TimeSpan(_appConfigInfo.DelegationEmailExpirationInMinutes, 0, 0));
 
       // Send the delegation email
       await _ccsSsoEmailService.SendUserDelegatedAccessEmailAsync(userName, orgName, encryptedInfo);
-    }
 
+      if (isLogEnable)
+      {
+        await CreateResendActivationLinkEventLog(user);
+      }
+
+      await UpdateDelegationLinkExpiryDate(userName, orgId, delegationLinkExpiryDate);
+    }
 
     private void ValidateDelegateUserDetails(Organisation organisation, DelegatedUserProfileRequestInfo userProfileRequestInfo, bool isUpdated = false)
     {
@@ -1941,7 +2045,7 @@ namespace CcsSso.Core.Service.External
       // date validations, in update case don't validate start date less then today
       if (userProfileRequestInfo.Detail.StartDate == default || userProfileRequestInfo.Detail.EndDate == default ||
           (isUpdated ? false : userProfileRequestInfo.Detail.StartDate.Date < DateTime.UtcNow.Date) ||
-          userProfileRequestInfo.Detail.EndDate.Date < userProfileRequestInfo.Detail.StartDate.Date.AddDays(28) ||
+          userProfileRequestInfo.Detail.EndDate.Date < userProfileRequestInfo.Detail.StartDate.Date.AddDays(1) ||
           userProfileRequestInfo.Detail.EndDate.Date > userProfileRequestInfo.Detail.StartDate.Date.AddDays(365) ||
           userProfileRequestInfo.Detail.StartDate.Date > userProfileRequestInfo.Detail.EndDate.Date)
       {
@@ -2018,88 +2122,22 @@ namespace CcsSso.Core.Service.External
       }
 
       var userProfileServiceRoleGroupResponseInfo = new UserProfileServiceRoleGroupResponseInfo();
-
       var userProfileResponseInfo = await this.GetUserAsync(userName, isDelegated, isSearchUser, delegatedOrgId);
 
       if (userProfileResponseInfo != null)
       {
         userProfileServiceRoleGroupResponseInfo = ConvertUserRoleToServiceRoleGroupResponse(userProfileResponseInfo);
-
-        List<ServiceRoleGroupInfo> serviceRoleGroupInfo = new List<ServiceRoleGroupInfo>();
-
-        var roleIds = userProfileResponseInfo.Detail.RolePermissionInfo.Select(x => x.RoleId).ToList();
-
-        var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(roleIds);
-
-        foreach (var serviceRoleGroup in serviceRoleGroups)
-        {
-          serviceRoleGroupInfo.Add(new ServiceRoleGroupInfo()
-          {
-            Id = serviceRoleGroup.Id,
-            Name = serviceRoleGroup.Name,
-            Key = serviceRoleGroup.Key,
-          });
-        }
-
+        var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(userProfileResponseInfo.Detail.RolePermissionInfo.Select(x => x.RoleId).ToList());
+        List<ServiceRoleGroupInfo> serviceRoleGroupInfo = (from serviceRoleGroup in serviceRoleGroups
+                                                           select new ServiceRoleGroupInfo()
+                                                           {
+                                                             Id = serviceRoleGroup.Id,
+                                                             Name = serviceRoleGroup.Name,
+                                                             Key = serviceRoleGroup.Key,
+                                                           }).ToList();
         userProfileServiceRoleGroupResponseInfo.Detail.ServiceRoleGroupInfo = serviceRoleGroupInfo;
-
-        var groupIds = userProfileResponseInfo.Detail.UserGroups.Select(x => x.GroupId).Distinct().ToList();
-
-        List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups = new List<GroupAccessServiceRoleGroup>();
-
-        var lastGroupRequest = await _dataContext.UserAccessRolePending.Include(u => u.User).OrderByDescending(x => x.Id).FirstOrDefaultAsync(x => x.User.UserName == userName.ToLower()
-            && x.OrganisationUserGroupId != null);
-
-        List<CcsServiceRoleGroup> userGroupsApprovalServiceRoleGroups = new();
-        if (lastGroupRequest != null && lastGroupRequest.Status != (int)UserPendingRoleStaus.Approved)
-        {
-          userGroupsApprovalServiceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(new List<int>() { lastGroupRequest.OrganisationEligibleRoleId });
-        }
-
-        foreach (var groupId in groupIds)
-        {
-          var groupInfo = await _organisationGroupService.GetServiceRoleGroupAsync(userProfileResponseInfo.OrganisationId, groupId);
-
-          if (groupInfo != null && groupInfo.ServiceRoleGroups != null && groupInfo.ServiceRoleGroups.Count > 0)
-          {
-            foreach (var serviceRoleGroup in groupInfo.ServiceRoleGroups)
-            {
-              if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroups.Any(x => x.Id == serviceRoleGroup.Id))
-              {
-                groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
-                {
-                  GroupId = groupInfo.GroupId,
-                  Group = groupInfo.GroupName,
-                });
-                continue;
-              }
-              groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
-              {
-                GroupId = groupInfo.GroupId,
-                Group = groupInfo.GroupName,
-                AccessServiceRoleGroupId = serviceRoleGroup.Id,
-                AccessServiceRoleGroupName = serviceRoleGroup.Name,
-              });
-            }
-          }
-          else
-          {
-            var userGroup = userProfileResponseInfo.Detail.UserGroups.FirstOrDefault(x => x.GroupId == groupId);
-
-            if (userGroup != null)
-            {
-              groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
-              {
-                GroupId = userGroup.GroupId,
-                Group = userGroup.Group,
-              });
-            }
-          }
-        }
-
-        userProfileServiceRoleGroupResponseInfo.Detail.UserGroups = groupAccessServiceRoleGroups;
+        await GetUserGroupDetails(userName, userProfileServiceRoleGroupResponseInfo, userProfileResponseInfo);
       }
-
       return userProfileServiceRoleGroupResponseInfo;
     }
 
@@ -2259,6 +2297,15 @@ namespace CcsSso.Core.Service.External
           throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
         }
 
+        var organisationServiceRoleGroups = await _organisationService.GetOrganisationServiceRoleGroupsAsync(delegatedUserRoleGroupRequestInfo.Detail.DelegatedOrgId);
+        var organisationServiceRoleGroupIds = organisationServiceRoleGroups.Select(x => x.Id);
+
+        if (!serviceRoleGroupIds.All(x => organisationServiceRoleGroupIds.Contains(x)))
+        {
+          throw new CcsSsoException(ErrorConstant.ErrorInvalidService);
+        }
+
+
         List<OrganisationEligibleRole> organisationEligibleRoles = await _serviceRoleGroupMapperService.ServiceRoleGroupsToOrgRolesAsync(serviceRoleGroupIds, delegatedUserRoleGroupRequestInfo.Detail.DelegatedOrgId);
 
         roleIds = organisationEligibleRoles.Select(x => x.Id).ToList();
@@ -2398,6 +2445,269 @@ namespace CcsSso.Core.Service.External
         }
       }
 
+    }
+
+    private async Task GetUserGroupDetails(string userName, UserProfileServiceRoleGroupResponseInfo userProfileServiceRoleGroupResponseInfo, UserProfileResponseInfo userProfileResponseInfo)
+    {
+      var groupIds = userProfileResponseInfo.Detail.UserGroups.Select(x => x.GroupId).Distinct().ToList();
+      List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups = new List<GroupAccessServiceRoleGroup>();
+
+      var allUserRequests = await _dataContext.UserAccessRolePending.Where(x => x.User.UserName.ToLower() == userName.ToLower() && x.OrganisationUserGroupId != null).ToListAsync();
+
+      foreach (var groupId in groupIds)
+      {
+        object userGroupsApprovalServiceRoleGroupWithStatus = null;
+        if (allUserRequests.Any())
+        {
+          List<CcsServiceRoleGroup> userGroupsApprovalServiceRoleGroups = new();
+          var lastRequestOfGroup = allUserRequests.OrderByDescending(x => x.Id).FirstOrDefault(x => x.OrganisationUserGroupId == groupId);
+          if (lastRequestOfGroup != default)
+          {
+            userGroupsApprovalServiceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(new List<int>() { lastRequestOfGroup.OrganisationEligibleRoleId });
+            userGroupsApprovalServiceRoleGroupWithStatus = new Tuple<List<CcsServiceRoleGroup>, int>(userGroupsApprovalServiceRoleGroups, lastRequestOfGroup.Status);
+          }
+        }
+        await GetGroupAccessServiceRoleGroups(userProfileResponseInfo, groupAccessServiceRoleGroups, (Tuple<List<CcsServiceRoleGroup>, int>)userGroupsApprovalServiceRoleGroupWithStatus, groupId);
+      }
+
+      userProfileServiceRoleGroupResponseInfo.Detail.UserGroups = groupAccessServiceRoleGroups;
+    }
+
+    private async Task GetGroupAccessServiceRoleGroups(UserProfileResponseInfo userProfileResponseInfo, List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups, Tuple<List<CcsServiceRoleGroup>, int> userGroupsApprovalServiceRoleGroupWithStatus, int groupId)
+    {
+      var groupInfo = await _organisationGroupService.GetServiceRoleGroupAsync(userProfileResponseInfo.OrganisationId, groupId);
+
+      if (groupInfo != null && groupInfo.ServiceRoleGroups != null && groupInfo.ServiceRoleGroups.Count > 0)
+      {
+        foreach (var serviceRoleGroup in groupInfo.ServiceRoleGroups)
+        {
+          PopulateGroupAccessServiceRoleGroups(groupAccessServiceRoleGroups, userGroupsApprovalServiceRoleGroupWithStatus, groupInfo, serviceRoleGroup);
+        }
+      }
+      else
+      {
+        var userGroup = userProfileResponseInfo.Detail.UserGroups.FirstOrDefault(x => x.GroupId == groupId);
+
+        if (userGroup != null)
+        {
+          groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+          {
+            GroupId = userGroup.GroupId,
+            Group = userGroup.Group,
+          });
+        }
+      }
+    }
+
+    private void PopulateGroupAccessServiceRoleGroups(List<GroupAccessServiceRoleGroup> groupAccessServiceRoleGroups, Tuple<List<CcsServiceRoleGroup>, int> userGroupsApprovalServiceRoleGroupWithStatus, OrganisationServiceRoleGroupResponseInfo groupInfo, GroupServiceRoleGroup serviceRoleGroup)
+    {
+      if (_appConfigInfo.UserRoleApproval.Enable && userGroupsApprovalServiceRoleGroupWithStatus != null && userGroupsApprovalServiceRoleGroupWithStatus.Item1.Any(x => x.Id == serviceRoleGroup.Id) && userGroupsApprovalServiceRoleGroupWithStatus.Item2 != (int)UserPendingRoleStaus.Approved)
+      {
+        groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+        {
+          GroupId = groupInfo.GroupId,
+          Group = groupInfo.GroupName,
+          AccessServiceRoleGroupId = serviceRoleGroup.Id,
+          AccessServiceRoleGroupName = serviceRoleGroup.Name,
+          ApprovalStatus = userGroupsApprovalServiceRoleGroupWithStatus.Item2
+        });
+      }
+      else
+      {
+        groupAccessServiceRoleGroups.Add(new GroupAccessServiceRoleGroup()
+        {
+          GroupId = groupInfo.GroupId,
+          Group = groupInfo.GroupName,
+          AccessServiceRoleGroupId = serviceRoleGroup.Id,
+          AccessServiceRoleGroupName = serviceRoleGroup.Name,
+          ApprovalStatus = (int)UserPendingRoleStaus.Approved
+        });
+      }
+    }
+
+    public async Task<List<User>> GetUsersAsync()
+    {
+      var users = await _dataContext.User.Where(u => !u.IsDeleted).ToListAsync();
+      return users;
+    }
+
+    private async Task CreateResendActivationLinkEventLog(User user)
+    {
+      await CreateDelegationEventLog(user, DelegationAuditEventType.ResendActivationLink);
+    }
+
+    private async Task CreateTerminationOfDelegatedAccessEventLog(User user)
+    {
+      await CreateDelegationEventLog(user, DelegationAuditEventType.TerminationOfDelegatedAccess);
+    }
+
+    private async Task CreateActivationOfDelegationEventLog(User user)
+    {
+      await CreateDelegationEventLog(user, DelegationAuditEventType.ActivationOfDelegation);
+    }
+
+    private async Task CreateDelegationEventLog(User user, DelegationAuditEventType delegationAuditEventType)
+    {
+      List<DelegationAuditEventInfo> auditEventLogs = new();
+      Guid groupId = Guid.NewGuid();
+      DelegationAuditEventInfo auditEventLog = new();
+      if (delegationAuditEventType == DelegationAuditEventType.ActivationOfDelegation)
+      {
+        auditEventLog = CreateDelegationEventLogObject(user, user, groupId);
+      }
+      else
+      {
+        var actionedBy = await GetActionedBy();
+        auditEventLog = CreateDelegationEventLogObject(user, actionedBy, groupId);
+      }
+
+      auditEventLog.EventType = delegationAuditEventType.ToString();
+      auditEventLogs.Add(auditEventLog);
+      await _delegationAuditEventService.CreateDelegationAuditEventsAsync(auditEventLogs);
+    }
+
+    private static DelegationAuditEventInfo CreateDelegationEventLogObject(User user, User actioneBy, Guid groupId)
+    {
+      return new DelegationAuditEventInfo
+      {
+        GroupId = groupId,
+        UserId = user.Id,
+        ActionedBy = DelegationAuditActionBy.Admin.ToString(),
+        ActionedByUserName = actioneBy?.UserName,
+        ActionedByFirstName = actioneBy?.Party.Person.FirstName,
+        ActionedByLastName = actioneBy?.Party.Person.LastName,
+      };
+    }
+
+    private async Task<List<int>> GetCcsSsiRoleId(List<int> roles)
+    {
+      var ccsRoleIds = await _dataContext.OrganisationEligibleRole.Where(orgRole => roles.Any(roleid => roleid == orgRole.Id)).Select(x => x.CcsAccessRoleId).ToListAsync();
+      return ccsRoleIds;
+    }
+    private async Task CreateDelegatedUserEventLog(DelegatedUserProfileRequestInfo userProfileRequestInfo, User user)
+    {
+      List<DelegationAuditEventInfo> auditEventLogs = new();
+      Guid groupId = Guid.NewGuid();
+      var actionedBy = await GetActionedBy();
+
+      DelegationAuditEventInfo auditSetupEventLog = CreateDelegationEventLogObject(user, actionedBy, groupId);
+      auditEventLogs.Add(GetSetupOfDelegationEventLog(auditSetupEventLog, userProfileRequestInfo));
+
+      if (userProfileRequestInfo?.Detail?.RoleIds?.Count > 0)
+      {
+        DelegationAuditEventInfo auditRoleAssignedEventLog = CreateDelegationEventLogObject(user, actionedBy, groupId);
+        List<int> assingedRoles = await GetCcsSsiRoleId(userProfileRequestInfo.Detail.RoleIds);
+        auditEventLogs.Add(GetDelegationRoleAssignedEventLog(auditRoleAssignedEventLog, assingedRoles));
+      }
+
+      await _delegationAuditEventService.CreateDelegationAuditEventsAsync(auditEventLogs);
+    }
+
+    private async Task UpdateDelegatedUserEventLog(DelegatedUserProfileRequestInfo userProfileRequestInfo, User existingDelegatedUserDetails)
+    {
+      List<DelegationAuditEventInfo> auditEventLogs = new();
+      Guid groupId = Guid.NewGuid();
+
+      await UpdateDelegatedUserRolesEventLog(userProfileRequestInfo, existingDelegatedUserDetails, auditEventLogs, groupId);
+      await UpdateDelegatedUserDatesEventLog(userProfileRequestInfo, existingDelegatedUserDetails, auditEventLogs, groupId);
+
+      await _delegationAuditEventService.CreateDelegationAuditEventsAsync(auditEventLogs);
+    }
+
+    private async Task UpdateDelegatedUserDatesEventLog(DelegatedUserProfileRequestInfo userProfileRequestInfo, User existingDelegatedUserDetails, List<DelegationAuditEventInfo> auditEventLogs, Guid groupId)
+    {
+      var actionedBy = await GetActionedBy();
+      if (!existingDelegatedUserDetails.DelegationStartDate.Value.Date.Equals(userProfileRequestInfo.Detail.StartDate.Date))
+      {
+        DelegationAuditEventInfo auditStartDateChangeEventLog = CreateDelegationEventLogObject(existingDelegatedUserDetails, actionedBy, groupId);
+        auditEventLogs.Add(GetDelegationStartDateChangedEventLog(auditStartDateChangeEventLog, userProfileRequestInfo, existingDelegatedUserDetails));
+      }
+      if (!existingDelegatedUserDetails.DelegationEndDate.Value.Date.Equals(userProfileRequestInfo.Detail.EndDate.Date))
+      {
+        DelegationAuditEventInfo auditEndDateChangeEventLog = CreateDelegationEventLogObject(existingDelegatedUserDetails, actionedBy, groupId);
+        auditEventLogs.Add(GetDelegationEndDateChangedEventLog(auditEndDateChangeEventLog, userProfileRequestInfo, existingDelegatedUserDetails));
+      }
+    }
+    private async Task UpdateDelegatedUserRolesEventLog(DelegatedUserProfileRequestInfo userProfileRequestInfo, User existingDelegatedUserDetails, List<DelegationAuditEventInfo> auditEventLogs, Guid groupId)
+    {
+      var actionedBy = await GetActionedBy();
+      
+      List<int> assignedRoles = (from role in userProfileRequestInfo.Detail.RoleIds where !(from oldRoleId in existingDelegatedUserDetails.UserAccessRoles select oldRoleId.OrganisationEligibleRoleId).Contains(role) select role).ToList();
+      if (assignedRoles?.Count > 0)
+      {
+        DelegationAuditEventInfo auditRoleAssignedEventLog = CreateDelegationEventLogObject(existingDelegatedUserDetails, actionedBy, groupId);
+        List<int> assingedCcsRoles = await GetCcsSsiRoleId(assignedRoles);
+        auditEventLogs.Add(GetDelegationRoleAssignedEventLog(auditRoleAssignedEventLog, assingedCcsRoles));
+      }
+      
+      List<int> unAssignedRoles = (from role in existingDelegatedUserDetails.UserAccessRoles where !(from newRoleId in userProfileRequestInfo.Detail.RoleIds select newRoleId).ToList().Contains(role.OrganisationEligibleRoleId) select role.OrganisationEligibleRoleId).ToList();
+      if (unAssignedRoles?.Count > 0)
+      {
+        DelegationAuditEventInfo auditRoleUnassignedEventLog = CreateDelegationEventLogObject(existingDelegatedUserDetails, actionedBy, groupId);
+        List<int> unAssingedCcsRoles = await GetCcsSsiRoleId(unAssignedRoles);
+        auditEventLogs.Add(GetDelegationRoleUnassignedEventLog(auditRoleUnassignedEventLog, unAssingedCcsRoles));
+      }
+    }
+
+    private static DelegationAuditEventInfo GetSetupOfDelegationEventLog(DelegationAuditEventInfo auditEventLog, DelegatedUserProfileRequestInfo userProfileRequestInfo)
+    {
+      auditEventLog.EventType = DelegationAuditEventType.SetupOfDelegation.ToString();
+      auditEventLog.NewDelegationStartDate = userProfileRequestInfo.Detail.StartDate.Date;
+      auditEventLog.NewDelegationEndDate = userProfileRequestInfo.Detail.EndDate.Date;
+      return auditEventLog;
+    }
+
+    private static DelegationAuditEventInfo GetDelegationRoleAssignedEventLog(DelegationAuditEventInfo auditEventLog, List<int> rolesAssigned)
+    {
+      auditEventLog.Roles = string.Join(",", rolesAssigned);
+      auditEventLog.EventType = DelegationAuditEventType.RoleAssigned.ToString();
+      return auditEventLog;
+    }
+
+    private static DelegationAuditEventInfo GetDelegationRoleUnassignedEventLog(DelegationAuditEventInfo auditEventLog, List<int> rolesUnassigned)
+    {
+      auditEventLog.Roles = string.Join(",", rolesUnassigned);
+      auditEventLog.EventType = DelegationAuditEventType.RoleUnassigned.ToString();
+      return auditEventLog;
+    }
+
+    private static DelegationAuditEventInfo GetDelegationStartDateChangedEventLog(DelegationAuditEventInfo auditEventLog, DelegatedUserProfileRequestInfo userProfileRequestInfo, User existingDelegatedUserDetails)
+    {
+      auditEventLog.NewDelegationStartDate = userProfileRequestInfo.Detail.StartDate.Date;
+      auditEventLog.PreviousDelegationStartDate = existingDelegatedUserDetails.DelegationStartDate.Value.Date;
+      auditEventLog.EventType = DelegationAuditEventType.StartDateChange.ToString();
+      return auditEventLog;
+    }
+
+    private static DelegationAuditEventInfo GetDelegationEndDateChangedEventLog(DelegationAuditEventInfo auditEventLog, DelegatedUserProfileRequestInfo userProfileRequestInfo, User existingDelegatedUserDetails)
+    {
+      auditEventLog.NewDelegationEndDate = userProfileRequestInfo.Detail.EndDate.Date;
+      auditEventLog.PreviousDelegationEndDate = existingDelegatedUserDetails.DelegationEndDate.Value.Date;
+      auditEventLog.EventType = DelegationAuditEventType.EndDateChange.ToString();
+      return auditEventLog;
+    }
+
+    private async Task UpdateDelegationLinkExpiryDate(string userName, string ciiOrganisationId, DateTime delegationLinkExpiryDate)
+    {
+      var user = await _dataContext.User
+        .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(pr => pr.Organisation)
+        .Where(u => !u.IsDeleted && u.UserName == userName && u.UserType == DbModel.Constants.UserType.Delegation
+               && u.Party.Person.Organisation.CiiOrganisationId == ciiOrganisationId)
+        .SingleOrDefaultAsync();
+
+      if (user == null)
+      {
+        throw new ResourceNotFoundException();
+      }
+
+      user.DelegationLinkExpiryOnUtc = delegationLinkExpiryDate;
+
+      await _dataContext.SaveChangesAsync();
+    }
+
+    private async Task<User> GetActionedBy()
+    {
+      return await _dataContext.User.Include(p => p.Party).ThenInclude(pe => pe.Person).FirstOrDefaultAsync(x => !x.IsDeleted && x.UserName == _requestContext.UserName && x.UserType == UserType.Primary);
     }
   }
 }

@@ -149,6 +149,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class UserList
   {
+    public int Id { get; set; }
     public string Name { get; set; }
 
     public string UserName { get; set; }
@@ -233,6 +234,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string AccessServiceRoleGroupName { get; set; }
 
     public string Group { get; set; }
+
+    public int ApprovalStatus { get; set; }
   }
 
 
