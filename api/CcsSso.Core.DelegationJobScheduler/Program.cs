@@ -11,6 +11,7 @@ using CcsSso.DbPersistence;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain;
 using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Domain.Helpers;
 using CcsSso.Shared.Services;
@@ -85,19 +86,38 @@ namespace CcsSso.Core.DelegationJobScheduler
     private static DelegationAppSettings GetConfigurationDetails(HostBuilderContext hostContext)
     {
       string dbConnection;
+      string conclaveLoginUrl;
       DelegationJobSettings scheduleJob;
+      DelegationExpiryNotificationJobSettings expiryNotificationJob;
+      EmailSettings emailSettings;
 
       var config = hostContext.Configuration;
       dbConnection = config["DbConnection"];
+      conclaveLoginUrl = config["ConclaveLoginUrl"];
       scheduleJob = config.GetSection("DelegationJobSettings").Get<DelegationJobSettings>();
+      expiryNotificationJob = config.GetSection("DelegationExpiryNotificationJobSettings").Get<DelegationExpiryNotificationJobSettings>();
+      emailSettings = config.GetSection("EmailSettings").Get<EmailSettings>();
 
       var appSettings = new DelegationAppSettings()
       {
         DbConnection = dbConnection,
+        ConclaveLoginUrl=conclaveLoginUrl,
         DelegationJobSettings = new DelegationJobSettings
         {
           DelegationLinkExpiryJobFrequencyInMinutes = scheduleJob.DelegationLinkExpiryJobFrequencyInMinutes,
           DelegationTerminationJobFrequencyInMinutes = scheduleJob.DelegationTerminationJobFrequencyInMinutes
+        },
+        DelegationExpiryNotificationJobSettings = new DelegationExpiryNotificationJobSettings
+        {
+          JobFrequencyInMinutes = expiryNotificationJob.JobFrequencyInMinutes,
+          ExpiryNoticeInMinutes = expiryNotificationJob.ExpiryNoticeInMinutes,
+         
+        },
+        EmailSettings=new EmailSettings
+        {
+          ApiKey=emailSettings.ApiKey,
+          DelegationExpiryNotificationToAdminTemplateId=emailSettings.DelegationExpiryNotificationToAdminTemplateId,
+          DelegationExpiryNotificationToUserTemplateId=emailSettings.DelegationExpiryNotificationToUserTemplateId,
         }
       };
 
@@ -107,22 +127,41 @@ namespace CcsSso.Core.DelegationJobScheduler
     private static void ConfigureServices(IServiceCollection services, DelegationAppSettings appSettings)
     {
       services.AddSingleton(s => appSettings);
+
+      services.AddSingleton(s =>
+      {
+        EmailConfigurationInfo emailConfigurationInfo = new()
+        {
+          ApiKey = appSettings.EmailSettings.ApiKey,
+        };
+
+        return emailConfigurationInfo;
+      });
+
       services.AddSingleton<ApplicationConfigurationInfo, ApplicationConfigurationInfo>();
+     
+      services.AddHttpClient();
+      services.AddSingleton<IEmailProviderService, EmailProviderService>();
+
 
       services.AddScoped<IAuditLoginService, AuditLoginService>();
       services.AddScoped<IDateTimeService, DateTimeService>();
       services.AddScoped<IServiceRoleGroupMapperService, ServiceRoleGroupMapperService>();
 
+
       services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
       services.AddScoped<IExternalHelperService, ExternalHelperService>();
       services.AddScoped<IDelegationAuditEventService, DelegationAuditEventService>();
       services.AddScoped<IDelegationService, DelegationService>();
+      services.AddScoped<IDelegationExpiryNotificationService, DelegationExpiryNotificationService>();
     }
 
     private static DelegationAppSettings GetAWSConfiguration()
     {
       string dbConnection;
       DelegationJobSettings delegationJobSettings;
+      DelegationExpiryNotificationJobSettings delegationExpiryNotificationJobSettings;
+      EmailSettings emailSettings;
 
       _programHelpers = new ProgramHelpers();
       _awsParameterStoreService = new AwsParameterStoreService();
@@ -131,6 +170,7 @@ namespace CcsSso.Core.DelegationJobScheduler
 
       var dbName = _awsParameterStoreService.FindParameterByName(parameters, path + "DbName");
       var dbConnectionEndPoint = _awsParameterStoreService.FindParameterByName(parameters, path + "DbConnection");
+      var conclaveLoginUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "conclaveLoginUrl");
 
       if (!string.IsNullOrEmpty(dbName))
       {
@@ -142,11 +182,16 @@ namespace CcsSso.Core.DelegationJobScheduler
       }
 
       ReadFromAWS(out delegationJobSettings, parameters);
+      ReadFromAWS(out delegationExpiryNotificationJobSettings, parameters);
+      ReadFromAWS(out emailSettings, parameters);
 
       return new DelegationAppSettings()
       {
         DbConnection = dbConnection,
-        DelegationJobSettings = delegationJobSettings
+        ConclaveLoginUrl= conclaveLoginUrl,
+        DelegationJobSettings = delegationJobSettings,
+        DelegationExpiryNotificationJobSettings = delegationExpiryNotificationJobSettings,
+        EmailSettings = emailSettings
       };
     }
 
@@ -155,10 +200,21 @@ namespace CcsSso.Core.DelegationJobScheduler
       delegationJobSettings = (DelegationJobSettings)_programHelpers.FillAwsParamsValue(typeof(DelegationJobSettings), parameters);
     }
 
+    private static void ReadFromAWS(out DelegationExpiryNotificationJobSettings delegationExpiryNotificationJobSettings, List<Parameter> parameters)
+    {
+      delegationExpiryNotificationJobSettings = (DelegationExpiryNotificationJobSettings)_programHelpers.FillExpiryNotificationAwsParamsValue(typeof(DelegationExpiryNotificationJobSettings), parameters);
+    }
+
+    private static void ReadFromAWS(out EmailSettings emailSettings, List<Parameter> parameters)
+    {
+      emailSettings = (EmailSettings)_programHelpers.FillEmailSettingsAwsParamsValue(typeof(EmailSettings), parameters);
+    }
+
     private static void ConfigureJobs(IServiceCollection services)
     {
       services.AddHostedService<LinkExpiryJob>();
       services.AddHostedService<DelegationTerminationJob>();
+      services.AddHostedService<DelegationExpiryNotificationJob>();
     }
   }
 }

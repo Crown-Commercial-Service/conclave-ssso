@@ -7,6 +7,7 @@ namespace CcsSso.Core.Domain.Dtos.External
     public class OrganisationGroupNameInfo
     {
         public string GroupName { get; set; }
+        public int GroupType { get; set; }
     }
 
     public class OrganisationGroupRequestInfo : OrganisationGroupNameInfo
@@ -84,6 +85,8 @@ namespace CcsSso.Core.Domain.Dtos.External
     public class GroupUserListResponse : PaginationInfo
     {
         public int groupId { get; set; }
+
+        public int GroupType { get; set; }
 
         public List<GroupUser> GroupUser { get; set; }
 

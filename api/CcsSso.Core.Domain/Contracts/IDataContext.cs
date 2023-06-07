@@ -113,6 +113,8 @@ namespace CcsSso.Domain.Contracts
 
     DbSet<DelegationAuditEvent> DelegationAuditEvent { get; set; }
 
+    DbSet<DelegationEmailNotificationLog> DelegationEmailNotificationLog { get; set; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
   }
 }
