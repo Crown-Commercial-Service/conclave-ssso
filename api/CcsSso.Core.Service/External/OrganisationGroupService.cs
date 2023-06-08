@@ -99,7 +99,6 @@ namespace CcsSso.Core.Service.External
         OrganisationId = organisation.Id,
         UserGroupName = organisationGroupNameInfo.GroupName.Trim(),
         GroupType = organisationGroupNameInfo.GroupType,
-        MfaEnabled = true,
         UserGroupNameKey = organisationGroupNameInfo.GroupName.Trim().ToUpper()
       };
 
