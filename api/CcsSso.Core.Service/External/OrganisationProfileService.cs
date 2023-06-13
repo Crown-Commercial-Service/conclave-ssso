@@ -25,6 +25,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+
 namespace CcsSso.Core.Service.External
 {
   public partial class OrganisationProfileService : IOrganisationProfileService
@@ -47,13 +48,14 @@ namespace CcsSso.Core.Service.External
     private readonly IServiceRoleGroupMapperService _rolesToServiceRoleGroupMapperService;
     private readonly IExternalHelperService _externalHelperService;
 		private readonly IDateTimeService _dateTimeService;
+    private readonly IDelegationAuditEventService _delegationAuditEventService;
 
 		public OrganisationProfileService(IDataContext dataContext, IContactsHelperService contactsHelper, ICcsSsoEmailService ccsSsoEmailService,
       ICiiService ciiService, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ILocalCacheService localCacheService,
       ApplicationConfigurationInfo applicationConfigurationInfo, RequestContext requestContext, IIdamService idamService, IRemoteCacheService remoteCacheService,
       ILookUpService lookUpService, IOrganisationAuditService organisationAuditService, IOrganisationAuditEventService organisationAuditEventService,
-      IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService rolesToRoleServiceMapperService, IExternalHelperService externalHelperService, IDateTimeService dateTimeService)
+      IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService rolesToRoleServiceMapperService, IExternalHelperService externalHelperService, IDateTimeService dateTimeService, IDelegationAuditEventService delegationAuditEventService)
     {
       _dataContext = dataContext;
       _contactsHelper = contactsHelper;
@@ -73,6 +75,7 @@ namespace CcsSso.Core.Service.External
       _rolesToServiceRoleGroupMapperService = rolesToRoleServiceMapperService;
       _externalHelperService = externalHelperService;
       _dateTimeService = dateTimeService;
+      _delegationAuditEventService = delegationAuditEventService;
 
 		}
 
@@ -1552,82 +1555,83 @@ namespace CcsSso.Core.Service.External
       StringBuilder rolesRemoved = new();
       rolesToDelete ??= new();
       if (rolesToDelete.Any())
-      {
-        var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
+			{
+				var deletingRoleIds = rolesToDelete.Select(r => r.RoleId).ToList();
 
-        var userAccessRolesForOrgUsers = await _dataContext.UserAccessRole.Include(gr => gr.OrganisationEligibleRole).Where(uar => !uar.IsDeleted &&
-                                           uar.OrganisationEligibleRole.OrganisationId == organisation.Id).ToListAsync();
+				var userAccessRolesForOrgUsers = await _dataContext.UserAccessRole.Include(gr => gr.OrganisationEligibleRole).Where(uar => !uar.IsDeleted &&
+																					 uar.OrganisationEligibleRole.OrganisationId == organisation.Id).ToListAsync();
 
-        var deletingOrgEligibleRoles = organisation.OrganisationEligibleRoles.Where(oer => deletingRoleIds.Contains(oer.CcsAccessRoleId) && !oer.IsDeleted).ToList();
+				var deletingOrgEligibleRoles = organisation.OrganisationEligibleRoles.Where(oer => deletingRoleIds.Contains(oer.CcsAccessRoleId) && !oer.IsDeleted).ToList();
 
-        var orgGroupRolesWithDeletedRoles = await _dataContext.OrganisationGroupEligibleRole
-          .Where(oger => !oger.IsDeleted && oger.OrganisationEligibleRole.OrganisationId == organisation.Id && deletingRoleIds.Contains(oger.OrganisationEligibleRole.CcsAccessRoleId))
-          .ToListAsync();
+				var orgGroupRolesWithDeletedRoles = await _dataContext.OrganisationGroupEligibleRole
+					.Where(oger => !oger.IsDeleted && oger.OrganisationEligibleRole.OrganisationId == organisation.Id && deletingRoleIds.Contains(oger.OrganisationEligibleRole.CcsAccessRoleId))
+					.ToListAsync();
 
-        var userAccessRolesWithDeletedRoles = userAccessRolesForOrgUsers
-          .Where(uar => deletingRoleIds.Contains(uar.OrganisationEligibleRole.CcsAccessRoleId)).ToList();
+				var userAccessRolesWithDeletedRoles = userAccessRolesForOrgUsers
+					.Where(uar => deletingRoleIds.Contains(uar.OrganisationEligibleRole.CcsAccessRoleId)).ToList();
 
-        deletingOrgEligibleRoles.ForEach((deletingOrgEligibleRole) =>
-        {
-          deletingOrgEligibleRole.IsDeleted = true;
-          rolesRemoved.Append(rolesRemoved.Length > 0 ? "," + deletingOrgEligibleRole.CcsAccessRole.CcsAccessRoleName : deletingOrgEligibleRole.CcsAccessRole.CcsAccessRoleName);
-        });
-
-        orgGroupRolesWithDeletedRoles.ForEach((orgGroupRolesWithDeletedRole) =>
-        {
-          orgGroupRolesWithDeletedRole.IsDeleted = true;
-        });
-
-        userAccessRolesWithDeletedRoles.ForEach((userAccessRolesWithDeletedRole) =>
-        {
-          userAccessRolesWithDeletedRole.IsDeleted = true;
-        });
-
-				var userIds = userAccessRolesWithDeletedRoles.Select(x => x.UserId).ToList();
-				var delegatedUserIds = await _dataContext.User.Where(x => userIds.Contains(x.Id) && x.UserType == UserType.Delegation).ToListAsync();
-				var delegateUserRoleIds = (delegatedUserIds.Select(z => z.Id)).Select(userId => new { UserId = userId,CcsRoleID = userAccessRolesWithDeletedRoles.Where(uar => uar.UserId == userId)
-										.Select(uar => uar.OrganisationEligibleRole.CcsAccessRoleId).ToList() }).ToList();
-
-				if (delegatedUserIds.Count() > 0)
+				deletingOrgEligibleRoles.ForEach((deletingOrgEligibleRole) =>
 				{
-					List<DelegationAuditEvent> delegationAuditEvents = new List<DelegationAuditEvent>();
-					foreach (var user in delegatedUserIds)
-					{
-						var auditEventLog = new DelegationAuditEvent();
-						{
-							auditEventLog.GroupId = Guid.NewGuid();
-							auditEventLog.UserId = user.Id;
-							auditEventLog.Roles = string.Join(",", delegateUserRoleIds.Where(x => x.UserId == user.Id).SelectMany(y => y.CcsRoleID).ToList());
-							auditEventLog.EventType = DelegationAuditEventType.RoleUnassigned.ToString();
-							auditEventLog.ActionedOnUtc = _dateTimeService.GetUTCNow();
-							auditEventLog.ActionedBy = DelegationAuditActionBy.Admin.ToString();
-							auditEventLog.ActionedByUserName = _dataContext.User.FirstOrDefault(u => u.Id == user.CreatedUserId)?.UserName;
-							auditEventLog.ActionedByFirstName = _dataContext.User.FirstOrDefault(u => u.Id == user.CreatedUserId)?.Party.Person.FirstName;
-							auditEventLog.ActionedByLastName = _dataContext.User.FirstOrDefault(u => u.Id == user.CreatedUserId)?.Party.Person.LastName;
-						}
-						delegationAuditEvents.Add(auditEventLog);
-					}
-					_dataContext.DelegationAuditEvent.AddRange(delegationAuditEvents);
-				}
-				await _dataContext.SaveChangesAsync();
+					deletingOrgEligibleRole.IsDeleted = true;
+					rolesRemoved.Append(rolesRemoved.Length > 0 ? "," + deletingOrgEligibleRole.CcsAccessRole.CcsAccessRoleName : deletingOrgEligibleRole.CcsAccessRole.CcsAccessRoleName);
+				});
+
+				orgGroupRolesWithDeletedRoles.ForEach((orgGroupRolesWithDeletedRole) =>
+				{
+					orgGroupRolesWithDeletedRole.IsDeleted = true;
+				});
+
+				userAccessRolesWithDeletedRoles.ForEach((userAccessRolesWithDeletedRole) =>
+				{
+					userAccessRolesWithDeletedRole.IsDeleted = true;
+				});
+				
+        await CreateLogsForUnassignedRoles(deletingRoleIds, userAccessRolesWithDeletedRoles);
 
 				if (_applicationConfigurationInfo.UserRoleApproval.Enable)
-        {
-          var deletingOrgEligibleRoleIds = deletingOrgEligibleRoles.Select(x => x.Id);
-          var allAccessRolePending = await _dataContext.UserAccessRolePending.Where(u => deletingOrgEligibleRoleIds.Contains(u.OrganisationEligibleRoleId)).ToListAsync();
+				{
+					var deletingOrgEligibleRoleIds = deletingOrgEligibleRoles.Select(x => x.Id);
+					var allAccessRolePending = await _dataContext.UserAccessRolePending.Where(u => deletingOrgEligibleRoleIds.Contains(u.OrganisationEligibleRoleId)).ToListAsync();
 
-          allAccessRolePending.ForEach((pendingRequest) =>
-          {
-            pendingRequest.IsDeleted = true;
-            pendingRequest.Status = (int)UserPendingRoleStaus.Removed;
-          });
-        }
-      }
+					allAccessRolePending.ForEach((pendingRequest) =>
+					{
+						pendingRequest.IsDeleted = true;
+						pendingRequest.Status = (int)UserPendingRoleStaus.Removed;
+					});
+				}
+			}
 
-      return rolesRemoved.ToString();
+			return rolesRemoved.ToString();
     }
 
-    private async Task RemoveUserRoles(List<OrganisationRole> rolesToDelete, Organisation organisation)
+		private async Task CreateLogsForUnassignedRoles(List<int> deletingRoleIds, List<UserAccessRole> userAccessRolesWithDeletedRoles)
+		{
+			var delegatedUserIds = await _dataContext.User.Where(x => userAccessRolesWithDeletedRoles.Select(x => x.UserId).Contains(x.Id) && x.UserType == UserType.Delegation).ToListAsync();
+			if (delegatedUserIds.Count() > 0)
+			{
+				List<DelegationAuditEventInfo> delegationAuditEventsInfo = new List<DelegationAuditEventInfo>();
+				var actionedBy = await GetActionedBy();
+				var groupId = Guid.NewGuid();
+				foreach (var user in delegatedUserIds)
+				{
+					var delegationAuditEventInfo = new DelegationAuditEventInfo();
+					{
+						delegationAuditEventInfo.GroupId = groupId;
+						delegationAuditEventInfo.UserId = user.Id;
+						delegationAuditEventInfo.Roles = string.Join(",", deletingRoleIds.Intersect(user.UserAccessRoles.Select(x => x.OrganisationEligibleRole.CcsAccessRoleId).ToList()).ToList());
+						delegationAuditEventInfo.EventType = DelegationAuditEventType.RoleUnassigned.ToString();
+						delegationAuditEventInfo.ActionedBy = DelegationAuditActionBy.Admin.ToString();
+						delegationAuditEventInfo.ActionedByUserName = actionedBy?.UserName;
+						delegationAuditEventInfo.ActionedByFirstName = actionedBy?.Party.Person.FirstName;
+						delegationAuditEventInfo.ActionedByLastName = actionedBy?.Party.Person.LastName;
+					}
+					delegationAuditEventsInfo.Add(delegationAuditEventInfo);
+				}
+        await _delegationAuditEventService.CreateDelegationAuditEventsAsync(delegationAuditEventsInfo);
+			}
+		}
+
+		private async Task RemoveUserRoles(List<OrganisationRole> rolesToDelete, Organisation organisation)
     {
       if (rolesToDelete != null && rolesToDelete.Any())
       {
