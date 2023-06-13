@@ -2306,7 +2306,7 @@ namespace CcsSso.Core.Service.External
                   .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId && !o.IsActivated);
       if (organisation != null)
       {
-        var isAdminFromGroup = user.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey));
+        var isAdminFromGroup = user.UserGroupMemberships.Any(ugm =>!ugm.IsDeleted && ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey));
         var isAdminFromProfile = user.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted);
         if (isAdminFromProfile || isAdminFromGroup)
         {

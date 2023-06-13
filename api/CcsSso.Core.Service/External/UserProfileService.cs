@@ -685,9 +685,9 @@ namespace CcsSso.Core.Service.External
         userQuery = userQuery.Where(u => u.Id != _requestContext.UserId);
       // #Autovalidation
       if (isAdmin && userFilterCriteria.includeUnverifiedAdmin)
-        userQuery = userQuery.Where(u => !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
+        userQuery = userQuery.Where(u => !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm =>!ugm.IsDeleted && ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
       else if (isAdmin)
-        userQuery = userQuery.Where(u => u.AccountVerified && !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
+        userQuery = userQuery.Where(u => u.AccountVerified && !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm =>!ugm.IsDeleted && ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
 
 
       // Delegated and delegated expired conditions
