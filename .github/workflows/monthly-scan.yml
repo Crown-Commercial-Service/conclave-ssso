@@ -8,7 +8,8 @@ on:
     #This scan will run on the last day of every month
     
   push:
-    branches: [main, p3sprint/*, feature/*]
+    branches-ignore: 
+    - '*'
 jobs:
   trufflehog-scan:
     runs-on: ubuntu-latest
@@ -22,7 +23,7 @@ jobs:
         
         #Configure the correct git url of the repo to be scanned
         run: |
-          trufflehog https://github.com/Crown-Commercial-Service/conclave-ssso-ui.git --regex --entropy=FALSE
+          trufflehog https://github.com/Crown-Commercial-Service/conclave-ssso.git --regex --entropy=FALSE
       
       - name: Send email notification
         uses: 
@@ -34,7 +35,7 @@ jobs:
          server_port: ${{ secrets.SERVER_PORT }}
          username: ${{ secrets.USER_NAME }}
          password: ${{ secrets.PASSWORD }}
-         subject: Git Secrets Scan Results
+         subject: Trufflehog Monthly Deep Scan Results
          to: "rahulgandhi.jayabalan@brickendon.com,ponselvam.sakthivel@brickendon.com"
          from: "secops@brickendon.com"
          body: |
