@@ -12,6 +12,7 @@ using CcsSso.Domain.Dtos;
 using CcsSso.Domain.Exceptions;
 using CcsSso.Dtos.Domain.Models;
 using CcsSso.Shared.Cache.Contracts;
+using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Contexts;
 using Microsoft.EntityFrameworkCore;
@@ -45,13 +46,14 @@ namespace CcsSso.Core.Service.External
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
     private readonly IServiceRoleGroupMapperService _rolesToServiceRoleGroupMapperService;
     private readonly IExternalHelperService _externalHelperService;
+		private readonly IDateTimeService _dateTimeService;
 
-    public OrganisationProfileService(IDataContext dataContext, IContactsHelperService contactsHelper, ICcsSsoEmailService ccsSsoEmailService,
+		public OrganisationProfileService(IDataContext dataContext, IContactsHelperService contactsHelper, ICcsSsoEmailService ccsSsoEmailService,
       ICiiService ciiService, IAdaptorNotificationService adapterNotificationService,
       IWrapperCacheService wrapperCacheService, ILocalCacheService localCacheService,
       ApplicationConfigurationInfo applicationConfigurationInfo, RequestContext requestContext, IIdamService idamService, IRemoteCacheService remoteCacheService,
       ILookUpService lookUpService, IOrganisationAuditService organisationAuditService, IOrganisationAuditEventService organisationAuditEventService,
-      IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService rolesToRoleServiceMapperService, IExternalHelperService externalHelperService)
+      IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService rolesToRoleServiceMapperService, IExternalHelperService externalHelperService, IDateTimeService dateTimeService)
     {
       _dataContext = dataContext;
       _contactsHelper = contactsHelper;
@@ -70,7 +72,9 @@ namespace CcsSso.Core.Service.External
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
       _rolesToServiceRoleGroupMapperService = rolesToRoleServiceMapperService;
       _externalHelperService = externalHelperService;
-    }
+      _dateTimeService = dateTimeService;
+
+		}
 
     /// <summary>
     /// Create organisation profile and the physical address with OTHER contact reson
@@ -1579,7 +1583,35 @@ namespace CcsSso.Core.Service.External
           userAccessRolesWithDeletedRole.IsDeleted = true;
         });
 
-        if (_applicationConfigurationInfo.UserRoleApproval.Enable)
+				var userIds = userAccessRolesWithDeletedRoles.Select(x => x.UserId).ToList();
+				var delegatedUserIds = await _dataContext.User.Where(x => userIds.Contains(x.Id) && x.UserType == UserType.Delegation).ToListAsync();
+				var delegateUserRoleIds = (delegatedUserIds.Select(z => z.Id)).Select(userId => new { UserId = userId,CcsRoleID = userAccessRolesWithDeletedRoles.Where(uar => uar.UserId == userId)
+										.Select(uar => uar.OrganisationEligibleRole.CcsAccessRoleId).ToList() }).ToList();
+
+				if (delegatedUserIds.Count() > 0)
+				{
+					List<DelegationAuditEvent> delegationAuditEvents = new List<DelegationAuditEvent>();
+					foreach (var user in delegatedUserIds)
+					{
+						var auditEventLog = new DelegationAuditEvent();
+						{
+							auditEventLog.GroupId = Guid.NewGuid();
+							auditEventLog.UserId = user.Id;
+							auditEventLog.Roles = string.Join(",", delegateUserRoleIds.Where(x => x.UserId == user.Id).SelectMany(y => y.CcsRoleID).ToList());
+							auditEventLog.EventType = DelegationAuditEventType.RoleUnassigned.ToString();
+							auditEventLog.ActionedOnUtc = _dateTimeService.GetUTCNow();
+							auditEventLog.ActionedBy = DelegationAuditActionBy.Admin.ToString();
+							auditEventLog.ActionedByUserName = _dataContext.User.FirstOrDefault(u => u.Id == user.CreatedUserId)?.UserName;
+							auditEventLog.ActionedByFirstName = _dataContext.User.FirstOrDefault(u => u.Id == user.CreatedUserId)?.Party.Person.FirstName;
+							auditEventLog.ActionedByLastName = _dataContext.User.FirstOrDefault(u => u.Id == user.CreatedUserId)?.Party.Person.LastName;
+						}
+						delegationAuditEvents.Add(auditEventLog);
+					}
+					_dataContext.DelegationAuditEvent.AddRange(delegationAuditEvents);
+				}
+				await _dataContext.SaveChangesAsync();
+
+				if (_applicationConfigurationInfo.UserRoleApproval.Enable)
         {
           var deletingOrgEligibleRoleIds = deletingOrgEligibleRoles.Select(x => x.Id);
           var allAccessRolePending = await _dataContext.UserAccessRolePending.Where(u => deletingOrgEligibleRoleIds.Contains(u.OrganisationEligibleRoleId)).ToListAsync();
