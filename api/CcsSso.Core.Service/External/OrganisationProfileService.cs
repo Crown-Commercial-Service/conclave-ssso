@@ -47,7 +47,6 @@ namespace CcsSso.Core.Service.External
     private readonly IUserProfileRoleApprovalService _userProfileRoleApprovalService;
     private readonly IServiceRoleGroupMapperService _rolesToServiceRoleGroupMapperService;
     private readonly IExternalHelperService _externalHelperService;
-		private readonly IDateTimeService _dateTimeService;
     private readonly IDelegationAuditEventService _delegationAuditEventService;
 
 		public OrganisationProfileService(IDataContext dataContext, IContactsHelperService contactsHelper, ICcsSsoEmailService ccsSsoEmailService,
@@ -55,7 +54,7 @@ namespace CcsSso.Core.Service.External
       IWrapperCacheService wrapperCacheService, ILocalCacheService localCacheService,
       ApplicationConfigurationInfo applicationConfigurationInfo, RequestContext requestContext, IIdamService idamService, IRemoteCacheService remoteCacheService,
       ILookUpService lookUpService, IOrganisationAuditService organisationAuditService, IOrganisationAuditEventService organisationAuditEventService,
-      IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService rolesToRoleServiceMapperService, IExternalHelperService externalHelperService, IDateTimeService dateTimeService, IDelegationAuditEventService delegationAuditEventService)
+      IUserProfileRoleApprovalService userProfileRoleApprovalService, IServiceRoleGroupMapperService rolesToRoleServiceMapperService, IExternalHelperService externalHelperService, IDelegationAuditEventService delegationAuditEventService)
     {
       _dataContext = dataContext;
       _contactsHelper = contactsHelper;
@@ -74,10 +73,8 @@ namespace CcsSso.Core.Service.External
       _userProfileRoleApprovalService = userProfileRoleApprovalService;
       _rolesToServiceRoleGroupMapperService = rolesToRoleServiceMapperService;
       _externalHelperService = externalHelperService;
-      _dateTimeService = dateTimeService;
       _delegationAuditEventService = delegationAuditEventService;
-
-		}
+    }
 
     /// <summary>
     /// Create organisation profile and the physical address with OTHER contact reson
