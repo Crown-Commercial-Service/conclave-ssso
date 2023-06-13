@@ -56,11 +56,15 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
         
         foreach (var user in usersWithExpiredLink) 
         {
-          var linkExpiredUsersLastAuditLog = _dataContext.DelegationAuditEvent.OrderByDescending(x => x.Id).FirstOrDefault(u => u.UserId == user.Id);
-          if (linkExpiredUsersLastAuditLog?.EventType != DelegationAuditEventType.ActivationLinkExpiry.ToString())
-          {
+
+          var auditEventLogWithActivationLinkExpiry = await _dataContext.DelegationAuditEvent.Where(x => x.UserId == user.Id && x.ActionedOnUtc > user.DelegationLinkExpiryOnUtc && x.EventType ==DelegationAuditEventType.ActivationLinkExpiry.ToString()).OrderByDescending(x => x.Id).ToListAsync();
+         
+
+         if (!auditEventLogWithActivationLinkExpiry.Any())
+         {
             usersWithExpiredLinkNoExpiredLog.Add(user);
-          }
+         }
+
         }
       }
       catch (Exception ex)
