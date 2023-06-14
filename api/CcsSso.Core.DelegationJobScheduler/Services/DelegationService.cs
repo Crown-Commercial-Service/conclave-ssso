@@ -56,12 +56,13 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
         
         foreach (var user in usersWithExpiredLink) 
         {
-
-          var auditEventLogWithActivationLinkExpiry = await _dataContext.DelegationAuditEvent.Where(x => x.UserId == user.Id && x.ActionedOnUtc > user.DelegationLinkExpiryOnUtc && x.EventType ==DelegationAuditEventType.ActivationLinkExpiry.ToString()).OrderByDescending(x => x.Id).ToListAsync();
+          _logger.LogInformation($"users with expired link inside for each first block: {user.UserName}");
+          var auditEventLogWithActivationLinkExpiry = await _dataContext.DelegationAuditEvent.Where(x => x.UserId == user.Id && x.ActionedOnUtc > user.DelegationLinkExpiryOnUtc && x.EventType == DelegationAuditEventType.ActivationLinkExpiry.ToString()).OrderByDescending(x => x.Id).ToListAsync();
          
 
          if (!auditEventLogWithActivationLinkExpiry.Any())
          {
+            _logger.LogInformation($"users with no previous expiry log inside if condition second block: {user.UserName}");
             usersWithExpiredLinkNoExpiredLog.Add(user);
          }
 
