@@ -50,28 +50,35 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
     private async Task<List<User>> GetDelegationLinkExpiredUsers()
     {
       var usersWithExpiredLinkNoExpiredLog = new List<User>();
-      try
-      {
-        var usersWithExpiredLink = await _dataContext.User.Where(u => !u.IsDeleted && u.UserType == UserType.Delegation && !u.DelegationAccepted && u.DelegationLinkExpiryOnUtc < _dateTimeService.GetUTCNow()).ToListAsync();
-        
-        foreach (var user in usersWithExpiredLink) 
-        {
-          _logger.LogInformation($"users with expired link inside for each first block: {user.UserName}");
-          var auditEventLogWithActivationLinkExpiry = await _dataContext.DelegationAuditEvent.Where(x => x.UserId == user.Id && x.ActionedOnUtc > user.DelegationLinkExpiryOnUtc && x.EventType == DelegationAuditEventType.ActivationLinkExpiry.ToString()).OrderByDescending(x => x.Id).ToListAsync();
-         
+            try
+            {
+                var usersWithExpiredLink = await _dataContext.User.Where(u => !u.IsDeleted && u.UserType == UserType.Delegation && !u.DelegationAccepted && u.DelegationLinkExpiryOnUtc < _dateTimeService.GetUTCNow()).ToListAsync();
 
-         if (!auditEventLogWithActivationLinkExpiry.Any())
-         {
-            _logger.LogInformation($"users with no previous expiry log inside if condition second block: {user.UserName}");
-            usersWithExpiredLinkNoExpiredLog.Add(user);
-         }
+                foreach (var user in usersWithExpiredLink)
+                {
+                    _logger.LogInformation($"users with expired link inside for each first block: {user.UserName}");
+                    var auditEventLogWithActivationLinkExpiry = await _dataContext.DelegationAuditEvent.Where(x => x.UserId == user.Id && x.ActionedOnUtc > user.DelegationLinkExpiryOnUtc && x.EventType == DelegationAuditEventType.ActivationLinkExpiry.ToString()).OrderByDescending(x => x.Id).ToListAsync();
+                    _logger.LogInformation($"userdeatils: {user.Id}"+$"Delegationexpirydate:{user.DelegationLinkExpiryOnUtc}");
 
-        }
-      }
-      catch (Exception ex)
-      {
-        _logger.LogError($"*****Error while getting delegation link expired users, exception message =  {ex.Message}");
-      }
+                    if (!auditEventLogWithActivationLinkExpiry.Any())
+                    {
+                        _logger.LogInformation($"users with no previous expiry log inside if condition second block: {user.UserName}");
+                        usersWithExpiredLinkNoExpiredLog.Add(user);
+                    }
+                    else
+                    {
+                        foreach (var audit in auditEventLogWithActivationLinkExpiry)
+                        {
+
+                            _logger.LogInformation($"auditEventLogWithActivationLinkExpiryDetails: {audit.Id}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"*****Error while getting delegation link expired users, exception message =  {ex.Message}");
+            }
       return usersWithExpiredLinkNoExpiredLog;
     }
     #endregion
