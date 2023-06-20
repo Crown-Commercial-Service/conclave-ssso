@@ -81,6 +81,7 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
     #region Delegation termination 
     public async Task PerformDelegationTermissionJobAsync()
     {
+      InitiateScopedServices();
       var usersWithDelegationEndDatePassed = await GetDelegationTerminatedUsers();
 
       if (!usersWithDelegationEndDatePassed.Any())
