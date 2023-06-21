@@ -570,6 +570,7 @@ namespace CcsSso.Core.Service.External
     private async Task EnableMfaForUser(OrganisationUserGroup group)
     {
       var mfaDisabledUsers = await _dataContext.User.Where(u => !u.IsDeleted && group.UserGroupMemberships.Select(ug => ug.UserId).Any(ugId => ugId == u.Id) && !u.MfaEnabled).ToListAsync();
+
       foreach (var user in mfaDisabledUsers)
       {
         user.MfaEnabled = true;
@@ -582,6 +583,7 @@ namespace CcsSso.Core.Service.External
         };
         await _idamService.UpdateUserMfaInIdamAsync(securityApiUserInfo);
       }
+      
       await _dataContext.SaveChangesAsync();
     }
 
