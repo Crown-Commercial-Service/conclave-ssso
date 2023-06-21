@@ -53,7 +53,6 @@ namespace CcsSso.Adaptor.SqsListener
               SqsListnerJobSettingVault sqsJobSettingsVault;
               QueueInfoVault queueInfoVault;
               SecurityApiSettingsVault securityApiSettingsVault;
-              NotificationApiSettingsVault notificationApiSettingsVault;
               DataQueueSettingsVault dataQueueSettingsVault;
               EmailSettingsVault emailSettingsVault;
               string _isApiGatewayEnabled;
@@ -68,7 +67,6 @@ namespace CcsSso.Adaptor.SqsListener
                   sqsJobSettingsVault = (SqsListnerJobSettingVault)FillAwsParamsValue(typeof(SqsListnerJobSettingVault), parameters);
                   queueInfoVault = (QueueInfoVault)FillAwsParamsValue(typeof(QueueInfoVault), parameters);
                   securityApiSettingsVault = (SecurityApiSettingsVault)FillAwsParamsValue(typeof(SecurityApiSettingsVault), parameters);
-                  notificationApiSettingsVault = (NotificationApiSettingsVault)FillAwsParamsValue(typeof(NotificationApiSettingsVault), parameters);
                   dataQueueSettingsVault = (DataQueueSettingsVault)FillAwsParamsValue(typeof(DataQueueSettingsVault), parameters);
                   emailSettingsVault = (EmailSettingsVault)FillAwsParamsValue(typeof(EmailSettingsVault), parameters);
                 }
@@ -80,7 +78,6 @@ namespace CcsSso.Adaptor.SqsListener
                   sqsJobSettingsVault = JsonConvert.DeserializeObject<SqsListnerJobSettingVault>(secrets["SqsListnerJobSettings"].ToString());
                   queueInfoVault = JsonConvert.DeserializeObject<QueueInfoVault>(secrets["QueueInfo"].ToString());
                   securityApiSettingsVault = JsonConvert.DeserializeObject<SecurityApiSettingsVault>(secrets["SecurityApiSettings"].ToString());
-                  notificationApiSettingsVault = JsonConvert.DeserializeObject<NotificationApiSettingsVault>(secrets["NotificationApiSettings"].ToString());
                   dataQueueSettingsVault = JsonConvert.DeserializeObject<DataQueueSettingsVault>(secrets["DataQueueSettings"].ToString());
                   emailSettingsVault = JsonConvert.DeserializeObject<EmailSettingsVault>(secrets["Email"].ToString());
                 }
@@ -94,7 +91,6 @@ namespace CcsSso.Adaptor.SqsListener
                 queueInfoVault = config.GetSection("QueueInfo").Get<QueueInfoVault>();
                 securityApiSettingsVault = config.GetSection("SecurityApiSettings").Get<SecurityApiSettingsVault>();
                 dataQueueSettingsVault = config.GetSection("DataQueueSettings").Get<DataQueueSettingsVault>();
-                notificationApiSettingsVault = config.GetSection("NotificationApiSettings").Get<NotificationApiSettingsVault>();
                 emailSettingsVault = config.GetSection("Email").Get<EmailSettingsVault>();
               }
 
@@ -155,11 +151,6 @@ namespace CcsSso.Adaptor.SqsListener
                   {
                     ApiKey = securityApiSettingsVault.ApiKey,
                     Url = securityApiSettingsVault.Url
-                  },
-                  NotificationApiSettings = new Domain.SqsListener.NotificationApiSettings
-                  {
-                    ApiKey = notificationApiSettingsVault.ApiKey,
-                    Url = notificationApiSettingsVault.Url
                   },
                   EmailSettings = new Domain.SqsListener.EmailSettings
                   {
@@ -228,12 +219,6 @@ namespace CcsSso.Adaptor.SqsListener
               {
                 c.BaseAddress = new Uri(securityApiSettingsVault.Url);
                 c.DefaultRequestHeaders.Add("X-API-Key", securityApiSettingsVault.ApiKey);
-              });
-              
-              services.AddHttpClient("NotificationApi", c =>
-              {
-                c.BaseAddress = new Uri(notificationApiSettingsVault.Url);
-                c.DefaultRequestHeaders.Add("X-API-Key", notificationApiSettingsVault.ApiKey);
               });
 
               services.AddHttpClient("ConsumerClient");
@@ -396,14 +381,6 @@ namespace CcsSso.Adaptor.SqsListener
         {
           ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "SecurityApiSettings/ApiKey"),
           Url = _awsParameterStoreService.FindParameterByName(parameters, path + "SecurityApiSettings/Url")
-        };
-      }
-      else if (objType == typeof(NotificationApiSettingsVault))
-      {
-        returnParams = new NotificationApiSettingsVault()
-        {
-          ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/ApiKey"),
-          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/Url")
         };
       }
       else if (objType == typeof(EmailSettingsVault))

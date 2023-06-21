@@ -18,12 +18,6 @@ if (clientServiceId is null) then
 	return 1;
 end if; 
 
- IF EXISTS (SELECT "Id" FROM public."CcsAccessRole" WHERE "CcsAccessRoleNameKey" = 'DigiTS_USER' AND "CcsAccessRoleName" = 'Access DigiTS' LIMIT 1) THEN
-	raise notice 'Role already exists';
-	return 1;
- END IF;
-
-
 INSERT INTO public."ServicePermission"(
 	"ServicePermissionName", "CcsServiceId", "CreatedUserId", "LastUpdatedUserId", "CreatedOnUtc","LastUpdatedOnUtc", "IsDeleted")
 	VALUES ('DigiTS_USER_DS', clientServiceId, 0, 0, now(), now(), false);

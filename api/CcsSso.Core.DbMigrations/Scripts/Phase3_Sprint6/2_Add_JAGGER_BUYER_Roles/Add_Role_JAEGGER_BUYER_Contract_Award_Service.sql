@@ -47,3 +47,4 @@
 --SELECT setval('"ServiceRolePermission_Id_seq"', max("Id")) FROM "ServiceRolePermission";
 --SELECT AddRole();
 --DROP FUNCTION AddRole;
+

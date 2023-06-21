@@ -74,37 +74,6 @@ namespace CcsSso.Core.Service
       }
     }
 
-    public async Task<string> RegisterUserInIdamGetAuthIdAsync(SecurityApiUserInfo securityApiUserInfo)
-    {
-      var client = _httpClientFactory.CreateClient();
-      client.BaseAddress = new Uri(_applicationConfigurationInfo.SecurityApiDetails.Url);
-      client.DefaultRequestHeaders.Add("X-API-Key", _applicationConfigurationInfo.SecurityApiDetails.ApiKey);
-      var byteContent = new ByteArrayContent(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(securityApiUserInfo)));
-      byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-      var response = await client.PostAsync("security/users", byteContent);
-
-      if (!response.IsSuccessStatusCode)
-      {
-        var responseContent = await response.Content.ReadAsStringAsync();
-        if (responseContent == "USERNAME_EXISTS")
-        {
-          throw new ResourceAlreadyExistsException();
-        }
-        else if (responseContent == "ERROR_PASSWORD_TOO_WEAK")
-        {
-          throw new CcsSsoException("ERROR_PASSWORD_TOO_WEAK");
-        }
-        else
-        {
-          throw new CcsSsoException("ERROR_IDAM_REGISTRATION_FAILED");
-        }
-      }
-      var content = await response.Content.ReadAsStringAsync();
-      var result = JsonConvert.DeserializeObject<Security.Domain.Dtos.UserRegisterResult>(content);
-
-      return result.Id;
-    }
-
     public async Task<string> GetActivationEmailVerificationLink(string email)
     {
       var client = _httpClientFactory.CreateClient();
