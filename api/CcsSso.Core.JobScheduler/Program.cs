@@ -230,7 +230,6 @@ namespace CcsSso.Core.JobScheduler
           services.AddScoped<IRoleApprovalLinkExpiredService, RoleApprovalLinkExpiredService>();
           // #Auto validation
           services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
-          services.AddScoped<IExternalHelperService, ExternalHelperService>();
           services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();          
           services.AddSingleton<IAutoValidationService, AutoValidationService>();
           services.AddSingleton<IAutoValidationOneTimeService, AutoValidationOneTimeService>();

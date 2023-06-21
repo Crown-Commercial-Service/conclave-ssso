@@ -1,2 +1,0 @@
-UPDATE "CcsService" SET "Description"='A self-service system where customers can obtain live pricing quotes for either purchasing or leasing standard build cars and light commercial vehicles' 
-WHERE "ServiceCode" ='FP_USER_DS';

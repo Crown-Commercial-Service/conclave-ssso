@@ -55,8 +55,6 @@ namespace CcsSso.DbModel.Entity
 
         public bool DelegationAccepted { get; set; }
 
-        public DateTime? DelegationLinkExpiryOnUtc { get; set; }
-
         public Organisation OriginOrganization   { get; set; }
 
         [ForeignKey("OriginOrganizationId")]

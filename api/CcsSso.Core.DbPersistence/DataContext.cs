@@ -190,8 +190,6 @@ namespace CcsSso.DbPersistence
 
     public DbSet<BulkUploadDetail> BulkUploadDetail { get; set; }
 
-    public DbSet<DataMigrationDetail> DataMigrationDetail { get; set; }
-
     public DbSet<CountryDetails> CountryDetails { get; set; }
 
     // #Auto validation
@@ -209,8 +207,6 @@ namespace CcsSso.DbPersistence
     public DbSet<CcsServiceRoleGroup> CcsServiceRoleGroup { get; set; }
 
     public DbSet<CcsServiceRoleMapping> CcsServiceRoleMapping { get; set; }
-
-    public DbSet<DelegationAuditEvent> DelegationAuditEvent { get; set; }
 
     public async override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {

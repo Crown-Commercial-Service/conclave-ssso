@@ -126,7 +126,7 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "ExternalServiceDefaultRoles/GlobalServiceDefaultRoles", "ExternalServiceDefaultRoles:GlobalServiceDefaultRoles"));
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "ExternalServiceDefaultRoles/ScopedServiceDefaultRoles", "ExternalServiceDefaultRoles:ScopedServiceDefaultRoles"));
 
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserDelegation/DelegationEmailExpirationInMinutes", "UserDelegation:DelegationEmailExpirationInMinutes"));
+      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserDelegation/DelegationEmailExpirationHours", "UserDelegation:DelegationEmailExpirationHours"));
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "UserDelegation/DelegationEmailTokenEncryptionKey", "UserDelegation:DelegationEmailTokenEncryptionKey"));
       
       configurations.AddRange(_awsParameterStoreService.GetParameterFromCommaSeparated(parameters, path + "UserDelegation/DelegationExcludeRoles", "UserDelegation:DelegationExcludeRoles"));
@@ -161,34 +161,6 @@ namespace CcsSso.Core.ExternalApi.CustomOptions
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "NotificationApiSettings/Url", "NotificationApiSettings:Url"));
 
       configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "NewUserJoinRequest/LinkExpirationInMinutes", "NewUserJoinRequest:LinkExpirationInMinutes"));
-
-      var s3ConfigurationInfoName = _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/Name");
-
-      if (!string.IsNullOrEmpty(s3ConfigurationInfoName))
-      {
-        var s3ConfigurationInfo = UtilityHelper.GetS3Settings(s3ConfigurationInfoName);
-        Data.Add("S3ConfigurationInfo:AccessKeyId", s3ConfigurationInfo.credentials.aws_access_key_id);
-        Data.Add("S3ConfigurationInfo:AccessSecretKey", s3ConfigurationInfo.credentials.aws_secret_access_key);
-      }
-      else
-      {
-        Data.Add("S3ConfigurationInfo:AccessKeyId", _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/AccessKeyId"));
-        Data.Add("S3ConfigurationInfo:AccessSecretKey", _awsParameterStoreService.FindParameterByName(parameters, path + "S3ConfigurationInfo/AccessSecretKey"));
-      }
-
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "S3ConfigurationInfo/ServiceUrl", "S3ConfigurationInfo:ServiceUrl"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "S3ConfigurationInfo/DataMigrationBucketName", "S3ConfigurationInfo:DataMigrationBucketName"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "S3ConfigurationInfo/DataMigrationFolderName", "S3ConfigurationInfo:DataMigrationFolderName"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "S3ConfigurationInfo/DataMigrationTemplateFolderName", "S3ConfigurationInfo:DataMigrationTemplateFolderName"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "S3ConfigurationInfo/FileAccessExpirationInHours", "S3ConfigurationInfo:FileAccessExpirationInHours"));
-
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "DocUpload/Url", "DocUpload:Url"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "DocUpload/Token", "DocUpload:Token"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "DocUpload/SizeValidationValue", "DocUpload:SizeValidationValue"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "DocUpload/TypeValidationValue", "DocUpload:TypeValidationValue"));
-
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "DataMigrationSettings/DataMigrationValidationFailedTemplateId", "DataMigrationSettings:DataMigrationValidationFailedTemplateId"));
-      configurations.Add(_awsParameterStoreService.GetParameter(parameters, path + "DataMigrationSettings/MaxFileSizeValue", "DataMigrationSettings:MaxFileSizeValue"));
 
       foreach (var configuration in configurations)
       {

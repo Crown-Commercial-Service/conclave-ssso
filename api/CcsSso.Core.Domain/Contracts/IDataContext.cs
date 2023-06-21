@@ -87,8 +87,6 @@ namespace CcsSso.Domain.Contracts
 
     DbSet<BulkUploadDetail> BulkUploadDetail { get; set; }
 
-    DbSet<DataMigrationDetail> DataMigrationDetail { get; set; }
-
     DbSet<CountryDetails> CountryDetails { get; set; }
 
 
@@ -110,8 +108,6 @@ namespace CcsSso.Domain.Contracts
     DbSet<CcsServiceRoleGroup> CcsServiceRoleGroup { get; set; }
 
     DbSet<CcsServiceRoleMapping> CcsServiceRoleMapping { get; set; }
-
-    DbSet<DelegationAuditEvent> DelegationAuditEvent { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
   }

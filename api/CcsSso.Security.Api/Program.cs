@@ -1,3 +1,4 @@
+using CcsSso.Logs.Extensions;
 using CcsSso.Security.Api.CustomOptions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -43,7 +44,7 @@ namespace CcsSso.Security.Api
               }
               config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
             })
-            
+            .UseApplicationLog() //Registers the Logger. This could depend on the actual configurations unique to each logger
             .ConfigureWebHostDefaults(webBuilder =>
             {
               webBuilder.UseStartup<Startup>();

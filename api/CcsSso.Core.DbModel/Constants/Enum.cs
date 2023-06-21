@@ -37,15 +37,6 @@ namespace CcsSso.Core.DbModel.Constants
     MigrationCompleted
   }
 
-  public enum DataMigrationStatus
-  {
-    Uploading,    
-    Validating,
-    Failed,
-    Processing,
-    Completed
-  }
-
   public enum UserType
   {
     Primary,
@@ -115,25 +106,5 @@ namespace CcsSso.Core.DbModel.Constants
     Rejected,
     Removed,
     Expired
-  }
-
-  public enum DelegationAuditActionBy
-  {
-    Admin,
-    Job
-  }
-
-  public enum DelegationAuditEventType
-  {
-    SetupOfDelegation,
-    RoleAssigned,
-    RoleUnassigned,
-    ActivationOfDelegation,
-    ActivationLinkExpiry,
-    StartDateChange,
-    EndDateChange,
-    ResendActivationLink,
-    ExpiryOfDelegationAccess,
-    TerminationOfDelegatedAccess
   }
 }

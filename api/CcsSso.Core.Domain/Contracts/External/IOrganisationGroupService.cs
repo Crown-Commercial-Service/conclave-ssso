@@ -1,5 +1,4 @@
 using CcsSso.Core.Domain.Dtos.External;
-using CcsSso.DbModel.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,10 +25,5 @@ namespace CcsSso.Core.Domain.Contracts.External
 
 
     Task UpdateServiceRoleGroupAsync(string ciiOrganisationId, int groupId, OrganisationServiceRoleGroupRequestInfo organisationServiceRoleGroupRequestInfo);
-
-    Task<OrganisationGroupServiceRoleGroupList> GetGroupsServiceRoleGroupAsync(string ciiOrganisationId, string searchString = null);
-        
-    Task<List<User>> GetGroupAdminUsersAsync(string ciiOrganisationId);
-   
-    }
+  }
 }

@@ -13,9 +13,12 @@ using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Domain.Constants;
 using CcsSso.Shared.Domain.Helpers;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
@@ -147,7 +150,7 @@ namespace CcsSso.Core.Service.External
       {
         throw new ResourceNotFoundException();
       }
-      var groupadminUsers = await GetGroupAdminUsersAsync(ciiOrganisationId);
+
       OrganisationGroupResponseInfo organisationGroupResponseInfo = new OrganisationGroupResponseInfo
       {
         GroupId = group.Id,
@@ -168,7 +171,7 @@ namespace CcsSso.Core.Service.External
       {
         UserId = ugm.User.UserName,
         Name = $"{ugm.User.Party.Person.FirstName} {ugm.User.Party.Person.LastName}",
-        IsAdmin = ugm.User.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted) || groupadminUsers.Any(x => x.Id == ugm.User.Id),
+        IsAdmin = ugm.User.UserAccessRoles.Any(r => !r.IsDeleted && r.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey && !r.OrganisationEligibleRole.IsDeleted),
 
         UserPendingRoleStatus = !isApprovalRequired ? null : getUserRolePendingStatus(ugm),
       }).ToList();
@@ -190,7 +193,7 @@ namespace CcsSso.Core.Service.External
     public async Task<OrganisationGroupList> GetGroupsAsync(string ciiOrganisationId, string searchString = null)
     {
       var organisation = await _dataContext.Organisation
-       .Include(o => o.UserGroups).ThenInclude(r => r.GroupEligibleRoles).ThenInclude(gr => gr.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
+       .Include(o => o.UserGroups)
        .FirstOrDefaultAsync(o => !o.IsDeleted && o.CiiOrganisationId == ciiOrganisationId);
 
       if (organisation == null)
@@ -204,13 +207,7 @@ namespace CcsSso.Core.Service.External
         {
           GroupId = g.Id,
           GroupName = g.UserGroupName,
-          CreatedDate = g.CreatedOnUtc.Date.ToString(DateTimeFormat.DateFormatShortMonth),
-          Roles = g.GroupEligibleRoles.Where(gr => !gr.IsDeleted).Select(gr => new GroupRole
-          {
-            Id = gr.OrganisationEligibleRole.Id,
-            Name = gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleName,
-            Description = gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleDescription,
-          }).ToList()
+          CreatedDate = g.CreatedOnUtc.Date.ToString(DateTimeFormat.DateFormatShortMonth)
         }).OrderBy(g => g.GroupName).ToList();
 
       return new OrganisationGroupList
@@ -218,42 +215,6 @@ namespace CcsSso.Core.Service.External
         OrganisationId = organisation.CiiOrganisationId,
         GroupList = groups
       };
-    }
-    public async Task<List<User>> GetGroupAdminUsersAsync(string ciiOrganisationId)
-    {
-      List<User> groupAdminUsers = new List<User>();
-      var users = await _dataContext.User
-      .Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation)
-      .Include(u => u.UserGroupMemberships).ThenInclude(ugm => ugm.OrganisationUserGroup).ThenInclude(ug => ug.GroupEligibleRoles)
-      .ThenInclude(ger => ger.OrganisationEligibleRole).ThenInclude(oer => oer.CcsAccessRole)
-      .Where(u => !u.IsDeleted
-           && (string.IsNullOrEmpty(ciiOrganisationId) || u.Party.Person.Organisation.CiiOrganisationId == ciiOrganisationId))
-      .ToListAsync();
-
-      foreach (var user in users)
-      {
-        if (user.UserGroupMemberships != null)
-        {
-          GetAdminUsers(groupAdminUsers, user);
-        }
-      }
-      return groupAdminUsers;
-    }
-
-    private static void GetAdminUsers(List<User> groupAdminUsers, User user)
-    {
-      user.UserGroupMemberships.ForEach((ugm) =>
-      {
-        var groupRoles = ugm.OrganisationUserGroup.GroupEligibleRoles;
-        if (!ugm.IsDeleted && groupRoles != null)
-        {
-          var isAdminRole = groupRoles.Any(gr => !gr.IsDeleted && gr.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey);
-          if (isAdminRole)
-          {
-            groupAdminUsers.Add(user);
-          }
-        }
-      });
     }
 
     public async Task UpdateGroupAsync(string ciiOrganisationId, int groupId, OrganisationGroupRequestInfo organisationGroupRequestInfo)
@@ -326,7 +287,6 @@ namespace CcsSso.Core.Service.External
           MfaEnable = r.MfaEnabled
         }).ToListAsync();
 
-      // handle role update
       if (organisationGroupRequestInfo.RoleInfo != null)
       {
         if (organisationGroupRequestInfo.RoleInfo.AddedRoleIds == null && organisationGroupRequestInfo.RoleInfo.RemovedRoleIds == null)
@@ -363,7 +323,6 @@ namespace CcsSso.Core.Service.External
                   OrganisationUserGroupId = groupId,
                   OrganisationEligibleRoleId = addedRoleId
                 };
-
                 group.GroupEligibleRoles.Add(groupAccess);
               }
             });
@@ -371,8 +330,6 @@ namespace CcsSso.Core.Service.External
         }
       }
 
-
-      // handle user update
       if (organisationGroupRequestInfo.UserInfo != null)
       {
         if (organisationGroupRequestInfo.UserInfo.AddedUserIds == null && organisationGroupRequestInfo.UserInfo.RemovedUserIds == null)
@@ -420,7 +377,6 @@ namespace CcsSso.Core.Service.External
               UserId = addedUserId,
               OrganisationUserGroupId = group.Id
             };
-
             addedUsersTupleList.Add(new Tuple<int, string>(addedUserId, addedUserName)); // for logs
             group.UserGroupMemberships.Add(userGroupMembership);
           }
@@ -436,7 +392,7 @@ namespace CcsSso.Core.Service.External
         {
           if (removedUserNameList.Any())
           {
-            _localCacheService.SetValue(groupId.ToString(), new List<string> { "-1"}, expiration);
+            _localCacheService.SetValue(groupId.ToString(), new List<string> { "userremoved" }, expiration);
           }
           else
           {
@@ -446,26 +402,8 @@ namespace CcsSso.Core.Service.External
       }
       else
       {
-        var anyRoleRequiredApproval = false;
+        _localCacheService.Remove(new string[] { groupId.ToString() });
 
-        if (addedRoleIds.Any())
-        {
-          anyRoleRequiredApproval = _dataContext.OrganisationEligibleRole.Include(x => x.CcsAccessRole).Any(y => y.OrganisationId == group.OrganisationId && !y.IsDeleted && addedRoleIds.Contains(y.Id)
-          && y.CcsAccessRole.ApprovalRequired == (int)RoleApprovalRequiredStatus.ApprovalRequired);
-        }
-
-        var expiration = new TimeSpan(0, 0, 60);
-        // role removed and added where added roles may need approval 
-        // or no roles are removed but new roles are added which may need approval.
-        // empty list added which will not send any user's pending status to the group success page 
-        if ((organisationGroupRequestInfo.RoleInfo.RemovedRoleIds != null && !anyRoleRequiredApproval) || !anyRoleRequiredApproval)
-        {
-          _localCacheService.SetValue(groupId.ToString(), new List<string>() { "-1"}, expiration);
-        }
-        else
-        {
-          _localCacheService.Remove(new string[] { groupId.ToString() });
-        }
       }
 
       var mfaEnableRoleExists = orgRoleInfo.Any(r => group.GroupEligibleRoles.Any(ge => ge.OrganisationEligibleRoleId == r.Id && !ge.IsDeleted && r.MfaEnable));
@@ -632,23 +570,6 @@ namespace CcsSso.Core.Service.External
       await _dataContext.SaveChangesAsync();
     }
 
-    //private async Task RemoveGroupRolePendingRequest(OrganisationUserGroup group, List<User> users)
-    //{
-    //    var pendingGroupRequest = await _dataContext.UserAccessRolePending.Where(x =>
-    //          x.OrganisationUserGroupId == group.Id
-    //          && !users.Select(user => user.Id).Contains(x.UserId)
-    //          && (x.Status == (int)UserPendingRoleStaus.Pending
-    //          || x.Status == (int)UserPendingRoleStaus.Approved
-    //          || x.Status == (int)UserPendingRoleStaus.Rejected)).ToListAsync();
-
-    //    foreach (var pendingRequest in pendingGroupRequest)
-    //    {
-    //        pendingRequest.IsDeleted = true;
-    //        pendingRequest.Status = (int)UserPendingRoleStaus.Removed;
-    //    }
-    //    await _dataContext.SaveChangesAsync();
-    //}
-
     public async Task<GroupUserListResponse> GetGroupUsersPendingRequestSummary(int groupId, string ciiOrgId, ResultSetCriteria resultSetCriteria, bool isPendingApproval)
     {
       var group = await _dataContext.OrganisationUserGroup
@@ -716,6 +637,7 @@ namespace CcsSso.Core.Service.External
       if (organisationGroupResponseInfo != null)
       {
         organisationServiceRoleGroupResponseInfo = ConvertGroupRoleToServiceRoleGroupResponse(organisationGroupResponseInfo);
+
         List<GroupServiceRoleGroup> groupServiceRoleGroups = new List<GroupServiceRoleGroup>();
 
         var roleIds = organisationGroupResponseInfo.Roles.Select(x => x.Id).ToList();
@@ -763,45 +685,7 @@ namespace CcsSso.Core.Service.External
       };
 
       await this.UpdateGroupAsync(ciiOrganisationId, groupId, organisationGroupRequestInfo);
-    }
-
-    public async Task<OrganisationGroupServiceRoleGroupList> GetGroupsServiceRoleGroupAsync(string ciiOrganisationId, string searchString = null)
-    {
-      var allGroups = await GetGroupsAsync(ciiOrganisationId, searchString);
-      List<OrganisationGroupServiceRoleGroupInfo> groupList = new();
-
-      foreach (var group in allGroups.GroupList)
-      {
-        List<GroupServiceRoleGroup> groupServiceRoleGroups = new List<GroupServiceRoleGroup>();
-        var serviceRoleGroups = await _serviceRoleGroupMapperService.OrgRolesToServiceRoleGroupsAsync(group.Roles.Select(x => x.Id).ToList());
-        serviceRoleGroups = serviceRoleGroups.OrderBy(x => x.DisplayOrder).ToList();
-
-        foreach (var serviceRoleGroup in serviceRoleGroups)
-        {
-          groupServiceRoleGroups.Add(new GroupServiceRoleGroup()
-          {
-            Id = serviceRoleGroup.Id,
-            Name = serviceRoleGroup.Name,
-            Description = serviceRoleGroup.Description,
-            DisplayOrder = serviceRoleGroup.DisplayOrder
-          });
-        }
-
-        groupList.Add(new OrganisationGroupServiceRoleGroupInfo()
-        {
-          GroupId = group.GroupId,
-          GroupName = group.GroupName,
-          CreatedDate = group.CreatedDate,
-          ServiceRoleGroups = groupServiceRoleGroups
-        });
-      }
-
-      return new OrganisationGroupServiceRoleGroupList()
-      {
-        OrganisationId = allGroups.OrganisationId,
-        GroupList = groupList
-      };
-    }
+    }    
 
     private static OrganisationServiceRoleGroupResponseInfo ConvertGroupRoleToServiceRoleGroupResponse(OrganisationGroupResponseInfo organisationGroupResponseInfo)
     {

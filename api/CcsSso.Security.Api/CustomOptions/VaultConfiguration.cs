@@ -1,3 +1,4 @@
+using CcsSso.Logs;
 using CcsSso.Security.Domain.Dtos;
 using CcsSso.Shared.Domain;
 using Microsoft.Extensions.Configuration;
@@ -36,7 +37,11 @@ namespace CcsSso.Security.Api.CustomOptions
 
     public override void Load()
     {
-      LoadAsync().Wait();      
+      LoadAsync().Wait();
+      if (Data.ContainsKey("Serilog"))
+      {
+        LogConfigurationManager.ConfigureLogs(Data["Serilog"].ToString());
+      }
     }
 
     public async Task LoadAsync()

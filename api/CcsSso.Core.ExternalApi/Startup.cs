@@ -59,7 +59,7 @@ namespace CcsSso.ExternalApi
         bool.TryParse(Configuration["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
         bool.TryParse(Configuration["EnableUserAccessTokenFix"], out bool enableUserAccessTokenFix);
         // #Delegated
-        int.TryParse(Configuration["UserDelegation:DelegationEmailExpirationInMinutes"], out int delegatedEmailExpirationInMinutes);
+        int.TryParse(Configuration["UserDelegation:DelegationEmailExpirationHours"], out int delegatedEmailExpirationHours);
 
         var globalServiceRoles = Configuration.GetSection("ExternalServiceDefaultRoles:GlobalServiceDefaultRoles").Get<List<string>>();
         var scopedServiceRoles = Configuration.GetSection("ExternalServiceDefaultRoles:ScopedServiceDefaultRoles").Get<List<string>>();
@@ -74,14 +74,7 @@ namespace CcsSso.ExternalApi
         }
         // #Delegated
 
-        delegatedEmailExpirationInMinutes = delegatedEmailExpirationInMinutes == 0 ? 2160 : delegatedEmailExpirationInMinutes;
-
-        int.TryParse(Configuration["DataMigrationSettings:MaxFileSizeValue"], out int dataMigrationMaxFileSizeValue);
-
-        if (dataMigrationMaxFileSizeValue == 0)
-        {
-          dataMigrationMaxFileSizeValue = 1048576;
-        }
+        delegatedEmailExpirationHours = delegatedEmailExpirationHours == 0 ? 36 : delegatedEmailExpirationHours;
 
         ApplicationConfigurationInfo appConfigInfo = new ApplicationConfigurationInfo()
         {
@@ -92,7 +85,7 @@ namespace CcsSso.ExternalApi
           InMemoryCacheExpirationInMinutes = inMemoryCacheExpirationInMinutes,
           DashboardServiceClientId = Configuration["DashboardServiceClientId"],
           // #Delegated
-          DelegationEmailExpirationInMinutes = delegatedEmailExpirationInMinutes,
+          DelegationEmailExpirationHours = delegatedEmailExpirationHours,
           DelegationEmailTokenEncryptionKey = Configuration["UserDelegation:DelegationEmailTokenEncryptionKey"],
           DelegationExcludeRoles = Configuration.GetSection("UserDelegation:DelegationExcludeRoles").Get<string[]>(),
           JwtTokenValidationInfo = new JwtTokenValidationConfigurationInfo()
@@ -115,13 +108,13 @@ namespace CcsSso.ExternalApi
             UserPermissionUpdateNotificationTemplateId = Configuration["Email:UserPermissionUpdateNotificationTemplateId"],
             // #Delegated
             UserDelegatedAccessEmailTemplateId = Configuration["Email:UserDelegatedAccessEmailTemplateId"],
-            UserUpdateEmailOnlyFederatedIdpTemplateId = Configuration["Email:UserUpdateEmailOnlyFederatedIdpTemplateId"],
+            UserUpdateEmailOnlyFederatedIdpTemplateId= Configuration["Email:UserUpdateEmailOnlyFederatedIdpTemplateId"],
             UserUpdateEmailOnlyUserIdPwdTemplateId = Configuration["Email:UserUpdateEmailOnlyUserIdPwdTemplateId"],
             UserUpdateEmailBothIdpTemplateId = Configuration["Email:UserUpdateEmailBothIdpTemplateId"],
             UserConfirmEmailOnlyFederatedIdpTemplateId = Configuration["Email:UserConfirmEmailOnlyFederatedIdpTemplateId"],
             UserConfirmEmailOnlyUserIdPwdTemplateId = Configuration["Email:UserConfirmEmailOnlyUserIdPwdTemplateId"],
             UserConfirmEmailBothIdpTemplateId = Configuration["Email:UserConfirmEmailBothIdpTemplateId"],
-            UserRegistrationEmailUserIdPwdTemplateId = Configuration["Email:UserRegistrationEmailUserIdPwdTemplateId"],
+            UserRegistrationEmailUserIdPwdTemplateId= Configuration["Email:UserRegistrationEmailUserIdPwdTemplateId"],           
             SendNotificationsEnabled = sendNotificationsEnabled,
           },
           QueueUrlInfo = new QueueUrlInfo
@@ -178,11 +171,6 @@ namespace CcsSso.ExternalApi
             LinkExpirationInMinutes = Convert.ToInt32(Configuration["NewUserJoinRequest:LinkExpirationInMinutes"])
           },
           TokenEncryptionKey = Configuration["TokenEncryptionKey"],
-          DataMigrationSettings = new DataMigrationSettings()
-          {
-            DataMigrationValidationFailedTemplateId = Configuration["DataMigrationSettings:DataMigrationValidationFailedTemplateId"],
-            MaxFileSizeValue = dataMigrationMaxFileSizeValue,
-          },
         };
         return appConfigInfo;
       });
@@ -223,42 +211,6 @@ namespace CcsSso.ExternalApi
         };
 
         return sqsConfiguration;
-      });
-      services.AddSingleton(s =>
-      {
-        int.TryParse(Configuration["S3ConfigurationInfo:FileAccessExpirationInHours"], out int fileAccessExpirationInHours);
-        fileAccessExpirationInHours = fileAccessExpirationInHours == 0 ? 36 : fileAccessExpirationInHours;
-
-        var s3Configuration = new S3ConfigurationInfo
-        {
-          ServiceUrl = Configuration["S3ConfigurationInfo:ServiceUrl"],
-          AccessKeyId = Configuration["S3ConfigurationInfo:AccessKeyId"],
-          AccessSecretKey = Configuration["S3ConfigurationInfo:AccessSecretKey"],
-          DataMigrationBucketName = Configuration["S3ConfigurationInfo:DataMigrationBucketName"],
-          DataMigrationFolderName = Configuration["S3ConfigurationInfo:DataMigrationFolderName"],
-          DataMigrationTemplateFolderName = Configuration["S3ConfigurationInfo:DataMigrationTemplateFolderName"],
-          FileAccessExpirationInHours = fileAccessExpirationInHours
-        };
-
-        return s3Configuration;
-      });
-      services.AddSingleton(s =>
-      {
-        int.TryParse(Configuration["DocUpload:SizeValidationValue"], out int docUploadSizeValidationValue);
-
-        if (docUploadSizeValidationValue == 0)
-        {
-          docUploadSizeValidationValue = 100000000;
-        }
-
-        DocUploadConfig docUploadConfig = new DocUploadConfig
-        {
-          BaseUrl = Configuration["DocUpload:Url"],
-          Token = Configuration["DocUpload:Token"],
-          DefaultSizeValidationValue = docUploadSizeValidationValue,
-          DefaultTypeValidationValue = Configuration["DocUpload:TypeValidationValue"],
-        };
-        return docUploadConfig;
       });
       services.AddSingleton<IAwsSqsService, AwsSqsService>();
       services.AddSingleton<INotificationApiService, NotificationApiService>();
@@ -304,20 +256,9 @@ namespace CcsSso.ExternalApi
       services.AddScoped<IAuthService, AuthService>();
       services.AddScoped<IUserProfileRoleApprovalService, UserProfileRoleApprovalService>();
       services.AddScoped<IServiceRoleGroupMapperService, ServiceRoleGroupMapperService>();
-      services.AddSingleton<IAwsS3Service, AwsS3Service>();
-      services.AddScoped<IDocUploadService, DocUploadService>();
-      services.AddScoped<IDataMigrationFileContentService, DataMigrationFileContentService>();
-      services.AddScoped<IDataMigrationService, DataMigrationService>();
-      services.AddScoped<IDelegationAuditEventService, DelegationAuditEventService>();
-      services.AddScoped<IExternalHelperService, ExternalHelperService>();
       services.AddHttpClient();
       services.AddHttpContextAccessor();
-      
-      services.AddHttpClient("DocUploadApi", c =>
-      {
-        c.BaseAddress = new Uri(Configuration["DocUpload:Url"]);
-        c.DefaultRequestHeaders.Add("x-api-key", $"Basic {Configuration["DocUpload:Token"]}");
-      });
+
       services.AddHttpClient("CiiApi", c =>
       {
         c.BaseAddress = new Uri(Configuration["Cii:Url"]);
