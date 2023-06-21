@@ -35,14 +35,15 @@ namespace CcsSso.Core.Service.External
     private readonly ILocalCacheService _localCacheService;
     private readonly RequestContext _requestContext;
     private readonly IExternalHelperService _externalHelperService;
-
+    private readonly IIdamService _idamService;
 
     public OrganisationGroupService(IDataContext dataContext, IUserProfileHelperService userProfileHelperService,
       IAuditLoginService auditLoginService, ICcsSsoEmailService ccsSsoEmailService, IWrapperCacheService wrapperCacheService,
       ApplicationConfigurationInfo appConfigInfo, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
       IOrganisationProfileService organisationService,
-      IUserProfileRoleApprovalService userProfileRoleApprovalService,
-      ILocalCacheService localCacheService, RequestContext requestContext, IExternalHelperService externalHelperService)
+      IUserProfileRoleApprovalService userProfileRoleApprovalService, 
+      ILocalCacheService localCacheService, RequestContext requestContext, IExternalHelperService externalHelperService,
+      IIdamService idamService)
     {
       _dataContext = dataContext;
       _userProfileHelperService = userProfileHelperService;
@@ -56,6 +57,7 @@ namespace CcsSso.Core.Service.External
       _localCacheService = localCacheService;
       _requestContext = requestContext;
       _externalHelperService = externalHelperService;
+      _idamService = idamService;
     }
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
@@ -568,7 +570,20 @@ namespace CcsSso.Core.Service.External
     private async Task EnableMfaForUser(OrganisationUserGroup group)
     {
       var mfaDisabledUsers = await _dataContext.User.Where(u => !u.IsDeleted && group.UserGroupMemberships.Select(ug => ug.UserId).Any(ugId => ugId == u.Id) && !u.MfaEnabled).ToListAsync();
-      mfaDisabledUsers.ForEach(l => { l.MfaEnabled = true; });
+
+      foreach (var user in mfaDisabledUsers)
+      {
+        user.MfaEnabled = true;
+
+        SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+        {
+          Email = user.UserName,
+          MfaEnabled = true,
+          SendUserRegistrationEmail = false
+        };
+        await _idamService.UpdateUserMfaInIdamAsync(securityApiUserInfo);
+      }
+      
       await _dataContext.SaveChangesAsync();
     }
 
