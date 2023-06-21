@@ -1,11 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AWSSDK.S3" Version="3.7.4.10" />
+		<PackageReference Include="AWSSDK.S3" Version="3.7.106.1" />
 		<PackageReference Include="AWSSDK.SimpleSystemsManagement" Version="3.7.18.5" />
 		<PackageReference Include="AWSSDK.SQS" Version="3.7.1.14" />
 		<PackageReference Include="Azure.Storage.Blobs" Version="12.14.1" />
