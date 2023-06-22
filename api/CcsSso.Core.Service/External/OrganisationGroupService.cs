@@ -35,14 +35,15 @@ namespace CcsSso.Core.Service.External
     private readonly ILocalCacheService _localCacheService;
     private readonly RequestContext _requestContext;
     private readonly IExternalHelperService _externalHelperService;
-
+    private readonly IIdamService _idamService;
 
     public OrganisationGroupService(IDataContext dataContext, IUserProfileHelperService userProfileHelperService,
       IAuditLoginService auditLoginService, ICcsSsoEmailService ccsSsoEmailService, IWrapperCacheService wrapperCacheService,
       ApplicationConfigurationInfo appConfigInfo, IServiceRoleGroupMapperService serviceRoleGroupMapperService,
       IOrganisationProfileService organisationService,
       IUserProfileRoleApprovalService userProfileRoleApprovalService,
-      ILocalCacheService localCacheService, RequestContext requestContext, IExternalHelperService externalHelperService)
+      ILocalCacheService localCacheService, RequestContext requestContext, IExternalHelperService externalHelperService,
+      IIdamService idamService)
     {
       _dataContext = dataContext;
       _userProfileHelperService = userProfileHelperService;
@@ -56,6 +57,7 @@ namespace CcsSso.Core.Service.External
       _localCacheService = localCacheService;
       _requestContext = requestContext;
       _externalHelperService = externalHelperService;
+      _idamService = idamService;
     }
 
     public async Task<int> CreateGroupAsync(string ciiOrganisationId, OrganisationGroupNameInfo organisationGroupNameInfo)
@@ -490,22 +492,18 @@ namespace CcsSso.Core.Service.External
       }
 
       var mfaEnableRoleExists = orgRoleInfo.Any(r => group.GroupEligibleRoles.Any(ge => ge.OrganisationEligibleRoleId == r.Id && !ge.IsDeleted && r.MfaEnable));
-
-      // validate for mfa
-      if (mfaEnableRoleExists && (addedRoleIds.Any() || addedUsersTupleList.Any()))
-      {
-        var mfaDisabledUserExists = await _dataContext.User.AnyAsync(u => !u.IsDeleted && group.UserGroupMemberships.Select(ug => ug.UserId).Any(ugId => ugId == u.Id) && !u.MfaEnabled);
-
-        if (mfaDisabledUserExists)
-        {
-          throw new CcsSsoException("MFA_DISABLED_USERS_INCLUDED");
-        }
-      }
+            
       // This field should not let be updated manually as it consumes in user screen to decide mfa enable/disable
       group.MfaEnabled = mfaEnableRoleExists;
+
       await CheckMFAForGroup(group.GroupType, group.MfaEnabled);
 
       await _dataContext.SaveChangesAsync();
+
+      if (mfaEnableRoleExists && (addedRoleIds.Any() || addedUsersTupleList.Any()))
+      {
+        await EnableMfaForUser(group);
+      }
 
       if (_appConfigInfo.UserRoleApproval.Enable)
       {
@@ -567,6 +565,26 @@ namespace CcsSso.Core.Service.External
       invalidatingCacheKeys.AddRange(changedUsersNameList.Select(changedUserName => $"{CacheKeyConstant.User}-{changedUserName}"));
       invalidatingCacheKeys.AddRange(existingUserNames.Select(existUserName => $"{CacheKeyConstant.User}-{existUserName}"));
       await _wrapperCacheService.RemoveCacheAsync(invalidatingCacheKeys.ToArray());
+    }
+
+    private async Task EnableMfaForUser(OrganisationUserGroup group)
+    {
+      var mfaDisabledUsers = await _dataContext.User.Where(u => !u.IsDeleted && group.UserGroupMemberships.Select(ug => ug.UserId).Any(ugId => ugId == u.Id) && !u.MfaEnabled).ToListAsync();
+      
+      foreach (var user in mfaDisabledUsers)
+      {
+        user.MfaEnabled = true;
+
+        SecurityApiUserInfo securityApiUserInfo = new SecurityApiUserInfo
+        {
+          Email = user.UserName,
+          MfaEnabled = true,
+          SendUserRegistrationEmail = false
+        };
+        await _idamService.UpdateUserMfaInIdamAsync(securityApiUserInfo);
+      }
+
+      await _dataContext.SaveChangesAsync();
     }
 
     private async Task CheckMFAForGroup(int groupType, bool mfaEnableRoleExists)
