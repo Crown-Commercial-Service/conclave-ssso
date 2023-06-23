@@ -28,6 +28,24 @@
             "entryPoint": [],
             "command": [],
             "environment": [],
+            "secrets": [
+                {
+                    "name": "ACCESSKEYID",
+                    "valueFrom": "ACCESSKEYID"
+                },
+                {
+                    "name": "ACCESSKEYSECRET",
+                    "valueFrom": "ACCESSKEYSECRET"
+                },
+                {
+                    "name": "REGION",
+                    "valueFrom": "REGION"
+                },
+                {
+                    "name": "STARTUP_URL",
+                    "valueFrom": "STARTUP_URL"
+                }
+            ],
             "mountPoints": [],
             "volumesFrom": [],
             "logConfiguration": {
