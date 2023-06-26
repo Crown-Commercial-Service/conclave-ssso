@@ -14,7 +14,7 @@
     "containerDefinitions": [
         {
             "name": "dev-api-adaptor",
-            "image": "111314917260.dkr.ecr.eu-west-2.amazonaws.com/dev-adaptor:%BUILD_NUMBER%",
+            "image": "111314917260.dkr.ecr.eu-west-2.amazonaws.com/dev-api-adaptor:%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
