@@ -14,7 +14,7 @@
     "containerDefinitions": [
         {
             "name": "dev-adaptor-sqs-listener",
-            "image": "111314917260.dkr.ecr.eu-west-2.amazonaws.com/dev-api-adaptor-sqs-listener:%BUILD_NUMBER%",
+            "image": "111314917260.dkr.ecr.eu-west-2.amazonaws.com/dev-adaptor-sqs-listener:dev-api-adaptor-sqs-listener-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
