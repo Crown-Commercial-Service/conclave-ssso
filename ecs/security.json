@@ -1,5 +1,5 @@
 {
-    "family": "dev-api-security",
+    "family": "dev-security",
     "networkMode": "awsvpc",
     "taskRoleArn": "arn:aws:iam::111314917260:role/ecsTaskExecutionRole",
     "executionRoleArn": "arn:aws:iam::111314917260:role/ecsTaskExecutionRole",
