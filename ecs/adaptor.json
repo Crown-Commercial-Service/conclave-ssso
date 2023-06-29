@@ -13,7 +13,7 @@
     "memory": "512",
     "containerDefinitions": [
         {
-            "name": "dev-api-adaptor",
+            "name": "dev-adaptor",
             "image": "111314917260.dkr.ecr.eu-west-2.amazonaws.com/dev-adaptor:dev-api-adaptor-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,

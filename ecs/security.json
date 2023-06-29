@@ -13,7 +13,7 @@
     "memory": "512",
     "containerDefinitions": [
         {
-            "name": "dev-api-security",
+            "name": "dev-security",
             "image": "111314917260.dkr.ecr.eu-west-2.amazonaws.com/dev-security:dev-api-security-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
