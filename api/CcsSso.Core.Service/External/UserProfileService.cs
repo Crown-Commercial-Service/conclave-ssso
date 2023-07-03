@@ -685,9 +685,9 @@ namespace CcsSso.Core.Service.External
         userQuery = userQuery.Where(u => u.Id != _requestContext.UserId);
       // #Autovalidation
       if (isAdmin && userFilterCriteria.includeUnverifiedAdmin)
-        userQuery = userQuery.Where(u => !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
+        userQuery = userQuery.Where(u => !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm =>!ugm.IsDeleted && ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
       else if (isAdmin)
-        userQuery = userQuery.Where(u => u.AccountVerified && !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm => ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
+        userQuery = userQuery.Where(u => u.AccountVerified && !u.IsDeleted && (u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId) || u.UserGroupMemberships.Any(ugm =>!ugm.IsDeleted && ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ger => !ger.IsDeleted && ger.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))));
 
 
       // Delegated and delegated expired conditions
@@ -869,8 +869,16 @@ namespace CcsSso.Core.Service.External
       }
 
       await _dataContext.SaveChangesAsync();
+			if (users.Any(x => x.UserType == UserType.Delegation))
+			{
+				var userDetails = users.Where(x => x.UserType == UserType.Delegation);
+				foreach (var user in userDetails)
+				{
+					await CreateTerminationOfDelegatedAccessEventLog(user);
+				}
+			}
 
-      if (_appConfigInfo.UserRoleApproval.Enable)
+			if (_appConfigInfo.UserRoleApproval.Enable)
       {
         var userAccessRolePendingExpiredList = await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && u.UserId == primaryUser.Id).ToListAsync();
         if (userAccessRolePendingExpiredList.Any())
@@ -1790,8 +1798,8 @@ namespace CcsSso.Core.Service.External
 
       ValidateDelegateUserDetails(organisation, userProfileRequestInfo, true);
 
-      var existingDelegatedUserDetails = await _dataContext.User.Include(u => u.UserAccessRoles)
-                                          .Include(u => u.Party).ThenInclude(p => p.Person)
+      var existingDelegatedUserDetails = await _dataContext.User.Include(u => u.UserAccessRoles.Where(y => y.OrganisationEligibleRole.IsDeleted == false))
+																					.Include(u => u.Party).ThenInclude(p => p.Person)
                                           .FirstOrDefaultAsync(u => u.UserName == userProfileRequestInfo.UserName.Trim() &&
                                           !u.IsDeleted &&
                                           u.UserType == DbModel.Constants.UserType.Delegation && u.DelegationEndDate.Value.Date >= DateTime.UtcNow.Date &&
