@@ -1,8 +1,8 @@
 {
-    "family": "dev-api-core",
+    "family": "%SPACE%-api-core",
     "networkMode": "awsvpc",
-    "taskRoleArn": "arn:aws:iam::111314917260:role/ecsTaskExecutionRole",
-    "executionRoleArn": "arn:aws:iam::111314917260:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
+    "executionRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
     "runtimePlatform": {
         "operatingSystemFamily": "LINUX"
     },
@@ -13,8 +13,8 @@
     "memory": "512",
     "containerDefinitions": [
         {
-            "name": "dev-core",
-            "image": "111314917260.dkr.ecr.eu-west-2.amazonaws.com/dev-core:dev-api-core-%BUILD_NUMBER%",
+            "name": "%SPACE%-core",
+            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-core:%SPACE%-api-core-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
@@ -51,7 +51,7 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/dev-core",
+                    "awslogs-group": "/ecs/%SPACE%-core",
                     "awslogs-region": "eu-west-2",
                     "awslogs-stream-prefix": "ecs"
                 }

@@ -1,8 +1,8 @@
 {
-    "family": "dev-org-dereg-job",
+    "family": "%SPACE%-org-dereg-job",
     "networkMode": "awsvpc",
-    "taskRoleArn": "arn:aws:iam::111314917260:role/ecsTaskExecutionRole",
-    "executionRoleArn": "arn:aws:iam::111314917260:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
+    "executionRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
     "runtimePlatform": {
         "operatingSystemFamily": "LINUX"
     },
@@ -13,8 +13,8 @@
     "memory": "512",
     "containerDefinitions": [
         {
-            "name": "dev-org-dereg-job",
-            "image": "111314917260.dkr.ecr.eu-west-2.amazonaws.com/dev-org-dereg-job:dev-api-org-dereg-job-%BUILD_NUMBER%",
+            "name": "%SPACE%-org-dereg-job",
+            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-org-dereg-job:%SPACE%-api-org-dereg-job-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
@@ -51,7 +51,7 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/dev-org-dereg-job",
+                    "awslogs-group": "/ecs/%SPACE%-org-dereg-job",
                     "awslogs-region": "eu-west-2",
                     "awslogs-stream-prefix": "ecs"
                 }

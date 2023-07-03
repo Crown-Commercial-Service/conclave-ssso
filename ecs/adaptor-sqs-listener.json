@@ -1,8 +1,8 @@
 {
-    "family": "dev-adaptor-sqs-listener",
+    "family": "%SPACE%-adaptor-sqs-listener",
     "networkMode": "awsvpc",
-    "taskRoleArn": "arn:aws:iam::111314917260:role/ecsTaskExecutionRole",
-    "executionRoleArn": "arn:aws:iam::111314917260:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
+    "executionRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
     "runtimePlatform": {
         "operatingSystemFamily": "LINUX"
     },
@@ -13,8 +13,8 @@
     "memory": "512",
     "containerDefinitions": [
         {
-            "name": "dev-adaptor-sqs-listener",
-            "image": "111314917260.dkr.ecr.eu-west-2.amazonaws.com/dev-adaptor-sqs-listener:dev-api-adaptor-sqs-listener-%BUILD_NUMBER%",
+            "name": "%SPACE%-adaptor-sqs-listener",
+            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-adaptor-sqs-listener:%SPACE%-api-adaptor-sqs-listener-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
@@ -51,7 +51,7 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/dev-adaptor-sqs-listener",
+                    "awslogs-group": "/ecs/%SPACE%-adaptor-sqs-listener",
                     "awslogs-region": "eu-west-2",
                     "awslogs-stream-prefix": "ecs"
                 }
