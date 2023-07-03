@@ -1,5 +1,5 @@
 {
-    "family": "%SPACE%-api-dashboardwrapper",
+    "family": "%SPACE%-dashboardwrapper",
     "networkMode": "awsvpc",
     "taskRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
     "executionRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
@@ -14,7 +14,7 @@
     "containerDefinitions": [
         {
             "name": "%SPACE%-dashboardwrapper",
-            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-dashboardwrapper:%SPACE%-api-dashboardwrapper-%BUILD_NUMBER%",
+            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-dashboardwrapper:%SPACE%-dashboardwrapper-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
