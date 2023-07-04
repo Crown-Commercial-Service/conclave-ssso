@@ -6,5 +6,7 @@ namespace CcsSso.Adaptor.Domain.Contracts
   public interface IUserService
   {
     Task<Dictionary<string, object>> GetUserAsync(string userName);
+
+    Task<Dictionary<string, object>> GetDeleteUserAsync(string userName);
   }
 }
