@@ -7,6 +7,6 @@ namespace CcsSso.Adaptor.Domain.Contracts
   {
     Task<Dictionary<string, object>> GetUserAsync(string userName);
 
-    Task<Dictionary<string, object>> GetDeleteUserAsync(string userName);
+    Task<Dictionary<string, object>> GetDeletedUserAsync(string userName);
   }
 }

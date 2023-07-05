@@ -60,7 +60,7 @@ namespace CcsSso.Adaptor.Service
             }
             else
             {
-              result = await _userService.GetDeleteUserAsync(userName);
+              result = await _userService.GetDeletedUserAsync(userName);
             }
             await NotifyPushDataToQueueAsync(result, ConclaveEntityNames.UserProfile);
 

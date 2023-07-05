@@ -77,7 +77,7 @@ namespace CcsSso.Adaptor.Service
       return result;
     }
 
-    public async Task<Dictionary<string, object>> GetDeleteUserAsync(string userName)
+    public async Task<Dictionary<string, object>> GetDeletedUserAsync(string userName)
     {
       List<Dictionary<string, object>> resultDictionaries = new();
       Dictionary<string, Dictionary<string, string>> conclaveEntityMappingDictionary = await _attributeMappingService.GetMappedAttributeDictionaryAsync(ConsumerEntityNames.User);
