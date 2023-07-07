@@ -1,62 +1,102 @@
 {
-    "family": "%SPACE%-security",
-    "networkMode": "awsvpc",
-    "taskRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
-    "executionRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
-    "runtimePlatform": {
-        "operatingSystemFamily": "LINUX"
-    },
-    "requiresCompatibilities": [
-        "FARGATE"
-    ],
-    "cpu": "256",
-    "memory": "512",
-    "containerDefinitions": [
-        {
-            "name": "%SPACE%-security",
-            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-security:%SPACE%-api-security-%BUILD_NUMBER%",
-            "cpu": 0,
-            "memoryReservation": 512,
-            "portMappings": [
-                {
-                    "containerPort": 5000,
-                    "hostPort": 5000,
-                    "protocol": "tcp"
-                }
-            ],
-            "essential": true,
-            "entryPoint": [],
-            "command": [],
-            "environment": [],
-            "secrets": [
-                {
-                    "name": "ACCESSKEYID",
-                    "valueFrom": "ACCESSKEYID"
-                },
-                {
-                    "name": "ACCESSKEYSECRET",
-                    "valueFrom": "ACCESSKEYSECRET"
-                },
-                {
-                    "name": "REGION",
-                    "valueFrom": "REGION"
-                },
-                {
-                    "name": "STARTUP_URL",
-                    "valueFrom": "STARTUP_URL"
-                }
-            ],
-            "mountPoints": [],
-            "volumesFrom": [],
-            "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-                    "awslogs-group": "/ecs/%SPACE%-security",
-                    "awslogs-region": "eu-west-2",
-                    "awslogs-stream-prefix": "ecs"
+    "taskDefinition": {
+        "taskDefinitionArn": "arn:aws:ecs:eu-west-2:%AWS_ACCOUNT_ID%:task-definition/%SPACE%-security:8",
+        "containerDefinitions": [
+            {
+                "name": "%SPACE%-security",
+                "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-security:%SPACE%-api-security-%BUILD_NUMBER%",
+                "cpu": 0,
+                "memoryReservation": 512,
+                "portMappings": [
+                    {
+                        "containerPort": 5000,
+                        "hostPort": 5000,
+                        "protocol": "tcp"
+                    }
+                ],
+                "essential": true,
+                "entryPoint": [],
+                "command": [],
+                "environment": [],
+                "mountPoints": [],
+                "volumesFrom": [],
+                "secrets": [
+                    {
+                        "name": "ACCESSKEYID",
+                        "valueFrom": "ACCESSKEYID"
+                    },
+                    {
+                        "name": "ACCESSKEYSECRET",
+                        "valueFrom": "ACCESSKEYSECRET"
+                    },
+                    {
+                        "name": "REGION",
+                        "valueFrom": "REGION"
+                    },
+                    {
+                        "name": "STARTUP_URL",
+                        "valueFrom": "STARTUP_URL"
+                    }
+                ],
+                "logConfiguration": {
+                    "logDriver": "awslogs",
+                    "options": {
+                        "awslogs-group": "/ecs/%SPACE%-security",
+                        "awslogs-region": "eu-west-2",
+                        "awslogs-stream-prefix": "ecs"
+                    }
                 }
             }
-        }
-    ]
+        ],
+        "family": "%SPACE%-security",
+        "taskRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
+        "executionRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
+        "networkMode": "awsvpc",
+        "revision": 8,
+        "volumes": [],
+        "status": "ACTIVE",
+        "requiresAttributes": [
+            {
+                "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+            },
+            {
+                "name": "ecs.capability.execution-role-awslogs"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.ecr-auth"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.21"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.task-iam-role"
+            },
+            {
+                "name": "ecs.capability.execution-role-ecr-pull"
+            },
+            {
+                "name": "ecs.capability.secrets.ssm.environment-variables"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+            },
+            {
+                "name": "ecs.capability.task-eni"
+            }
+        ],
+        "placementConstraints": [],
+        "compatibilities": [
+            "EC2",
+            "FARGATE"
+        ],
+        "requiresCompatibilities": [
+            "FARGATE"
+        ],
+        "cpu": "256",
+        "memory": "512"
+    },
+    "tags": []
 }
-
