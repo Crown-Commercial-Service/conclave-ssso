@@ -2,6 +2,7 @@ using CcsSso.Adaptor.Domain.Constants;
 using CcsSso.Adaptor.Domain.Contracts;
 using CcsSso.Adaptor.Domain.Contracts.Cii;
 using CcsSso.Adaptor.Domain.Contracts.Wrapper;
+using CcsSso.Adaptor.Domain.Dtos;
 using CcsSso.Shared.Domain.Excecptions;
 using System.Collections.Generic;
 using System.Linq;
@@ -75,5 +76,21 @@ namespace CcsSso.Adaptor.Service
 
       return result;
     }
+
+    public async Task<Dictionary<string, object>> GetDeletedUserAsync(string userName)
+    {
+      List<Dictionary<string, object>> resultDictionaries = new();
+      Dictionary<string, Dictionary<string, string>> conclaveEntityMappingDictionary = await _attributeMappingService.GetMappedAttributeDictionaryAsync(ConsumerEntityNames.User);
+      userName = userName?.Trim();
+      var userResponse = new DeletedUserDetail();
+      userResponse.UserName = userName;
+      var userResultDictionary = _attributeMappingService.GetMappedDataDictionary(userResponse, conclaveEntityMappingDictionary[ConclaveEntityNames.UserProfile]);
+      resultDictionaries.Add(userResultDictionary);
+
+      var result = _attributeMappingService.GetMergedResultDictionary(resultDictionaries);
+
+      return result;
+    }
+
   }
 }
