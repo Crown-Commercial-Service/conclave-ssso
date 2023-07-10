@@ -326,41 +326,41 @@ namespace CcsSso.Api
       app.UseSwagger();
       app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.Api v1"));
 
-      app.Use(async (context, next) =>
-      {
-        var customDomain = Configuration.GetSection("CustomDomain").Get<string>();
-        context.Response.Headers.Add(
-            "Cache-Control",
-            "no-cache");
-        context.Response.Headers.Add(
-            "Pragma",
-            "no-cache");
-        context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
-        context.Response.Headers.Add("X-Xss-Protection", "1");
-        var tokens = antiforgery.GetAndStoreTokens(context);
-        // [ValidateAntiForgeryToken]
-        // Cookie will be read by angular client and attach to http header
-        context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken,
-            new CookieOptions()
-        {
-          SameSite = string.IsNullOrEmpty(customDomain) ? SameSiteMode.None : SameSiteMode.Lax,
-          Domain = customDomain,
-          Secure = true,
-          HttpOnly = false
-        });
+      // app.Use(async (context, next) =>
+      // {
+      //   var customDomain = Configuration.GetSection("CustomDomain").Get<string>();
+      //   context.Response.Headers.Add(
+      //       "Cache-Control",
+      //       "no-cache");
+      //   context.Response.Headers.Add(
+      //       "Pragma",
+      //       "no-cache");
+      //   context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+      //   context.Response.Headers.Add("X-Xss-Protection", "1");
+      //   var tokens = antiforgery.GetAndStoreTokens(context);
+      //   // [ValidateAntiForgeryToken]
+      //   // Cookie will be read by angular client and attach to http header
+      //   context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken,
+      //       new CookieOptions()
+      //   {
+      //     SameSite = string.IsNullOrEmpty(customDomain) ? SameSiteMode.None : SameSiteMode.Lax,
+      //     Domain = customDomain,
+      //     Secure = true,
+      //     HttpOnly = false
+      //   });
 
-        // For server to compare
-        context.Response.Cookies.Append("XSRF-TOKEN-SVR", tokens.RequestToken,
-           new CookieOptions()
-       {
-         SameSite = string.IsNullOrEmpty(customDomain) ? SameSiteMode.None : SameSiteMode.Lax,
-         Secure = true,
-         Domain = customDomain,
-         HttpOnly = true
-       });
+      //   // For server to compare
+      //   context.Response.Cookies.Append("XSRF-TOKEN-SVR", tokens.RequestToken,
+      //      new CookieOptions()
+      //  {
+      //    SameSite = string.IsNullOrEmpty(customDomain) ? SameSiteMode.None : SameSiteMode.Lax,
+      //    Secure = true,
+      //    Domain = customDomain,
+      //    HttpOnly = true
+      //  });
 
-        await next();
-      });
+      //   await next();
+      // });
       app.UseRouting();
       var _cors = Configuration.GetSection("CorsDomains").Get<string[]>();
       app.UseCors(builder => builder.WithOrigins(_cors)
