@@ -317,7 +317,7 @@ namespace CcsSso.Core.Service.External
             CompanyHouseId = userProfileRequestInfo.CompanyHouseId
           };
 
-          isAutovalidationSuccess = await _wrapperApiService.PostAsync<bool>($"{userProfileRequestInfo.OrganisationId}/registration", autoValidationDetails, "ERROR_ORGANISATION_AUTOVALIDATION");
+          isAutovalidationSuccess = await _wrapperApiService.PostAsync<bool>(WrapperApi.Organisation, $"{userProfileRequestInfo.OrganisationId}/registration", autoValidationDetails, "ERROR_ORGANISATION_AUTOVALIDATION");
         }
 
         if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)

@@ -104,6 +104,11 @@ namespace CcsSso.Core.PPONScheduler
         c.BaseAddress = new Uri(appSettings.CiiSettings.Url);
         c.DefaultRequestHeaders.Add("x-api-key", appSettings.CiiSettings.Token);
       });
+      services.AddHttpClient("OrgWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(appSettings.IsApiGatewayEnabled ? appSettings.WrapperApiSettings.ApiGatewayEnabledOrgUrl : appSettings.WrapperApiSettings.ApiGatewayDisabledOrgUrl);
+        c.DefaultRequestHeaders.Add("X-API-Key", appSettings.WrapperApiSettings.OrgApiKey);
+      });
     }
 
     private static PPONAppSettings GetConfigurationDetails(HostBuilderContext hostContext)
@@ -112,10 +117,14 @@ namespace CcsSso.Core.PPONScheduler
       OneTimeJob oneTimeJob;
       CiiSettings ciiSettings;
       ApiSettings pPONApiSettings;
+      WrapperApiSettings wrapperApiSettings;
 
       string dbConnection;
 
       var config = hostContext.Configuration;
+
+      bool.TryParse(config["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
+
       dbConnection = config["DbConnection"];
 
       ciiSettings = config.GetSection("CIIApi").Get<CiiSettings>();
@@ -124,13 +133,17 @@ namespace CcsSso.Core.PPONScheduler
       scheduleJob = config.GetSection("ScheduleJob").Get<ScheduleJob>();
       oneTimeJob = config.GetSection("OneTimeJob").Get<OneTimeJob>();
 
+      wrapperApiSettings = config.GetSection("OneTimeJob").Get<WrapperApiSettings>();
+
       var appSettings = new PPONAppSettings()
       {
+        IsApiGatewayEnabled = isApiGatewayEnabled,
         DbConnection = dbConnection,
         CiiSettings = ciiSettings,
         PPONApiSettings = pPONApiSettings,
         ScheduleJobSettings = scheduleJob,
         OneTimeJobSettings = oneTimeJob,
+        WrapperApiSettings = wrapperApiSettings,
       };
 
       return appSettings;

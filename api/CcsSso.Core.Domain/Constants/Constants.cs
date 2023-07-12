@@ -208,4 +208,13 @@ namespace CcsSso.Domain.Constants
     public const string ManageGroup = "Manage-group";
     public const string OrgUserSupport = "Org-user-support";
   }
+
+  public enum WrapperApi
+  {
+    Configuration,
+    Organisation,
+    Contact,
+    Security,
+    User
+  }
 }
