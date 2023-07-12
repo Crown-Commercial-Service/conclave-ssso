@@ -11,6 +11,8 @@ using CcsSso.Core.PPONScheduler.Service;
 using CcsSso.Service;
 using CcsSso.Core.Service;
 using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Service.External;
 
 namespace CcsSso.Core.PPONScheduler
 {
@@ -68,7 +70,7 @@ namespace CcsSso.Core.PPONScheduler
         };
         return ciiConfigInfo;
       });
-    }
+		}
 
     private static void ConfigureJobs(IServiceCollection services)
     {
@@ -90,6 +92,8 @@ namespace CcsSso.Core.PPONScheduler
       services.AddScoped<ICiiService, CiiService>();
       services.AddScoped<IDateTimeService, DateTimeService>();
       services.AddScoped<IPPONService, PPONService>();
+      services.AddScoped<IWrapperOrganisationService, WrapperOrganisationService>();
+      services.AddScoped<IWrapperApiService, WrapperApiService>(); 
     }
 
     private static void ConfigureHttpClients(IServiceCollection services, PPONAppSettings appSettings)
@@ -104,7 +108,7 @@ namespace CcsSso.Core.PPONScheduler
         c.BaseAddress = new Uri(appSettings.CiiSettings.Url);
         c.DefaultRequestHeaders.Add("x-api-key", appSettings.CiiSettings.Token);
       });
-      services.AddHttpClient("OrgWrapperApi", c =>
+			services.AddHttpClient("OrgWrapperApi", c =>
       {
         c.BaseAddress = new Uri(appSettings.IsApiGatewayEnabled ? appSettings.WrapperApiSettings.ApiGatewayEnabledOrgUrl : appSettings.WrapperApiSettings.ApiGatewayDisabledOrgUrl);
         c.DefaultRequestHeaders.Add("X-API-Key", appSettings.WrapperApiSettings.OrgApiKey);
@@ -133,7 +137,7 @@ namespace CcsSso.Core.PPONScheduler
       scheduleJob = config.GetSection("ScheduleJob").Get<ScheduleJob>();
       oneTimeJob = config.GetSection("OneTimeJob").Get<OneTimeJob>();
 
-      wrapperApiSettings = config.GetSection("OneTimeJob").Get<WrapperApiSettings>();
+      wrapperApiSettings = config.GetSection("WrapperApiSettings").Get<WrapperApiSettings>();
 
       var appSettings = new PPONAppSettings()
       {
