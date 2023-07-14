@@ -14,7 +14,7 @@
     "containerDefinitions": [
         {
             "name": "%SPACE%-adaptor-sqs-listener",
-            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-adaptor-sqs-listener:%SPACE%-api-adaptor-sqs-listener-%BUILD_NUMBER%",
+            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-adaptor-sqs-listener:%SPACE%-adaptor-sqs-listener-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
