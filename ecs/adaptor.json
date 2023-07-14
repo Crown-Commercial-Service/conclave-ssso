@@ -14,7 +14,7 @@
     "containerDefinitions": [
         {
             "name": "%SPACE%-adaptor",
-            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-adaptor:%SPACE%-api-adaptor-%BUILD_NUMBER%",
+            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-adaptor:%SPACE%-adaptor-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
