@@ -1,5 +1,5 @@
 {
-    "family": "%SPACE%-api-security",
+    "family": "%SPACE%-security",
     "networkMode": "awsvpc",
     "taskRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
     "executionRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/ecsTaskExecutionRole",
@@ -14,7 +14,7 @@
     "containerDefinitions": [
         {
             "name": "%SPACE%-security",
-            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-security:%SPACE%-api-security-%BUILD_NUMBER%",
+            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-security:%SPACE%-security-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
