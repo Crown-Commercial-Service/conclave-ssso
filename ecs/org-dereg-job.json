@@ -14,7 +14,7 @@
     "containerDefinitions": [
         {
             "name": "%SPACE%-org-dereg-job",
-            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-org-dereg-job:%SPACE%-api-org-dereg-job-%BUILD_NUMBER%",
+            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-org-dereg-job:%SPACE%-org-dereg-job-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
