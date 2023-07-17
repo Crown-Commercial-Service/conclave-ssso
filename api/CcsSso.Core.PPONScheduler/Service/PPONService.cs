@@ -1,4 +1,5 @@
 ﻿using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.PPONScheduler.Model;
 using CcsSso.Core.PPONScheduler.Service.Contracts;
 using CcsSso.Domain.Constants;
@@ -60,7 +61,7 @@ namespace CcsSso.Core.PPONScheduler.Service
 			}
 		}
 
-		private async Task ProcessOrg(Organisation orgDetails)
+		private async Task ProcessOrg(OrganisationDto orgDetails)
 		{
 			var ciiOrgId = orgDetails.CiiOrganisationId;
 			var orgLegalName = orgDetails.LegalName;
@@ -77,61 +78,30 @@ namespace CcsSso.Core.PPONScheduler.Service
 			}
 		}
 
-		private async Task<List<Organisation>> GetRegisteredOrgsAsync(bool oneTimeValidationSwitch, DateTime startDate, DateTime endDate)
+		private async Task<List<OrganisationDto>> GetRegisteredOrgsAsync(bool oneTimeValidationSwitch, DateTime startDate, DateTime endDate)
 		{
 			var dataDuration = _appSettings.ScheduleJobSettings.DataDurationInMinutes;
 			var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
-
+			var resultSetCriteria = new ResultSetCriteria { IsPagination = false };
 			try
 			{
+				var organisationFilterCriteria = new OrganisationFilterCriteria();
 				if (oneTimeValidationSwitch)
 				{
-					return await GetRegisteredOrgsByDateAsync(startDate, endDate);
+					organisationFilterCriteria.StartDate = startDate;
+					organisationFilterCriteria.EndDate = endDate;
 				}
 				else
 				{
-					return await GetRegisteredOrgsByDateAsync(untilDateTime);
+					organisationFilterCriteria.UntilDateTime = untilDateTime;
 				}
+				return await _wrapperOrganisationService.GetOrganisationDataAsync(organisationFilterCriteria, resultSetCriteria);			
 			}
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "Error");
 				throw;
 			}
-		}
-
-		private async Task<List<Organisation>> GetRegisteredOrgsByDateAsync(DateTime untilDateTime)
-		{
-			var result = await _dataContext.Organisation.Where(
-													 org => !org.IsDeleted).ToListAsync();
-
-			return result.Where(org => org.CreatedOnUtc > untilDateTime)
-										.Select(o =>
-										new Organisation
-										{
-											Id = o.Id,
-											CiiOrganisationId = o.CiiOrganisationId,
-											LegalName = o.LegalName,
-											CreatedOnUtc = o.CreatedOnUtc,
-											RightToBuy = o.RightToBuy,
-											SupplierBuyerType = o.SupplierBuyerType
-										}).ToList();
-		}
-
-		private async Task<List<Organisation>> GetRegisteredOrgsByDateAsync(DateTime startDate, DateTime endDate)
-		{
-			return await _dataContext.Organisation.Where(
-														org => !org.IsDeleted
-														&& org.CreatedOnUtc >= TimeZoneInfo.ConvertTimeToUtc(startDate) && org.CreatedOnUtc <= TimeZoneInfo.ConvertTimeToUtc(endDate))
-						.Select(o => new Organisation
-						{
-							Id = o.Id,
-							CiiOrganisationId = o.CiiOrganisationId,
-							LegalName = o.LegalName,
-							CreatedOnUtc = o.CreatedOnUtc,
-							RightToBuy = o.RightToBuy,
-							SupplierBuyerType = o.SupplierBuyerType
-						}).ToListAsync();
 		}
 
 		private async Task LinkPPONWithOrgAsync(string ciiOrganisationId)

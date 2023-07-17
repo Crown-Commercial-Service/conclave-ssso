@@ -24,7 +24,9 @@ namespace CcsSso.Dtos.Domain.Models
 
     public int PartyId { get; set; }
 
-    public Address Address { get; set; }
+		public DateTime CreatedOnUtc { get; set; }
+
+		public Address Address { get; set; }
 
     public bool IsAutovalidationPending { get; set; }
   }
