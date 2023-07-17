@@ -1,5 +1,5 @@
 {
-    "family": "%SPACE%-dashboardwrapper",
+    "family": "%SPACE%-dashboard-wrapper",
     "networkMode": "awsvpc",
     "taskRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/%ENV_NAME%-ecs-task-execution-role",
     "executionRoleArn": "arn:aws:iam::%AWS_ACCOUNT_ID%:role/%ENV_NAME%-ecs-task-execution-role",
@@ -13,8 +13,8 @@
     "memory": "512",
     "containerDefinitions": [
         {
-            "name": "%SPACE%-dashboardwrapper",
-            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-dashboardwrapper:%SPACE%-dashboardwrapper-%BUILD_NUMBER%",
+            "name": "%SPACE%-dashboard-wrapper",
+            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-dashboard-wrapper:%SPACE%-dashboard-wrapper-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
@@ -51,7 +51,7 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/%SPACE%-dashboardwrapper",
+                    "awslogs-group": "/ecs/%SPACE%-dashboard-wrapper",
                     "awslogs-region": "eu-west-2",
                     "awslogs-stream-prefix": "ecs"
                 }
