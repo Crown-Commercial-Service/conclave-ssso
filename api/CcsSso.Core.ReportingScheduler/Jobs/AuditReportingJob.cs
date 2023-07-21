@@ -1,4 +1,5 @@
 using CcsSso.Core.ReportingScheduler.Models;
+using CcsSso.Core.ReportingScheduler.Wrapper.Contracts;
 using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Dto;
@@ -18,10 +19,12 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ICSVConverter _csvConverter;
     private readonly IFileUploadToCloud _fileUploadToCloud;
+    private readonly IWrapperUserService _wrapperUserService;
+
 
     public AuditReportingJob(IServiceScopeFactory factory, ILogger<AuditReportingJob> logger,
        IDateTimeService dataTimeService, AppSettings appSettings, IHttpClientFactory httpClientFactory,
-       ICSVConverter csvConverter, IFileUploadToCloud fileUploadToCloud)
+       ICSVConverter csvConverter, IFileUploadToCloud fileUploadToCloud, IWrapperUserService wrapperUserService)
     {
       _logger = logger;
       _appSettings = appSettings;
@@ -30,6 +33,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       _httpClientFactory = httpClientFactory;
       _csvConverter = csvConverter;
       _fileUploadToCloud = fileUploadToCloud;
+      _wrapperUserService = wrapperUserService;
 
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -51,7 +55,9 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       {
         var totalNumberOfItemsDuringThisSchedule = 0;
 
-        var listOfAllModifiedAuditLog = await GetModifiedAuditLog();
+        var auditLogResponse = await GetModifiedAuditLog();
+
+        var listOfAllModifiedAuditLog = auditLogResponse.AuditLogDetail;
 
         if (listOfAllModifiedAuditLog == null || listOfAllModifiedAuditLog.Count() == 0)
         {
@@ -79,14 +85,14 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             if (eachModifiedAuditLog != null)
             {
               auditLog = new AuditLogResponseInfo();
-              auditLog.Id = Convert.ToInt32(eachModifiedAuditLog.Item1.Split("|")[0].ToString());
-              auditLog.Event = eachModifiedAuditLog.Item1.Split("|")[1];
-              auditLog.UserId = eachModifiedAuditLog.Item2;
-              auditLog.Application = eachModifiedAuditLog.Item3;
-              auditLog.ReferenceData = eachModifiedAuditLog.Item4;
-              auditLog.IpAddress = eachModifiedAuditLog.Item5;
-              auditLog.Device = eachModifiedAuditLog.Item6;
-              auditLog.EventTimeUtc = eachModifiedAuditLog.Item7;
+              auditLog.Id = eachModifiedAuditLog.Id;
+              auditLog.Event = eachModifiedAuditLog.Event;
+              auditLog.UserId = eachModifiedAuditLog.UserName;
+              auditLog.Application = eachModifiedAuditLog.Application;
+              auditLog.ReferenceData = eachModifiedAuditLog.ReferenceData;
+              auditLog.IpAddress = eachModifiedAuditLog.IpAddress;
+              auditLog.Device = eachModifiedAuditLog.Device;
+              auditLog.EventTimeUtc = eachModifiedAuditLog.EventTimeUtc;
               auditLogList.Add(auditLog);
             }
 
@@ -121,7 +127,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             _logger.LogInformation("After converting the list of Audit Log object into CSV format and returned byte Array");
           
 
-            AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Audit");
+             AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Audit");
             _logger.LogInformation("After Transfered the files to Azure Blob");
 
             if (result.responseStatus)
@@ -158,22 +164,26 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         _logger.LogError("");
       }
     }
-    public async Task<List<Tuple< string, string, string, string, string, string, DateTime>>> GetModifiedAuditLog()
+   
+    public async Task<AuditLogResponse> GetModifiedAuditLog()
     {
       var dataDuration = _appSettings.ReportDataDurations.AuditLogReportingDurationInMinutes;
-      DateTime untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(- dataDuration);
+      DateTime untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
+
+      AuditLogResponse auditLogResult =new();
+      int currentPage = 1;
+      int pageSize = 1;
 
       try
       {
-        var auditLogResult = await (from a in _dataContext.AuditLog
-                                    join s in _dataContext.User
-                                    on a.UserId equals s.Id into sur
-                                    from x in sur.DefaultIfEmpty()
-                                    where a.EventTimeUtc > untilDateTime
-                                    select new Tuple< string, string, string, string, string, string, DateTime>( a.Id + "|" + a.Event, x==null? "direct api call":x.UserName, a.Application, a.ReferenceData, a.IpAddress, a.Device, a.EventTimeUtc)
-                                   ).ToListAsync();
-       
-      
+        auditLogResult = await _wrapperUserService.GetUserAuditLog(untilDateTime, pageSize, currentPage);
+
+        for (int i = 2; i <= auditLogResult.PageCount; i++)
+        {
+          var auditLogNextPageResult = await _wrapperUserService.GetUserAuditLog(untilDateTime, pageSize, i);
+          auditLogResult.CurrentPage = i;
+          auditLogResult.AuditLogDetail.AddRange(auditLogNextPageResult.AuditLogDetail);
+        }
 
         return auditLogResult;
       }
