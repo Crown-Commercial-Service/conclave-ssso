@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Api.Controllers
 {
-  [Route("cii")]
+  [Route("dashboard-wrapper/cii")]
   [ApiController]
   public class CiiController : ControllerBase
   {

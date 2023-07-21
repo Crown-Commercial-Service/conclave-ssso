@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Api.Controllers
 {
-  [Route("users")]
+  [Route("dashboard-wrapper/users")]
   [ApiController]
   public class UserController : ControllerBase
   {

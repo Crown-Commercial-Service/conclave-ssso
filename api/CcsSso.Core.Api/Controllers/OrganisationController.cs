@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Api.Controllers
 {
-  [Route("organisations")]
+  [Route("dashboard-wrapper/organisations")]
   [ApiController]
   public class OrganisationController : ControllerBase
   {

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Adaptor.Api.Controllers
 {
-  [Route("contacts")]
+  [Route("adaptor-service/contacts")]
   [ApiController]
   public class ContactController : ControllerBase
   {

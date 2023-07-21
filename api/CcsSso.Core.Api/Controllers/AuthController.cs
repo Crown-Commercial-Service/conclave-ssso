@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.Api.Controllers
 {
-  [Route("auth")]
+  [Route("dashboard-wrapper/auth")]
   [ApiController]
   public class AuthController : ControllerBase
   {

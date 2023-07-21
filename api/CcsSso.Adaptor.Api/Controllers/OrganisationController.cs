@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Adaptor.Api.Controllers
 {
-  [Route("organisations")]
+  [Route("adaptor-service/organisations")]
   [ApiController]
   public class OrganisationController : ControllerBase
   {

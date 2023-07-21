@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.ExternalApi.Controllers
 {
-  [Route("configurations")]
+  [Route("dashboard-wrapper/configurations")]
   [ApiController]
   public class ConfigurationController : ControllerBase
   {

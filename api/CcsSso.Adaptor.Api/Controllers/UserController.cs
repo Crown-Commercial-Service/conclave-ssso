@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Adaptor.Api.Controllers
 {
-  [Route("users")]
+  [Route("adaptor-service/users")]
   [ApiController]
   public class UserController : ControllerBase
   {

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace CcsSso.Adaptor.Api.Controllers
 {
   [ApiExplorerSettings(IgnoreApi = true)]
-  [Route("push")]
+  [Route("adaptor-service/push")]
   [ApiController]
   public class PushController : ControllerBase
   {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.Api.Controllers
 {
-  [Route("logs")]
+  [Route("dashboard-wrapper/logs")]
   [ApiController]
   public class LoggerController : ControllerBase
   {
