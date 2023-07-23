@@ -2,9 +2,10 @@
 
 namespace CcsSso.Core.ReportingScheduler.Wrapper.Contracts
 {
-    public interface IWrapperUserService
-    {
-        Task<AuditLogResponse> GetUserAuditLog(DateTime startDate, int pageSize, int currentPage);
-        Task<List<UserModel>> GetUserDetails(string listOfUserIds);
-    }
+  public interface IWrapperUserService
+  {
+    Task<AuditLogResponse> GetUserAuditLog(DateTime startDate, int pageSize, int currentPage);
+
+    Task<UserNameListResponse> GetUserNames(string listOfUserIds);
+  }
 }

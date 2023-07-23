@@ -19,7 +19,7 @@ namespace CcsSso.Core.ReportingScheduler.Wrapper
       _wrapperApiService = wrapperApiService;
     }
 
-    public async Task<AuditLogResponse> ContactAuditLog(DateTime startDate, int pageSize, int currentPage)
+    public async Task<AuditLogResponse> GetContactAuditLog(DateTime startDate, int pageSize, int currentPage)
     {
       return await _wrapperApiService.GetAsync<AuditLogResponse>(WrapperApi.Contact, $"data/audit?startDate={startDate}&page-size={pageSize}&current-page={currentPage}", "ERROR_GETTING_CONTACT_AUDIT_LOG");
     }

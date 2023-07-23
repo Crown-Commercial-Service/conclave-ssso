@@ -20,11 +20,14 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     private readonly ICSVConverter _csvConverter;
     private readonly IFileUploadToCloud _fileUploadToCloud;
     private readonly IWrapperUserService _wrapperUserService;
+    private readonly IWrapperOrganisationService _wrapperOrganisationService;
+    private readonly IWrapperContactService _wrapperContactService;
 
 
     public AuditReportingJob(IServiceScopeFactory factory, ILogger<AuditReportingJob> logger,
        IDateTimeService dataTimeService, AppSettings appSettings, IHttpClientFactory httpClientFactory,
-       ICSVConverter csvConverter, IFileUploadToCloud fileUploadToCloud, IWrapperUserService wrapperUserService)
+       ICSVConverter csvConverter, IFileUploadToCloud fileUploadToCloud, IWrapperUserService wrapperUserService,
+       IWrapperContactService wrapperContactService, IWrapperOrganisationService wrapperOrganisationService)
     {
       _logger = logger;
       _appSettings = appSettings;
@@ -34,7 +37,8 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       _csvConverter = csvConverter;
       _fileUploadToCloud = fileUploadToCloud;
       _wrapperUserService = wrapperUserService;
-
+      _wrapperContactService = wrapperContactService;
+      _wrapperOrganisationService = wrapperOrganisationService;
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -56,6 +60,8 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         var totalNumberOfItemsDuringThisSchedule = 0;
 
         var auditLogResponse = await GetModifiedAuditLog();
+
+
 
         var listOfAllModifiedAuditLog = auditLogResponse.AuditLogDetail;
 
@@ -125,9 +131,9 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             }
 
             _logger.LogInformation("After converting the list of Audit Log object into CSV format and returned byte Array");
-          
 
-             AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Audit");
+
+            AzureResponse result = await _fileUploadToCloud.FileUploadToAzureBlobAsync(fileByteArray, "Audit");
             _logger.LogInformation("After Transfered the files to Azure Blob");
 
             if (result.responseStatus)
@@ -164,15 +170,32 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         _logger.LogError("");
       }
     }
-   
+
     public async Task<AuditLogResponse> GetModifiedAuditLog()
+    {
+      AuditLogResponse auditLogList = new ();
+      auditLogList.AuditLogDetail = new();
+
+      var userAuditList= await GetModifiedUserAuditLog();
+      var contactAuditList = await GetModifiedContactAuditLog();
+      var orgAuditList = await GetModifiedOrgAuditLog();
+
+      auditLogList.AuditLogDetail.AddRange(userAuditList.AuditLogDetail);
+      auditLogList.AuditLogDetail.AddRange(contactAuditList.AuditLogDetail);
+      auditLogList.AuditLogDetail.AddRange(orgAuditList.AuditLogDetail);
+
+      return auditLogList;
+    }
+
+
+    public async Task<AuditLogResponse> GetModifiedUserAuditLog()
     {
       var dataDuration = _appSettings.ReportDataDurations.AuditLogReportingDurationInMinutes;
       DateTime untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
 
       AuditLogResponse auditLogResult =new();
       int currentPage = 1;
-      int pageSize = 1;
+      int pageSize = 50;
 
       try
       {
@@ -181,6 +204,85 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         for (int i = 2; i <= auditLogResult.PageCount; i++)
         {
           var auditLogNextPageResult = await _wrapperUserService.GetUserAuditLog(untilDateTime, pageSize, i);
+          auditLogResult.CurrentPage = i;
+          auditLogResult.AuditLogDetail.AddRange(auditLogNextPageResult.AuditLogDetail);
+        }
+
+        return auditLogResult;
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error");
+        throw;
+      }
+    }
+
+    public async Task<AuditLogResponse> GetModifiedOrgAuditLog()
+    {
+      var dataDuration = _appSettings.ReportDataDurations.AuditLogReportingDurationInMinutes;
+      DateTime untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
+
+      AuditLogResponse auditLogResult = new();
+      int currentPage = 1;
+      int pageSize = 50;
+
+      try
+      {
+        auditLogResult = await _wrapperOrganisationService.GetOrgAuditLog(untilDateTime, pageSize, currentPage);
+        await AddUserName(auditLogResult);
+
+        for (int i = 2; i <= auditLogResult.PageCount; i++)
+        {
+          var auditLogNextPageResult = await _wrapperOrganisationService.GetOrgAuditLog(untilDateTime, pageSize, i);
+          await AddUserName(auditLogNextPageResult);
+
+          auditLogResult.CurrentPage = i;
+          auditLogResult.AuditLogDetail.AddRange(auditLogNextPageResult.AuditLogDetail);
+        }
+
+        return auditLogResult;
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error");
+        throw;
+      }
+    }
+
+    private async Task AddUserName(AuditLogResponse auditLogResult)
+    {
+      if (!auditLogResult.AuditLogDetail.Any())
+        return;
+
+      var listOfUserIds = auditLogResult.AuditLogDetail.Select(x => x.UserId).ToList();
+      var listOfUserNames = await _wrapperUserService.GetUserNames(string.Join(",", listOfUserIds));
+
+      foreach (var item in auditLogResult.AuditLogDetail)
+      {
+        item.UserName = listOfUserNames.UserNameList.FirstOrDefault(x => x.Id == item.UserId)?.Name;
+      }
+    }
+
+    public async Task<AuditLogResponse> GetModifiedContactAuditLog()
+    {
+      var dataDuration = _appSettings.ReportDataDurations.AuditLogReportingDurationInMinutes;
+      DateTime untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
+
+      AuditLogResponse auditLogResult = new();
+      int currentPage = 1;
+      int pageSize = 50;
+
+      try
+      {
+        auditLogResult = await _wrapperContactService.GetContactAuditLog(untilDateTime, pageSize, currentPage);
+        await AddUserName(auditLogResult);
+
+
+        for (int i = 2; i <= auditLogResult.PageCount; i++)
+        {
+          var auditLogNextPageResult = await _wrapperContactService.GetContactAuditLog(untilDateTime, pageSize, i);
+          await AddUserName(auditLogNextPageResult);
+
           auditLogResult.CurrentPage = i;
           auditLogResult.AuditLogDetail.AddRange(auditLogNextPageResult.AuditLogDetail);
         }

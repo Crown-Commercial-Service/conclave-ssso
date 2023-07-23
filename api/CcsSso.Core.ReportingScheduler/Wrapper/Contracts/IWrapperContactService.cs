@@ -4,6 +4,7 @@ namespace CcsSso.Core.ReportingScheduler.Wrapper.Contracts
 {
     public interface IWrapperContactService
     {
-        Task<AuditLogResponse> ContactAuditLog(DateTime startDate, int pageSize, int currentPage);
-    }
+        Task<AuditLogResponse> GetContactAuditLog(DateTime startDate, int pageSize, int currentPage);
+
+  }
 }

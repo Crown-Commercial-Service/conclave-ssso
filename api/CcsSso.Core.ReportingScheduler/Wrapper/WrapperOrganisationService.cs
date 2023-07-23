@@ -19,7 +19,7 @@ namespace CcsSso.Core.ReportingScheduler.Wrapper
       _wrapperApiService = wrapperApiService;
     }
 
-    public async Task<AuditLogResponse> OrgAuditLog(DateTime startDate, int pageSize, int currentPage)
+    public async Task<AuditLogResponse> GetOrgAuditLog(DateTime startDate, int pageSize, int currentPage)
     {
       return await _wrapperApiService.GetAsync<AuditLogResponse>(WrapperApi.Organisation, $"data/audit?startDate={startDate}&page-size={pageSize}&current-page={currentPage}", "ERROR_GETTING_ORGANISATION_AUDIT_LOG");
     }
