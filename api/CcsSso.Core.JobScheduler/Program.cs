@@ -42,209 +42,236 @@ namespace CcsSso.Core.JobScheduler
     }
 
     public static IHostBuilder CreateHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args).ConfigureAppConfiguration((hostingContext, config) =>
+      Host.CreateDefaultBuilder(args).ConfigureAppConfiguration((hostingContext, config) =>
+      {
+        var configBuilder = new ConfigurationBuilder()
+                        .AddJsonFile("appsettings.json", optional: false)
+                        .Build();
+        var builtConfig = config.Build();
+        vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
+        vaultSource = configBuilder.GetValue<string>("Source");
+        if (!vaultEnabled)
         {
-          var configBuilder = new ConfigurationBuilder()
-                         .AddJsonFile("appsettings.json", optional: false)
-                         .Build();
-          var builtConfig = config.Build();
-          vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
-          vaultSource = configBuilder.GetValue<string>("Source");
-          if (!vaultEnabled)
-          {
-            config.AddJsonFile("appsecrets.json", optional: false, reloadOnChange: true);
-          }
-        }).ConfigureServices((hostContext, services) =>
+          config.AddJsonFile("appsecrets.json", optional: false, reloadOnChange: true);
+        }
+      }).ConfigureServices((hostContext, services) =>
+      {
+        string dbConnection;
+        CiiSettings ciiSettings;
+        List<UserDeleteJobSetting> userDeleteJobSettings;
+        SecurityApiSettings securityApiSettings;
+        WrapperApiSettings wrapperApiSettings;
+        ScheduleJobSettings scheduleJobSettings;
+        BulkUploadSettings bulkUploadSettings;
+        RedisCacheSettingsVault redisCacheSettingsVault;
+        EmailConfigurationInfo emailConfigurationInfo;
+        DocUploadInfoVault docUploadConfig;
+        S3ConfigurationInfoVault s3ConfigurationInfo;
+        OrgAutoValidationJobSettings orgAutoValidationJobSettings;
+        OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles;
+        OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob;
+        OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail;
+        ActiveJobStatus activeJobStatus;
+        ServiceRoleGroupSettings serviceRoleGroupSettings;
+        bool isApiGatewayEnabled = false;
+
+        if (vaultEnabled)
         {
-          string dbConnection;
-          CiiSettings ciiSettings;
-          List<UserDeleteJobSetting> userDeleteJobSettings;
-          SecurityApiSettings securityApiSettings;
-          WrapperApiSettings wrapperApiSettings;
-          ScheduleJobSettings scheduleJobSettings;
-          BulkUploadSettings bulkUploadSettings;
-          RedisCacheSettingsVault redisCacheSettingsVault;
-          EmailConfigurationInfo emailConfigurationInfo;
-          DocUploadInfoVault docUploadConfig;
-          S3ConfigurationInfoVault s3ConfigurationInfo;
-          OrgAutoValidationJobSettings orgAutoValidationJobSettings;
-          OrgAutoValidationOneTimeJobRoles orgAutoValidationOneTimeJobRoles;
-          OrgAutoValidationOneTimeJob orgAutoValidationOneTimeJob;
-          OrgAutoValidationOneTimeJobEmail orgAutoValidationOneTimeJobEmail;
-          ActiveJobStatus activeJobStatus;
-          ServiceRoleGroupSettings serviceRoleGroupSettings;
-          bool isApiGatewayEnabled = false;
+          _programHelpers = new ProgramHelpers();
 
-
-          if (vaultEnabled)
+          if (vaultSource?.ToUpper() == "AWS")
           {
-            _programHelpers = new ProgramHelpers();
+            _awsParameterStoreService = new AwsParameterStoreService();
 
-            if (vaultSource?.ToUpper() == "AWS")
+            var parameters = _programHelpers.LoadAwsSecretsAsync(_awsParameterStoreService).Result;
+
+            var dbName = _awsParameterStoreService.FindParameterByName(parameters, path + "DbName");
+            var dbConnectionEndPoint = _awsParameterStoreService.FindParameterByName(parameters, path + "DbConnection");
+
+            if (!string.IsNullOrEmpty(dbName))
             {
-              _awsParameterStoreService = new AwsParameterStoreService();
-           
-              var parameters = _programHelpers.LoadAwsSecretsAsync(_awsParameterStoreService).Result;
-
-              var dbName = _awsParameterStoreService.FindParameterByName(parameters, path + "DbName");
-              var dbConnectionEndPoint = _awsParameterStoreService.FindParameterByName(parameters, path + "DbConnection");
-
-              if (!string.IsNullOrEmpty(dbName))
-              {
-                dbConnection = UtilityHelper.GetDatbaseConnectionString(dbName, dbConnectionEndPoint);
-              }
-              else
-              {
-                dbConnection = dbConnectionEndPoint;
-              }
-
-              isApiGatewayEnabled = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "IsApiGatewayEnabled"));
-
-              ReadFromAWS(out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings, out bulkUploadSettings,
-                out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
-                 out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles,out orgAutoValidationOneTimeJobEmail, out serviceRoleGroupSettings, parameters);
-              ReadFromAWSActiveJobStatus(out activeJobStatus, parameters);
+              dbConnection = UtilityHelper.GetDatbaseConnectionString(dbName, dbConnectionEndPoint);
             }
             else
             {
-              ReadFromHashicorp(out dbConnection, out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings,
-                out bulkUploadSettings, out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
-                out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail, out isApiGatewayEnabled,
-                out serviceRoleGroupSettings);
-              ReadFromHashicorpActiveJobStatus(out activeJobStatus);
+              dbConnection = dbConnectionEndPoint;
             }
+
+            isApiGatewayEnabled = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "IsApiGatewayEnabled"));
+
+            ReadFromAWS(out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings, out bulkUploadSettings,
+              out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
+               out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail, out serviceRoleGroupSettings, parameters);
+            ReadFromAWSActiveJobStatus(out activeJobStatus, parameters);
           }
           else
           {
-            ReadFromAppSecret(hostContext, out dbConnection, out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings,
+            ReadFromHashicorp(out dbConnection, out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings,
               out bulkUploadSettings, out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
               out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail, out isApiGatewayEnabled,
               out serviceRoleGroupSettings);
-            ReadFromAppSecretActiveJobStatus(hostContext, out activeJobStatus);
+            ReadFromHashicorpActiveJobStatus(out activeJobStatus);
           }
+        }
+        else
+        {
+          ReadFromAppSecret(hostContext, out dbConnection, out ciiSettings, out userDeleteJobSettings, out securityApiSettings, out wrapperApiSettings, out scheduleJobSettings,
+            out bulkUploadSettings, out redisCacheSettingsVault, out emailConfigurationInfo, out docUploadConfig, out s3ConfigurationInfo, out orgAutoValidationJobSettings,
+            out orgAutoValidationOneTimeJob, out orgAutoValidationOneTimeJobRoles, out orgAutoValidationOneTimeJobEmail, out isApiGatewayEnabled,
+            out serviceRoleGroupSettings);
+          ReadFromAppSecretActiveJobStatus(hostContext, out activeJobStatus);
+        }
 
-          services.AddSingleton(s =>
+        services.AddSingleton(s =>
+        {
+          return new AppSettings()
           {
-            return new AppSettings()
+            DbConnection = dbConnection,
+            UserDeleteJobSettings = userDeleteJobSettings,
+            WrapperApiSettings = new WrapperApiSettings()
             {
-              DbConnection = dbConnection,
-              UserDeleteJobSettings = userDeleteJobSettings,
-              WrapperApiSettings = new WrapperApiSettings()
-              {
-                ApiKey = wrapperApiSettings.ApiKey,
-                Url = wrapperApiSettings.Url,
-                ApiGatewayEnabledUserUrl = wrapperApiSettings.ApiGatewayEnabledUserUrl,
-                ApiGatewayDisabledUserUrl = wrapperApiSettings.ApiGatewayDisabledUserUrl,
-              },
-              SecurityApiSettings = new SecurityApiSettings()
-              {
-                ApiKey = securityApiSettings.ApiKey,
-                Url = securityApiSettings.Url
-              },
-              ScheduleJobSettings = scheduleJobSettings,
-              BulkUploadSettings = bulkUploadSettings,
-              CiiSettings = new CiiSettings()
-              {
-                Token = ciiSettings.Token,
-                Url = ciiSettings.Url
-              },
-              OrgAutoValidationJobSettings = orgAutoValidationJobSettings,
-              OrgAutoValidationOneTimeJob=orgAutoValidationOneTimeJob,
-              OrgAutoValidationOneTimeJobRoles = orgAutoValidationOneTimeJobRoles,
-              OrgAutoValidationOneTimeJobEmail =orgAutoValidationOneTimeJobEmail,
-              IsApiGatewayEnabled = isApiGatewayEnabled,
-              ActiveJobStatus = activeJobStatus,
-              ServiceRoleGroupSettings = new ServiceRoleGroupSettings()
-              {
-                Enable = serviceRoleGroupSettings.Enable
-              }
-            };
-          });
-
-          services.AddHttpClient("default").ConfigurePrimaryHttpMessageHandler(() =>
-          {
-            return new HttpClientHandler()
+              ApiKey = wrapperApiSettings.ApiKey,
+              Url = wrapperApiSettings.Url,
+              ApiGatewayEnabledUserUrl = wrapperApiSettings.ApiGatewayEnabledUserUrl,
+              ApiGatewayDisabledUserUrl = wrapperApiSettings.ApiGatewayDisabledUserUrl,
+              ConfigApiKey = wrapperApiSettings.ConfigApiKey,
+              OrgApiKey = wrapperApiSettings.OrgApiKey,
+              ApiGatewayDisabledConfigUrl = wrapperApiSettings.ApiGatewayDisabledConfigUrl,
+              ApiGatewayDisabledOrgUrl = wrapperApiSettings.ApiGatewayDisabledOrgUrl,
+              ApiGatewayEnabledConfigUrl = wrapperApiSettings.ApiGatewayEnabledConfigUrl,
+              ApiGatewayEnabledOrgUrl = wrapperApiSettings.ApiGatewayEnabledOrgUrl,
+            },
+            SecurityApiSettings = new SecurityApiSettings()
             {
-              AllowAutoRedirect = true,
-              UseDefaultCredentials = true
-            };
-          });
-          services.AddSingleton(s =>
-          {
-            return emailConfigurationInfo;
-          });
-
-          services.AddSingleton(s =>
-          {
-            int.TryParse(docUploadConfig.SizeValidationValue, out int sizeValidationValue);
-            sizeValidationValue = sizeValidationValue == 0 ? 100000000 : sizeValidationValue;
-
-            return new DocUploadConfig
+              ApiKey = securityApiSettings.ApiKey,
+              Url = securityApiSettings.Url
+            },
+            ScheduleJobSettings = scheduleJobSettings,
+            BulkUploadSettings = bulkUploadSettings,
+            CiiSettings = new CiiSettings()
             {
-              BaseUrl = docUploadConfig.Url,
-              Token = docUploadConfig.Token,
-              DefaultTypeValidationValue = docUploadConfig.TypeValidationValue,
-              DefaultSizeValidationValue = sizeValidationValue
-            };
-          });
-
-          services.AddSingleton(s =>
-          {
-
-            int.TryParse(s3ConfigurationInfo.FileAccessExpirationInHours, out int fileAccessExpirationInHours);
-            fileAccessExpirationInHours = fileAccessExpirationInHours == 0 ? 36 : fileAccessExpirationInHours;
-
-            return new S3ConfigurationInfo
+              Token = ciiSettings.Token,
+              Url = ciiSettings.Url
+            },
+            OrgAutoValidationJobSettings = orgAutoValidationJobSettings,
+            OrgAutoValidationOneTimeJob = orgAutoValidationOneTimeJob,
+            OrgAutoValidationOneTimeJobRoles = orgAutoValidationOneTimeJobRoles,
+            OrgAutoValidationOneTimeJobEmail = orgAutoValidationOneTimeJobEmail,
+            IsApiGatewayEnabled = isApiGatewayEnabled,
+            ActiveJobStatus = activeJobStatus,
+            ServiceRoleGroupSettings = new ServiceRoleGroupSettings()
             {
-              AccessKeyId = s3ConfigurationInfo.AccessKeyId,
-              AccessSecretKey = s3ConfigurationInfo.AccessSecretKey,
-              BulkUploadBucketName = s3ConfigurationInfo.BulkUploadBucketName,
-              BulkUploadFolderName = s3ConfigurationInfo.BulkUploadFolderName,
-              BulkUploadTemplateFolderName = s3ConfigurationInfo.BulkUploadTemplateFolderName,
-              ServiceUrl = s3ConfigurationInfo.ServiceUrl,
-              FileAccessExpirationInHours = fileAccessExpirationInHours
-            };
-          });
-
-          services.AddSingleton<IDateTimeService, DateTimeService>();
-          services.AddSingleton<IIdamSupportService, IdamSupportService>();
-          services.AddSingleton<IEmailSupportService, EmailSupportService>();
-          services.AddSingleton<IEmailProviderService, EmailProviderService>();
-          services.AddSingleton<RequestContext>(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
-          services.AddSingleton<IRemoteCacheService, RedisCacheService>();
-          services.AddSingleton<ICacheInvalidateService, CacheInvalidateService>();
-          services.AddSingleton<RedisConnectionPoolService>(_ =>
-            new RedisConnectionPoolService(redisCacheSettingsVault.ConnectionString)
-          );
-          services.AddSingleton<IAwsS3Service, AwsS3Service>();
-          services.AddSingleton<ApplicationConfigurationInfo, ApplicationConfigurationInfo>();
-
-          services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(dbConnection));
-
-
-          services.AddScoped<IOrganisationSupportService, OrganisationSupportService>();
-          services.AddScoped<IContactSupportService, ContactSupportService>();
-          services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
-          services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
-          services.AddScoped<IServiceRoleGroupMapperService, ServiceRoleGroupMapperService>(); 
-          services.AddScoped<IRoleApprovalLinkExpiredService, RoleApprovalLinkExpiredService>();
-          // #Auto validation
-          services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
-          services.AddScoped<IExternalHelperService, ExternalHelperService>();
-          services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();          
-          services.AddSingleton<IAutoValidationService, AutoValidationService>();
-          services.AddSingleton<IAutoValidationOneTimeService, AutoValidationOneTimeService>();
-
-          services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
-          services.AddHostedService<UnverifiedUserDeleteJob>();
-          services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
-          services.AddHostedService<OrganisationAutovalidationJob>();
-          services.AddHostedService<RoleApprovalLinkExpiredJob>();
-
-
+              Enable = serviceRoleGroupSettings.Enable
+            }
+          };
         });
 
-   
+        services.AddHttpClient("default").ConfigurePrimaryHttpMessageHandler(() =>
+        {
+          return new HttpClientHandler()
+          {
+            AllowAutoRedirect = true,
+            UseDefaultCredentials = true
+          };
+        });
+        services.AddSingleton(s =>
+        {
+          return emailConfigurationInfo;
+        });
+
+        services.AddSingleton(s =>
+        {
+          int.TryParse(docUploadConfig.SizeValidationValue, out int sizeValidationValue);
+          sizeValidationValue = sizeValidationValue == 0 ? 100000000 : sizeValidationValue;
+
+          return new DocUploadConfig
+          {
+            BaseUrl = docUploadConfig.Url,
+            Token = docUploadConfig.Token,
+            DefaultTypeValidationValue = docUploadConfig.TypeValidationValue,
+            DefaultSizeValidationValue = sizeValidationValue
+          };
+        });
+
+        services.AddSingleton(s =>
+        {
+
+          int.TryParse(s3ConfigurationInfo.FileAccessExpirationInHours, out int fileAccessExpirationInHours);
+          fileAccessExpirationInHours = fileAccessExpirationInHours == 0 ? 36 : fileAccessExpirationInHours;
+
+          return new S3ConfigurationInfo
+          {
+            AccessKeyId = s3ConfigurationInfo.AccessKeyId,
+            AccessSecretKey = s3ConfigurationInfo.AccessSecretKey,
+            BulkUploadBucketName = s3ConfigurationInfo.BulkUploadBucketName,
+            BulkUploadFolderName = s3ConfigurationInfo.BulkUploadFolderName,
+            BulkUploadTemplateFolderName = s3ConfigurationInfo.BulkUploadTemplateFolderName,
+            ServiceUrl = s3ConfigurationInfo.ServiceUrl,
+            FileAccessExpirationInHours = fileAccessExpirationInHours
+          };
+        });
+
+        services.AddSingleton<IDateTimeService, DateTimeService>();
+        services.AddSingleton<IIdamSupportService, IdamSupportService>();
+        services.AddSingleton<IEmailSupportService, EmailSupportService>();
+        services.AddSingleton<IEmailProviderService, EmailProviderService>();
+        services.AddSingleton<RequestContext>(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
+        services.AddSingleton<IRemoteCacheService, RedisCacheService>();
+        services.AddSingleton<ICacheInvalidateService, CacheInvalidateService>();
+        services.AddSingleton<RedisConnectionPoolService>(_ =>
+          new RedisConnectionPoolService(redisCacheSettingsVault.ConnectionString)
+        );
+        services.AddSingleton<IAwsS3Service, AwsS3Service>();
+        services.AddSingleton<ApplicationConfigurationInfo, ApplicationConfigurationInfo>();
+
+        services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(dbConnection));
+
+
+        services.AddScoped<IOrganisationSupportService, OrganisationSupportService>();
+        services.AddScoped<IContactSupportService, ContactSupportService>();
+        services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
+        services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
+        services.AddScoped<IServiceRoleGroupMapperService, ServiceRoleGroupMapperService>();
+        services.AddScoped<IRoleApprovalLinkExpiredService, RoleApprovalLinkExpiredService>();
+        // #Auto validation
+        services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
+        services.AddScoped<IExternalHelperService, ExternalHelperService>();
+        services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();
+        services.AddSingleton<IAutoValidationService, AutoValidationService>();
+        services.AddSingleton<IAutoValidationOneTimeService, AutoValidationOneTimeService>();
+        services.AddSingleton<IWrapperApiService, WrapperApiService>();
+        services.AddSingleton<IWrapperUserService, WrapperUserService>();
+        services.AddSingleton<IWrapperConfigurationService, WrapperConfigurationService>();
+        services.AddSingleton<IWrapperOrganisationService, WrapperOrganisationService>();
+
+        services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
+        services.AddHostedService<UnverifiedUserDeleteJob>();
+        services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
+        services.AddHostedService<OrganisationAutovalidationJob>();
+        services.AddHostedService<RoleApprovalLinkExpiredJob>();
+        ConfigureHttpClients(services, wrapperApiSettings, isApiGatewayEnabled);
+      });
+
+    private static void ConfigureHttpClients(IServiceCollection services, WrapperApiSettings _wrapperApiSettings, bool isApiGatewayEnabled)
+    {
+      services.AddHttpClient("UserWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(isApiGatewayEnabled ? _wrapperApiSettings.ApiGatewayEnabledUserUrl : _wrapperApiSettings.ApiGatewayDisabledUserUrl);
+        c.DefaultRequestHeaders.Add("x-api-key", _wrapperApiSettings.UserApiKey);
+      });
+
+      services.AddHttpClient("ConfigWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(isApiGatewayEnabled ? _wrapperApiSettings.ApiGatewayEnabledConfigUrl : _wrapperApiSettings.ApiGatewayDisabledConfigUrl);
+        c.DefaultRequestHeaders.Add("x-api-key", _wrapperApiSettings.ConfigApiKey);
+      });
+
+      services.AddHttpClient("OrgWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(isApiGatewayEnabled ? _wrapperApiSettings.ApiGatewayEnabledOrgUrl : _wrapperApiSettings.ApiGatewayDisabledOrgUrl);
+        c.DefaultRequestHeaders.Add("x-api-key", _wrapperApiSettings.OrgApiKey);
+      });
+    }
 
     private static void ReadFromAppSecret(HostBuilderContext hostContext, out string dbConnection, out CiiSettings ciiSettings,
       out List<UserDeleteJobSetting> userDeleteJobSettings, out SecurityApiSettings securityApiSettings, out WrapperApiSettings wrapperApiSettings,

@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Dtos.External
 {
-    public class CcsServiceInfo
+  public class CcsServiceInfo
     {
         public int Id { get; set; }
 
@@ -35,5 +32,19 @@ namespace CcsSso.Core.Domain.Dtos.External
         public string CountryName { get; set; }
 
         public string CountryCode { get; set; }
+    }
+
+    public class RoleApprovalConfigurationInfo
+    {
+        public int Id { get; set; }
+
+        public int CcsAccessRoleId { get; set; }
+
+        public int LinkExpiryDurationInMinute { get; set; }
+
+        public string? NotificationEmails { get; set; }
+
+        public DateTime LastUpdatedOnUtc { get; set; }
+
     }
 }

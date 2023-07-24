@@ -1,16 +1,9 @@
 ﻿using CcsSso.Core.Domain.Contracts.External;
-using CcsSso.Domain.Exceptions;
-using CcsSso.Shared.Cache.Contracts;
-using Newtonsoft.Json;
-using System.Net;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
-using CcsSso.Shared.Domain.Constants;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Domain.Constants;
-using CcsSso.DbModel.Entity;
+using CcsSso.Shared.Domain.Constants;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.External
 {
@@ -31,5 +24,17 @@ namespace CcsSso.Core.Service.External
 			return result;
 		}
 
-	}
+    public async Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(int organisationId)
+    {
+			var result = await _wrapperApiService.GetAsync<OrganisationProfileResponseInfo>(WrapperApi.Organisation, $"internal/{organisationId}", $"{CacheKeyConstant.Organisation}-{organisationId}", "ERROR_RETRIEVING_ORGANISATION");
+			return result;
+    }
+
+    public async Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId)
+    {
+			var result = await _wrapperApiService.GetAsync<List<OrganisationRole>>(WrapperApi.Organisation, $"{organisationId}/roles", $"{CacheKeyConstant.Organisation}-{organisationId}-ROLES", "ORGANISATION_ROLES_NOT_FOUND");
+			return result;
+    }
+
+  }
 }

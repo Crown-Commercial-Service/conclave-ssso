@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using CcsSso.Core.Domain.Dtos.External;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using CcsSso.Core.Domain.Dtos.External;
 
 namespace CcsSso.Core.Domain.Contracts.External
 {
@@ -8,5 +8,9 @@ namespace CcsSso.Core.Domain.Contracts.External
   public interface IWrapperOrganisationService
 	{
 		Task<OrganisationProfileResponseInfo> GetOrganisationAsync(string organisationId);
-	}
+
+    Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(int organisationId);
+
+    Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId);
+  }
 }

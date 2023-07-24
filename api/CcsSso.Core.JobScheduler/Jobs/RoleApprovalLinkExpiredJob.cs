@@ -1,17 +1,13 @@
 ﻿using CcsSso.Core.DbModel.Constants;
+using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
-using CcsSso.DbModel.Entity;
-using CcsSso.Domain.Contracts;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,22 +15,19 @@ namespace CcsSso.Core.JobScheduler.Jobs
 {
   public class RoleApprovalLinkExpiredJob : BackgroundService
   {
-    private readonly IDataContext _dataContext;
     private readonly AppSettings _appSettings;
     private readonly IRoleApprovalLinkExpiredService _roleDeleteExpiredNotificationService;
-
     private readonly ILogger<RoleApprovalLinkExpiredJob> _logger;
     private bool enable;
-
+    private IWrapperUserService _wrapperUserService;
     public RoleApprovalLinkExpiredJob(ILogger<RoleApprovalLinkExpiredJob> logger, IServiceScopeFactory factory,
-      AppSettings appSettings)
+      AppSettings appSettings, IWrapperUserService wrapperUserService)
     {
-      _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
-
       _appSettings = appSettings;
-      _roleDeleteExpiredNotificationService = factory.CreateScope().ServiceProvider.GetRequiredService<IRoleApprovalLinkExpiredService>(); ;
+      _roleDeleteExpiredNotificationService = factory.CreateScope().ServiceProvider.GetRequiredService<IRoleApprovalLinkExpiredService>();
       _logger = logger;
       enable = false;
+      _wrapperUserService = wrapperUserService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -63,30 +56,18 @@ namespace CcsSso.Core.JobScheduler.Jobs
     {
       try
       {
-        var userPendingRole = await GetPendingRoleApproval();
+        UserAccessRolePendingFilterCriteria criteria = new UserAccessRolePendingFilterCriteria() { Status = UserPendingRoleStaus.Pending };
+        var userPendingRole = await _wrapperUserService.GetRoleApprovalLinkExpiredData(criteria);
 
-        _logger.LogInformation($"Pending Role approval request: {userPendingRole.Count()}");
+        _logger.LogInformation($"Pending Role approval request: {userPendingRole.UserAccessRolePendingDetails.Count()}");
 
-        await _roleDeleteExpiredNotificationService.PerformJobAsync(userPendingRole);
-
+        await _roleDeleteExpiredNotificationService.PerformJobAsync(userPendingRole.UserAccessRolePendingDetails);
 
       }
       catch (Exception e)
       {
         _logger.LogError($"Error while deleting the expired user role notification: {e.Message}");
       }
-
-    }
-
-    public async Task<List<UserAccessRolePending>> GetPendingRoleApproval()
-    {
-      var userAccessRolePendingAllList = await _dataContext.UserAccessRolePending
-       .Include(u => u.OrganisationEligibleRole).ThenInclude(or => or.CcsAccessRole)
-       .Where(u => !u.IsDeleted && u.Status == (int)UserPendingRoleStaus.Pending)
-       .OrderBy(u => u.CreatedOnUtc)
-       .ToListAsync();
-
-      return userAccessRolePendingAllList;
     }
   }
 }

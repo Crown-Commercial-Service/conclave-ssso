@@ -9,6 +9,11 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Dtos.External
 {
+  public class OrganisationEligibleRoleResponse
+  {
+    public int CcsAccessRoleId { get; set; }
+  }
+
   public class OrganisationProfileInfo
   {
     public OrganisationIdentifier Identifier { get; set; }
@@ -109,6 +114,8 @@ namespace CcsSso.Core.Domain.Dtos.External
   {
     public int RoleId { get; set; }
 
+    public int CcsAccessRoleId { get; set; }
+    
     public string RoleKey { get; set; }
 
     public string RoleName { get; set; }
@@ -122,6 +129,7 @@ namespace CcsSso.Core.Domain.Dtos.External
     public RoleEligibleTradeType TradeEligibility { get; set; }
 
     public int[] AutoValidationRoleTypeEligibility { get; set; }
+
   }
 
   public class OrganisationRoleUpdate

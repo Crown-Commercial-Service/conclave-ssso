@@ -65,7 +65,14 @@ namespace CcsSso.Core.JobScheduler
           Url = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/Url"),
           ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiKey"),
           ApiGatewayEnabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledUserUrl"),
-          ApiGatewayDisabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledUserUrl")
+          ApiGatewayDisabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledUserUrl"),
+          ConfigApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ConfigApiKey"),
+          OrgApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/OrgApiKey"),
+          UserApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/UserApiKey"),
+          ApiGatewayEnabledConfigUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledConfigUrl"),
+          ApiGatewayEnabledOrgUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledOrgUrl"),
+          ApiGatewayDisabledConfigUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledConfigUrl"),
+          ApiGatewayDisabledOrgUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledOrgUrl"),
         };
       }
       else if (objType == typeof(SecurityApiSettings))
