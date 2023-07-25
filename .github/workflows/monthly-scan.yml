@@ -3,7 +3,7 @@ name: Trufflehog Monthly Deep Scan
 
 on:
   schedule:
-    - cron: "0 0 28-31 * *" 
+    - cron: "0 0 28 * *" 
     
     #This scan will run on the last day of every month
     
@@ -32,8 +32,8 @@ jobs:
          server_port: ${{ secrets.SERVER_PORT }}
          username: ${{ secrets.USER_NAME }}
          password: ${{ secrets.PASSWORD }}
-         subject: Git Secrets Scan Results
-         to: "rahulgandhi.jayabalan@brickendon.com,ponselvam.sakthivel@brickendon.com"
+         subject: Trufflehog Monthly Deep Scan - "${{ github.repository }}"
+         to: "rahulgandhi.jayabalan@brickendon.com,ponselvam.sakthivel@brickendon.com, cybersecurity@crowncommercial.gov.uk"
          from: "secops@brickendon.com"
          body: |
            
