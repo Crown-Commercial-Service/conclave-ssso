@@ -23,5 +23,10 @@ namespace CcsSso.Core.ReportingScheduler.Wrapper
     {
       return await _wrapperApiService.GetAsync<AuditLogResponse>(WrapperApi.User, $"data/audit?startDate={startDate}&page-size={pageSize}&current-page={currentPage}", "ERROR_GETTING_USER_AUDIT_LOG");
     }
+
+    public async Task<List<UserReportDetail>> GetModifiedUsers(string modifiedDate)
+    {
+      return await _wrapperApiService.GetAsync<List<UserReportDetail>>(WrapperApi.User, $"data/user-report/modifieddate={modifiedDate}", "ERROR_GETTING_MODIFIED_USERS");
+    }
   }
 }

@@ -1,4 +1,5 @@
 using CcsSso.Core.ReportingScheduler.Models;
+using CcsSso.Core.ReportingScheduler.Wrapper.Contracts;
 using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Dto;
@@ -20,10 +21,12 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ICSVConverter _csvConverter;
     private readonly IFileUploadToCloud _fileUploadToCloud;
+    private readonly IWrapperUserService _wrapperUserService;
 
     public UserReportingJob(IServiceScopeFactory factory, ILogger<UserReportingJob> logger,
        IDateTimeService dataTimeService, AppSettings appSettings, IHttpClientFactory httpClientFactory,
-       ICSVConverter csvConverter, IFileUploadToCloud fileUploadToCloud)
+       ICSVConverter csvConverter, IFileUploadToCloud fileUploadToCloud
+       , IWrapperUserService wrapperUserService)
     {
       _logger = logger;
       _appSettings = appSettings;
@@ -32,6 +35,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       _httpClientFactory = httpClientFactory;
       _csvConverter = csvConverter;
       _fileUploadToCloud = fileUploadToCloud;
+      _wrapperUserService = wrapperUserService;
 
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -94,7 +98,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             }
             catch (Exception ex)
             {
-              _logger.LogError($" XXXXXXXXXXXX Failed to retrieve user details from Wrapper Api. UserId ={eachModifiedUser.Item2} and Message - {ex.Message} XXXXXXXXXXXX");
+              _logger.LogError($" XXXXXXXXXXXX Failed to retrieve user details from Wrapper Api. UserId ={eachModifiedUser.UserName} and Message - {ex.Message} XXXXXXXXXXXX");
             }
 
             if (listOfAllModifiedUser.Count != index && userDetailList.Count < size)
@@ -166,27 +170,27 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       }
     }
 
-    private async Task<UserProfileResponseInfo?> GetUserDetails(Tuple<int, string> eachModifiedUser, HttpClient client)
+    private async Task<UserProfileResponseInfo?> GetUserDetails(UserReportDetail eachModifiedUser, HttpClient client)
     {
-      string url = $"users/?user-id={HttpUtility.UrlEncode(eachModifiedUser.Item2)}"; // Send as Query String as expected in the Wrapper API - GetUser method
+      string url = $"users/?user-id={HttpUtility.UrlEncode(eachModifiedUser.UserName)}"; // Send as Query String as expected in the Wrapper API - GetUser method
 
       var response = await client.GetAsync(url);
 
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
-        _logger.LogInformation($"Retrived user details for userId-{eachModifiedUser.Item2}");
+        _logger.LogInformation($"Retrived user details for userId-{eachModifiedUser.UserName}");
 
         return JsonConvert.DeserializeObject<UserProfileResponseInfo>(content);
 
       }
       else
       {
-        _logger.LogError($"No Users retrived for userId-{eachModifiedUser.Item2}");
+        _logger.LogError($"No Users retrived for userId-{eachModifiedUser.UserName}");
         return null;
       }
     }
-    public async Task<List<Tuple<int, string>>> GetModifiedUserIds()
+    public async Task<List<UserReportDetail>> GetModifiedUserIds()
     {
       var dataDuration = _appSettings.ReportDataDurations.UserReportingDurationInMinutes;
 
@@ -194,54 +198,8 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        var detectedUsers = new List<Tuple<int, string>>();
-
-        var userIds = await _dataContext.User.Where(m => m.LastUpdatedOnUtc > untilDateTime && !m.IsDeleted)
-                                              .Select(u => new Tuple<int, string>(u.Id, u.UserName)).Distinct().ToListAsync();
-
-
-        var userPersonIds = await (from per in _dataContext.Person
-                                   join usr in _dataContext.User on per.PartyId equals usr.PartyId
-                                   where usr.IsDeleted == false && per.LastUpdatedOnUtc > untilDateTime
-                                   select new Tuple<int, string>(
-                                           usr.Id, usr.UserName)
-                                      ).Distinct().ToListAsync();
-
-        var userIdentityIds = await (from uip in _dataContext.UserIdentityProvider
-                                     join usr in _dataContext.User on uip.UserId equals usr.Id
-                                     where usr.IsDeleted == false && uip.LastUpdatedOnUtc > untilDateTime
-                                     select new Tuple<int, string>(
-                                                 usr.Id, usr.UserName)
-                                      ).Distinct().ToListAsync();
-
-        var userAccessRoleIds = await (from uar in _dataContext.UserAccessRole
-                                       join usr in _dataContext.User on uar.UserId equals usr.Id
-                                       where usr.IsDeleted == false && uar.LastUpdatedOnUtc > untilDateTime
-                                       select new Tuple<int, string>(usr.Id, usr.UserName)
-                                     ).Distinct().ToListAsync();
-
-
-        var userGroupMemberIds = await (from ugm in _dataContext.UserGroupMembership
-                                        join usr in _dataContext.User on ugm.UserId equals usr.Id
-                                        where ugm.IsDeleted == false && ugm.LastUpdatedOnUtc > untilDateTime
-                                        select new Tuple<int, string>(usr.Id, usr.UserName)
-                                     ).Distinct().ToListAsync();
-
-        var userGroupMemberRoleIds = await (from ugm in _dataContext.UserGroupMembership
-                                            join orger in _dataContext.OrganisationGroupEligibleRole on ugm.OrganisationUserGroupId equals orger.OrganisationUserGroupId
-                                            join usr in _dataContext.User on ugm.UserId equals usr.Id
-                                            where orger.IsDeleted == false && orger.LastUpdatedOnUtc > untilDateTime
-                                            select new Tuple<int, string>(usr.Id, usr.UserName)
-                                     ).Distinct().ToListAsync();
-
-        detectedUsers.AddRange(userIds);
-        detectedUsers.AddRange(userPersonIds);
-        detectedUsers.AddRange(userIdentityIds);
-        detectedUsers.AddRange(userAccessRoleIds);
-        detectedUsers.AddRange(userGroupMemberIds);
-        detectedUsers.AddRange(userGroupMemberRoleIds);
-
-        return detectedUsers.Distinct().ToList();
+        var detectedUsers = _wrapperUserService.GetModifiedUsers(untilDateTime.ToString("dd-MM-yyyy HH:mm:ss")).Result;
+        return detectedUsers;
       }
       catch (Exception ex)
       {
