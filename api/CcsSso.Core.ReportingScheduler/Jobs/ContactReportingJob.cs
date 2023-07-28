@@ -7,6 +7,7 @@ using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Npgsql.Internal;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks.Dataflow;
 using System.Web;
@@ -66,7 +67,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         var listOfAllModifiedContact = new List<ContactModel>();
 
         var orgContacts = await GetModifiedContactIds();
-        orgContacts.ForEach(x =>  listOfAllModifiedContact.Add(new ContactModel { ContactType = "ORG", DetectedContact = x }));
+        orgContacts.ForEach(x => listOfAllModifiedContact.Add(new ContactModel { ContactType = "ORG", DetectedContact = x }));
 
         var userContacts = await GetModifiedUserContactIds();
         userContacts.ForEach(x => listOfAllModifiedContact.Add(new ContactModel { ContactType = "USER", DetectedContact = x }));
@@ -107,7 +108,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
               switch (eachModifiedOrg.ContactType)
               {
                 case "ORG":
-                  var contactDetails = await GetOrgContactDetails((Tuple<int, int, int, string>)eachModifiedOrg.DetectedContact, client);
+                  var contactDetails = await GetOrgContactDetails((ModifiedOrgContactInfo)eachModifiedOrg.DetectedContact, client);
                   if (contactDetails != null)
                   {
                     contactDetails.contactType = "organisation";
@@ -115,7 +116,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                   }
                   break;
                 case "USER":
-                  var contactUserDetails = await GetUserContactDetails((Tuple<int, int, int, string>)eachModifiedOrg.DetectedContact, client);
+                  var contactUserDetails = await GetUserContactDetails((ModifiedUserContactInfo)eachModifiedOrg.DetectedContact, client);
                   if (contactUserDetails != null)
                   {
                     contactUserDetails.contactType = "user";
@@ -123,7 +124,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                   }
                   break;
                 case "SITE":
-                  var contactSiteDetails = await GetSiteContactDetails((Tuple<string, int, int>)eachModifiedOrg.DetectedContact, client);
+                  var contactSiteDetails = await GetSiteContactDetails((ModifiedSiteContactInfo)eachModifiedOrg.DetectedContact, client);
                   if (contactSiteDetails != null)
                   {
                     contactSiteDetails.contactType = "site";
@@ -153,9 +154,9 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
             _logger.LogInformation("After calling the wrapper API to get Contact Details");
 
-           
-            var fileByteArrayOrg = _csvConverter.ConvertToCSV(contactDetailList.Where(x=>x.ContactType=="ORG").Select(x=>(ContactOrgResponseInfo)x.ContactDetail).ToList(), "contact-org");
-            var fileByteArrayUser = _csvConverter.ConvertToCSV(contactDetailList.Where(x => x.ContactType == "USER").Select(x =>(ContactUserResponseInfo) x.ContactDetail).ToList(), "contact-user");
+
+            var fileByteArrayOrg = _csvConverter.ConvertToCSV(contactDetailList.Where(x => x.ContactType == "ORG").Select(x => (ContactOrgResponseInfo)x.ContactDetail).ToList(), "contact-org");
+            var fileByteArrayUser = _csvConverter.ConvertToCSV(contactDetailList.Where(x => x.ContactType == "USER").Select(x => (ContactUserResponseInfo)x.ContactDetail).ToList(), "contact-user");
             var fileByteArraySite = _csvConverter.ConvertToCSV(contactDetailList.Where(x => x.ContactType == "SITE").Select(x => (ContactSiteResponseInfo)x.ContactDetail).ToList(), "contact-site");
             byte[] fileByteArray = fileByteArrayOrg.Concat(fileByteArrayUser).Concat(fileByteArraySite).ToArray();
 
@@ -225,192 +226,145 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
 
 
-    private async Task<ContactSiteResponseInfo?> GetSiteContactDetails(Tuple<string, int, int> eachModifiedContact, HttpClient client)
+    private async Task<ContactSiteResponseInfo?> GetSiteContactDetails(ModifiedSiteContactInfo eachModifiedContact, HttpClient client)
     {
 
-      string url = $"organisations/{eachModifiedContact.Item1}/sites/{eachModifiedContact.Item2}/contacts/{eachModifiedContact.Item3}";
+      string url = $"organisations/{eachModifiedContact.CiiOrgId}/sites/{eachModifiedContact.SiteContactId}/contacts/{eachModifiedContact.ContactPointId}";
 
       var response = await client.GetAsync(url);
 
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
-        _logger.LogInformation($"Retrived contact details for contact ID-{eachModifiedContact.Item2}");
+        _logger.LogInformation($"Retrived contact details for contact ID-{eachModifiedContact.ContactPointId}");
         return JsonConvert.DeserializeObject<ContactSiteResponseInfo>(content);
 
       }
       else
       {
-        _logger.LogError($"No Users retrived for contact ID-{eachModifiedContact.Item2}");
+        _logger.LogError($"No Users retrived for contact ID-{eachModifiedContact.ContactPointId}");
         return null;
       }
     }
 
-    private async Task<ContactUserResponseInfo?> GetUserContactDetails(Tuple<int, int, int, string> eachModifiedContact, HttpClient client)
+    private async Task<ContactUserResponseInfo?> GetUserContactDetails(ModifiedUserContactInfo eachModifiedContact, HttpClient client)
     {
 
-      string url = $"users/contacts/{eachModifiedContact.Item1}?user-id={HttpUtility.UrlEncode(eachModifiedContact.Item4)}";
+      string url = $"users/contacts/{eachModifiedContact.ContactPointId}?user-id={HttpUtility.UrlEncode(eachModifiedContact.UserName)}";
 
       var response = await client.GetAsync(url);
 
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
-        _logger.LogInformation($"Retrived contact details for contact ID-{eachModifiedContact.Item2}");
+        _logger.LogInformation($"Retrived contact details for contact ID-{eachModifiedContact.ContactPointId}");
         return JsonConvert.DeserializeObject<ContactUserResponseInfo>(content);
 
       }
       else
       {
-        _logger.LogError($"No Users retrived for contact ID-{eachModifiedContact.Item2}");
+        _logger.LogError($"No Users retrived for contact ID-{eachModifiedContact.ContactPointId}");
         return null;
       }
     }
 
 
 
-    private async Task<ContactOrgResponseInfo?> GetOrgContactDetails(Tuple<int, int, int, string> eachModifiedContact, HttpClient client)
+    private async Task<ContactOrgResponseInfo?> GetOrgContactDetails(ModifiedOrgContactInfo eachModifiedContact, HttpClient client)
     {
-      string url = $"organisations/{eachModifiedContact.Item4}/contacts/{eachModifiedContact.Item1}";
+      string url = $"organisations/{eachModifiedContact.CiiOrgId}/contacts/{eachModifiedContact.ContactPointId}";
       var response = await client.GetAsync(url);
 
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
-        _logger.LogInformation($"Retrived contact details for contact ID-{eachModifiedContact.Item2}");
+        _logger.LogInformation($"Retrived contact details for contact ID-{eachModifiedContact.PartyId}");
         return JsonConvert.DeserializeObject<ContactOrgResponseInfo>(content);
 
       }
       else
       {
-        _logger.LogError($"No Users retrived for contact ID-{eachModifiedContact.Item2}");
+        _logger.LogError($"No Users retrived for contact ID-{eachModifiedContact.PartyId}");
         return null;
       }
     }
 
-    public async Task<List<Tuple<int, int, int, string>>> GetModifiedContactIds()
+    public async Task<List<ModifiedOrgContactInfo>> GetModifiedContactIds()
     {
       var dataDuration = _appSettings.ReportDataDurations.ContactReportingDurationInMinutes;
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
+      List<ModifiedOrgContactInfo> ModifedOrgContacts = new List<ModifiedOrgContactInfo>();
 
       try
       {
-        var contactDetailsResult = await (from p in _dataContext.Person
-                                          join prt in _dataContext.Party on p.PartyId equals prt.Id
-                                          join cp in _dataContext.ContactPoint on prt.Id equals cp.PartyId into gcp
-                                          from subgcp in gcp.Where(x => x.PartyTypeId == 4).DefaultIfEmpty()
-                                          join cpuser in _dataContext.ContactPoint on new { subgcp.ContactDetailId, PartyType = 2 } equals new { cpuser.ContactDetailId, PartyType = cpuser.PartyTypeId }
-                                          join org in _dataContext.Organisation on p.OrganisationId equals org.Id
-                                          join vrad in _dataContext.VirtualAddress on subgcp.ContactDetailId equals vrad.ContactDetailId into gvrad
-                                          from subgvrad in gvrad.DefaultIfEmpty()
-                                          where ((p.LastUpdatedOnUtc > untilDateTime || subgcp.LastUpdatedOnUtc > untilDateTime || cpuser.LastUpdatedOnUtc > untilDateTime || subgvrad.LastUpdatedOnUtc > untilDateTime) && cpuser.IsDeleted == false)
-                                          select new Tuple<int, int, int, string>(
-                                       cpuser.Id, cpuser.PartyId, subgcp.ContactDetailId, org.CiiOrganisationId)
-                             ).Distinct().ToListAsync();
-         return contactDetailsResult;
+        string url = $"contacts/internal/data/org-report?lastmodifieddate" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+        var client = _httpClientFactory.CreateClient("ContactWrapperApi");
+        var response = await client.GetAsync(url);
 
+        if (response.IsSuccessStatusCode)
+        {
+          var content = await response.Content.ReadAsStringAsync();
+          ModifedOrgContacts = JsonConvert.DeserializeObject<List<ModifiedOrgContactInfo>>(content);
+        }
       }
       catch (Exception ex)
       {
         _logger.LogError(ex, "Error");
         throw;
       }
-
-
+      return ModifedOrgContacts;
     }
 
-    public async Task<List<Tuple<int, int, int, string>>> GetModifiedUserContactIds()
+    public async Task<List<ModifiedUserContactInfo>> GetModifiedUserContactIds()
     {
       var dataDuration = _appSettings.ReportDataDurations.ContactReportingDurationInMinutes;
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
+      List<ModifiedUserContactInfo> ModifedUserContacts = new List<ModifiedUserContactInfo>();
 
       try
       {
+        string url = $"contacts/internal/data/user-report?lastmodifieddate" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+        var client = _httpClientFactory.CreateClient("ContactWrapperApi");
+        var response = await client.GetAsync(url);
 
-        var contactDetailsResult = await (from p in _dataContext.Person
-                                          join prt in _dataContext.Party on p.PartyId equals prt.Id
-                                          join cp in _dataContext.ContactPoint on prt.Id equals cp.PartyId into gcp
-                                          from subgcp in gcp.Where(x => x.PartyTypeId == 4).DefaultIfEmpty()
-                                          join cpuser in _dataContext.ContactPoint on subgcp.ContactDetailId equals cpuser.ContactDetailId into gcpuser
-                                          from subgcpuser in gcpuser.Where(x => x.PartyTypeId == 3).DefaultIfEmpty()
-                                          join u in _dataContext.User on subgcpuser.PartyId equals u.PartyId
-                                          join vrad in _dataContext.VirtualAddress on subgcp.ContactDetailId equals vrad.ContactDetailId into gvrad
-                                          from subgvrad in gvrad.DefaultIfEmpty()
-                                          where ((p.LastUpdatedOnUtc > untilDateTime || subgcp.LastUpdatedOnUtc > untilDateTime || subgvrad.LastUpdatedOnUtc > untilDateTime) && subgcp.IsDeleted == false)
-                                          select new Tuple<int, int, int, string>(
-                                       subgcpuser.Id, subgcpuser.PartyId, subgcpuser.ContactDetailId, u.UserName)
-                                      ).Distinct().ToListAsync();
-
-        return contactDetailsResult;
-
+        if (response.IsSuccessStatusCode)
+        {
+          var content = await response.Content.ReadAsStringAsync();
+          ModifedUserContacts = JsonConvert.DeserializeObject<List<ModifiedUserContactInfo>>(content);
+        }
       }
       catch (Exception ex)
       {
         _logger.LogError(ex, "Error");
         throw;
       }
-
+      return ModifedUserContacts;
     }
 
-    private async Task<List<Tuple<string, int, int>>> GetModifiedSiteContactIds()
+    private async Task<List<ModifiedSiteContactInfo>> GetModifiedSiteContactIds()
     {
       var dataDuration = _appSettings.ReportDataDurations.ContactReportingDurationInMinutes;
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
+      List<ModifiedSiteContactInfo> ModifedSiteContacts = new List<ModifiedSiteContactInfo>();
 
       try
       {
-        var detectedContacts = new List<Tuple<string, int, int>>();
+        string url = $"contacts/internal/data/site-report?lastmodifieddate" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+        var client = _httpClientFactory.CreateClient("ContactWrapperApi");
+        var response = await client.GetAsync(url);
 
-        var directContact = await (from p in _dataContext.Person
-                                   join prt in _dataContext.Party on p.PartyId equals prt.Id
-                                   join cp in _dataContext.ContactPoint
-                                         on new { PartyType = 4, PartyId = prt.Id } equals new { PartyType = cp.PartyTypeId, PartyId = cp.PartyId }
-
-                                   join cplink in _dataContext.ContactPoint
-                                     on cp.ContactDetailId equals cplink.ContactDetailId into gcplink
-                                   from subcplink in gcplink.DefaultIfEmpty()
-
-
-                                   join sc in _dataContext.SiteContact on new { Id = subcplink.Id, IsDeleted = false } equals new { Id = sc.ContactId, IsDeleted = sc.IsDeleted }
-
-                                   join cpsite in _dataContext.ContactPoint
-                                         on new { ContactPointId = sc.ContactPointId, isSite = true } equals new { ContactPointId = cpsite.Id, isSite = cpsite.IsSite }
-
-                                   join vrad in _dataContext.VirtualAddress
-                                         on cp.ContactDetailId equals vrad.ContactDetailId into gvrad
-                                   from subgvrad in gvrad.DefaultIfEmpty()
-
-                                   join org in _dataContext.Organisation
-                                        on p.OrganisationId equals org.Id into gorg
-                                   from subgorg in gorg.DefaultIfEmpty()
-
-                                   where (p.LastUpdatedOnUtc > untilDateTime || cp.LastUpdatedOnUtc > untilDateTime || subgvrad.LastUpdatedOnUtc > untilDateTime || sc.LastUpdatedOnUtc > untilDateTime)
-
-                                   select new Tuple<string, int, int>(subgorg.CiiOrganisationId, sc.ContactPointId, sc.Id)).Distinct().ToListAsync();
-
-
-        var assignedContact = await (from sc in _dataContext.SiteContact
-                                     join cp in _dataContext.ContactPoint
-                                           on sc.ContactId equals cp.Id
-                                     join pty in _dataContext.Party on cp.PartyId equals pty.Id
-                                     join p in _dataContext.Person on pty.Id equals p.PartyId
-                                     join org in _dataContext.Organisation on p.OrganisationId equals org.Id
-                                     where sc.LastUpdatedOnUtc > untilDateTime && sc.IsDeleted == false && sc.AssignedContactType != 0
-                                     select new Tuple<string, int, int>(org.CiiOrganisationId, sc.ContactPointId, sc.Id)).Distinct().ToListAsync();
-
-        detectedContacts.AddRange(directContact);
-        detectedContacts.AddRange(assignedContact);
-
-        return detectedContacts.Distinct().ToList();
-
+        if (response.IsSuccessStatusCode)
+        {
+          var content = await response.Content.ReadAsStringAsync();
+          ModifedSiteContacts = JsonConvert.DeserializeObject<List<ModifiedSiteContactInfo>>(content);
+        }
       }
       catch (Exception ex)
       {
         _logger.LogError(ex, "Error");
         throw;
       }
+      return ModifedSiteContacts;      
     }
-
-
   }
 }
