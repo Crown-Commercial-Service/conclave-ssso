@@ -11,12 +11,12 @@ using CcsSso.Core.PPONScheduler.Service;
 using CcsSso.Service;
 using CcsSso.Core.Service;
 using CcsSso.Core.Domain.Contracts;
-using CcsSso.Core.Domain.Contracts.External;
-using CcsSso.Core.Service.External;
+using CcsSso.Core.Service.Wrapper;
+using CcsSso.Core.Domain.Contracts.Wrapper;
 
 namespace CcsSso.Core.PPONScheduler
 {
-  public class Program
+    public class Program
   {
     private static bool vaultEnabled;
 

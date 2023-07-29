@@ -1,5 +1,4 @@
-﻿using CcsSso.Core.Domain.Contracts.External;
-using CcsSso.Core.Domain.Dtos.External;
+﻿using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.PPONScheduler.Model;
 using CcsSso.Core.PPONScheduler.Service.Contracts;
 using CcsSso.Domain.Constants;
@@ -8,10 +7,13 @@ using CcsSso.Dtos.Domain.Models;
 using CcsSso.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using CcsSso.Core.Domain.Dtos.Wrapper;
+using System.Globalization;
+
 
 namespace CcsSso.Core.PPONScheduler.Service
 {
-	public class PPONService : IPPONService
+    public class PPONService : IPPONService
 	{
 		private readonly IDataContext _dataContext;
 		private readonly IHttpClientFactory _httpClientFactory;
@@ -61,7 +63,7 @@ namespace CcsSso.Core.PPONScheduler.Service
 			}
 		}
 
-		private async Task ProcessOrg(OrganisationDto orgDetails)
+		private async Task ProcessOrg(OrganisationData orgDetails)
 		{
 			var ciiOrgId = orgDetails.CiiOrganisationId;
 			var orgLegalName = orgDetails.LegalName;
@@ -78,7 +80,7 @@ namespace CcsSso.Core.PPONScheduler.Service
 			}
 		}
 
-		private async Task<List<OrganisationDto>> GetRegisteredOrgsAsync(bool oneTimeValidationSwitch, DateTime startDate, DateTime endDate)
+		private async Task<List<OrganisationData>> GetRegisteredOrgsAsync(bool oneTimeValidationSwitch, DateTime startDate, DateTime endDate)
 		{
 			var dataDuration = _appSettings.ScheduleJobSettings.DataDurationInMinutes;
 			var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
@@ -88,14 +90,15 @@ namespace CcsSso.Core.PPONScheduler.Service
 				var organisationFilterCriteria = new OrganisationFilterCriteria();
 				if (oneTimeValidationSwitch)
 				{
-					organisationFilterCriteria.StartDate = startDate;
-					organisationFilterCriteria.EndDate = endDate;
+					organisationFilterCriteria.StartDate = startDate.ToString("MM-dd-yyyy");
+					organisationFilterCriteria.EndDate = endDate.ToString("MM-dd-yyyy");
 				}
 				else
 				{
-					organisationFilterCriteria.UntilDateTime = untilDateTime;
+					organisationFilterCriteria.UntilDateTime = untilDateTime.ToString("MM-dd-yyyy hh:mm:ss");
 				}
-				return await _wrapperOrganisationService.GetOrganisationDataAsync(organisationFilterCriteria, resultSetCriteria);			
+				var result = await _wrapperOrganisationService.GetOrganisationDataAsync(organisationFilterCriteria, resultSetCriteria);
+				return result.OrgList;
 			}
 			catch (Exception ex)
 			{
