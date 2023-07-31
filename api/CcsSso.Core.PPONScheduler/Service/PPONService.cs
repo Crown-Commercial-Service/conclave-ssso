@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using CcsSso.Core.Domain.Dtos.Wrapper;
 using System.Globalization;
-
+using CcsSso.Core.Domain.Dtos.External;
 
 namespace CcsSso.Core.PPONScheduler.Service
 {

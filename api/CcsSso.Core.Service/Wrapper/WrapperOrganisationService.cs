@@ -27,7 +27,7 @@ namespace CcsSso.Core.Service.Wrapper
 			return result;
 		}
 
-    public async Task<OrganisationListResponseInfo> GetOrganisationDataAsync(OrganisationFilterCriteria organisationFilterCriteria, Domain.Dtos.External.ResultSetCriteria resultSetCriteria)
+    public async Task<OrganisationListResponseInfo> GetOrganisationDataAsync(OrganisationFilterCriteria organisationFilterCriteria, ResultSetCriteria resultSetCriteria)
 		{
 			var url = $"data?organisation-name={organisationFilterCriteria.OrganisationName}" +
 															$"&exact-match-name={organisationFilterCriteria.IsExactMatchName}" +

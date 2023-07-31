@@ -11,17 +11,17 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
 {
   // #Auto validation
   public interface IWrapperOrganisationService
-    {
-        Task<WrapperOrganisationProfileResponseInfo> GetOrganisationAsync(string organisationId);
-        Task<OrganisationListResponseInfo> GetOrganisationDataAsync(OrganisationFilterCriteria organisationFilterCriteria, Dtos.External.ResultSetCriteria resultSetCriteria);
-        Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId);
-        Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(DateTime CreatedOnUtc);
-        Task<List<int>> DeleteOrganisationAsync(string organisationId);
-        Task<bool> UpdateOrganisationAuditList(OrganisationAuditInfo organisationAuditInfo);
-        Task CreateOrganisationAuditEventAsync(List<OrganisationAuditEventInfo> organisationAuditEventInfoList);
-        Task<bool> ActivateOrganisationByUser(string userId);
-        Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(string organisationId, UserFilterCriteria filter);
-        Task<OrganisationContactInfoList> GetOrganisationContactsList(string organisationId, string contactType = null, ContactAssignedStatus contactAssignedStatus = ContactAssignedStatus.All);
-        Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(int organisationId);
+  {
+    Task<WrapperOrganisationProfileResponseInfo> GetOrganisationAsync(string organisationId);
+    Task<OrganisationListResponseInfo> GetOrganisationDataAsync(OrganisationFilterCriteria organisationFilterCriteria, ResultSetCriteria resultSetCriteria);
+    Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId);
+    Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(DateTime CreatedOnUtc);
+    Task<List<int>> DeleteOrganisationAsync(string organisationId);
+    Task<bool> UpdateOrganisationAuditList(OrganisationAuditInfo organisationAuditInfo);
+    Task CreateOrganisationAuditEventAsync(List<OrganisationAuditEventInfo> organisationAuditEventInfoList);
+    Task<bool> ActivateOrganisationByUser(string userId);
+    Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(string organisationId, UserFilterCriteria filter);
+    Task<OrganisationContactInfoList> GetOrganisationContactsList(string organisationId, string contactType = null, ContactAssignedStatus contactAssignedStatus = ContactAssignedStatus.All);
+    Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(int organisationId);
   }
 }
