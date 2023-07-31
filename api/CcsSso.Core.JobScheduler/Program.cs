@@ -249,11 +249,11 @@ namespace CcsSso.Core.JobScheduler
           services.AddSingleton<IWrapperConfigurationService, WrapperConfigurationService>();
           services.AddSingleton<IWrapperOrganisationService, WrapperOrganisationService>();
 
-          //services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
+          services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
           services.AddHostedService<UnverifiedUserDeleteJob>();
-          //services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
-          //services.AddHostedService<OrganisationAutovalidationJob>();
-          // services.AddHostedService<RoleApprovalLinkExpiredJob>();
+          services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
+          services.AddHostedService<OrganisationAutovalidationJob>();
+          services.AddHostedService<RoleApprovalLinkExpiredJob>();
 
           services.AddSingleton<IWrapperUserService, WrapperUserService>();
           services.AddSingleton<IWrapperOrganisationService, WrapperOrganisationService>();
