@@ -215,6 +215,7 @@ namespace CcsSso.Domain.Constants
     Organisation,
     Contact,
     Security,
-    User
+    User,
+    Cii
   }
 }

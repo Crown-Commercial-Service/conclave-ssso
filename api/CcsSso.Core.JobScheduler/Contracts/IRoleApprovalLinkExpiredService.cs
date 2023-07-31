@@ -7,6 +7,6 @@ namespace CcsSso.Core.JobScheduler.Contracts
 {
   public interface IRoleApprovalLinkExpiredService
   {
-    Task PerformJobAsync(List<UserAccessRolePending> organisation);
+    Task PerformJobAsync(List<UserAccessRolePendingDetailsInfo> organisations);
   }
 }

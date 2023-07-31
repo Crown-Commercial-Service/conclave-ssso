@@ -1,28 +1,17 @@
-﻿using CcsSso.Domain.Exceptions;
-using CcsSso.Shared.Cache.Contracts;
-using Newtonsoft.Json;
-using System.Net;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
-using CcsSso.Shared.Domain.Constants;
-using CcsSso.Domain.Constants;
-using CcsSso.DbModel.Entity;
-using System.Collections.Generic;
-using CcsSso.Dtos.Domain.Models;
-using CcsSso.Core.Domain.Contracts.Wrapper;
+﻿using CcsSso.Core.Domain.Contracts.Wrapper;
+using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Dtos.Wrapper;
-using System.Linq;
-//using CcsSso.Core.Domain.Dtos.External;
-using System.Drawing;
-using CcsSso.Core.DbModel.Entity;
+using CcsSso.Domain.Constants;
+using CcsSso.Shared.Domain.Constants;
+using Newtonsoft.Json;
 using System;
-
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.Wrapper
 {
-    // #Auto validation
-    public class WrapperUserService : IWrapperUserService
+  // #Auto validation
+  public class WrapperUserService : IWrapperUserService
 	{
 		private readonly IWrapperApiService _wrapperApiService;
 
@@ -63,5 +52,42 @@ namespace CcsSso.Core.Service.Wrapper
 		{
 			return await _wrapperApiService.GetAsync<List<string>>(WrapperApi.User, $"data/admin-email-ids?organisation-id={organisationId}", $"{CacheKeyConstant.User}", "ERROR_RETRIEVING_ORGANISATION_ADMIN_USERS", false);
 		}
-	}
+
+    public async Task<UserAccessRolePendingRequestDetails> GetUserAccessRolePendingDetails(UserAccessRolePendingFilterCriteria criteria)
+    {
+      var payload = JsonConvert.SerializeObject(criteria);
+      return await _wrapperApiService.GetAsync<UserAccessRolePendingRequestDetails>(WrapperApi.User, $"internal/approve/roles?{payload}", $"{CacheKeyConstant.User}-USER_ACCESSROLE_PENDING", "ERROR_RETRIEVING_USER_ACCESSROLE_PENDING");
+    }
+
+    public async Task DeleteUserAccessRolePending(List<int> roleIds)
+    {
+      var Ids = string.Join(",", roleIds);
+      await _wrapperApiService.DeleteAsync<bool>(WrapperApi.User, $"internal/approve/roles?roleIds={Ids}", "ERROR_DELETING_USER_ACCESS_ROLE_PENDING");
+    }
+
+    public async Task<List<UserResponse>> GetUserByUserName(string UserName, int CreatedUserId)
+    {
+      return await _wrapperApiService.GetAsync<List<UserResponse>>(WrapperApi.User, $"{UserName}/{CreatedUserId}", $"{CacheKeyConstant.User}-{UserName}", "ERROR_RETRIEVING_USER");
+    }
+
+    public async Task<List<UserListForOrganisationInfo>> GetUsersByOrganisation(int organisationId, UserFilterCriteria filter)
+    {
+      var url = $"internal/organisation/{organisationId}?search-string={filter.searchString}" +
+                $"&delegated-only={filter.isDelegatedOnly}&delegated-expired-only={filter.isDelegatedExpiredOnly}" +
+                $"&isAdmin={filter.isAdmin}&include-unverified-admin={filter.includeUnverifiedAdmin}&include-self={filter.includeSelf}";
+
+      var result = await _wrapperApiService.GetAsync<List<UserListForOrganisationInfo>>(WrapperApi.User, url, $"{CacheKeyConstant.OrganisationUsers}", "ERROR_RETRIEVING_ORGANISATION_USERS", false);
+      return result;
+    }
+
+    public async Task<List<UserToDeleteResponse>> GetUsersToDelete(DateTime createdOnUtc)
+    {
+      return await _wrapperApiService.GetAsync<List<UserToDeleteResponse>>(WrapperApi.User, $"users-to-delete?createdOnUtc={createdOnUtc.ToString("yyyy-MM-dd")}", $"{CacheKeyConstant.User}-TO-DELETE-{createdOnUtc}", "ERROR_RETRIEVING_USERS_TO_DELETE");
+    }
+
+    public async Task DeleteUserAsync(string userName)
+    {
+      await _wrapperApiService.DeleteAsync(WrapperApi.User, $"/user-id={userName}", "ERROR_DELETING_USER");
+    }
+  }
 }

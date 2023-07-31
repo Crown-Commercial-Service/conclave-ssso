@@ -1,15 +1,27 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Dtos.Wrapper;
-using CcsSso.Dtos.Domain.Models;
+using CcsSso.Domain.Constants;
+using CcsSso.Domain.Dtos.External;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 
 namespace CcsSso.Core.Domain.Contracts.Wrapper
 {
-    // #Auto validation
-    public interface IWrapperOrganisationService
+  // #Auto validation
+  public interface IWrapperOrganisationService
     {
         Task<WrapperOrganisationProfileResponseInfo> GetOrganisationAsync(string organisationId);
-        Task<OrganisationListResponseInfo> GetOrganisationDataAsync(OrganisationFilterCriteria organisationFilterCriteria, ResultSetCriteria resultSetCriteria);
-    }
+        Task<OrganisationListResponseInfo> GetOrganisationDataAsync(OrganisationFilterCriteria organisationFilterCriteria, Dtos.External.ResultSetCriteria resultSetCriteria);
+        Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId);
+        Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(DateTime CreatedOnUtc);
+        Task<List<int>> DeleteOrganisationAsync(string organisationId);
+        Task<bool> UpdateOrganisationAuditList(OrganisationAuditInfo organisationAuditInfo);
+        Task CreateOrganisationAuditEventAsync(List<OrganisationAuditEventInfo> organisationAuditEventInfoList);
+        Task<bool> ActivateOrganisationByUser(string userId);
+        Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(string organisationId, UserFilterCriteria filter);
+        Task<OrganisationContactInfoList> GetOrganisationContactsList(string organisationId, string contactType = null, ContactAssignedStatus contactAssignedStatus = ContactAssignedStatus.All);
+        Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(int organisationId);
+  }
 }

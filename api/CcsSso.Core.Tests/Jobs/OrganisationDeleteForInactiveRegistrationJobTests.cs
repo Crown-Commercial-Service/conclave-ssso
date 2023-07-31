@@ -1,4 +1,5 @@
 using CcsSso.Core.DbModel.Entity;
+using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler;
 using CcsSso.Core.JobScheduler.Contracts;
@@ -16,7 +17,7 @@ using Xunit;
 
 namespace CcsSso.Core.Tests.Jobs
 {
-  public class OrganisationDeleteForInactiveRegistrationJobTests
+    public class OrganisationDeleteForInactiveRegistrationJobTests
   {
     [Fact]
     public async Task ReturnsOrganisationIds()
@@ -35,7 +36,7 @@ namespace CcsSso.Core.Tests.Jobs
           }
         };
         var orjDeleteJob = await GetOrganisationDeleteForInactiveRegistrationServiceAsync(dataContext, dateTimeMock.Object, appSettings, httpClientFactoryMock.Object);
-        var results = await orjDeleteJob.GetExpiredOrganisationIdsAsync();
+        var results = await orjDeleteJob.GetInactiveOrganisationAsync();
         Assert.NotNull(results);
       });
     }
@@ -62,13 +63,17 @@ namespace CcsSso.Core.Tests.Jobs
             .Returns(serviceScope.Object);
 
         var mockCacheInvalidateService = new Mock<ICacheInvalidateService>();
-        var mockIdamSupportService = new Mock<IIdamSupportService>();
-
+        var mockIWrapperOrganisationService = new Mock<IWrapperOrganisationService>();
+        var mockIWrapperUserService = new Mock<IWrapperUserService>();
+        var mockIHttpClientFactory = new Mock<IHttpClientFactory>();
         serviceProvider
     .Setup(x => x.GetService(typeof(IServiceScopeFactory)))
     .Returns(serviceScopeFactory.Object);
-        return new OrganisationDeleteForInactiveRegistrationJob(serviceScopeFactory.Object, dateTimeService, appSettings,
-          httpClientFactory, mockCacheInvalidateService.Object, mockIdamSupportService.Object);
+        return new OrganisationDeleteForInactiveRegistrationJob(appSettings,
+          mockCacheInvalidateService.Object, 
+          mockIWrapperOrganisationService.Object, 
+          mockIWrapperUserService.Object, 
+          mockIHttpClientFactory.Object);
       }
       catch(Exception e)
       {

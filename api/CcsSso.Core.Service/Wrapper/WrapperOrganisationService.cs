@@ -1,23 +1,17 @@
-﻿using CcsSso.Domain.Exceptions;
-using CcsSso.Shared.Cache.Contracts;
-using Newtonsoft.Json;
-using System.Net;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
-using CcsSso.Shared.Domain.Constants;
-using CcsSso.Domain.Constants;
-using CcsSso.DbModel.Entity;
-using System.Collections.Generic;
-using CcsSso.Dtos.Domain.Models;
-using CcsSso.Core.Domain.Contracts.Wrapper;
+﻿using CcsSso.Core.Domain.Contracts.Wrapper;
+using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Dtos.Wrapper;
-
+using CcsSso.Domain.Constants;
+using CcsSso.Domain.Dtos.External;
+using CcsSso.Shared.Domain.Constants;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CcsSso.Core.Service.Wrapper
 {
-    // #Auto validation
-    public class WrapperOrganisationService : IWrapperOrganisationService
+  // #Auto validation
+  public class WrapperOrganisationService : IWrapperOrganisationService
 	{
 		private readonly IWrapperApiService _wrapperApiService;
 
@@ -27,13 +21,13 @@ namespace CcsSso.Core.Service.Wrapper
 
 		}
 
-		public async Task<WrapperOrganisationProfileResponseInfo> GetOrganisationAsync(string organisationId)
+    public async Task<WrapperOrganisationProfileResponseInfo> GetOrganisationAsync(string organisationId)
 		{
 			var result = await _wrapperApiService.GetAsync<WrapperOrganisationProfileResponseInfo>(WrapperApi.Organisation, $"internal/cii/{organisationId}", $"{CacheKeyConstant.Organisation}-{organisationId}", "ERROR_RETRIEVING_ORGANISATION",false);
 			return result;
 		}
 
-		public async Task<OrganisationListResponseInfo> GetOrganisationDataAsync(OrganisationFilterCriteria organisationFilterCriteria, ResultSetCriteria resultSetCriteria)
+    public async Task<OrganisationListResponseInfo> GetOrganisationDataAsync(OrganisationFilterCriteria organisationFilterCriteria, Domain.Dtos.External.ResultSetCriteria resultSetCriteria)
 		{
 			var url = $"data?organisation-name={organisationFilterCriteria.OrganisationName}" +
 															$"&exact-match-name={organisationFilterCriteria.IsExactMatchName}" +
@@ -49,5 +43,57 @@ namespace CcsSso.Core.Service.Wrapper
 			var result = await _wrapperApiService.GetAsync<OrganisationListResponseInfo>(WrapperApi.Organisation, url, $"{CacheKeyConstant.OrganisationData}", "ERROR_RETRIEVING_ORGANISATION_DATA",false);
 			return result;
 		}
-	}
+
+    public async Task<OrganisationContactInfoList> GetOrganisationContactsList(string organisationId, string contactType = null, ContactAssignedStatus contactAssignedStatus = ContactAssignedStatus.All)
+    {
+      return await _wrapperApiService.GetAsync<OrganisationContactInfoList>(WrapperApi.Organisation, $"{organisationId}/contacts", $"{CacheKeyConstant.Organisation}-{organisationId}", "ERROR_RETRIEVING_ORGANISATION_USERS");
+    }
+    public async Task<bool> ActivateOrganisationByUser(string userId)
+    {
+      return await _wrapperApiService.PutAsync<bool>(WrapperApi.Organisation, $"activation-by-user/{userId}", null, "ERROR_ACTIVATING_ORGANISATION_BY_USER_ID");
+    }
+
+    public async Task CreateOrganisationAuditEventAsync(List<OrganisationAuditEventInfo> organisationAuditEventInfoList)
+    {
+      await _wrapperApiService.PostAsync<Task>(WrapperApi.Organisation, "auditevents", organisationAuditEventInfoList, "ERROR_CREATING_ORGANISATION_AUDIT_EVENT_LOG");
+    }
+
+    public async Task<List<int>> DeleteOrganisationAsync(string organisationId)
+    {
+      var result = await _wrapperApiService.DeleteAsync<List<int>>(WrapperApi.Organisation, $"organisationId?={organisationId}", "ERROR_DELETING_ORGANISATION");
+      return result;
+    }
+
+    public async Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(DateTime CreatedOnUtc)
+    {
+      var result = await _wrapperApiService.GetAsync<List<InactiveOrganisationResponse>>(WrapperApi.Organisation, $"in-active?CreatedOnUtc={CreatedOnUtc.ToString("yyyy-MM-dd")}", $"{CacheKeyConstant.Organisation}-{CreatedOnUtc}", "ERROR_RETRIEVING_EXPIRED_ORGANISATION");
+      return result;
+    }
+
+    public async Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId)
+    {
+      var result = await _wrapperApiService.GetAsync<List<OrganisationRole>>(WrapperApi.Organisation, $"{organisationId}/roles", $"{CacheKeyConstant.Organisation}-{organisationId}-ROLES", "ORGANISATION_ROLES_NOT_FOUND");
+      return result;
+    }
+
+    public async Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(string organisationId, UserFilterCriteria filter)
+    {
+      var url = $"internal/organisation/{organisationId}?search-string={filter.searchString}" +
+                $"&delegated-only={filter.isDelegatedOnly}&delegated-expired-only={filter.isDelegatedExpiredOnly}" +
+                $"&isAdmin={filter.isAdmin}&include-unverified-admin={filter.includeUnverifiedAdmin}&include-self={filter.includeSelf}";
+
+      var result = await _wrapperApiService.GetAsync<List<UserListForOrganisationInfo>>(WrapperApi.User, url, $"{CacheKeyConstant.OrganisationUsers}", "ERROR_RETRIEVING_ORGANISATION_USERS", false);
+      return result;
+    }
+
+    public async Task<bool> UpdateOrganisationAuditList(Domain.Dtos.External.OrganisationAuditInfo organisationAuditInfo)
+    {
+      return await _wrapperApiService.PutAsync<bool>(WrapperApi.Organisation, "audits", organisationAuditInfo, "ERROR_CREATING_ORGANISATION_AUDIT_LOG");
+    }
+
+    public async Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(int organisationId)
+    {
+      return await _wrapperApiService.GetAsync<OrganisationProfileResponseInfo>(WrapperApi.Organisation, $"?organisationId={organisationId}", $"{CacheKeyConstant.Organisation}-{organisationId}", "ORGANISATION_DETAILS_NOT_FOUND");
+    }
+  }
 }

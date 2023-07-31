@@ -1,9 +1,5 @@
 using CcsSso.Domain.Dtos;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Jobs
 {
@@ -69,9 +65,20 @@ namespace CcsSso.Core.Domain.Jobs
     public string ApiGatewayEnabledUserUrl { get; set; }
 
     public string ApiGatewayDisabledUserUrl   { get; set; }
+
+    public string ConfigApiKey { get; set; }
+    public string OrgApiKey { get; set; }
+    public string UserApiKey { get; set; }
+    public string SecurityApiKey { get; set; }
+    public string ApiGatewayEnabledConfigUrl { get; set; }
+    public string ApiGatewayEnabledOrgUrl { get; set; }
+    public string ApiGatewayDisabledConfigUrl { get; set; }
+    public string ApiGatewayDisabledOrgUrl { get; set; }
+    public string ApiGatewayDisabledSecurityUrl { get; set; }
+    public string ApiGatewayEnabledSecurityUrl { get; set; }
   }
 
-  public class SecurityApiSettings
+    public class SecurityApiSettings
   {
     public string ApiKey { get; set; }
 

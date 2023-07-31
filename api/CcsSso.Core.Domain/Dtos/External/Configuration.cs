@@ -27,8 +27,20 @@ namespace CcsSso.Core.Domain.Dtos.External
 
         public List<string> RoleKeys { get; set; }
     }
+    public class RoleApprovalConfigurationInfo
+    {
+      public int Id { get; set; }
 
-    public class CountryDetail
+      public int CcsAccessRoleId { get; set; }
+
+      public int LinkExpiryDurationInMinute { get; set; }
+
+      public string? NotificationEmails { get; set; }
+
+      public DateTime LastUpdatedOnUtc { get; set; }
+
+    }
+  public class CountryDetail
     {
         public int Id { get; set; }
 

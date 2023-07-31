@@ -9,6 +9,11 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.Domain.Dtos.External
 {
+  public class OrganisationEligibleRoleResponse
+  {
+    public int CcsAccessRoleId { get; set; }
+  }
+
   public class OrganisationProfileInfo
   {
     public OrganisationIdentifier Identifier { get; set; }
@@ -109,6 +114,8 @@ namespace CcsSso.Core.Domain.Dtos.External
   {
     public int RoleId { get; set; }
 
+    public int CcsAccessRoleId { get; set; }
+
     public string RoleKey { get; set; }
 
     public string RoleName { get; set; }
@@ -189,5 +196,12 @@ namespace CcsSso.Core.Domain.Dtos.External
   }
 
   #endregion
+
+  public class InactiveOrganisationResponse
+  {
+    public int Id { get; set; }
+    public string OrganisationId { get; set; }
+    public int SupplierBuyerType { get; set; }
+  }
 
 }

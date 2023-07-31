@@ -1,4 +1,5 @@
 using CcsSso.Core.DbModel.Constants;
+using CcsSso.DbModel.Entity;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
@@ -330,4 +331,23 @@ namespace CcsSso.Core.Domain.Dtos.External
   {
     public string UserName { get; set; }
   }
+  public class UserListForOrganisationInfo : UserListInfo
+  {
+    public bool IsDeleted { get; set; } = false;
+    public bool AccountVerified { get; set; } = false;
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public UserType UserType { get; set; }
+    public string UserName { get; set; }
+  }
+  public class UserToDeleteResponse
+  {
+    public int Id { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string UserName { get; set; }
+    public int OrganisationId { get; set; }
+    public List<UserAccessRolePending> UserAccessRolePendings { get; set; }
+  }
+
 }

@@ -1,15 +1,10 @@
+using Amazon.Runtime;
 using CcsSso.Core.DbModel.Constants;
-using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Jobs;
-using CcsSso.Core.JobScheduler.Contracts;
 using CcsSso.Core.JobScheduler.Enum;
-using CcsSso.DbModel.Entity;
-using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
-using CcsSso.Shared.Contracts;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using System;
@@ -24,27 +19,22 @@ namespace CcsSso.Core.JobScheduler
 {
   public class OrganisationDeleteForInactiveRegistrationJob : BackgroundService
   {
-    private readonly IDataContext _dataContext;
-    private readonly IDateTimeService _dataTimeService;
     private readonly AppSettings _appSettings;
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ICacheInvalidateService _cacheInvalidateService;
-    private readonly IIdamSupportService _idamSupportService;
-    private readonly IOrganisationAuditService _organisationAuditService;
-    private readonly IOrganisationAuditEventService _organisationAuditEventService;
-
-    public OrganisationDeleteForInactiveRegistrationJob(IServiceScopeFactory factory, IDateTimeService dataTimeService,
-      AppSettings appSettings, IHttpClientFactory httpClientFactory, ICacheInvalidateService cacheInvalidateService,
-      IIdamSupportService idamSupportService)
+    private readonly IWrapperOrganisationService _wrapperOrganisationService;
+    private readonly IWrapperUserService _wrapperUserService;
+    private readonly IHttpClientFactory _httpClientFactory;
+    public OrganisationDeleteForInactiveRegistrationJob(AppSettings appSettings, 
+      ICacheInvalidateService cacheInvalidateService,
+      IWrapperOrganisationService wrapperOrganisationService,
+      IWrapperUserService wrapperUserService, 
+      IHttpClientFactory httpClientFactory)
     {
-      _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
-      _dataTimeService = dataTimeService;
       _appSettings = appSettings;
-      _httpClientFactory = httpClientFactory;
       _cacheInvalidateService = cacheInvalidateService;
-      _idamSupportService = idamSupportService;
-      _organisationAuditService = factory.CreateScope().ServiceProvider.GetRequiredService<IOrganisationAuditService>();
-      _organisationAuditEventService = factory.CreateScope().ServiceProvider.GetRequiredService<IOrganisationAuditEventService>();
+      _wrapperOrganisationService = wrapperOrganisationService;
+      _wrapperUserService = wrapperUserService;
+      _httpClientFactory = httpClientFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -61,7 +51,7 @@ namespace CcsSso.Core.JobScheduler
 
     private async Task PerformJobAsync()
     {
-      var organisationIds = await GetExpiredOrganisationIdsAsync();
+      var organisationIds = await GetInactiveOrganisationAsync();
       Guid groupId = Guid.NewGuid();
 
       if (organisationIds != null)
@@ -84,23 +74,27 @@ namespace CcsSso.Core.JobScheduler
           try
           {
             OrgDeleteCandidateStatus orgDeleteCandidateStatus = OrgDeleteCandidateStatus.None;
-            //Get admin users to check their statuses in idam
+
+            string activeUserId = string.Empty;
             var adminUsers = await GetOrganisationAdmins(orgDetail.Id);
-            
-            Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.Id}");
-            
+
+            Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.OrganisationId}");
+
             foreach (var adminUser in adminUsers)
             {
               var url = "/security/users?email=" + HttpUtility.UrlEncode(adminUser.UserName);
               var response = await client.GetAsync(url);
-              if (response.StatusCode == System.Net.HttpStatusCode.OK)
+              var responseContent = await response.Content.ReadAsStringAsync();
+              var idamUser = JsonConvert.DeserializeObject<IdamUser>(responseContent);
+              // var idamUser = await _wrapperSecurityService.GetUserByEmail(adminUser.UserName);
+
+              if (idamUser != null)
               {
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var idamUser = JsonConvert.DeserializeObject<IdamUser>(responseContent);
 
                 if (idamUser.EmailVerified)
                 {
                   orgDeleteCandidateStatus = OrgDeleteCandidateStatus.Activate;
+                  activeUserId = adminUser.Id.ToString();
                   break;
                 }
                 else
@@ -117,46 +111,38 @@ namespace CcsSso.Core.JobScheduler
 
             if (orgDeleteCandidateStatus == OrgDeleteCandidateStatus.Delete)
             {
-              //Console.WriteLine($"*********Start Deleting from Conclave Organization id {orgDetail.Id}***********************");
-              await DeleteOrganisationAsync(orgDetail.Id);
-              //Console.WriteLine($"*********End Deleted from Conclave Organization id {orgDetail.Id}***********************");
+              await DeleteOrganisationAsync(orgDetail.OrganisationId);
 
-              //Console.WriteLine($"*********Start Deleting from CII Organization id {orgDetail.Id} ***********************");
-              await DeleteCIIOrganisationEntryAsync(orgDetail.CiiOrganisationId);
-              //Console.WriteLine($"*********End Deleting from CII Organization id {orgDetail.Id} ***********************");
+              await DeleteCIIOrganisationEntryAsync(orgDetail.OrganisationId);
 
               if (_appSettings.OrgAutoValidationJobSettings.Enable && orgDetail.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier)
               {
-                var organisationAudit = _dataContext.OrganisationAudit.FirstOrDefault(x => x.OrganisationId == orgDetail.Id);
-                if (organisationAudit != null)
+                var orgStatus = new OrganisationAuditInfo
                 {
-                  var orgStatus = new OrganisationAuditInfo
-                  {
-                    Status = OrgAutoValidationStatus.AutoOrgRemoval,
-                    OrganisationId = orgDetail.Id,
-                    Actioned = OrganisationAuditActionType.Job.ToString(),
-                    ActionedBy = OrganisationAuditActionType.Job.ToString()
+                  Status = OrgAutoValidationStatus.AutoOrgRemoval,
+                  CiiOrganisationId = orgDetail.OrganisationId,
+                  Actioned = OrganisationAuditActionType.Job.ToString(),
+                  ActionedBy = OrganisationAuditActionType.Job.ToString()
+                };
+                var organisationAudit = await _wrapperOrganisationService.UpdateOrganisationAuditList(orgStatus);
+
+                var eventLogs = new List<OrganisationAuditEventInfo>() {
+                    new OrganisationAuditEventInfo
+                    {
+                      Actioned = OrganisationAuditActionType.Job.ToString(),
+                      Event = OrganisationAuditEventType.InactiveOrganisationRemoved.ToString(),
+                      GroupId = groupId,
+                      CiiOrganisationId = orgDetail.OrganisationId
+                    }
                   };
 
-                  var eventLogs = new List<OrganisationAuditEventInfo>() {
-                                new OrganisationAuditEventInfo
-                                {
-                                  Actioned = OrganisationAuditActionType.Job.ToString(),
-                                  Event = OrganisationAuditEventType.InactiveOrganisationRemoved.ToString(),
-                                  GroupId = groupId,
-                                  OrganisationId = orgDetail.Id
-                                }
-                              };
-
-                  await _organisationAuditService.UpdateOrganisationAuditAsync(orgStatus);
-                  await _organisationAuditEventService.CreateOrganisationAuditEventAsync(eventLogs);
-                }
+                await _wrapperOrganisationService.CreateOrganisationAuditEventAsync(eventLogs);
               }
             }
             else if (orgDeleteCandidateStatus == OrgDeleteCandidateStatus.Activate)
             {
               //Console.WriteLine($"*********Activating CII Organization id {orgDetail.Item1} ***********************");
-              await ActivateOrganisationAsync(orgDetail.Id);
+              await ActivateOrganisationAsync(activeUserId);
               //Console.WriteLine($"*********Activated CII Organization id {orgDetail.Item1} ***********************");
             }
           }
@@ -171,159 +157,49 @@ namespace CcsSso.Core.JobScheduler
       }
     }
 
-    public async Task ActivateOrganisationAsync(int orgId)
+    public async Task ActivateOrganisationAsync(string activeUserId)
     {
-      var org = await _dataContext.Organisation.FirstOrDefaultAsync(o => o.Id == orgId);
-      if (org != null)
-      {
-        org.IsActivated = true;
-      }
-      await _dataContext.SaveChangesAsync();
+      await _wrapperOrganisationService.ActivateOrganisationByUser(activeUserId);
     }
 
-    public async Task DeleteOrganisationAsync(int orgId)
+    public async Task DeleteOrganisationAsync(string ciiOrgId)
     {
-      var deletingOrganisation = await _dataContext.Organisation
-                                .Include(o => o.OrganisationEligibleIdentityProviders)
-                                .Include(o => o.OrganisationAccessRoles)
-                                .Include(o => o.OrganisationEligibleRoles)
-                                .Include(o => o.Party).ThenInclude(p => p.ContactPoints)
-                                .ThenInclude(cp => cp.ContactDetail).ThenInclude(cd => cd.PhysicalAddress)
-                                .FirstOrDefaultAsync(o => o.Id == orgId);
+      Console.WriteLine($"*********Start Deleting from Conclave Organization id {ciiOrgId}***********************");
+      await _wrapperOrganisationService.DeleteOrganisationAsync(ciiOrgId);
+      Console.WriteLine($"*********End Deleted from Conclave Organization id {ciiOrgId}***********************");
 
-      if (deletingOrganisation != null)
+      var filter = new UserFilterCriteria
       {
-        List<int> orgContactPointIds = new();
-        Dictionary<string, List<int>> deletingUserDetails = new();
+        isAdmin = true,
+        includeSelf = true,
+        includeUnverifiedAdmin = true,
+        isDelegatedExpiredOnly = false,
+        isDelegatedOnly = false,
+        searchString = String.Empty
+      };
 
-        deletingOrganisation.OrganisationEligibleIdentityProviders.ForEach((idp) => { idp.IsDeleted = true; });
+      Console.WriteLine($"*********Start Deleting from Organization Users ***********************");
+      var orgUsers = await _wrapperOrganisationService.GetUserByOrganisation(ciiOrgId, filter);
+      orgUsers.ForEach(user =>
+      {
+        Console.WriteLine($"********* Deleting from Users: {user.UserName} ***********************");
+        _wrapperUserService.DeleteUserAsync(user.UserName);
+        _cacheInvalidateService.RemoveUserCacheValuesOnDeleteAsync(user.UserName, ciiOrgId, new List<int>());
+      });
 
-        if (deletingOrganisation.Party != null)
-        {
-          deletingOrganisation.Party.IsDeleted = true;
-        }
-
-        deletingOrganisation.IsDeleted = true;
-
-        if (deletingOrganisation.Party.ContactPoints != null)
-        {
-          foreach (var orgContactPoint in deletingOrganisation.Party.ContactPoints)
-          {
-            orgContactPoint.IsDeleted = true;
-            orgContactPointIds.Add(orgContactPoint.Id);
-            if (orgContactPoint.ContactDetail != null)
-            {
-              orgContactPoint.ContactDetail.IsDeleted = true;
-            }
-
-            if (orgContactPoint.ContactDetail.PhysicalAddress != null)
-            {
-              orgContactPoint.ContactDetail.PhysicalAddress.IsDeleted = true;
-            }
-          }
-        }
-
-        if (deletingOrganisation.OrganisationAccessRoles != null)
-        {
-          foreach (var orgAccessRoles in deletingOrganisation.OrganisationAccessRoles)
-          {
-            orgAccessRoles.IsDeleted = true;
-          }
-        }
-
-        if (deletingOrganisation.OrganisationEligibleRoles != null)
-        {
-          foreach (var orgEligibleRoles in deletingOrganisation.OrganisationEligibleRoles)
-          {
-            orgEligibleRoles.IsDeleted = true;
-          }
-        }
-
-        var deletingOrganisationPeople = await _dataContext.Organisation
-        .Include(o => o.People).ThenInclude(prs => prs.Party).ThenInclude(p => p.User).ThenInclude(u => u.UserAccessRoles)
-        .Include(o => o.People).ThenInclude(prs => prs.Party).ThenInclude(p => p.User).ThenInclude(u => u.UserIdentityProviders)
-        .Include(o => o.People).ThenInclude(prs => prs.Party).ThenInclude(p => p.ContactPoints)
-        .ThenInclude(cp => cp.ContactDetail).ThenInclude(cd => cd.VirtualAddresses)
-        .FirstOrDefaultAsync(o => o.Id == orgId);
-
-        if (deletingOrganisationPeople.People != null)
-        {
-          foreach (var person in deletingOrganisationPeople.People)
-          {
-            person.Party.IsDeleted = true;
-            person.IsDeleted = true;
-
-            if (person.Party.User != null)
-            {
-              person.Party.User.IsDeleted = true;
-              if (person.Party.User.UserAccessRoles != null)
-              {
-                foreach (var uar in person.Party.User.UserAccessRoles)
-                {
-                  uar.IsDeleted = true;
-                }
-              }
-
-              if (person.Party.User.UserIdentityProviders != null)
-              {
-                foreach (var uidp in person.Party.User.UserIdentityProviders.Where(uidp => !uidp.IsDeleted))
-                {
-                  uidp.IsDeleted = true;
-                }
-              }
-
-              List<int> delteingUserContactPointIds = new();
-              if (person.Party.ContactPoints != null)
-              {
-                foreach (var personContactPoint in person.Party.ContactPoints)
-                {
-                  personContactPoint.IsDeleted = true;
-                  delteingUserContactPointIds.Add(personContactPoint.Id);
-                  if (personContactPoint.ContactDetail != null)
-                  {
-                    personContactPoint.ContactDetail.IsDeleted = true;
-
-                    if (personContactPoint.ContactDetail.VirtualAddresses != null)
-                    {
-                      foreach (var virtualContact in personContactPoint.ContactDetail.VirtualAddresses)
-                      {
-                        virtualContact.IsDeleted = true;
-                      }
-                    }
-                  }
-                }
-              }
-
-              deletingUserDetails.Add(person.Party.User.UserName, delteingUserContactPointIds);
-            }
-          }
-        }
-        await _dataContext.SaveChangesAsync();
-        foreach (var user in deletingUserDetails)
-        {
-          //Console.WriteLine($"********* Deleting {userName} from Auth0 ***********************");
-          await _idamSupportService.DeleteUserInIdamAsync(user.Key);
-          try
-          {
-            await _cacheInvalidateService.RemoveUserCacheValuesOnDeleteAsync(user.Key, deletingOrganisation.CiiOrganisationId, user.Value);
-          }
-          catch // Dont want to stop user deletion if any error in cache invalidate
-          {
-            continue;
-          }
-        }
-        await _cacheInvalidateService.RemoveOrganisationCacheValuesOnDeleteAsync(deletingOrganisation.CiiOrganisationId, orgContactPointIds,
-          new Dictionary<string, List<int>>());
+      var contactDetails = await _wrapperOrganisationService.GetOrganisationContactsList(ciiOrgId);
+      if (contactDetails.ContactPoints.Any())
+      {
+        var orgContactPointIds = contactDetails.ContactPoints.Select(cp => cp.ContactPointId).ToList<int>();
+        await _cacheInvalidateService.RemoveOrganisationCacheValuesOnDeleteAsync(ciiOrgId, orgContactPointIds, new Dictionary<string, List<int>>());
       }
+
     }
 
-    public async Task<List<Organisation>> GetExpiredOrganisationIdsAsync()
+    public async Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync()
     {
-      var organisationIds = await _dataContext.Organisation.Where(
-                          org => !org.IsActivated && !org.IsDeleted
-                          && org.CreatedOnUtc < _dataTimeService.GetUTCNow().AddMinutes(-(_appSettings.ScheduleJobSettings.OrganizationRegistrationExpiredThresholdInMinutes)))
-                          .ToListAsync();
-
+      var createdOnUtc = DateTime.UtcNow.AddMinutes(-1 * _appSettings.ScheduleJobSettings.OrganizationRegistrationExpiredThresholdInMinutes);
+      var organisationIds = await _wrapperOrganisationService.GetInactiveOrganisationAsync(createdOnUtc);
       return organisationIds;
     }
 
@@ -344,19 +220,20 @@ namespace CcsSso.Core.JobScheduler
       }
     }
 
-    private async Task<List<User>> GetOrganisationAdmins(int organisationId)
+    private async Task<List<UserListForOrganisationInfo>> GetOrganisationAdmins(int organisationId)
     {
-      var orgAdminAccessRoleId = (await _dataContext.OrganisationEligibleRole
-       .FirstOrDefaultAsync(or => !or.IsDeleted && or.OrganisationId == organisationId &&
-       or.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))?.Id;
 
-      var orgAdmins = await _dataContext.User.Where(u => !u.IsDeleted
-       && u.Party.Person.OrganisationId == organisationId
-       && (u.UserGroupMemberships.Any(ugm => !ugm.IsDeleted
-       && ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ga => !ga.IsDeleted && ga.OrganisationEligibleRoleId == orgAdminAccessRoleId))
-       || u.UserAccessRoles.Any(ur => !ur.IsDeleted && ur.OrganisationEligibleRoleId == orgAdminAccessRoleId)))
-      .Select(u => u).OrderBy(u => u.Id).ToListAsync();
+      var filter = new UserFilterCriteria
+      {
+        isAdmin = true,
+        includeSelf = true,
+        includeUnverifiedAdmin = false,
+        isDelegatedExpiredOnly = false,
+        isDelegatedOnly = false,
+        searchString = String.Empty
+      };
 
+      var orgAdmins = await _wrapperUserService.GetUsersByOrganisation(organisationId, filter);
       return orgAdmins;
     }
   }

@@ -1,15 +1,20 @@
+using Amazon.Runtime;
 using Amazon.SimpleSystemsManagement.Model;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
 using CcsSso.Core.JobScheduler.Jobs;
 using CcsSso.Core.JobScheduler.Services;
 using CcsSso.Core.Service;
 using CcsSso.Core.Service.External;
+using CcsSso.Core.Service.Wrapper;
 using CcsSso.DbPersistence;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
+using CcsSso.Dtos.Domain.Models;
+using CcsSso.Service;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Cache.Services;
 using CcsSso.Shared.Contracts;
@@ -28,7 +33,7 @@ using System.Net.Http;
 
 namespace CcsSso.Core.JobScheduler
 {
-  public class Program
+    public class Program
   {
     private static bool vaultEnabled;
     private static string vaultSource;
@@ -135,6 +140,12 @@ namespace CcsSso.Core.JobScheduler
                 Url = wrapperApiSettings.Url,
                 ApiGatewayEnabledUserUrl = wrapperApiSettings.ApiGatewayEnabledUserUrl,
                 ApiGatewayDisabledUserUrl = wrapperApiSettings.ApiGatewayDisabledUserUrl,
+                ConfigApiKey = wrapperApiSettings.ConfigApiKey,
+                OrgApiKey = wrapperApiSettings.OrgApiKey,
+                ApiGatewayDisabledConfigUrl = wrapperApiSettings.ApiGatewayDisabledConfigUrl,
+                ApiGatewayDisabledOrgUrl = wrapperApiSettings.ApiGatewayDisabledOrgUrl,
+                ApiGatewayEnabledConfigUrl = wrapperApiSettings.ApiGatewayEnabledConfigUrl,
+                ApiGatewayEnabledOrgUrl = wrapperApiSettings.ApiGatewayEnabledOrgUrl,
               },
               SecurityApiSettings = new SecurityApiSettings()
               {
@@ -221,7 +232,6 @@ namespace CcsSso.Core.JobScheduler
 
           services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(dbConnection));
 
-
           services.AddScoped<IOrganisationSupportService, OrganisationSupportService>();
           services.AddScoped<IContactSupportService, ContactSupportService>();
           services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
@@ -234,18 +244,56 @@ namespace CcsSso.Core.JobScheduler
           services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();          
           services.AddSingleton<IAutoValidationService, AutoValidationService>();
           services.AddSingleton<IAutoValidationOneTimeService, AutoValidationOneTimeService>();
+          services.AddSingleton<IWrapperApiService, WrapperApiService>();
+          services.AddSingleton<IWrapperUserService, WrapperUserService>();
+          services.AddSingleton<IWrapperConfigurationService, WrapperConfigurationService>();
+          services.AddSingleton<IWrapperOrganisationService, WrapperOrganisationService>();
 
-          services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
+          //services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
           services.AddHostedService<UnverifiedUserDeleteJob>();
-          services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
-          services.AddHostedService<OrganisationAutovalidationJob>();
-          services.AddHostedService<RoleApprovalLinkExpiredJob>();
+          //services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
+          //services.AddHostedService<OrganisationAutovalidationJob>();
+          // services.AddHostedService<RoleApprovalLinkExpiredJob>();
 
-
+          services.AddSingleton<IWrapperUserService, WrapperUserService>();
+          services.AddSingleton<IWrapperOrganisationService, WrapperOrganisationService>();
+          services.AddSingleton<IWrapperSecurityService, WrapperSecurityService>();
+          ConfigureHttpClients(services, ciiSettings,securityApiSettings, wrapperApiSettings, isApiGatewayEnabled);
         });
 
-   
+    private static void ConfigureHttpClients(IServiceCollection services,CiiSettings _ciiSettings, SecurityApiSettings _securityApiSettings, WrapperApiSettings _wrapperApiSettings, bool isApiGatewayEnabled)
+    {
+      services.AddHttpClient("UserWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(isApiGatewayEnabled ? _wrapperApiSettings.ApiGatewayEnabledUserUrl : _wrapperApiSettings.ApiGatewayDisabledUserUrl);
+        c.DefaultRequestHeaders.Add("x-api-key", _wrapperApiSettings.UserApiKey);
+      });
 
+      services.AddHttpClient("ConfigWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(isApiGatewayEnabled ? _wrapperApiSettings.ApiGatewayEnabledConfigUrl : _wrapperApiSettings.ApiGatewayDisabledConfigUrl);
+        c.DefaultRequestHeaders.Add("x-api-key", _wrapperApiSettings.ConfigApiKey);
+      });
+
+      services.AddHttpClient("OrgWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(isApiGatewayEnabled ? _wrapperApiSettings.ApiGatewayEnabledOrgUrl : _wrapperApiSettings.ApiGatewayDisabledOrgUrl);
+        c.DefaultRequestHeaders.Add("x-api-key", _wrapperApiSettings.OrgApiKey);
+      });
+      // Question about security wrapper api settings where to place these settings.
+      services.AddHttpClient("SecurityWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(_securityApiSettings.Url);
+        c.DefaultRequestHeaders.Add("x-api-key", _securityApiSettings.ApiKey);
+      });
+
+      services.AddHttpClient("CiiWrapperApi", c =>
+      {
+        c.DefaultRequestHeaders.Add("x-api-key", _ciiSettings.Token);
+        c.BaseAddress = new Uri(_ciiSettings.Url);
+      });
+
+    }
     private static void ReadFromAppSecret(HostBuilderContext hostContext, out string dbConnection, out CiiSettings ciiSettings,
       out List<UserDeleteJobSetting> userDeleteJobSettings, out SecurityApiSettings securityApiSettings, out WrapperApiSettings wrapperApiSettings,
       out ScheduleJobSettings scheduleJobSettings, out BulkUploadSettings bulkUploadSettings, out RedisCacheSettingsVault redisCacheSettingsVault,
