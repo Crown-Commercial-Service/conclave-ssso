@@ -16,11 +16,11 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
     Task<OrganisationListResponseInfo> GetOrganisationDataAsync(OrganisationFilterCriteria organisationFilterCriteria, ResultSetCriteria resultSetCriteria);
     Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId);
     Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(DateTime CreatedOnUtc);
-    Task<List<int>> DeleteOrganisationAsync(string organisationId);
+    Task<List<int>> DeleteOrganisationAsync(int organisationId);
     Task<bool> UpdateOrganisationAuditList(OrganisationAuditInfo organisationAuditInfo);
     Task CreateOrganisationAuditEventAsync(List<OrganisationAuditEventInfo> organisationAuditEventInfoList);
     Task<bool> ActivateOrganisationByUser(string userId);
-    Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(string organisationId, UserFilterCriteria filter);
+    Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(int organisationId, UserFilterCriteria filter);
     Task<OrganisationContactInfoList> GetOrganisationContactsList(string organisationId, string contactType = null, ContactAssignedStatus contactAssignedStatus = ContactAssignedStatus.All);
     Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(int organisationId);
   }

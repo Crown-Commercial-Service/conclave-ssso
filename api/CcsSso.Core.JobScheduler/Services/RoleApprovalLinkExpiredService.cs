@@ -1,12 +1,9 @@
 ﻿using CcsSso.Core.DbModel.Constants;
-using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
-using CcsSso.DbModel.Entity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -15,17 +12,16 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Core.JobScheduler.Services
 {
-    public class RoleApprovalLinkExpiredService : IRoleApprovalLinkExpiredService
+  public class RoleApprovalLinkExpiredService : IRoleApprovalLinkExpiredService
   {
     private readonly ILogger<RoleApprovalLinkExpiredService> _logger;
     private readonly IEmailSupportService _emailSupportService;
-    private readonly IServiceRoleGroupMapperService _serviceRoleGroupMapperService;
     private readonly AppSettings _appSettings;
     private readonly IWrapperConfigurationService _wrapperConfigurationService;
     private readonly IWrapperUserService _wrapperUserService;
     private readonly IWrapperOrganisationService _wrapperOrganisationService;
-    public RoleApprovalLinkExpiredService(IServiceScopeFactory factory,
-      ILogger<RoleApprovalLinkExpiredService> logger,
+    private UserAccessRolePendingRequestDetails PendingRolesList { get; set; }
+    public RoleApprovalLinkExpiredService(ILogger<RoleApprovalLinkExpiredService> logger,
       IEmailSupportService emailSupportService,
       AppSettings appSettings,
       IWrapperConfigurationService wrapperConfigurationService,
@@ -34,15 +30,17 @@ namespace CcsSso.Core.JobScheduler.Services
     {
       _emailSupportService = emailSupportService;
       _logger = logger;
-      _serviceRoleGroupMapperService = factory.CreateScope().ServiceProvider.GetRequiredService<IServiceRoleGroupMapperService>();
       _appSettings = appSettings;
       _wrapperConfigurationService = wrapperConfigurationService;
       _wrapperUserService = wrapperUserService;
       _wrapperOrganisationService = wrapperOrganisationService;
+      PendingRolesList = new UserAccessRolePendingRequestDetails();
     }
+
 
     public async Task PerformJobAsync(List<UserAccessRolePendingDetailsInfo> pendingRoles)
     {
+      PendingRolesList.UserAccessRolePendingDetailsInfo = pendingRoles;
       var approvalRoleConfig = await _wrapperConfigurationService.GetRoleApprovalConfigurationsAsync();
 
       List<UserAccessRolePendingDetailsInfo> expiredUserAccessRolePendingList = new();
@@ -56,7 +54,7 @@ namespace CcsSso.Core.JobScheduler.Services
         if (roleConfig == null)
           continue;
 
-        var roleExpireTime = roleConfig.LastUpdatedOnUtc.AddMinutes(roleConfig.LinkExpiryDurationInMinute);
+        var roleExpireTime = role.LastUpdatedOnUtc.AddMinutes(roleConfig.LinkExpiryDurationInMinute);
 
         if (roleExpireTime < DateTime.UtcNow)
         {
@@ -104,14 +102,17 @@ namespace CcsSso.Core.JobScheduler.Services
 
     private async Task RemoveExpiredApprovalPendingRolesAsync(List<UserAccessRolePendingDetailsInfo> userAccessRolePending)
     {
-      UserAccessRolePendingFilterCriteria criteria = new UserAccessRolePendingFilterCriteria() { Status = UserPendingRoleStaus.Pending };
-      var roleApprovalLink = await _wrapperUserService.GetUserAccessRolePendingDetails(criteria);
-      var userAccessRolePendingExpiredList = roleApprovalLink.UserAccessRolePendingDetails.Where(u => !u.IsDeleted && userAccessRolePending.Select(x => x.Id).Contains(u.Id)).ToList();
+      var userAccessRolePendingExpiredList = PendingRolesList.UserAccessRolePendingDetailsInfo
+        .Where(pr => !pr.IsDeleted && userAccessRolePending.Select(x => x.Id).Contains(pr.Id)).ToList();
 
       if (userAccessRolePendingExpiredList.Any())
       {
-        var orgEligibleRoleIds = userAccessRolePendingExpiredList.Select(r => r.OrganisationEligibleRoleId).ToList();
-        await _wrapperUserService.DeleteUserAccessRolePending(orgEligibleRoleIds);
+        PendingRolesList.UserAccessRolePendingDetailsInfo.ForEach(async pr =>
+        {
+          var orgEligibleRoleIds = userAccessRolePendingExpiredList.Select(r => r.OrganisationEligibleRoleId).ToList();
+          await _wrapperUserService.RemoveApprovalPendingRoles(pr.UserName, orgEligibleRoleIds, UserPendingRoleStaus.Expired);
+        });
+        
       }
     }
 
@@ -125,7 +126,14 @@ namespace CcsSso.Core.JobScheduler.Services
           continue;
         }
 
-        var emailList = await _wrapperUserService.GetUserByUserName(pendingNotification.UserName, pendingNotification.CreatedUserId);
+        var emailList = new List<string>() { pendingNotification.UserName };
+        if (pendingNotification.UserId != pendingNotification.CreatedUserId)
+        {
+          if (pendingNotification.CreatedBy != null)
+          {
+            emailList.Add(pendingNotification.CreatedBy);
+          }
+        }
 
         var serviceName = string.Empty;
         var roleConfig = await GetRoleConfigAsync(approvalRoleConfig, pendingNotification.OrganisationId);
@@ -143,7 +151,7 @@ namespace CcsSso.Core.JobScheduler.Services
 
         foreach (var email in emailList)
         {
-          await _emailSupportService.SendRoleRejectedEmailAsync(email.UserName, pendingNotification.UserName, serviceName);
+          await _emailSupportService.SendRoleRejectedEmailAsync(email, pendingNotification.UserName, serviceName);
         }
       }
 

@@ -6,7 +6,7 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
     // #Auto validation
     public interface IWrapperApiService
     {
-        Task<T> GetAsync<T>(WrapperApi wrapperApi, string url, string cacheKey, string errorMessage, bool cacheEnabledForRequest = true);
+        Task<T> GetAsync<T>(WrapperApi wrapperApi, string url, string cacheKey, string errorMessage);
 
         Task<T> PostAsync<T>(WrapperApi wrapperApi, string url, object requestData, string errorMessage);
 

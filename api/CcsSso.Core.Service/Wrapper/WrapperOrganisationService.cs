@@ -23,7 +23,7 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task<WrapperOrganisationProfileResponseInfo> GetOrganisationAsync(string organisationId)
 		{
-			var result = await _wrapperApiService.GetAsync<WrapperOrganisationProfileResponseInfo>(WrapperApi.Organisation, $"internal/cii/{organisationId}", $"{CacheKeyConstant.Organisation}-{organisationId}", "ERROR_RETRIEVING_ORGANISATION",false);
+			var result = await _wrapperApiService.GetAsync<WrapperOrganisationProfileResponseInfo>(WrapperApi.Organisation, $"internal/cii/{organisationId}", $"{CacheKeyConstant.Organisation}-{organisationId}", "ERROR_RETRIEVING_ORGANISATION");
 			return result;
 		}
 
@@ -40,7 +40,7 @@ namespace CcsSso.Core.Service.Wrapper
 															$"&PageSize={resultSetCriteria.PageSize}" +
 															$"&CurrentPage={resultSetCriteria.CurrentPage}" +
 															$"&IsPagination={resultSetCriteria.IsPagination}";
-			var result = await _wrapperApiService.GetAsync<OrganisationListResponseInfo>(WrapperApi.Organisation, url, $"{CacheKeyConstant.OrganisationData}", "ERROR_RETRIEVING_ORGANISATION_DATA",false);
+			var result = await _wrapperApiService.GetAsync<OrganisationListResponseInfo>(WrapperApi.Organisation, url, $"{CacheKeyConstant.OrganisationData}", "ERROR_RETRIEVING_ORGANISATION_DATA");
 			return result;
 		}
 
@@ -58,7 +58,7 @@ namespace CcsSso.Core.Service.Wrapper
       await _wrapperApiService.PostAsync<Task>(WrapperApi.Organisation, "auditevents", organisationAuditEventInfoList, "ERROR_CREATING_ORGANISATION_AUDIT_EVENT_LOG");
     }
 
-    public async Task<List<int>> DeleteOrganisationAsync(string organisationId)
+    public async Task<List<int>> DeleteOrganisationAsync(int organisationId)
     {
       var result = await _wrapperApiService.DeleteAsync<List<int>>(WrapperApi.Organisation, $"organisationId?={organisationId}", "ERROR_DELETING_ORGANISATION");
       return result;
@@ -66,7 +66,7 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(DateTime CreatedOnUtc)
     {
-      var result = await _wrapperApiService.GetAsync<List<InactiveOrganisationResponse>>(WrapperApi.Organisation, $"in-active?CreatedOnUtc={CreatedOnUtc.ToString("yyyy-MM-dd")}", $"{CacheKeyConstant.Organisation}-{CreatedOnUtc}", "ERROR_RETRIEVING_EXPIRED_ORGANISATION");
+      var result = await _wrapperApiService.GetAsync<List<InactiveOrganisationResponse>>(WrapperApi.Organisation, $"in-active?created-on={CreatedOnUtc.ToString("yyyy-MM-dd")}", $"{CacheKeyConstant.Organisation}-{CreatedOnUtc}", "ERROR_RETRIEVING_EXPIRED_ORGANISATION");
       return result;
     }
 
@@ -76,13 +76,13 @@ namespace CcsSso.Core.Service.Wrapper
       return result;
     }
 
-    public async Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(string organisationId, UserFilterCriteria filter)
+    public async Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(int organisationId, UserFilterCriteria filter)
     {
       var url = $"internal/organisation/{organisationId}?search-string={filter.searchString}" +
                 $"&delegated-only={filter.isDelegatedOnly}&delegated-expired-only={filter.isDelegatedExpiredOnly}" +
                 $"&isAdmin={filter.isAdmin}&include-unverified-admin={filter.includeUnverifiedAdmin}&include-self={filter.includeSelf}";
 
-      var result = await _wrapperApiService.GetAsync<List<UserListForOrganisationInfo>>(WrapperApi.User, url, $"{CacheKeyConstant.OrganisationUsers}", "ERROR_RETRIEVING_ORGANISATION_USERS", false);
+      var result = await _wrapperApiService.GetAsync<List<UserListForOrganisationInfo>>(WrapperApi.User, url, $"{CacheKeyConstant.OrganisationUsers}", "ERROR_RETRIEVING_ORGANISATION_USERS");
       return result;
     }
 
@@ -93,7 +93,7 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(int organisationId)
     {
-      return await _wrapperApiService.GetAsync<OrganisationProfileResponseInfo>(WrapperApi.Organisation, $"?organisationId={organisationId}", $"{CacheKeyConstant.Organisation}-{organisationId}", "ORGANISATION_DETAILS_NOT_FOUND");
+      return await _wrapperApiService.GetAsync<OrganisationProfileResponseInfo>(WrapperApi.Organisation, $"internal/{organisationId}", $"{CacheKeyConstant.Organisation}-{organisationId}", "ORGANISATION_DETAILS_NOT_FOUND");
     }
   }
 }

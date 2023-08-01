@@ -1,12 +1,13 @@
 ﻿using CcsSso.Core.DbModel.Constants;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 
 namespace CcsSso.Core.Domain.Dtos.External
 {
   public class UserAccessRolePendingRequestDetails
   {
-    public List<UserAccessRolePendingDetailsInfo> UserAccessRolePendingDetails;
+    public List<UserAccessRolePendingDetailsInfo> UserAccessRolePendingDetailsInfo;
   }
   public class UserAccessRolePendingDetailsInfo
   {
@@ -26,15 +27,21 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public int CreatedUserId { get; set; }
 
+    public string CreatedBy { get; set; }
+
     public int OrganisationId { get; set; }
+
     public string UserName { get; set; }
+
+    public DateTime LastUpdatedOnUtc { get; set; }
+
   }
   public class UserAccessRolePendingFilterCriteria
   {
-    [FromQuery(Name = "User-Ids")]
+    [FromQuery(Name = "user-ids")]
     public List<int>? UserIds { get; set; }
 
-    [FromQuery(Name = "Status")]
+    [FromQuery(Name = "status")]
     public UserPendingRoleStaus? Status { get; set; }
   }
 

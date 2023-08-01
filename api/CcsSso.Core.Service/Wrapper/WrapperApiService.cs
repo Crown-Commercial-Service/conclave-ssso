@@ -18,7 +18,7 @@ namespace CcsSso.Core.Service.Wrapper
 			_httpClientFactory = httpClientFactory;
 		}
 
-		public async Task<T> GetAsync<T>(WrapperApi wrapperApi, string url, string cacheKey, string errorMessage, bool cacheEnabledForRequest = true)
+		public async Task<T> GetAsync<T>(WrapperApi wrapperApi, string url, string cacheKey, string errorMessage)
 		{
 			var client = GetHttpClient(wrapperApi);
 

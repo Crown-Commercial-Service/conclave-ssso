@@ -59,9 +59,9 @@ namespace CcsSso.Core.JobScheduler.Jobs
         UserAccessRolePendingFilterCriteria criteria = new UserAccessRolePendingFilterCriteria() { Status = UserPendingRoleStaus.Pending };
         var userPendingRole = await _wrapperUserService.GetUserAccessRolePendingDetails(criteria);
 
-        _logger.LogInformation($"Pending Role approval request: {userPendingRole.UserAccessRolePendingDetails.Count()}");
+        _logger.LogInformation($"Pending Role approval request: {userPendingRole.UserAccessRolePendingDetailsInfo.Count()}");
 
-        await _roleDeleteExpiredNotificationService.PerformJobAsync(userPendingRole.UserAccessRolePendingDetails);
+        await _roleDeleteExpiredNotificationService.PerformJobAsync(userPendingRole.UserAccessRolePendingDetailsInfo);
 
       }
       catch (Exception e)
