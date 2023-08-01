@@ -58,10 +58,9 @@ namespace CcsSso.Core.Service.Wrapper
       await _wrapperApiService.PostAsync<Task>(WrapperApi.Organisation, "auditevents", organisationAuditEventInfoList, "ERROR_CREATING_ORGANISATION_AUDIT_EVENT_LOG");
     }
 
-    public async Task<List<int>> DeleteOrganisationAsync(string organisationId)
+    public async Task DeleteOrganisationAsync(string organisationId)
     {
-      var result = await _wrapperApiService.DeleteAsync<List<int>>(WrapperApi.Organisation, $"organisationId?={organisationId}", "ERROR_DELETING_ORGANISATION");
-      return result;
+      await _wrapperApiService.DeleteAsync<Task>(WrapperApi.Organisation, $"organisationId?={organisationId}", "ERROR_DELETING_ORGANISATION");
     }
 
     public async Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(DateTime CreatedOnUtc)
