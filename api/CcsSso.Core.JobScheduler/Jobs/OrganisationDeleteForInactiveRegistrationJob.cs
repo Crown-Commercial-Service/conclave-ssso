@@ -165,7 +165,7 @@ namespace CcsSso.Core.JobScheduler
     public async Task DeleteOrganisationAsync(string ciiOrgId, int orgId)
     {
       Console.WriteLine($"*********Start Deleting from Conclave Organization id {ciiOrgId}***********************");
-      await _wrapperOrganisationService.DeleteOrganisationAsync(orgId);
+      await _wrapperOrganisationService.DeleteOrganisationAsync(ciiOrgId);
       Console.WriteLine($"*********End Deleted from Conclave Organization id {ciiOrgId}***********************");
 
       var filter = new UserFilterCriteria
