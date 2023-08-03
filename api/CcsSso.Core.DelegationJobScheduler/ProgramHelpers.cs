@@ -76,6 +76,21 @@ namespace CcsSso.Core.DelegationJobScheduler
 			}
 			return returnParams;
 		}
+
+		public dynamic FillNotificationApiSettingsAwsParamsValue(Type objType, List<Parameter> parameters)
+		{
+			dynamic? returnParams = null;
+
+			if (objType == typeof(NotificationApiSettings))
+			{
+				returnParams = new NotificationApiSettings()
+				{
+					NotificationApiUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiUrl"),
+					NotificationApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiKey"),
+				};
+			}
+			return returnParams;
+		}
 		public async Task<List<Parameter>> LoadAwsSecretsAsync(IAwsParameterStoreService _awsParameterStoreService)
     {
       return await _awsParameterStoreService.GetParameters(path);

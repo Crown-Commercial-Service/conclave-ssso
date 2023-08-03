@@ -203,8 +203,15 @@ namespace CcsSso.Core.JobScheduler
           Enable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "ServiceRoleGroupSettings/Enable"))
         };
       }
-
-      return returnParams;
+			else if (objType == typeof(NotificationApiSettings))
+			{
+				returnParams = new NotificationApiSettings()
+				{
+					NotificationApiUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiUrl"),
+				  NotificationApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiKey")	
+        };
+			}
+			return returnParams;
     }
 
     private List<UserDeleteJobSetting> FillUserDeleteJobSetting(string value)
