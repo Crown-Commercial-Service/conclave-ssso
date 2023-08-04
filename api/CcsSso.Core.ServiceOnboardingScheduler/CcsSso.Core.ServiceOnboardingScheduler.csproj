@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0.7" />
+	  <PackageReference Include="GovukNotify" Version="6.1.0" />
   </ItemGroup>
 
   <ItemGroup>
