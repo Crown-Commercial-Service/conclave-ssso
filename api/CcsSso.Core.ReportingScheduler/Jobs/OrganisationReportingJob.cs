@@ -179,7 +179,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
     private async Task<OrganisationProfileResponseInfo?> GetOrganisationDetails(Tuple<int, string> eachModifiedOrg, HttpClient client)
     {
-      string url = $"organisations/{eachModifiedOrg.Item2}";
+      string url = $"organisation-profile/{eachModifiedOrg.Item2}";
       var response = await client.GetAsync(url);
 
       if (response.IsSuccessStatusCode)
