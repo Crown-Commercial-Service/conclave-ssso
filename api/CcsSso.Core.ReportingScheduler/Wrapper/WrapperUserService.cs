@@ -16,7 +16,7 @@ namespace CcsSso.Core.ReportingScheduler.Wrapper
 
     public async Task<UserNameListResponse> GetUserNames(string listOfUserIds)
     {
-      return await _wrapperApiService.GetAsync<UserNameListResponse>(WrapperApi.User, $"internal/user-names/{listOfUserIds}", "ERROR_GETTING_USER_NAME_LIST");
+      return await _wrapperApiService.GetAsync<UserNameListResponse>(WrapperApi.User, $"user-names/{listOfUserIds}", "ERROR_GETTING_USER_NAME_LIST");
     }
 
     public async Task<AuditLogResponse> GetUserAuditLog(DateTime startDate, int pageSize,int currentPage)
