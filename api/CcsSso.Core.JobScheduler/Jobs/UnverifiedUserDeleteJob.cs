@@ -112,7 +112,7 @@ namespace CcsSso.Core.JobScheduler
               isDelegatedOnly = false,
               searchString = String.Empty
             };
-            var adminUsers = await _wrapperOrganisationService.GetUserByOrganisation(orgByUsers.Key, filter);
+            var adminUsers = await _wrapperUserService.GetUserByOrganisation(orgByUsers.Key, filter);
             adminList.Add(orgByUsers.Key, adminUsers.Where(au => au.AccountVerified).Select(au => au.UserName).ToList());
 
             await _emailSupportService.SendUnVerifiedUserDeletionEmailToAdminAsync($"{user.FirstName} {user.LastName}", user.UserName, adminList[orgByUsers.Key]);
