@@ -64,7 +64,7 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task RemoveApprovalPendingRoles(string UserName, List<int> roleIds, UserPendingRoleStaus? status)
     {
-      await _wrapperApiService.DeleteAsync<bool>(WrapperApi.User, $"approval/user-roles?user-id={UserName}&roles={string.Join(",", roleIds)}&status={(int)status}", "ERROR_DELETING_USER_ACCESS_ROLE_PENDING");
+      await _wrapperApiService.DeleteAsync<bool>(WrapperApi.User, $"approval/roles?user-id={UserName}&roles={string.Join(",", roleIds)}&status={(int)status}", "ERROR_DELETING_USER_ACCESS_ROLE_PENDING");
     }
 
     public async Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(int organisationId, UserFilterCriteria filter)
