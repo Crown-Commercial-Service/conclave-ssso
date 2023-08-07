@@ -59,12 +59,12 @@ namespace CcsSso.Core.Service.Wrapper
     public async Task<UserAccessRolePendingRequestDetails> GetUserAccessRolePendingDetails(UserAccessRolePendingFilterCriteria criteria)
     {
       var payload = JsonConvert.SerializeObject(criteria);
-      return await _wrapperApiService.GetAsync<UserAccessRolePendingRequestDetails>(WrapperApi.User, $"approve/user-roles?{payload}", $"{CacheKeyConstant.User}-USER_ACCESSROLE_PENDING", "ERROR_RETRIEVING_USER_ACCESSROLE_PENDING");
+      return await _wrapperApiService.GetAsync<UserAccessRolePendingRequestDetails>(WrapperApi.User, $"approval/user-roles?{payload}", $"{CacheKeyConstant.User}-USER_ACCESSROLE_PENDING", "ERROR_RETRIEVING_USER_ACCESSROLE_PENDING");
     }
 
     public async Task RemoveApprovalPendingRoles(string UserName, List<int> roleIds, UserPendingRoleStaus? status)
     {
-      await _wrapperApiService.DeleteAsync<bool>(WrapperApi.User, $"approve/user-roles?user-id={UserName}&roles={string.Join(",", roleIds)}&status={(int)status}", "ERROR_DELETING_USER_ACCESS_ROLE_PENDING");
+      await _wrapperApiService.DeleteAsync<bool>(WrapperApi.User, $"approval/user-roles?user-id={UserName}&roles={string.Join(",", roleIds)}&status={(int)status}", "ERROR_DELETING_USER_ACCESS_ROLE_PENDING");
     }
 
     public async Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(int organisationId, UserFilterCriteria filter)
