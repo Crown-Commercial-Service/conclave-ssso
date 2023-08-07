@@ -60,7 +60,7 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task DeleteOrganisationAsync(string organisationId)
     {
-      await _wrapperApiService.DeleteAsync<Task>(WrapperApi.Organisation, $"organisationId?={organisationId}", "ERROR_DELETING_ORGANISATION");
+      await _wrapperApiService.DeleteAsync<Task>(WrapperApi.OrganisationDelete, $"organisationId?={organisationId}", "ERROR_DELETING_ORGANISATION");
     }
 
     public async Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(DateTime CreatedOnUtc)

@@ -68,6 +68,7 @@ namespace CcsSso.Core.JobScheduler
           ApiGatewayDisabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledUserUrl"),
           ConfigApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ConfigApiKey"),
           OrgApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/OrgApiKey"),
+          OrgDeleteApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/OrgDeleteApiKey"),
           UserApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/UserApiKey"),
           ApiGatewayEnabledConfigUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledConfigUrl"),
           ApiGatewayEnabledOrgUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledOrgUrl"),

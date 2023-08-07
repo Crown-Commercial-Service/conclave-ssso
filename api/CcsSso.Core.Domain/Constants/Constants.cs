@@ -213,6 +213,7 @@ namespace CcsSso.Domain.Constants
   {
     Configuration,
     Organisation,
+    OrganisationDelete,
     Contact,
     Security,
     User,

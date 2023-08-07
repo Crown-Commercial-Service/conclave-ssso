@@ -178,7 +178,8 @@ namespace CcsSso.Core.Service.Wrapper
 			var clientName = wrapperApi switch
 			{
 				WrapperApi.Organisation => "OrgWrapperApi",
-				WrapperApi.Configuration => "ConfigWrapperApi",
+                WrapperApi.OrganisationDelete => "OrgWrapperDeleteApi",
+                WrapperApi.Configuration => "ConfigWrapperApi",
 				WrapperApi.Contact => "ContactWrapperApi",
 				WrapperApi.User => "UserWrapperApi",
 				_ => "SecurityWrapperApi"

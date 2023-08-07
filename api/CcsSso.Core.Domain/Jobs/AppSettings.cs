@@ -68,6 +68,7 @@ namespace CcsSso.Core.Domain.Jobs
 
     public string ConfigApiKey { get; set; }
     public string OrgApiKey { get; set; }
+    public string OrgDeleteApiKey { get; set; }
     public string UserApiKey { get; set; }
     public string SecurityApiKey { get; set; }
     public string ApiGatewayEnabledConfigUrl { get; set; }
