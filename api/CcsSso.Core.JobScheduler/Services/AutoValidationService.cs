@@ -201,7 +201,7 @@ namespace CcsSso.Core.JobScheduler.Services
     {
       _logger.LogInformation($"Autovalidation CiiOrganisationId:- {orgDetail.CiiOrganisationId} ");
 
-      var url = "/organisation-profile/" + orgDetail.CiiOrganisationId + "/autovalidationjob/roles";
+      var url = "/organisation-profile/" + orgDetail.CiiOrganisationId + "/validation/auto/job/roles";
 
       AutoValidationOneTimeJobDetails details = new AutoValidationOneTimeJobDetails()
       {
@@ -223,7 +223,7 @@ namespace CcsSso.Core.JobScheduler.Services
     {
       _logger.LogInformation($"Autovalidation CiiOrganisationId:- {orgDetail.CiiOrganisationId} ");
 
-      var url = "/organisation-profile/" + orgDetail.CiiOrganisationId + "/autovalidationjob";
+      var url = "/organisation-profile/" + orgDetail.CiiOrganisationId + "/validation/auto/job";
       var response = await client.PostAsync(url, null);
       return response;
     }

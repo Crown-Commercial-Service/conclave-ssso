@@ -22,7 +22,7 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task<List<ServiceRoleGroup>> GetServiceRoleGroupsRequireApproval()
     {
-      var result = await _wrapperApiService.GetAsync<List<ServiceRoleGroup>>(WrapperApi.Configuration, $"approve/servicerolegroups", $"{CacheKeyConstant.Configuration}-ROLES", "ERROR_RETRIEVING_SERVICE_ROLE_GROUPS_REQUIRE_APPROVAL");
+      var result = await _wrapperApiService.GetAsync<List<ServiceRoleGroup>>(WrapperApi.Configuration, $"approval/service-role-groups", $"{CacheKeyConstant.Configuration}-ROLES", "ERROR_RETRIEVING_SERVICE_ROLE_GROUPS_REQUIRE_APPROVAL");
       return result;
     }
   }
