@@ -27,7 +27,9 @@ namespace CcsSso.Core.Domain.Jobs
     public ActiveJobStatus? ActiveJobStatus { get; set; }
     public bool IsApiGatewayEnabled { get; set; }
     public ServiceRoleGroupSettings ServiceRoleGroupSettings { get; set; }
-  }
+
+    public NotificationApiSettings NotificationApiSettings { get; set; }
+	}
 
   public class CiiSettings
   {
@@ -36,7 +38,12 @@ namespace CcsSso.Core.Domain.Jobs
     public string Token { get; set; }
   }
 
-  public class ActiveJobStatus
+	public class NotificationApiSettings
+	{
+		public string NotificationApiUrl { get; set; }
+		public string NotificationApiKey { get; set; }
+	}
+	public class ActiveJobStatus
   {
     public bool RoleDeleteExpiredNotificationJob { get; set; }
 

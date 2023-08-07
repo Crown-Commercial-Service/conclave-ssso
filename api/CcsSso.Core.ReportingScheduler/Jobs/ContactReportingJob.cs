@@ -250,7 +250,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     private async Task<ContactUserResponseInfo?> GetUserContactDetails(ModifiedUserContactInfo eachModifiedContact, HttpClient client)
     {
 
-      string url = $"users/contacts/{eachModifiedContact.ContactPointId}?user-id={HttpUtility.UrlEncode(eachModifiedContact.UserName)}";
+      string url = $"user-profile/contacts/{eachModifiedContact.ContactPointId}?user-id={HttpUtility.UrlEncode(eachModifiedContact.UserName)}";
 
       var response = await client.GetAsync(url);
 
@@ -272,7 +272,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
     private async Task<ContactOrgResponseInfo?> GetOrgContactDetails(ModifiedOrgContactInfo eachModifiedContact, HttpClient client)
     {
-      string url = $"organisations/{eachModifiedContact.CiiOrgId}/contacts/{eachModifiedContact.ContactPointId}";
+      string url = $"organisation-profile/{eachModifiedContact.CiiOrgId}/contacts/{eachModifiedContact.ContactPointId}";
       var response = await client.GetAsync(url);
 
       if (response.IsSuccessStatusCode)
@@ -297,7 +297,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        string url = $"contacts/internal/data/org-report?lastmodifieddate" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+        string url = $"contact-service/internal/data/org-report?lastmodifieddate" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
         var client = _httpClientFactory.CreateClient("ContactWrapperApi");
         var response = await client.GetAsync(url);
 
@@ -323,7 +323,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        string url = $"contacts/internal/data/user-report?lastmodifieddate" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+        string url = $"contact-service/internal/data/user-report?lastmodifieddate" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
         var client = _httpClientFactory.CreateClient("ContactWrapperApi");
         var response = await client.GetAsync(url);
 
@@ -349,7 +349,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        string url = $"contacts/internal/data/site-report?lastmodifieddate" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+        string url = $"contact-service/internal/data/site-report?lastmodifieddate" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
         var client = _httpClientFactory.CreateClient("ContactWrapperApi");
         var response = await client.GetAsync(url);
 

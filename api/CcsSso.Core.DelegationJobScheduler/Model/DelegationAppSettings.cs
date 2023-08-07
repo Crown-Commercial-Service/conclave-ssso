@@ -11,9 +11,16 @@ namespace CcsSso.Core.DelegationJobScheduler.Model
     public EmailSettings EmailSettings { get; set; }
     public WrapperApiSettings WrapperApiSettings { get; set; }
     public bool IsApiGatewayEnabled { get; set; }
+    public NotificationApiSettings NotificationApiSettings { get ; set; }
 	}
 
-  public class WrapperApiSettings
+  public class NotificationApiSettings
+  {
+    public string NotificationApiUrl { get; set; }
+    public string NotificationApiKey { get; set; }
+  }
+
+	public class WrapperApiSettings
   {
 		public string UserApiKey { get; set; }
 		public string ApiGatewayEnabledUserUrl { get; set; }

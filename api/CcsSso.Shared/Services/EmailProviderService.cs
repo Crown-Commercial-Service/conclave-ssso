@@ -1,8 +1,10 @@
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
-using Notify.Client;
-using Notify.Models.Responses;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace CcsSso.Shared.Services
@@ -17,13 +19,31 @@ namespace CcsSso.Shared.Services
       _emailConfigurationInfo = emailConfigurationInfo;
       _httpClientFactory = httpClientFactory;
     }
-    public async Task SendEmailAsync(EmailInfo emailInfo)
-    {
-      var client = _httpClientFactory.CreateClient();
-      var httpClientWithProxy = new HttpClientWrapper(client);
-      var notificationClient = new NotificationClient(httpClientWithProxy, _emailConfigurationInfo.ApiKey);
-      EmailNotificationResponse response = await notificationClient.SendEmailAsync(emailInfo.To,
-        emailInfo.TemplateId, emailInfo.BodyContent);
-    }
-  }
+		public async Task SendEmailAsync(EmailInfo emailInfo)
+		{
+			try
+			{
+				var client = _httpClientFactory.CreateClient("NotificationApi");
+				string url = $"email";
+				var bodyContent = new Dictionary<string, dynamic>();
+				if (emailInfo != null && emailInfo.BodyContent == null)
+				{
+					emailInfo.BodyContent = bodyContent;
+				}
+				HttpContent data = new StringContent(JsonConvert.SerializeObject(emailInfo, new JsonSerializerSettings
+				{ ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
+				var response = await client.PostAsync(url, data);
+				if (!response.IsSuccessStatusCode)
+				{
+					string errorContent = await response.Content.ReadAsStringAsync();
+					Console.WriteLine($"ERROR SENDING EMAIL NOTIFICATION. Status Code: {response.StatusCode}. Error Content: {errorContent}");
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("ERROR SENDING EMAIL NOTIFICATION. Status Code" + ex.Message);
+			}
+
+		}
+	}
 }

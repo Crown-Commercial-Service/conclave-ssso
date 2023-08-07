@@ -172,7 +172,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
     private async Task<UserProfileResponseInfo?> GetUserDetails(UserReportDetail eachModifiedUser, HttpClient client)
     {
-      string url = $"users/?user-id={HttpUtility.UrlEncode(eachModifiedUser.UserName)}"; // Send as Query String as expected in the Wrapper API - GetUser method
+      string url = $"user-profile/?user-id={HttpUtility.UrlEncode(eachModifiedUser.UserName)}"; // Send as Query String as expected in the Wrapper API - GetUser method
 
       var response = await client.GetAsync(url);
 

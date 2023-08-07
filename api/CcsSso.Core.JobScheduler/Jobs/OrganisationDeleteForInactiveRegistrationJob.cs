@@ -179,7 +179,8 @@ namespace CcsSso.Core.JobScheduler
       };
 
       Console.WriteLine($"*********Start removing from cache ***********************");
-      var orgUsers = await _wrapperOrganisationService.GetUserByOrganisation(orgId, filter);
+      var orgUsers = await _wrapperUserService.GetUserByOrganisation(orgId, filter);
+
       orgUsers.ForEach(user =>
       {
         Console.WriteLine($"********* Removing from cache : {user.UserName} ***********************");

@@ -20,7 +20,7 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
     Task<bool> UpdateOrganisationAuditList(OrganisationAuditInfo organisationAuditInfo);
     Task CreateOrganisationAuditEventAsync(List<OrganisationAuditEventInfo> organisationAuditEventInfoList);
     Task<bool> ActivateOrganisationByUser(string userId);
-    Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(int organisationId, UserFilterCriteria filter);
+    //Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(int organisationId, UserFilterCriteria filter);
     Task<OrganisationContactInfoList> GetOrganisationContactsList(string organisationId, string contactType = null, ContactAssignedStatus contactAssignedStatus = ContactAssignedStatus.All);
     Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(int organisationId);
   }

@@ -17,7 +17,6 @@ using CcsSso.Shared.Services;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Notify.Client;
 using OrganisationDetail = CcsSso.Core.JobScheduler.Model.OrganisationDetail;
 
 namespace CcsSso.Core.JobScheduler.Services
@@ -119,7 +118,7 @@ namespace CcsSso.Core.JobScheduler.Services
           var email = _appSettings.OrgAutoValidationOneTimeJob.LogReportEmailId;
           if (!string.IsNullOrEmpty(email) && jobReport.Count()>0)
           {
-            await SendLogDetailEmailAsync(jobReport, new List<string> { email});
+            await SendLogDetailEmailAsync(jobReport, new List<string> { email });
           }
         }
         catch (Exception)
@@ -133,10 +132,11 @@ namespace CcsSso.Core.JobScheduler.Services
     {
       byte[] documentContents = ConvertToCsv(logs);
 
-
+      // Email notification related code moved to notification API, so the below function is not required
+      // AutoValidation job is not required; we will remove the job after some time.
       var data = new Dictionary<string, dynamic>
       {
-        { "link_to_file", NotificationClient.PrepareUpload(documentContents, true) }
+       // { "link_to_file", NotificationClient.PrepareUpload(documentContents, true) }
 
       };
 
@@ -144,7 +144,7 @@ namespace CcsSso.Core.JobScheduler.Services
       foreach (var toEmail in toEmails)
       {
         var emailTempalteId = _appSettings.OrgAutoValidationOneTimeJobEmail.FailedAutoValidationNotificationTemplateId;
-        var emailInfo = GetEmailInfo(toEmail, emailTempalteId, data); 
+        var emailInfo = GetEmailInfo(toEmail, emailTempalteId, data);
 
         emailTaskList.Add(_emaillProviderService.SendEmailAsync(emailInfo));
       }
@@ -201,7 +201,7 @@ namespace CcsSso.Core.JobScheduler.Services
     {
       _logger.LogInformation($"Autovalidation CiiOrganisationId:- {orgDetail.CiiOrganisationId} ");
 
-      var url = "/organisations/" + orgDetail.CiiOrganisationId + "/autovalidationjob/roles";
+      var url = "/organisation-profile/" + orgDetail.CiiOrganisationId + "/validation/auto/job/roles";
 
       AutoValidationOneTimeJobDetails details = new AutoValidationOneTimeJobDetails()
       {
@@ -223,7 +223,7 @@ namespace CcsSso.Core.JobScheduler.Services
     {
       _logger.LogInformation($"Autovalidation CiiOrganisationId:- {orgDetail.CiiOrganisationId} ");
 
-      var url = "/organisations/" + orgDetail.CiiOrganisationId + "/autovalidationjob";
+      var url = "/organisation-profile/" + orgDetail.CiiOrganisationId + "/validation/auto/job";
       var response = await client.PostAsync(url, null);
       return response;
     }

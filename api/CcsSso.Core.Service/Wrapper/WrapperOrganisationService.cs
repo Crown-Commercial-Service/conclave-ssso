@@ -23,7 +23,7 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task<WrapperOrganisationProfileResponseInfo> GetOrganisationAsync(string organisationId)
 		{
-			var result = await _wrapperApiService.GetAsync<WrapperOrganisationProfileResponseInfo>(WrapperApi.Organisation, $"internal/cii/{organisationId}", $"{CacheKeyConstant.Organisation}-{organisationId}", "ERROR_RETRIEVING_ORGANISATION");
+			var result = await _wrapperApiService.GetAsync<WrapperOrganisationProfileResponseInfo>(WrapperApi.Organisation, $"{organisationId}/org-details?type=CII", $"{CacheKeyConstant.Organisation}-{organisationId}", "ERROR_RETRIEVING_ORGANISATION");
 			return result;
 		}
 
@@ -75,15 +75,15 @@ namespace CcsSso.Core.Service.Wrapper
       return result;
     }
 
-    public async Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(int organisationId, UserFilterCriteria filter)
-    {
-      var url = $"internal/organisation/{organisationId}?search-string={filter.searchString}" +
-                $"&delegated-only={filter.isDelegatedOnly}&delegated-expired-only={filter.isDelegatedExpiredOnly}" +
-                $"&isAdmin={filter.isAdmin}&include-unverified-admin={filter.includeUnverifiedAdmin}&include-self={filter.includeSelf}";
+    //public async Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(int organisationId, UserFilterCriteria filter)
+    //{
+    //  var url = $"internal/organisation/{organisationId}?search-string={filter.searchString}" +
+    //            $"&delegated-only={filter.isDelegatedOnly}&delegated-expired-only={filter.isDelegatedExpiredOnly}" +
+    //            $"&isAdmin={filter.isAdmin}&include-unverified-admin={filter.includeUnverifiedAdmin}&include-self={filter.includeSelf}";
 
-      var result = await _wrapperApiService.GetAsync<List<UserListForOrganisationInfo>>(WrapperApi.User, url, $"{CacheKeyConstant.OrganisationUsers}", "ERROR_RETRIEVING_ORGANISATION_USERS");
-      return result;
-    }
+    //  var result = await _wrapperApiService.GetAsync<List<UserListForOrganisationInfo>>(WrapperApi.User, url, $"{CacheKeyConstant.OrganisationUsers}", "ERROR_RETRIEVING_ORGANISATION_USERS");
+    //  return result;
+    //}
 
     public async Task<bool> UpdateOrganisationAuditList(Domain.Dtos.External.OrganisationAuditInfo organisationAuditInfo)
     {
@@ -92,7 +92,7 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(int organisationId)
     {
-      return await _wrapperApiService.GetAsync<OrganisationProfileResponseInfo>(WrapperApi.Organisation, $"internal/{organisationId}", $"{CacheKeyConstant.Organisation}-{organisationId}", "ORGANISATION_DETAILS_NOT_FOUND");
+      return await _wrapperApiService.GetAsync<OrganisationProfileResponseInfo>(WrapperApi.Organisation, $"{organisationId}/org-details?type=PPG", $"{CacheKeyConstant.Organisation}-{organisationId}", "ORGANISATION_DETAILS_NOT_FOUND");
     }
   }
 }

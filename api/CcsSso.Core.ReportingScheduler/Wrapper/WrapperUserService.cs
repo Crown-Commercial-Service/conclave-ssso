@@ -16,7 +16,7 @@ namespace CcsSso.Core.ReportingScheduler.Wrapper
 
     public async Task<UserNameListResponse> GetUserNames(string listOfUserIds)
     {
-      return await _wrapperApiService.GetAsync<UserNameListResponse>(WrapperApi.User, $"internal/user-names/{listOfUserIds}", "ERROR_GETTING_USER_NAME_LIST");
+      return await _wrapperApiService.GetAsync<UserNameListResponse>(WrapperApi.User, $"user-details/{listOfUserIds}", "ERROR_GETTING_USER_NAME_LIST");
     }
 
     public async Task<AuditLogResponse> GetUserAuditLog(DateTime startDate, int pageSize,int currentPage)
@@ -26,7 +26,7 @@ namespace CcsSso.Core.ReportingScheduler.Wrapper
 
     public async Task<List<UserReportDetail>> GetModifiedUsers(string modifiedDate)
     {
-      return await _wrapperApiService.GetAsync<List<UserReportDetail>>(WrapperApi.User, $"data/user-report/modifieddate={modifiedDate}", "ERROR_GETTING_MODIFIED_USERS");
+      return await _wrapperApiService.GetAsync<List<UserReportDetail>>(WrapperApi.User, $"data/user-report?modifieddate={modifiedDate}", "ERROR_GETTING_MODIFIED_USERS");
     }
   }
 }
