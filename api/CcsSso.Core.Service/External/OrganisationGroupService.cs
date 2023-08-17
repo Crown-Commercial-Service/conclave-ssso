@@ -495,12 +495,14 @@ namespace CcsSso.Core.Service.External
 
       // This field should not let be updated manually as it consumes in user screen to decide mfa enable/disable
       group.MfaEnabled = mfaEnableRoleExists;
-      
-      await CheckMFAForGroup(group.GroupType, group.MfaEnabled);
+
+      // Bug 6179 - This validation is not required
+      //await CheckMFAForGroup(group.GroupType, group.MfaEnabled);
 
       await _dataContext.SaveChangesAsync();
 
-      if (mfaEnableRoleExists && (addedRoleIds.Any() || addedUsersTupleList.Any()))
+      if (group.GroupType == (int)GroupType.Admin
+        && mfaEnableRoleExists && (addedRoleIds.Any() || addedUsersTupleList.Any()))
       {
         await EnableMfaForUser(group);
       }

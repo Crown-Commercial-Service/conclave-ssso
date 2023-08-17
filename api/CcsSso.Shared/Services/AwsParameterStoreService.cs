@@ -20,12 +20,25 @@ namespace CcsSso.Shared.Services
 
     public AwsParameterStoreService()
     {
-      string env = Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
-      var envData = (JObject)JsonConvert.DeserializeObject(env);
-      string setting = JsonConvert.SerializeObject(envData["user-provided"].FirstOrDefault(obj => obj["name"].Value<string>().Contains("ssm-service")));
-      _settings = JsonConvert.DeserializeObject<AmazonSimpleSystemsManagementSettings>(setting.ToString());
-      var credentials = new BasicAWSCredentials(_settings.credentials.aws_access_key_id, _settings.credentials.aws_secret_access_key);
-      _client = new AmazonSimpleSystemsManagementClient(credentials, RegionEndpoint.GetBySystemName(_settings.credentials.region));
+      string accessKeyId = Environment.GetEnvironmentVariable("ACCESSKEYID");
+      string accessKeySecret = Environment.GetEnvironmentVariable("ACCESSKEYSECRET");
+      string region = Environment.GetEnvironmentVariable("REGION");
+
+      // Deployed in cloud foundry then will not get credentials from environment variable
+      if (string.IsNullOrWhiteSpace(accessKeyId) || string.IsNullOrWhiteSpace(accessKeySecret) || string.IsNullOrWhiteSpace(region))
+      {
+        string env = Environment.GetEnvironmentVariable("VCAP_SERVICES", EnvironmentVariableTarget.Process);
+        var envData = (JObject)JsonConvert.DeserializeObject(env);
+        string setting = JsonConvert.SerializeObject(envData["user-provided"].FirstOrDefault(obj => obj["name"].Value<string>().Contains("ssm-service")));
+        _settings = JsonConvert.DeserializeObject<AmazonSimpleSystemsManagementSettings>(setting.ToString());
+
+        accessKeyId = _settings.credentials.aws_access_key_id;
+        accessKeySecret = _settings.credentials.aws_secret_access_key;
+        region = _settings.credentials.region;
+      }
+      
+      var credentials = new BasicAWSCredentials(accessKeyId, accessKeySecret);
+      _client = new AmazonSimpleSystemsManagementClient(credentials, RegionEndpoint.GetBySystemName(region));
     }
 
     public async Task<List<Parameter>> GetParameters(string path)

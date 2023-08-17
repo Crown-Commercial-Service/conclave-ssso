@@ -53,7 +53,18 @@ namespace CcsSso.Api
         })
         .ConfigureWebHostDefaults(webBuilder =>
         {
-          webBuilder.UseStartup<Startup>();
+          string accessKeyId = Environment.GetEnvironmentVariable("ACCESSKEYID");
+          string accessKeySecret = Environment.GetEnvironmentVariable("ACCESSKEYSECRET");
+          string region = Environment.GetEnvironmentVariable("REGION");
+          string startupUrl = Environment.GetEnvironmentVariable("STARTUP_URL");
+          if (string.IsNullOrWhiteSpace(accessKeyId) || string.IsNullOrWhiteSpace(accessKeySecret) || string.IsNullOrWhiteSpace(region))
+          {
+            webBuilder.UseStartup<Startup>();
+          }
+          else
+          {
+            webBuilder.UseStartup<Startup>().UseUrls(startupUrl);
+          }
         });
     }
 }

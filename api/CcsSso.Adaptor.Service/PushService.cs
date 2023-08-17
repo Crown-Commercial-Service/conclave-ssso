@@ -60,11 +60,7 @@ namespace CcsSso.Adaptor.Service
             }
             else
             {
-              result = new Dictionary<string, object>
-              {
-                { QueueConstant.UserNameAttribute, userName },
-                //{ "Status", "Deleted" }
-              };
+              result = await _userService.GetDeletedUserAsync(userName);
             }
             await NotifyPushDataToQueueAsync(result, ConclaveEntityNames.UserProfile);
 
