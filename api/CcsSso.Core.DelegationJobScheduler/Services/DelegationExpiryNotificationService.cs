@@ -67,7 +67,7 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
 
           _logger.LogInformation($"1. Delegated users EmailId {item.UserName}");
 
-          List<string>? orgAdmins = await _wrapperUserService.GetOrgAdminAsync(item.OrganisationId);
+          List<string>? orgAdmins = await _wrapperUserService.GetOrgAdminAsync(item.CiiOrganisationId);
 
           foreach (var orgAdmin in orgAdmins)
           {
@@ -95,7 +95,7 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
 					var delegationAuditEvent = new DelegationEmailNotificationLogInfo
 					{
 						UserName = user.UserName,
-            OrganisationId = user.OrganisationId,
+						CiiOrganisationId = user.CiiOrganisationId,
             DelegationEndDate = user.DelegationEndDate
 					};
 

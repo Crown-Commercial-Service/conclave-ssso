@@ -23,9 +23,9 @@ namespace CcsSso.Core.Service.Wrapper
 			_wrapperApiService = wrapperApiService;
 
 		}
-		public async Task DeleteDelegatedUser(string userName, int organisationId)
+		public async Task DeleteDelegatedUser(string userName, string ciiOrganisationId)
 		{
-			await _wrapperApiService.DeleteAsync(WrapperApi.User, $"delegate-user/terminate?user-id={userName}&delegated-organisation-id={organisationId}", "ERROR_DELETING_DELEGATED_USER");
+			await _wrapperApiService.DeleteAsync(WrapperApi.User, $"delegate-user/terminate?user-id={userName}&delegated-organisation-id={ciiOrganisationId}", "ERROR_DELETING_DELEGATED_USER");
 		}
 
 		public async Task<int> CreateDelegationEmailNotificationLog(DelegationEmailNotificationLogInfo delegationEmailNotificationLogInfo)
@@ -51,9 +51,9 @@ namespace CcsSso.Core.Service.Wrapper
 		{
 			return await _wrapperApiService.GetAsync<List<DelegationUserDto>>(WrapperApi.User, $"delegate-user/expired-notice?untilDate={untilDate}", $"{CacheKeyConstant.User}", "ERROR_RETRIEVING_USERS_WITHIN_EXPIRED_NOTICE");
 		}
-		public async Task<List<string>> GetOrgAdminAsync(int organisationId)
+		public async Task<List<string>> GetOrgAdminAsync(string ciiOrganisationId)
 		{
-			return await _wrapperApiService.GetAsync<List<string>>(WrapperApi.User, $"data/admin-email-ids?organisation-id={organisationId}", $"{CacheKeyConstant.User}", "ERROR_RETRIEVING_ORGANISATION_ADMIN_USERS");
+			return await _wrapperApiService.GetAsync<List<string>>(WrapperApi.User, $"data/admin-email-ids?organisation-id={ciiOrganisationId}", $"{CacheKeyConstant.User}", "ERROR_RETRIEVING_ORGANISATION_ADMIN_USERS");
 		}
 
     public async Task<UserAccessRolePendingRequestDetails> GetUserAccessRolePendingDetails(UserAccessRolePendingFilterCriteria criteria)

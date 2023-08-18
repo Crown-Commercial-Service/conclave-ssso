@@ -14,11 +14,9 @@ namespace CcsSso.Core.Domain.Dtos.Wrapper
 {
 	public class DelegationUserDto
 	{
-		public int UserId { get; set; }
-
 		public string UserName { get; set; }
 
-		public int OrganisationId { get; set; }
+		public string CiiOrganisationId { get; set; }
 
 		public DateTime? DelegationLinkExpiryOnUtc { get; set; }
 

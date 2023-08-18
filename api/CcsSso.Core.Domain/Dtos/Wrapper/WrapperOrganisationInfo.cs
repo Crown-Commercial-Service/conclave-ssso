@@ -79,7 +79,6 @@ namespace CcsSso.Core.Domain.Dtos.Wrapper
 
 	public class OrganisationData
 	{
-		public int OrganisationId { get; set; }
 
 		public string CiiOrganisationId { get; set; }
 

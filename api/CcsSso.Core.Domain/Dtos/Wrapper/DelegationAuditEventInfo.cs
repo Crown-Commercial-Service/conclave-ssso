@@ -12,7 +12,7 @@ namespace CcsSso.Core.Domain.Dtos.Wrapper
 
 		public string UserName { get; set; }
 
-		public int OrganisationId { get; set; }
+		public string CiiOrganisationId { get; set; }
 
 		public DateTime? PreviousDelegationStartDate { get; set; }
 
@@ -40,7 +40,7 @@ namespace CcsSso.Core.Domain.Dtos.Wrapper
 	{
 		public string UserName { get; set; }
 
-		public int OrganisationId { get; set; }
+		public string CiiOrganisationId { get; set; }
 
 		public DateTime? DelegationEndDate { get; set; }
 

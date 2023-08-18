@@ -86,7 +86,7 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
 				var delegationAuditEventLogs = CreateAuditLogs(delegationEndDatePassedUsers, DelegationAuditEventType.ExpiryOfDelegationAccess);
 				await _wrapperUserService.CreateDelegationAuditEvents(delegationAuditEventLogs);
 				//Delete delegated users
-				await _wrapperUserService.DeleteDelegatedUser(delegationEndDatePassedUsers.UserName, delegationEndDatePassedUsers.OrganisationId);
+				await _wrapperUserService.DeleteDelegatedUser(delegationEndDatePassedUsers.UserName, delegationEndDatePassedUsers.CiiOrganisationId);
 			}
 		}
 
@@ -116,7 +116,7 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
 				{
           GroupId = groupId,
           UserName = linkExpiredUsers.UserName,
-					OrganisationId = linkExpiredUsers.OrganisationId,
+					CiiOrganisationId = linkExpiredUsers.CiiOrganisationId,
           EventType = eventType.ToString(),
           ActionedOnUtc = _dateTimeService.GetUTCNow(),
           ActionedBy = DelegationAuditActionBy.Job.ToString()

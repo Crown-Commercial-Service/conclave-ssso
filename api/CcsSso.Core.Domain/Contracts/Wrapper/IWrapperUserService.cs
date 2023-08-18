@@ -18,7 +18,7 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
 
 		Task<int> CreateDelegationEmailNotificationLog(DelegationEmailNotificationLogInfo delegationEmailNotificationLogInfo);
 
-		Task DeleteDelegatedUser(string userName, int organisationId);
+		Task DeleteDelegatedUser(string userName, string ciiOrganisationId);
 
 		Task<List<DelegationUserDto>> GetDelegationLinkExpiredUsersAsync();
 
@@ -26,7 +26,7 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
 
 		Task<List<DelegationUserDto>> GetUsersWithinExpiredNoticeAsync(string untilDate);
 
-		Task<List<string>> GetOrgAdminAsync(int organisationId);
+		Task<List<string>> GetOrgAdminAsync(string ciiOrganisationId);
 
     Task<UserAccessRolePendingRequestDetails> GetUserAccessRolePendingDetails(UserAccessRolePendingFilterCriteria criteria);
     Task RemoveApprovalPendingRoles(string UserName, List<int> roleIds, UserPendingRoleStaus? status);
