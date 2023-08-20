@@ -198,7 +198,10 @@ namespace CcsSso.Adaptor.Api
     {
       app.UseMiddleware<CommonExceptionHandlerMiddleware>();
       app.UseSwagger();
-      app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.Adaptor.Api v1"));
+      app.UseSwaggerUI(c => {
+          c.SwaggerEndpoint("/swagger/v1/swagger.json", "CcsSso.Adaptor.Api v1");
+          c.RoutePrefix = "adaptor/swagger";
+          })
       app.UseHsts();
       app.UseHttpsRedirection();
 
