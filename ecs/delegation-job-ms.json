@@ -14,7 +14,7 @@
     "containerDefinitions": [
         {
             "name": "%SPACE%-delegation-job-ms",
-            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-delegation-job-ms:latest",
+            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-delegation-job-ms:%SPACE%-delegation-job-ms-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
