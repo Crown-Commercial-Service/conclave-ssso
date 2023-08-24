@@ -2,6 +2,7 @@ using Amazon.Runtime;
 using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Domain.Dtos.External;
+using CcsSso.Core.Domain.Dtos.Wrapper;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Enum;
 using CcsSso.DbModel.Entity;
@@ -76,10 +77,10 @@ namespace CcsSso.Core.JobScheduler
           {
             OrgDeleteCandidateStatus orgDeleteCandidateStatus = OrgDeleteCandidateStatus.None;
 
-            string activeUserId = string.Empty;
-            var adminUsers = await GetOrganisationAdmins(orgDetail.Id);
+            string activeUserName = string.Empty;
+            var adminUsers = await GetOrganisationAdmins(orgDetail.OrganisationId);
 
-            Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.Id}");
+            Console.WriteLine($"{adminUsers.Count()} org admin(s) found in Org id {orgDetail.OrganisationId}");
 
             foreach (var adminUser in adminUsers)
             {
@@ -94,7 +95,7 @@ namespace CcsSso.Core.JobScheduler
                 if (idamUser.EmailVerified)
                 {
                   orgDeleteCandidateStatus = OrgDeleteCandidateStatus.Activate;
-                  activeUserId = adminUser.Id.ToString();
+                  activeUserName = adminUser.UserName;
                   break;
                 }
                 else
@@ -111,28 +112,28 @@ namespace CcsSso.Core.JobScheduler
 
             if (orgDeleteCandidateStatus == OrgDeleteCandidateStatus.Delete)
             {
-              await DeleteOrganisationAsync(orgDetail.OrganisationId, orgDetail.Id);
+              await DeleteOrganisationAsync(orgDetail.OrganisationId);
 
               await DeleteCIIOrganisationEntryAsync(orgDetail.OrganisationId);
 
               if (_appSettings.OrgAutoValidationJobSettings.Enable && orgDetail.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier)
               {
-                var orgStatus = new OrganisationAuditInfo
+                var orgStatus = new WrapperOrganisationAuditInfo
                 {
                   Status = OrgAutoValidationStatus.AutoOrgRemoval,
-                  OrganisationId = orgDetail.Id,
+                  OrganisationId = orgDetail.OrganisationId,
                   Actioned = OrganisationAuditActionType.Job.ToString(),
                   ActionedBy = OrganisationAuditActionType.Job.ToString()
                 };
                 var organisationAudit = await _wrapperOrganisationService.UpdateOrganisationAuditList(orgStatus);
 
-                var eventLogs = new List<OrganisationAuditEventInfo>() {
-                    new OrganisationAuditEventInfo
+                var eventLogs = new List<WrapperOrganisationAuditEventInfo>() {
+                    new WrapperOrganisationAuditEventInfo
                     {
                       Actioned = OrganisationAuditActionType.Job.ToString(),
                       Event = OrganisationAuditEventType.InactiveOrganisationRemoved.ToString(),
                       GroupId = groupId,
-                      OrganisationId = orgDetail.Id
+                      OrganisationId = orgDetail.OrganisationId
                     }
                   };
 
@@ -142,7 +143,7 @@ namespace CcsSso.Core.JobScheduler
             else if (orgDeleteCandidateStatus == OrgDeleteCandidateStatus.Activate)
             {
               //Console.WriteLine($"*********Activating CII Organization id {orgDetail.Item1} ***********************");
-              await ActivateOrganisationAsync(activeUserId);
+              await ActivateOrganisationAsync(activeUserName);
               //Console.WriteLine($"*********Activated CII Organization id {orgDetail.Item1} ***********************");
             }
           }
@@ -157,16 +158,16 @@ namespace CcsSso.Core.JobScheduler
       }
     }
 
-    public async Task ActivateOrganisationAsync(string activeUserId)
+    public async Task ActivateOrganisationAsync(string userName)
     {
-      await _wrapperOrganisationService.ActivateOrganisationByUser(activeUserId);
+      await _wrapperOrganisationService.ActivateOrganisationByUser(userName);
     }
 
-    public async Task DeleteOrganisationAsync(string ciiOrgId, int orgId)
+    public async Task DeleteOrganisationAsync(string ciiOrganisationId)
     {
-      Console.WriteLine($"*********Start Deleting from Conclave Organization id {ciiOrgId}***********************");
-      await _wrapperOrganisationService.DeleteOrganisationAsync(ciiOrgId);
-      Console.WriteLine($"*********End Deleted from Conclave Organization id {ciiOrgId}***********************");
+      Console.WriteLine($"*********Start Deleting from Conclave Organization id {ciiOrganisationId}***********************");
+      await _wrapperOrganisationService.DeleteOrganisationAsync(ciiOrganisationId);
+      Console.WriteLine($"*********End Deleted from Conclave Organization id {ciiOrganisationId}***********************");
 
       var filter = new UserFilterCriteria
       {
@@ -179,19 +180,19 @@ namespace CcsSso.Core.JobScheduler
       };
 
       Console.WriteLine($"*********Start removing from cache ***********************");
-      var orgUsers = await _wrapperUserService.GetUserByOrganisation(orgId, filter);
+      var orgUsers = await _wrapperUserService.GetUserByOrganisation(ciiOrganisationId, filter);
 
       orgUsers.ForEach(user =>
       {
         Console.WriteLine($"********* Removing from cache : {user.UserName} ***********************");
-        _cacheInvalidateService.RemoveUserCacheValuesOnDeleteAsync(user.UserName, ciiOrgId, new List<int>());  
+        _cacheInvalidateService.RemoveUserCacheValuesOnDeleteAsync(user.UserName, ciiOrganisationId, new List<int>());  
       });
       
-      var contactDetails = await _wrapperOrganisationService.GetOrganisationContactsList(ciiOrgId);
+      var contactDetails = await _wrapperOrganisationService.GetOrganisationContactsList(ciiOrganisationId);
       if (contactDetails.ContactPoints.Any())
       {
         var orgContactPointIds = contactDetails.ContactPoints.Select(cp => cp.ContactPointId).ToList<int>();
-        await _cacheInvalidateService.RemoveOrganisationCacheValuesOnDeleteAsync(ciiOrgId, orgContactPointIds, new Dictionary<string, List<int>>());
+        await _cacheInvalidateService.RemoveOrganisationCacheValuesOnDeleteAsync(ciiOrganisationId, orgContactPointIds, new Dictionary<string, List<int>>());
       }
 
     }
@@ -203,12 +204,12 @@ namespace CcsSso.Core.JobScheduler
       return organisationIds;
     }
 
-    public async Task DeleteCIIOrganisationEntryAsync(string ciiOrgId)
+    public async Task DeleteCIIOrganisationEntryAsync(string CiiOrganisationId)
     {
       var client = _httpClientFactory.CreateClient();
       client.DefaultRequestHeaders.Add("x-api-key", _appSettings.CiiSettings.Token);
       client.BaseAddress = new Uri(_appSettings.CiiSettings.Url);
-      var url = "identities/organisations/" + ciiOrgId;
+      var url = "identities/organisations/" + CiiOrganisationId;
       var result = await client.DeleteAsync(url);
       if (result.IsSuccessStatusCode)
       {
@@ -220,7 +221,7 @@ namespace CcsSso.Core.JobScheduler
       }
     }
 
-    private async Task<List<UserListForOrganisationInfo>> GetOrganisationAdmins(int organisationId)
+    private async Task<List<UserListForOrganisationInfo>> GetOrganisationAdmins(string CiiOrganisationId)
     {
 
       var filter = new UserFilterCriteria
@@ -233,7 +234,7 @@ namespace CcsSso.Core.JobScheduler
         searchString = String.Empty
       };
 
-      var orgAdmins = await _wrapperUserService.GetUserByOrganisation(organisationId, filter);
+      var orgAdmins = await _wrapperUserService.GetUserByOrganisation(CiiOrganisationId, filter);
       return orgAdmins;
     }
   }

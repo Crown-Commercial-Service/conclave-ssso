@@ -67,9 +67,9 @@ namespace CcsSso.Core.Service.Wrapper
       await _wrapperApiService.DeleteAsync<bool>(WrapperApi.User, $"approval/roles?user-id={UserName}&roles={string.Join(",", roleIds)}&status={(int)status}", "ERROR_DELETING_USER_ACCESS_ROLE_PENDING");
     }
 
-    public async Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(int organisationId, UserFilterCriteria filter)
+    public async Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(string CiiOrganisationId, UserFilterCriteria filter)
     {
-      var url = $"organisation/{organisationId}?search-string={filter.searchString}" +
+      var url = $"organisation/{CiiOrganisationId}?search-string={filter.searchString}" +
                 $"&delegated-only={filter.isDelegatedOnly}&delegated-expired-only={filter.isDelegatedExpiredOnly}" +
                 $"&isAdmin={filter.isAdmin}&include-unverified-admin={filter.includeUnverifiedAdmin}&include-self={filter.includeSelf}";
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CcsSso.Core.DbModel.Constants;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -45,4 +46,40 @@ namespace CcsSso.Core.Domain.Dtos.Wrapper
 		public DateTime? DelegationEndDate { get; set; }
 
 	}
+
+	public class WrapperOrganisationAuditInfo
+	{
+    public OrgAutoValidationStatus Status { get; set; }
+
+    public string SchemeIdentifier { get; set; }
+
+    public string Actioned { get; set; }
+
+    public string ActionedBy { get; set; }
+
+    public string OrganisationId { get; set; }
+  }
+  public class WrapperOrganisationAuditEventInfo
+  {
+
+    public string SchemeIdentifier { get; set; }
+
+    public string FirstName { get; set; }
+
+    public string LastName { get; set; }
+
+    public Guid GroupId { get; set; }
+
+    public string Actioned { get; set; }
+
+    public string ActionedBy { get; set; }
+
+    public string Event { get; set; }
+
+    public string Roles { get; set; }
+
+    public string OrganisationId { get; set; }
+  }
+
+
 }

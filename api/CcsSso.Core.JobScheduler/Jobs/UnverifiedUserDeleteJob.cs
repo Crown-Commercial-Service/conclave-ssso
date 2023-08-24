@@ -70,7 +70,7 @@ namespace CcsSso.Core.JobScheduler
 
     public async Task PerformJobAsync()
     {
-      Dictionary<int, List<string>> adminList = new Dictionary<int, List<string>>();
+      Dictionary<string, List<string>> adminList = new Dictionary<string, List<string>>();
       Dictionary<int, bool> orgSiteContactAvailabilityStatus = new Dictionary<int, bool>();
 
       var minimumThreshold = _appSettings.UserDeleteJobSettings.Min(udj => udj.UserDeleteThresholdInMinutes);
@@ -84,19 +84,19 @@ namespace CcsSso.Core.JobScheduler
 
 
       var orgAdminList = new List<string>();
-      foreach (var orgByUsers in users.GroupBy(u => u.Id))
+      foreach (var orgByUsers in users.GroupBy(u => u.UserName))
       {
         Console.WriteLine($"Unverified User Deletion Organisation: {orgByUsers.Key}");
         foreach (var user in orgByUsers.Select(ou => ou).ToList())
         {
-          Console.WriteLine($"Unverified User Deletion User: {user.UserName} Id:{user.Id}");
+          Console.WriteLine($"Unverified User Deletion User: {user.UserName}");
           try
           {
             await _wrapperUserService.DeleteUserAsync(user.UserName);
 
             if (user.UserAccessRolePendings.Any())
             {
-              var userPendingRoles = user.UserAccessRolePendings.Where(x => x.UserId == user.Id).ToList();
+              var userPendingRoles = user.UserAccessRolePendings.Where(x => x.User.UserName == user.UserName).ToList();
               var roleIds = userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList();
               await _wrapperUserService.RemoveApprovalPendingRoles(user.UserName, roleIds, DbModel.Constants.UserPendingRoleStaus.Expired);
               Console.WriteLine($" **************** Unverified User pending role deletion success for user:{user.UserName} **************** ");

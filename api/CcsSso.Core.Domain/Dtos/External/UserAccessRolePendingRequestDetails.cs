@@ -29,7 +29,7 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string CreatedBy { get; set; }
 
-    public int OrganisationId { get; set; }
+    public string OrganisationId { get; set; }
 
     public string UserName { get; set; }
 

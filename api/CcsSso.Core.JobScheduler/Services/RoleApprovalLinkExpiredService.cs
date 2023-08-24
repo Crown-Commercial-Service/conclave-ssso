@@ -156,10 +156,10 @@ namespace CcsSso.Core.JobScheduler.Services
       }
 
     }
-    private async Task<RoleApprovalConfigurationInfo> GetRoleConfigAsync(List<RoleApprovalConfigurationInfo> approvalRoleConfig, int organisationId)
+    private async Task<RoleApprovalConfigurationInfo> GetRoleConfigAsync(List<RoleApprovalConfigurationInfo> approvalRoleConfig, string OrganisationId)
     {
-      var orgDetails = await _wrapperOrganisationService.GetOrganisationDetailsById(organisationId);
-      var orgEligibleRole = await _wrapperOrganisationService.GetOrganisationRoles(orgDetails.Detail.OrganisationId);
+      // var orgDetails = await _wrapperOrganisationService.GetOrganisationDetailsById(CiiOrganisationId);
+      var orgEligibleRole = await _wrapperOrganisationService.GetOrganisationRoles(OrganisationId);
       var roleConfig = approvalRoleConfig.FirstOrDefault(config => orgEligibleRole.Any(orgRole => orgRole.CcsAccessRoleId == config.CcsAccessRoleId));
 
       return roleConfig;

@@ -48,14 +48,14 @@ namespace CcsSso.Core.Service.Wrapper
     {
       return await _wrapperApiService.GetAsync<OrganisationContactInfoList>(WrapperApi.Organisation, $"{organisationId}/contacts", $"{CacheKeyConstant.Organisation}-{organisationId}", "ERROR_RETRIEVING_ORGANISATION_USERS");
     }
-    public async Task<bool> ActivateOrganisationByUser(string userId)
+    public async Task<bool> ActivateOrganisationByUser(string userName)
     {
-      return await _wrapperApiService.PutAsync<bool>(WrapperApi.Organisation, $"activation-by-user/{userId}", null, "ERROR_ACTIVATING_ORGANISATION_BY_USER_ID");
+      return await _wrapperApiService.PutAsync<bool>(WrapperApi.Organisation, $"activation-by-user/{userName}", null, "ERROR_ACTIVATING_ORGANISATION_BY_USER_ID");
     }
 
-    public async Task CreateOrganisationAuditEventAsync(List<OrganisationAuditEventInfo> organisationAuditEventInfoList)
+    public async Task CreateOrganisationAuditEventAsync(List<WrapperOrganisationAuditEventInfo> organisationAuditEventInfoList)
     {
-      await _wrapperApiService.PostAsync<Task>(WrapperApi.Organisation, "auditevents", organisationAuditEventInfoList, "ERROR_CREATING_ORGANISATION_AUDIT_EVENT_LOG");
+      await _wrapperApiService.PostAsync<Task>(WrapperApi.Organisation, "audit-events", organisationAuditEventInfoList, "ERROR_CREATING_ORGANISATION_AUDIT_EVENT_LOG");
     }
 
     public async Task DeleteOrganisationAsync(string organisationId)
@@ -75,24 +75,14 @@ namespace CcsSso.Core.Service.Wrapper
       return result;
     }
 
-    //public async Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(int organisationId, UserFilterCriteria filter)
-    //{
-    //  var url = $"internal/organisation/{organisationId}?search-string={filter.searchString}" +
-    //            $"&delegated-only={filter.isDelegatedOnly}&delegated-expired-only={filter.isDelegatedExpiredOnly}" +
-    //            $"&isAdmin={filter.isAdmin}&include-unverified-admin={filter.includeUnverifiedAdmin}&include-self={filter.includeSelf}";
-
-    //  var result = await _wrapperApiService.GetAsync<List<UserListForOrganisationInfo>>(WrapperApi.User, url, $"{CacheKeyConstant.OrganisationUsers}", "ERROR_RETRIEVING_ORGANISATION_USERS");
-    //  return result;
-    //}
-
-    public async Task<bool> UpdateOrganisationAuditList(Domain.Dtos.External.OrganisationAuditInfo organisationAuditInfo)
+    public async Task<bool> UpdateOrganisationAuditList(WrapperOrganisationAuditInfo organisationAuditInfo)
     {
       return await _wrapperApiService.PutAsync<bool>(WrapperApi.Organisation, "audits", organisationAuditInfo, "ERROR_CREATING_ORGANISATION_AUDIT_LOG");
     }
 
-    public async Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(int organisationId)
+    public async Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(string CiiOrganisationId)
     {
-      return await _wrapperApiService.GetAsync<OrganisationProfileResponseInfo>(WrapperApi.Organisation, $"{organisationId}/org-details?type=PPG", $"{CacheKeyConstant.Organisation}-{organisationId}", "ORGANISATION_DETAILS_NOT_FOUND");
+      return await _wrapperApiService.GetAsync<OrganisationProfileResponseInfo>(WrapperApi.Organisation, $"{CiiOrganisationId}/org-details?type=PPG", $"{CacheKeyConstant.Organisation}-{CiiOrganisationId}", "ORGANISATION_DETAILS_NOT_FOUND");
     }
   }
 }

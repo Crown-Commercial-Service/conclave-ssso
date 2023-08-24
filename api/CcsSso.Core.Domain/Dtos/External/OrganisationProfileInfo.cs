@@ -199,7 +199,6 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   public class InactiveOrganisationResponse
   {
-    public int Id { get; set; }
     public string OrganisationId { get; set; }
     public int SupplierBuyerType { get; set; }
   }

@@ -26,7 +26,6 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     public string Roles { get; set; }
 
-    public string CiiOrganisationId { get; set; }
   }
 
   public class AuditEventResponseBase 

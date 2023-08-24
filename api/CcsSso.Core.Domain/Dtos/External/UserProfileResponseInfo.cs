@@ -342,12 +342,11 @@ namespace CcsSso.Core.Domain.Dtos.External
   }
   public class UserToDeleteResponse
   {
-    public int Id { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string UserName { get; set; }
-    public int OrganisationId { get; set; }
     public List<UserAccessRolePending> UserAccessRolePendings { get; set; }
+    public string OrganisationId { get; set; }
   }
 
 }
