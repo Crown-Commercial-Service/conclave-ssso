@@ -14,7 +14,7 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
 	// #Auto validation
 	public interface IWrapperUserService
 	{
-		Task<int> CreateDelegationAuditEvents(DelegationAuditEventRequestInfo delegationAuditEventRequestInfoList);
+		Task<bool> CreateDelegationAuditEvent(DelegationAuditEventRequestInfo delegationAuditEventRequestInfoList);
 
 		Task<int> CreateDelegationEmailNotificationLog(DelegationEmailNotificationLogInfo delegationEmailNotificationLogInfo);
 

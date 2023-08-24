@@ -19,9 +19,6 @@ namespace CcsSso.Core.Domain.Dtos.Wrapper
 
 		public OrganisationAddressResponse Address { get; set; }
 
-		// Commented since this is still not available from CII service
-		//public OrganisationContactPoint ContactPoint { get; set; }
-
 		public OrganisationDetail Detail { get; set; }
 	}
 

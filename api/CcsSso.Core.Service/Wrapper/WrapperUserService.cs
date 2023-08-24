@@ -30,12 +30,12 @@ namespace CcsSso.Core.Service.Wrapper
 
 		public async Task<int> CreateDelegationEmailNotificationLog(DelegationEmailNotificationLogInfo delegationEmailNotificationLogInfo)
 		{
-			return await _wrapperApiService.PostAsync<int>(WrapperApi.User, $"delegate-user/notification-logs", delegationEmailNotificationLogInfo, "ERROR_CREATING_USER_DELEGATION_EMAIL_NOTIFICATION_LOG");
+			return await _wrapperApiService.PostAsync<int>(WrapperApi.User, $"delegate-user/notification-log", delegationEmailNotificationLogInfo, "ERROR_CREATING_USER_DELEGATION_EMAIL_NOTIFICATION_LOG");
 		}
 
-		public async Task<int> CreateDelegationAuditEvents(DelegationAuditEventRequestInfo delegationAuditEventRequestInfoList)
+		public async Task<bool> CreateDelegationAuditEvent(DelegationAuditEventRequestInfo delegationAuditEventRequestInfoList)
 		{
-			return await _wrapperApiService.PostAsync<int>(WrapperApi.User, $"delegate-user/audit-events", delegationAuditEventRequestInfoList, "ERROR_CREATING_DELEGATION_AUDIT_EVENTS");
+			return await _wrapperApiService.PostAsync<bool>(WrapperApi.User, $"delegate-user/audit-event", delegationAuditEventRequestInfoList, "ERROR_CREATING_DELEGATION_AUDIT_EVENTS");
 		}
 
 		public async Task<List<DelegationUserDto>> GetDelegationLinkExpiredUsersAsync()
@@ -45,11 +45,11 @@ namespace CcsSso.Core.Service.Wrapper
 
 		public async Task<List<DelegationUserDto>> GetDelegationTerminatedUsersAsync()
 		{
-			return await _wrapperApiService.GetAsync<List<DelegationUserDto>>(WrapperApi.User, $"delegate-user/end-dated", $"{CacheKeyConstant.User}", "ERROR_RETRIEVING_DELEGATION_TERMINATED_USERS");
+			return await _wrapperApiService.GetAsync<List<DelegationUserDto>>(WrapperApi.User, $"delegate-user/expired", $"{CacheKeyConstant.User}", "ERROR_RETRIEVING_DELEGATION_TERMINATED_USERS");
 		}
 		public async Task<List<DelegationUserDto>> GetUsersWithinExpiredNoticeAsync(string untilDate)
 		{
-			return await _wrapperApiService.GetAsync<List<DelegationUserDto>>(WrapperApi.User, $"delegate-user/expired-notice?untilDate={untilDate}", $"{CacheKeyConstant.User}", "ERROR_RETRIEVING_USERS_WITHIN_EXPIRED_NOTICE");
+			return await _wrapperApiService.GetAsync<List<DelegationUserDto>>(WrapperApi.User, $"delegate-user/expired?expiry-date={untilDate}", $"{CacheKeyConstant.User}", "ERROR_RETRIEVING_USERS_WITHIN_EXPIRED_NOTICE");
 		}
 		public async Task<List<string>> GetOrgAdminAsync(string ciiOrganisationId)
 		{

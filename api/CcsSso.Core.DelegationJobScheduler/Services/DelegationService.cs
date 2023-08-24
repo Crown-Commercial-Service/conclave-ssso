@@ -42,10 +42,10 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
       _logger.LogInformation($"Number of users with expired delegated link: {linkExpiredUsers.Count()}");
       _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
-      foreach (var expiredUsers in linkExpiredUsers)
+      foreach (var expiredUser in linkExpiredUsers)
       {
-        var delegationAuditEventLogs = CreateAuditLogs(expiredUsers, DelegationAuditEventType.ActivationLinkExpiry);
-				await _wrapperUserService.CreateDelegationAuditEvents(delegationAuditEventLogs);
+        var delegationAuditEventLog = CreateAuditLog(expiredUser, DelegationAuditEventType.ActivationLinkExpiry);
+				await _wrapperUserService.CreateDelegationAuditEvent(delegationAuditEventLog);
       }
      
     }
@@ -81,12 +81,12 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
 			_logger.LogInformation($"Number of users with delegation end date passed {usersWithDelegationEndDatePassed.Count()}");
 			_logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
-			foreach (var delegationEndDatePassedUsers in usersWithDelegationEndDatePassed)
+			foreach (var delegationEndDatePassedUser in usersWithDelegationEndDatePassed)
 			{
-				var delegationAuditEventLogs = CreateAuditLogs(delegationEndDatePassedUsers, DelegationAuditEventType.ExpiryOfDelegationAccess);
-				await _wrapperUserService.CreateDelegationAuditEvents(delegationAuditEventLogs);
+				var delegationAuditEventLog = CreateAuditLog(delegationEndDatePassedUser, DelegationAuditEventType.ExpiryOfDelegationAccess);
+				await _wrapperUserService.CreateDelegationAuditEvent(delegationAuditEventLog);
 				//Delete delegated users
-				await _wrapperUserService.DeleteDelegatedUser(delegationEndDatePassedUsers.UserName, delegationEndDatePassedUsers.CiiOrganisationId);
+				await _wrapperUserService.DeleteDelegatedUser(delegationEndDatePassedUser.UserName, delegationEndDatePassedUser.CiiOrganisationId);
 			}
 		}
 
@@ -108,7 +108,7 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
 
 		#region common methods
 
-		private DelegationAuditEventRequestInfo CreateAuditLogs(DelegationUserDto linkExpiredUsers, DelegationAuditEventType eventType)
+		private DelegationAuditEventRequestInfo CreateAuditLog(DelegationUserDto linkExpiredUsers, DelegationAuditEventType eventType)
     {
       Guid groupId = Guid.NewGuid();
 

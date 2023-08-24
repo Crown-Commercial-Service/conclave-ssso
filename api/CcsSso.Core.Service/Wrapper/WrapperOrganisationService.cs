@@ -23,7 +23,7 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task<WrapperOrganisationProfileResponseInfo> GetOrganisationAsync(string organisationId)
 		{
-			var result = await _wrapperApiService.GetAsync<WrapperOrganisationProfileResponseInfo>(WrapperApi.Organisation, $"{organisationId}/org-details?type=CII", $"{CacheKeyConstant.Organisation}-{organisationId}", "ERROR_RETRIEVING_ORGANISATION");
+			var result = await _wrapperApiService.GetAsync<WrapperOrganisationProfileResponseInfo>(WrapperApi.Organisation, $"{organisationId}", $"{CacheKeyConstant.Organisation}-{organisationId}", "ERROR_RETRIEVING_ORGANISATION");
 			return result;
 		}
 
