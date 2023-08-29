@@ -75,7 +75,7 @@ namespace CcsSso.Core.JobScheduler
 
       var minimumThreshold = _appSettings.UserDeleteJobSettings.Min(udj => udj.UserDeleteThresholdInMinutes);
       var createdOnUtc = DateTime.UtcNow.AddMinutes(-1 * minimumThreshold);
-      var users = await _wrapperUserService.GetInActiveUsers(createdOnUtc.ToString("dd-MM-yyyy HH:mm:ss"));
+      var users = await _wrapperUserService.GetInActiveUsers(createdOnUtc.ToString("yyyy-MM-dd HH:mm:ss"));
 
       if (users != null)
         Console.WriteLine($"{users.Count()} user(s) found");
