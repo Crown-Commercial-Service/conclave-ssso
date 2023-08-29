@@ -84,7 +84,7 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task DeleteUserAsync(string userName)
     {
-      await _wrapperApiService.DeleteAsync(WrapperApi.User, $"/{userName}", "ERROR_DELETING_USER");
+      await _wrapperApiService.DeleteAsync(WrapperApi.User, $"{userName}", "ERROR_DELETING_USER");
     }
   }
 }
