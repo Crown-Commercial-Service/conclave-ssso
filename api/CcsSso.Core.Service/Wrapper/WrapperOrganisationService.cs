@@ -50,7 +50,7 @@ namespace CcsSso.Core.Service.Wrapper
     }
     public async Task<bool> ActivateOrganisationByUser(string userId)
     {
-      return await _wrapperApiService.PutAsync<bool>(WrapperApi.Organisation, $"activation-by-user/{userId}", null, "ERROR_ACTIVATING_ORGANISATION_BY_USER_ID");
+      return await _wrapperApiService.PostAsync<bool>(WrapperApi.Organisation, $"activation-by-user/{userId}", null, "ERROR_ACTIVATING_ORGANISATION_BY_USER_ID");
     }
 
     public async Task CreateOrganisationAuditEventAsync(List<OrganisationAuditEventInfo> organisationAuditEventInfoList)

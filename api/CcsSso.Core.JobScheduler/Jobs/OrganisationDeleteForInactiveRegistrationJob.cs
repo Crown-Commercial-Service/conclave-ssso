@@ -154,7 +154,7 @@ namespace CcsSso.Core.JobScheduler
           }
           catch (Exception e)
           {
-            Console.WriteLine($"Failed to processed {i}st Organisation from the list of Organisations");
+            Console.WriteLine($"Failed to processed OrganisationId: {orgDetail.Id} from the list of Organisations");
 
             Console.WriteLine($"********* Org deletion error " + JsonConvert.SerializeObject(e));
           }
