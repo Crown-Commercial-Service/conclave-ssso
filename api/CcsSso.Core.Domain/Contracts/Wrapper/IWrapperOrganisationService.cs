@@ -15,7 +15,7 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
     Task<WrapperOrganisationProfileResponseInfo> GetOrganisationAsync(string organisationId);
     Task<OrganisationListResponseInfo> GetOrganisationDataAsync(OrganisationFilterCriteria organisationFilterCriteria, ResultSetCriteria resultSetCriteria);
     Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId);
-    Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(DateTime CreatedOnUtc);
+    Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(string CreatedOnUtc);
     Task DeleteOrganisationAsync(string organisationId);
     Task<bool> UpdateOrganisationAuditList(OrganisationAuditInfo organisationAuditInfo);
     Task CreateOrganisationAuditEventAsync(List<OrganisationAuditEventInfo> organisationAuditEventInfoList);

@@ -55,18 +55,17 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task CreateOrganisationAuditEventAsync(List<OrganisationAuditEventInfo> organisationAuditEventInfoList)
     {
-      await _wrapperApiService.PostAsync<Task>(WrapperApi.Organisation, "auditevents", organisationAuditEventInfoList, "ERROR_CREATING_ORGANISATION_AUDIT_EVENT_LOG");
+      await _wrapperApiService.PostAsync<Task>(WrapperApi.Organisation, "audit-events", organisationAuditEventInfoList, "ERROR_CREATING_ORGANISATION_AUDIT_EVENT_LOG");
     }
 
     public async Task DeleteOrganisationAsync(string organisationId)
     {
-      await _wrapperApiService.DeleteAsync<Task>(WrapperApi.OrganisationDelete, $"organisationId?={organisationId}", "ERROR_DELETING_ORGANISATION");
+      await _wrapperApiService.DeleteAsync<Task>(WrapperApi.OrganisationDelete, $"{organisationId}", "ERROR_DELETING_ORGANISATION");
     }
 
-    public async Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(DateTime CreatedOnUtc)
+    public async Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(string CreatedOnUtc)
     {
-      var result = await _wrapperApiService.GetAsync<List<InactiveOrganisationResponse>>(WrapperApi.Organisation, $"in-active?created-on={CreatedOnUtc.ToString("yyyy-MM-dd")}", $"{CacheKeyConstant.Organisation}-{CreatedOnUtc}", "ERROR_RETRIEVING_EXPIRED_ORGANISATION");
-      return result;
+      return await _wrapperApiService.GetAsync<List<InactiveOrganisationResponse>>(WrapperApi.Organisation, $"in-active?created-on={CreatedOnUtc}", $"{CacheKeyConstant.Organisation}-{CreatedOnUtc}", "ERROR_RETRIEVING_EXPIRED_ORGANISATION");
     }
 
     public async Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId)

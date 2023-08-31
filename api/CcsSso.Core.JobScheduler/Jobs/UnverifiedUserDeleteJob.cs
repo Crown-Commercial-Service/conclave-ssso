@@ -102,7 +102,7 @@ namespace CcsSso.Core.JobScheduler
               Console.WriteLine($" **************** Unverified User pending role deletion success for user:{user.UserName} **************** ");
             }
 
-
+            Console.WriteLine($" **************** Retrieving users for org :{orgByUsers.Key} **************** ");
             var filter = new UserFilterCriteria
             {
               isAdmin = true,
@@ -113,7 +113,12 @@ namespace CcsSso.Core.JobScheduler
               searchString = String.Empty
             };
             var adminUsers = await _wrapperUserService.GetUserByOrganisation(orgByUsers.Key, filter);
+
+            Console.WriteLine($" **************** {adminUsers.Count} found **************** ");
+
             adminList.Add(orgByUsers.Key, adminUsers.Where(au => au.AccountVerified).Select(au => au.UserName).ToList());
+
+            Console.WriteLine($" **************** Email will be sending to: {adminList[orgByUsers.Key].Count} Users **************** ");
 
             await _emailSupportService.SendUnVerifiedUserDeletionEmailToAdminAsync($"{user.FirstName} {user.LastName}", user.UserName, adminList[orgByUsers.Key]);
             Console.WriteLine($"Unverified User Notify Admin Success for: {user.UserName}");

@@ -94,7 +94,7 @@ namespace CcsSso.Core.JobScheduler
                 if (idamUser.EmailVerified)
                 {
                   orgDeleteCandidateStatus = OrgDeleteCandidateStatus.Activate;
-                  activeUserId = adminUser.Id.ToString();
+                  activeUserId = adminUser.UserName;
                   break;
                 }
                 else
@@ -115,6 +115,8 @@ namespace CcsSso.Core.JobScheduler
 
               await DeleteCIIOrganisationEntryAsync(orgDetail.OrganisationId);
 
+              Console.WriteLine($"********* checking supplier buyer type NOT to be 0 for Org: {orgDetail.Id} ***********************");
+
               if (_appSettings.OrgAutoValidationJobSettings.Enable && orgDetail.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier)
               {
                 var orgStatus = new OrganisationAuditInfo
@@ -124,7 +126,9 @@ namespace CcsSso.Core.JobScheduler
                   Actioned = OrganisationAuditActionType.Job.ToString(),
                   ActionedBy = OrganisationAuditActionType.Job.ToString()
                 };
+                Console.WriteLine($"********* Start Update Organisation Audit List for Org: {orgDetail.Id} ***********************");
                 var organisationAudit = await _wrapperOrganisationService.UpdateOrganisationAuditList(orgStatus);
+                Console.WriteLine($"********* Finished Update Organisation Audit List for Org: {orgDetail.Id} ***********************");
 
                 var eventLogs = new List<OrganisationAuditEventInfo>() {
                     new OrganisationAuditEventInfo
@@ -136,22 +140,23 @@ namespace CcsSso.Core.JobScheduler
                     }
                   };
 
+                Console.WriteLine($"********* Start Create Organisation Audit Event Async List for Org: {orgDetail.Id} ***********************");
                 await _wrapperOrganisationService.CreateOrganisationAuditEventAsync(eventLogs);
+                Console.WriteLine($"********* Finished Create Organisation Audit Event Async List for Org: {orgDetail.Id} ***********************");
               }
             }
             else if (orgDeleteCandidateStatus == OrgDeleteCandidateStatus.Activate)
             {
-              //Console.WriteLine($"*********Activating CII Organization id {orgDetail.Item1} ***********************");
+              Console.WriteLine($"*********Activating CII Organization id {orgDetail.Id} ***********************");
               await ActivateOrganisationAsync(activeUserId);
-              //Console.WriteLine($"*********Activated CII Organization id {orgDetail.Item1} ***********************");
+              Console.WriteLine($"*********Activated CII Organization id {orgDetail.Id} ***********************");
             }
           }
           catch (Exception e)
           {
             Console.WriteLine($"Failed to processed {i}st Organisation from the list of Organisations");
 
-            Console.WriteLine($"Org deletion error " + JsonConvert.SerializeObject(e));
-            //Console.WriteLine($"*********Error deleting Organization***********************" + e.Message);
+            Console.WriteLine($"********* Org deletion error " + JsonConvert.SerializeObject(e));
           }
         }
       }
@@ -164,10 +169,6 @@ namespace CcsSso.Core.JobScheduler
 
     public async Task DeleteOrganisationAsync(string ciiOrgId, int orgId)
     {
-      Console.WriteLine($"*********Start Deleting from Conclave Organization id {ciiOrgId}***********************");
-      await _wrapperOrganisationService.DeleteOrganisationAsync(ciiOrgId);
-      Console.WriteLine($"*********End Deleted from Conclave Organization id {ciiOrgId}***********************");
-
       var filter = new UserFilterCriteria
       {
         isAdmin = false,
@@ -177,17 +178,21 @@ namespace CcsSso.Core.JobScheduler
         isDelegatedOnly = false,
         searchString = String.Empty
       };
-
-      Console.WriteLine($"*********Start removing from cache ***********************");
       var orgUsers = await _wrapperUserService.GetUserByOrganisation(orgId, filter);
 
+      var contactDetails = await _wrapperOrganisationService.GetOrganisationContactsList(ciiOrgId);
+
+      Console.WriteLine($"*********Start Deleting from Conclave Organization id {ciiOrgId}***********************");
+      await _wrapperOrganisationService.DeleteOrganisationAsync(ciiOrgId);
+      Console.WriteLine($"*********End Deleted from Conclave Organization id {ciiOrgId}***********************");
+
+      Console.WriteLine($"*********Start removing from cache ***********************");
       orgUsers.ForEach(user =>
       {
         Console.WriteLine($"********* Removing from cache : {user.UserName} ***********************");
         _cacheInvalidateService.RemoveUserCacheValuesOnDeleteAsync(user.UserName, ciiOrgId, new List<int>());  
       });
       
-      var contactDetails = await _wrapperOrganisationService.GetOrganisationContactsList(ciiOrgId);
       if (contactDetails.ContactPoints.Any())
       {
         var orgContactPointIds = contactDetails.ContactPoints.Select(cp => cp.ContactPointId).ToList<int>();
@@ -199,7 +204,7 @@ namespace CcsSso.Core.JobScheduler
     public async Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync()
     {
       var createdOnUtc = DateTime.UtcNow.AddMinutes(-1 * _appSettings.ScheduleJobSettings.OrganizationRegistrationExpiredThresholdInMinutes);
-      var organisationIds = await _wrapperOrganisationService.GetInactiveOrganisationAsync(createdOnUtc);
+      var organisationIds = await _wrapperOrganisationService.GetInactiveOrganisationAsync(createdOnUtc.ToString("yyyy-MM-dd HH:mm:ss"));
       return organisationIds;
     }
 
@@ -212,11 +217,11 @@ namespace CcsSso.Core.JobScheduler
       var result = await client.DeleteAsync(url);
       if (result.IsSuccessStatusCode)
       {
-        //Console.WriteLine($"*********Deleted from CII Organization id {ciiOrgId} ***********************");
+        Console.WriteLine($"*********Deleted from CII Organization id {ciiOrgId} ***********************");
       }
       else
       {
-        //Console.WriteLine($"*********Could not delete from CII Organization id {ciiOrgId} ***********************");
+        Console.WriteLine($"*********Could not delete from CII Organization id {ciiOrgId} ***********************");
       }
     }
 
