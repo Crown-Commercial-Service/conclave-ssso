@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace CcsSso.Api.Middleware
 {
-  public class CommonExceptionHandlerMiddleware
+    public class CommonExceptionHandlerMiddleware
   {
     private RequestDelegate _next;
     private readonly ILogger<CommonExceptionHandlerMiddleware> _logger;
@@ -50,6 +50,10 @@ namespace CcsSso.Api.Middleware
       catch (CcsSsoException ex)
       {
         await HandleException(context, ex.Message, ex, HttpStatusCode.BadRequest);
+      }
+      catch (ServiceUnavailableException ex)
+      {
+        await HandleException(context, string.Empty, ex, HttpStatusCode.ServiceUnavailable);
       }
       catch (Exception ex)
       {
