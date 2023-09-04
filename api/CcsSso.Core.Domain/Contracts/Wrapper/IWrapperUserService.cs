@@ -31,7 +31,7 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
     Task<UserAccessRolePendingRequestDetails> GetUserAccessRolePendingDetails(UserAccessRolePendingFilterCriteria criteria);
     Task RemoveApprovalPendingRoles(string UserName, List<int> roleIds, UserPendingRoleStaus? status);
     Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(string organisationId, UserFilterCriteria filter);
-    Task<List<UserToDeleteResponse>> GetInActiveUsers(DateTime createdOnUtc);
+    Task<List<UserToDeleteResponse>> GetInActiveUsers(string createdOnUtc);
     Task DeleteUserAsync(string userName);
 
   }

@@ -48,9 +48,9 @@ namespace CcsSso.Core.Service.Wrapper
     {
       return await _wrapperApiService.GetAsync<OrganisationContactInfoList>(WrapperApi.Organisation, $"{organisationId}/contacts", $"{CacheKeyConstant.Organisation}-{organisationId}", "ERROR_RETRIEVING_ORGANISATION_USERS");
     }
-    public async Task<bool> ActivateOrganisationByUser(string userName)
+    public async Task<bool> ActivateOrganisationByUser(string userId)
     {
-      return await _wrapperApiService.PutAsync<bool>(WrapperApi.Organisation, $"activation-by-user/{userName}", null, "ERROR_ACTIVATING_ORGANISATION_BY_USER_ID");
+      return await _wrapperApiService.PostAsync<bool>(WrapperApi.Organisation, $"activation-by-user/{userId}", null, "ERROR_ACTIVATING_ORGANISATION_BY_USER_ID");
     }
 
     public async Task CreateOrganisationAuditEventAsync(List<WrapperOrganisationAuditEventInfo> organisationAuditEventInfoList)
@@ -60,13 +60,12 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task DeleteOrganisationAsync(string organisationId)
     {
-      await _wrapperApiService.DeleteAsync<Task>(WrapperApi.OrganisationDelete, $"organisationId?={organisationId}", "ERROR_DELETING_ORGANISATION");
+      await _wrapperApiService.DeleteAsync<Task>(WrapperApi.OrganisationDelete, $"{organisationId}", "ERROR_DELETING_ORGANISATION");
     }
 
-    public async Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(DateTime CreatedOnUtc)
+    public async Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync(string CreatedOnUtc)
     {
-      var result = await _wrapperApiService.GetAsync<List<InactiveOrganisationResponse>>(WrapperApi.Organisation, $"in-active?created-on={CreatedOnUtc.ToString("yyyy-MM-dd")}", $"{CacheKeyConstant.Organisation}-{CreatedOnUtc}", "ERROR_RETRIEVING_EXPIRED_ORGANISATION");
-      return result;
+      return await _wrapperApiService.GetAsync<List<InactiveOrganisationResponse>>(WrapperApi.Organisation, $"in-active?created-on={CreatedOnUtc}", $"{CacheKeyConstant.Organisation}-{CreatedOnUtc}", "ERROR_RETRIEVING_EXPIRED_ORGANISATION");
     }
 
     public async Task<List<OrganisationRole>> GetOrganisationRoles(string organisationId)
@@ -80,9 +79,5 @@ namespace CcsSso.Core.Service.Wrapper
       return await _wrapperApiService.PutAsync<bool>(WrapperApi.Organisation, "audits", organisationAuditInfo, "ERROR_CREATING_ORGANISATION_AUDIT_LOG");
     }
 
-    public async Task<OrganisationProfileResponseInfo> GetOrganisationDetailsById(string CiiOrganisationId)
-    {
-      return await _wrapperApiService.GetAsync<OrganisationProfileResponseInfo>(WrapperApi.Organisation, $"{CiiOrganisationId}/org-details?type=PPG", $"{CacheKeyConstant.Organisation}-{CiiOrganisationId}", "ORGANISATION_DETAILS_NOT_FOUND");
-    }
   }
 }

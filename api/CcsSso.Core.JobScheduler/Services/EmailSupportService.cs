@@ -34,10 +34,11 @@ namespace CcsSso.Core.JobScheduler.Services
       foreach (var toEmail in toEmails)
       {
         var emailInfo = GetEmailInfo(toEmail, _emailConfigurationInfo.UnverifiedUserDeletionNotificationTemplateId, data);
-
+        Console.WriteLine($" **************** Sending email to: {toEmail} **************** ");
         emailTaskList.Add(_emaillProviderService.SendEmailAsync(emailInfo));
       }
       await Task.WhenAll(emailTaskList);
+      Console.WriteLine($" **************** Finish sending email **************** ");
     }
 
     public async Task SendBulUploadResultEmailAsync(string toEmail, string resultStatus, string reportUrl)

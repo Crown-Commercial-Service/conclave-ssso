@@ -77,14 +77,14 @@ namespace CcsSso.Core.Service.Wrapper
       return result;
     }
 
-    public async Task<List<UserToDeleteResponse>> GetInActiveUsers(DateTime createdOnUtc)
+    public async Task<List<UserToDeleteResponse>> GetInActiveUsers(string createdOnUtc)
     {
-      return await _wrapperApiService.GetAsync<List<UserToDeleteResponse>>(WrapperApi.User, $"in-active?created-on={createdOnUtc.ToString("yyyy-MM-dd")}", $"{CacheKeyConstant.User}-TO-DELETE-{createdOnUtc}", "ERROR_RETRIEVING_USERS_TO_DELETE");
+      return await _wrapperApiService.GetAsync<List<UserToDeleteResponse>>(WrapperApi.User, $"in-active?created-on={createdOnUtc}", $"{CacheKeyConstant.User}-TO-DELETE-{createdOnUtc}", "ERROR_RETRIEVING_USERS_TO_DELETE");
     }
 
     public async Task DeleteUserAsync(string userName)
     {
-      await _wrapperApiService.DeleteAsync(WrapperApi.User, $"/{userName}", "ERROR_DELETING_USER");
+      await _wrapperApiService.DeleteAsync(WrapperApi.User, $"?user-id={userName}", "ERROR_DELETING_USER");
     }
   }
 }

@@ -116,6 +116,8 @@ namespace CcsSso.Core.JobScheduler
 
               await DeleteCIIOrganisationEntryAsync(orgDetail.OrganisationId);
 
+              Console.WriteLine($"********* checking supplier buyer type NOT to be 0 for Org: {orgDetail.OrganisationId} ***********************");
+
               if (_appSettings.OrgAutoValidationJobSettings.Enable && orgDetail.SupplierBuyerType != (int)RoleEligibleTradeType.Supplier)
               {
                 var orgStatus = new WrapperOrganisationAuditInfo
@@ -125,7 +127,9 @@ namespace CcsSso.Core.JobScheduler
                   Actioned = OrganisationAuditActionType.Job.ToString(),
                   ActionedBy = OrganisationAuditActionType.Job.ToString()
                 };
+                Console.WriteLine($"********* Start Update Organisation Audit List for Org: {orgDetail.OrganisationId} ***********************");
                 var organisationAudit = await _wrapperOrganisationService.UpdateOrganisationAuditList(orgStatus);
+                Console.WriteLine($"********* Finished Update Organisation Audit List for Org: {orgDetail.OrganisationId} ***********************");
 
                 var eventLogs = new List<WrapperOrganisationAuditEventInfo>() {
                     new WrapperOrganisationAuditEventInfo
@@ -137,7 +141,9 @@ namespace CcsSso.Core.JobScheduler
                     }
                   };
 
+                Console.WriteLine($"********* Start Create Organisation Audit Event Async List for Org: {orgDetail.OrganisationId} ***********************");
                 await _wrapperOrganisationService.CreateOrganisationAuditEventAsync(eventLogs);
+                Console.WriteLine($"********* Finished Create Organisation Audit Event Async List for Org: {orgDetail.OrganisationId} ***********************");
               }
             }
             else if (orgDeleteCandidateStatus == OrgDeleteCandidateStatus.Activate)
@@ -149,10 +155,9 @@ namespace CcsSso.Core.JobScheduler
           }
           catch (Exception e)
           {
-            Console.WriteLine($"Failed to processed {i}st Organisation from the list of Organisations");
+            Console.WriteLine($"Failed to processed OrganisationId: {orgDetail.OrganisationId} from the list of Organisations");
 
-            Console.WriteLine($"Org deletion error " + JsonConvert.SerializeObject(e));
-            //Console.WriteLine($"*********Error deleting Organization***********************" + e.Message);
+            Console.WriteLine($"********* Org deletion error " + JsonConvert.SerializeObject(e));
           }
         }
       }
@@ -200,7 +205,7 @@ namespace CcsSso.Core.JobScheduler
     public async Task<List<InactiveOrganisationResponse>> GetInactiveOrganisationAsync()
     {
       var createdOnUtc = DateTime.UtcNow.AddMinutes(-1 * _appSettings.ScheduleJobSettings.OrganizationRegistrationExpiredThresholdInMinutes);
-      var organisationIds = await _wrapperOrganisationService.GetInactiveOrganisationAsync(createdOnUtc);
+      var organisationIds = await _wrapperOrganisationService.GetInactiveOrganisationAsync(createdOnUtc.ToString("yyyy-MM-dd HH:mm:ss"));
       return organisationIds;
     }
 
