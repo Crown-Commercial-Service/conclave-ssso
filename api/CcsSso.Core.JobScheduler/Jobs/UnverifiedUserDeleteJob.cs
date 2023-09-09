@@ -71,20 +71,21 @@ namespace CcsSso.Core.JobScheduler
     public async Task PerformJobAsync()
     {
       Dictionary<string, List<string>> adminList = new Dictionary<string, List<string>>();
-      Dictionary<int, bool> orgSiteContactAvailabilityStatus = new Dictionary<int, bool>();
 
       var minimumThreshold = _appSettings.UserDeleteJobSettings.Min(udj => udj.UserDeleteThresholdInMinutes);
       var createdOnUtc = DateTime.UtcNow.AddMinutes(-1 * minimumThreshold);
-      var users = await _wrapperUserService.GetInActiveUsers(createdOnUtc.ToString("yyyy-MM-dd HH:mm:ss"));
 
-      if (users != null)
-        Console.WriteLine($"{users.Count()} user(s) found");
+      Console.WriteLine($"Retrieving unverified users created before {createdOnUtc}.");
+      var inactiveUsers = await _wrapperUserService.GetInActiveUsers(createdOnUtc.ToString("yyyy-MM-dd HH:mm:ss"));
+
+      if (inactiveUsers != null && inactiveUsers.Any())
+        Console.WriteLine($"{inactiveUsers.Count()} user(s) found");
       else
         Console.WriteLine("No users found");
 
 
       var orgAdminList = new List<string>();
-      foreach (var orgByUsers in users.GroupBy(u => u.UserName))
+      foreach (var orgByUsers in inactiveUsers.GroupBy(u => u.OrganisationId))
       {
         Console.WriteLine($"Unverified User Deletion Organisation: {orgByUsers.Key}");
         foreach (var user in orgByUsers.Select(ou => ou).ToList())
@@ -94,15 +95,15 @@ namespace CcsSso.Core.JobScheduler
           {
             await _wrapperUserService.DeleteUserAsync(user.UserName);
 
-            if (user.UserAccessRolePendings.Any())
-            {
-              var userPendingRoles = user.UserAccessRolePendings.Where(x => x.User.UserName == user.UserName).ToList();
-              var roleIds = userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList();
-              await _wrapperUserService.RemoveApprovalPendingRoles(user.UserName, roleIds, DbModel.Constants.UserPendingRoleStaus.Expired);
-              Console.WriteLine($" **************** Unverified User pending role deletion success for user:{user.UserName} **************** ");
-            }
+            //if (user.UserAccessRolePendings.Any())
+            //{
+            //  var userPendingRoles = user.UserAccessRolePendings.Where(x => x.User.UserName == user.UserName).ToList();
+            //  var roleIds = userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList();
+            //  await _wrapperUserService.RemoveApprovalPendingRoles(user.UserName, roleIds, DbModel.Constants.UserPendingRoleStaus.Expired);
+            //  Console.WriteLine($" **************** Unverified User pending role deletion success for user:{user.UserName} **************** ");
+            //}
 
-            Console.WriteLine($" **************** Retrieving users for org :{orgByUsers.Key} **************** ");
+            Console.WriteLine($" **************** Retrieving admins for org :{user.OrganisationId} **************** ");
             var filter = new UserFilterCriteria
             {
               isAdmin = true,
@@ -112,16 +113,27 @@ namespace CcsSso.Core.JobScheduler
               isDelegatedOnly = false,
               searchString = String.Empty
             };
-            var adminUsers = await _wrapperUserService.GetUserByOrganisation(orgByUsers.Key, filter);
 
-            Console.WriteLine($" **************** {adminUsers.Count} found **************** ");
+            var userDeleteJobSetting = _appSettings.UserDeleteJobSettings.FirstOrDefault(ud => ud.ServiceClientId == (user.ServiceClientId ?? ""));
 
-            adminList.Add(orgByUsers.Key, adminUsers.Where(au => au.AccountVerified).Select(au => au.UserName).ToList());
+            if (userDeleteJobSetting == null)
+            {
+              userDeleteJobSetting = _appSettings.UserDeleteJobSettings.FirstOrDefault(ud => ud.ServiceClientId == "ANY");
+            }
 
-            Console.WriteLine($" **************** Email will be sending to: {adminList[orgByUsers.Key].Count} Users **************** ");
+            if (userDeleteJobSetting.NotifyOrgAdmin)
+            {
+              if (!adminList.Any(x => x.Key == user.OrganisationId))
+              {
+                var orgUsers = await _wrapperUserService.GetUserByOrganisation(user.OrganisationId, filter);
+                adminList.Add(orgByUsers.Key, orgUsers.UserList.Select(au => au.UserName).ToList());
+                Console.WriteLine($" **************** {orgUsers.UserList.Count()} admins found for the org:{user.OrganisationId} **************** ");
+              }
 
-            await _emailSupportService.SendUnVerifiedUserDeletionEmailToAdminAsync($"{user.FirstName} {user.LastName}", user.UserName, adminList[orgByUsers.Key]);
-            Console.WriteLine($"Unverified User Notify Admin Success for: {user.UserName}");
+              await _emailSupportService.SendUnVerifiedUserDeletionEmailToAdminAsync($"{user.FirstName} {user.LastName}", user.UserName, adminList[orgByUsers.Key]);
+              Console.WriteLine($"Unverified User Notify Admin Success for: {user.UserName}");
+            }
+
           }
           catch (Exception ex)
           {

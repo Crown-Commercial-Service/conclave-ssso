@@ -3,6 +3,7 @@ using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
+using CcsSso.Domain.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -63,6 +64,10 @@ namespace CcsSso.Core.JobScheduler.Jobs
 
         await _roleDeleteExpiredNotificationService.PerformJobAsync(userPendingRole.UserAccessRolePendingDetailsInfo);
 
+      }
+      catch (CcsSsoException ex) 
+      {
+        _logger.LogError($"{ex.Message}");
       }
       catch (Exception e)
       {

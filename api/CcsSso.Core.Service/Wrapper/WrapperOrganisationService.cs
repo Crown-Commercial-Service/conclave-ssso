@@ -48,9 +48,9 @@ namespace CcsSso.Core.Service.Wrapper
     {
       return await _wrapperApiService.GetAsync<OrganisationContactInfoList>(WrapperApi.Organisation, $"{organisationId}/contacts", $"{CacheKeyConstant.Organisation}-{organisationId}", "ERROR_RETRIEVING_ORGANISATION_USERS");
     }
-    public async Task<bool> ActivateOrganisationByUser(string userId)
+    public async Task ActivateOrganisationByUser(string userId)
     {
-      return await _wrapperApiService.PostAsync<bool>(WrapperApi.Organisation, $"activation-by-user/{userId}", null, "ERROR_ACTIVATING_ORGANISATION_BY_USER_ID");
+      await _wrapperApiService.PostAsync<Task>(WrapperApi.Organisation, $"activation-by-user/{userId}", null, "ERROR_ACTIVATING_ORGANISATION_BY_USER_ID");
     }
 
     public async Task CreateOrganisationAuditEventAsync(List<WrapperOrganisationAuditEventInfo> organisationAuditEventInfoList)

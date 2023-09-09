@@ -187,7 +187,7 @@ namespace CcsSso.Core.JobScheduler
       Console.WriteLine($"*********Start removing from cache ***********************");
       var orgUsers = await _wrapperUserService.GetUserByOrganisation(ciiOrganisationId, filter);
 
-      orgUsers.ForEach(user =>
+      orgUsers.UserList.ForEach(user =>
       {
         Console.WriteLine($"********* Removing from cache : {user.UserName} ***********************");
         _cacheInvalidateService.RemoveUserCacheValuesOnDeleteAsync(user.UserName, ciiOrganisationId, new List<int>());  
@@ -226,21 +226,21 @@ namespace CcsSso.Core.JobScheduler
       }
     }
 
-    private async Task<List<UserListForOrganisationInfo>> GetOrganisationAdmins(string CiiOrganisationId)
+    private async Task<List<UserListInfo>> GetOrganisationAdmins(string CiiOrganisationId)
     {
 
       var filter = new UserFilterCriteria
       {
         isAdmin = true,
         includeSelf = true,
-        includeUnverifiedAdmin = false,
+        includeUnverifiedAdmin = true,
         isDelegatedExpiredOnly = false,
         isDelegatedOnly = false,
         searchString = String.Empty
       };
 
       var orgAdmins = await _wrapperUserService.GetUserByOrganisation(CiiOrganisationId, filter);
-      return orgAdmins;
+      return orgAdmins?.UserList;
     }
   }
 }

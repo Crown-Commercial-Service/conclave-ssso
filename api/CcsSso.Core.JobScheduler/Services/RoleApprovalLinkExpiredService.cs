@@ -64,7 +64,7 @@ namespace CcsSso.Core.JobScheduler.Services
           {
             expiredUserAccessRolePendingList.Add(role);
 
-            var relatedPendingRoles = pendingRoles.Where(x => x.Id != role.Id && x.UserId == role.UserId).ToList();
+            var relatedPendingRoles = pendingRoles.Where(x => x.Id != role.Id && x.UserName == role.UserName).ToList();
             relatedExpiredUserAccessRolePendingList.AddRange(relatedPendingRoles);
           }
         }

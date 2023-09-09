@@ -347,6 +347,7 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string UserName { get; set; }
     public List<UserAccessRolePending> UserAccessRolePendings { get; set; }
     public string OrganisationId { get; set; }
+    public string ServiceClientId { get; set; }
   }
 
 }

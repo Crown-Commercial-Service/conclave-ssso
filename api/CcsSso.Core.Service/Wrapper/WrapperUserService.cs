@@ -2,19 +2,16 @@
 using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Dtos.Wrapper;
-using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
 using CcsSso.Shared.Domain.Constants;
-using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace CcsSso.Core.Service.Wrapper
 {
-  // #Auto validation
-  public class WrapperUserService : IWrapperUserService
+	// #Auto validation
+	public class WrapperUserService : IWrapperUserService
 	{
 		private readonly IWrapperApiService _wrapperApiService;
 
@@ -58,22 +55,30 @@ namespace CcsSso.Core.Service.Wrapper
 
     public async Task<UserAccessRolePendingRequestDetails> GetUserAccessRolePendingDetails(UserAccessRolePendingFilterCriteria criteria)
     {
-      var payload = JsonConvert.SerializeObject(criteria);
-      return await _wrapperApiService.GetAsync<UserAccessRolePendingRequestDetails>(WrapperApi.User, $"approval/user-roles?{payload}", $"{CacheKeyConstant.User}-USER_ACCESSROLE_PENDING", "ERROR_RETRIEVING_USER_ACCESSROLE_PENDING");
+			string url = "";
+			if (criteria.Status != null)
+			{
+				url += "status=" + criteria.Status.ToString();
+			}
+			if(criteria.UserIds != null && criteria.UserIds.Any())
+			{
+				url += url.Length > 0 ? "&user-ids=" + string.Join(',', criteria.UserIds) : "user-ids=" + string.Join(',', criteria.UserIds);
+			}
+      return await _wrapperApiService.GetAsync<UserAccessRolePendingRequestDetails>(WrapperApi.User, $"approval/user-roles?{url}", $"{CacheKeyConstant.User}-USER_ACCESSROLE_PENDING", "ERROR_RETRIEVING_USER_ACCESSROLE_PENDING");
     }
 
     public async Task RemoveApprovalPendingRoles(string UserName, List<int> roleIds, UserPendingRoleStaus? status)
     {
-      await _wrapperApiService.DeleteAsync<bool>(WrapperApi.User, $"approval/roles?user-id={UserName}&roles={string.Join(",", roleIds)}&status={(int)status}", "ERROR_DELETING_USER_ACCESS_ROLE_PENDING");
+      await _wrapperApiService.DeleteAsync(WrapperApi.User, $"approval/roles?user-id={UserName}&roles={string.Join(",", roleIds)}&status={(int)status}", "ERROR_DELETING_USER_ACCESS_ROLE_PENDING");
     }
 
-    public async Task<List<UserListForOrganisationInfo>> GetUserByOrganisation(string CiiOrganisationId, UserFilterCriteria filter)
+    public async Task<UserListResponseInfo> GetUserByOrganisation(string CiiOrganisationId, UserFilterCriteria filter)
     {
-      var url = $"organisation/{CiiOrganisationId}?search-string={filter.searchString}" +
+      var url = $"{CiiOrganisationId}/users?search-string={filter.searchString}" +
                 $"&delegated-only={filter.isDelegatedOnly}&delegated-expired-only={filter.isDelegatedExpiredOnly}" +
                 $"&isAdmin={filter.isAdmin}&include-unverified-admin={filter.includeUnverifiedAdmin}&include-self={filter.includeSelf}";
 
-      var result = await _wrapperApiService.GetAsync<List<UserListForOrganisationInfo>>(WrapperApi.User, url, $"{CacheKeyConstant.OrganisationUsers}", "ERROR_RETRIEVING_ORGANISATION_USERS");
+      var result = await _wrapperApiService.GetAsync<UserListResponseInfo>(WrapperApi.Organisation, url, $"{CacheKeyConstant.OrganisationUsers}", "ERROR_RETRIEVING_ORGANISATION_USERS");
       return result;
     }
 
