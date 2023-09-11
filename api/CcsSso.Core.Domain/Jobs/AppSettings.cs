@@ -29,7 +29,7 @@ namespace CcsSso.Core.Domain.Jobs
     public ServiceRoleGroupSettings ServiceRoleGroupSettings { get; set; }
 
     public NotificationApiSettings NotificationApiSettings { get; set; }
-	}
+  }
 
   public class CiiSettings
   {
@@ -78,12 +78,15 @@ namespace CcsSso.Core.Domain.Jobs
     public string OrgDeleteApiKey { get; set; }
     public string UserApiKey { get; set; }
     public string SecurityApiKey { get; set; }
+    public string ContactApiKey { get; set; }
     public string ApiGatewayEnabledConfigUrl { get; set; }
     public string ApiGatewayEnabledOrgUrl { get; set; }
+    public string ApiGatewayEnabledContactUrl { get; set; }
     public string ApiGatewayDisabledConfigUrl { get; set; }
     public string ApiGatewayDisabledOrgUrl { get; set; }
     public string ApiGatewayDisabledSecurityUrl { get; set; }
     public string ApiGatewayEnabledSecurityUrl { get; set; }
+    public string ApiGatewayDisabledContactUrl { get; set; }
   }
 
     public class SecurityApiSettings

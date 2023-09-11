@@ -70,10 +70,13 @@ namespace CcsSso.Core.JobScheduler
           OrgApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/OrgApiKey"),
           OrgDeleteApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/OrgDeleteApiKey"),
           UserApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/UserApiKey"),
+          ContactApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ContactApiKey"),
           ApiGatewayEnabledConfigUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledConfigUrl"),
           ApiGatewayEnabledOrgUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledOrgUrl"),
+          ApiGatewayEnabledContactUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledContactUrl"),
           ApiGatewayDisabledConfigUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledConfigUrl"),
           ApiGatewayDisabledOrgUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledOrgUrl"),
+          ApiGatewayDisabledContactUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledContactUrl"),
         };
       }
       else if (objType == typeof(SecurityApiSettings))

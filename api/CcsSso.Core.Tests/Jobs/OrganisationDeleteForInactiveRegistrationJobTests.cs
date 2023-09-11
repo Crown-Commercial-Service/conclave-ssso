@@ -65,6 +65,7 @@ namespace CcsSso.Core.Tests.Jobs
         var mockCacheInvalidateService = new Mock<ICacheInvalidateService>();
         var mockIWrapperOrganisationService = new Mock<IWrapperOrganisationService>();
         var mockIWrapperUserService = new Mock<IWrapperUserService>();
+        var mockIWrapperUserContactrvice = new Mock<IWrapperContactService>();
         var mockIHttpClientFactory = new Mock<IHttpClientFactory>();
         serviceProvider
     .Setup(x => x.GetService(typeof(IServiceScopeFactory)))
@@ -72,7 +73,8 @@ namespace CcsSso.Core.Tests.Jobs
         return new OrganisationDeleteForInactiveRegistrationJob(appSettings,
           mockCacheInvalidateService.Object, 
           mockIWrapperOrganisationService.Object, 
-          mockIWrapperUserService.Object, 
+          mockIWrapperUserService.Object,
+          mockIWrapperUserContactrvice.Object,
           mockIHttpClientFactory.Object);
       }
       catch(Exception e)

@@ -5,6 +5,7 @@ using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,6 +44,12 @@ namespace CcsSso.Core.JobScheduler.Services
       PendingRolesList.UserAccessRolePendingDetailsInfo = pendingRoles;
       var approvalRoleConfig = await _wrapperConfigurationService.GetRoleApprovalConfigurationsAsync();
 
+      foreach (var approvalRole in approvalRoleConfig)
+      {
+        _logger.LogInformation($"****** Approval role config role id: {approvalRole.CcsAccessRoleId}, expired duration: {approvalRole.LinkExpiryDurationInMinute}, " +
+          $"email to: {approvalRole?.NotificationEmails} ");
+      }
+
       List<UserAccessRolePendingDetailsInfo> expiredUserAccessRolePendingList = new();
       List<UserAccessRolePendingDetailsInfo> relatedExpiredUserAccessRolePendingList = new();
 
@@ -53,6 +60,8 @@ namespace CcsSso.Core.JobScheduler.Services
 
         if (roleConfig == null)
           continue;
+
+        _logger.LogInformation($"****** Found role config matching org role: {roleConfig.CcsAccessRoleId}, expired minutes: {roleConfig.LinkExpiryDurationInMinute}");
 
         var roleExpireTime = role.LastUpdatedOnUtc.AddMinutes(roleConfig.LinkExpiryDurationInMinute);
 
@@ -76,27 +85,27 @@ namespace CcsSso.Core.JobScheduler.Services
 
     private async Task ProcessRelatedExpiredUserAccessRolePending(List<UserAccessRolePendingDetailsInfo> relatedExpiredUserAccessRolePendingList)
     {
-      _logger.LogInformation($"Total number of related expired Roles: {relatedExpiredUserAccessRolePendingList.Count()}");
+      _logger.LogInformation($"****** Total number of related expired Roles: {relatedExpiredUserAccessRolePendingList.Count()}");
 
       if (relatedExpiredUserAccessRolePendingList.Any())
       {
         await RemoveExpiredApprovalPendingRolesAsync(relatedExpiredUserAccessRolePendingList);
-        _logger.LogInformation($"Successfully updated the related expired roles");
+        _logger.LogInformation($"****** Successfully updated the related expired roles.");
       }
     }
 
     private async Task ProcessExpiredUserAccessRolePending(List<UserAccessRolePendingDetailsInfo> expiredUserAccessRolePendingList, List<RoleApprovalConfigurationInfo> approvalRoleConfig)
     {
-      _logger.LogInformation($"Total number of expired Roles: {expiredUserAccessRolePendingList.Count()}");
+      _logger.LogInformation($"****** Total number of expired roles: {expiredUserAccessRolePendingList.Count()}");
 
       if (expiredUserAccessRolePendingList.Any())
       {
         await RemoveExpiredApprovalPendingRolesAsync(expiredUserAccessRolePendingList);
-        _logger.LogInformation($"Successfully updated the expired roles");
+        _logger.LogInformation($"****** Successfully updated the expired roles.");
 
-        _logger.LogInformation($"Sending email if it is eligible");
+        _logger.LogInformation($"****** Sending email if it is eligible.");
         await SendEmail(expiredUserAccessRolePendingList, approvalRoleConfig);
-        _logger.LogInformation($"Finished sending email");
+        _logger.LogInformation($"****** Finished sending email.");
       }
     }
 
@@ -112,7 +121,7 @@ namespace CcsSso.Core.JobScheduler.Services
           var orgEligibleRoleIds = userAccessRolePendingExpiredList.Select(r => r.OrganisationEligibleRoleId).ToList();
           await _wrapperUserService.RemoveApprovalPendingRoles(pr.UserName, orgEligibleRoleIds, UserPendingRoleStaus.Expired);
         });
-        
+
       }
     }
 
@@ -138,7 +147,6 @@ namespace CcsSso.Core.JobScheduler.Services
         var serviceName = string.Empty;
         var roleConfig = await GetRoleConfigAsync(approvalRoleConfig, pendingNotification.OrganisationId);
 
-
         if (roleConfig != null)
         {
 
@@ -156,13 +164,25 @@ namespace CcsSso.Core.JobScheduler.Services
       }
 
     }
-    private async Task<RoleApprovalConfigurationInfo> GetRoleConfigAsync(List<RoleApprovalConfigurationInfo> approvalRoleConfig, string OrganisationId)
-    {
-      // var orgDetails = await _wrapperOrganisationService.GetOrganisationDetailsById(CiiOrganisationId);
-      var orgEligibleRole = await _wrapperOrganisationService.GetOrganisationRoles(OrganisationId);
-      var roleConfig = approvalRoleConfig.FirstOrDefault(config => orgEligibleRole.Any(orgRole => orgRole.CcsAccessRoleId == config.CcsAccessRoleId));
 
-      return roleConfig;
+    private async Task<RoleApprovalConfigurationInfo> GetRoleConfigAsync(List<RoleApprovalConfigurationInfo> approvalRoleConfig, string organisationId)
+    {
+      try
+      {
+        // var orgDetails = await _wrapperOrganisationService.GetOrganisationDetailsById(CiiOrganisationId);
+        var orgEligibleRole = await _wrapperOrganisationService.GetOrganisationRoles(organisationId);
+
+        _logger.LogInformation($"****** Org roles found :{orgEligibleRole.Count()} for org: {organisationId}");
+
+        var roleConfig = approvalRoleConfig.FirstOrDefault(config => orgEligibleRole.Any(orgRole => orgRole.CcsAccessRoleId == config.CcsAccessRoleId));
+
+        return roleConfig;
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine($"Error getting org roles: {JsonConvert.SerializeObject(e)}");
+        return null;
+      }
     }
 
   }

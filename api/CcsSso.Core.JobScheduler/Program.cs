@@ -79,9 +79,9 @@ namespace CcsSso.Core.JobScheduler
 					ActiveJobStatus activeJobStatus;
 					ServiceRoleGroupSettings serviceRoleGroupSettings;
 					NotificationApiSettings notificationApiSettings;
-				
 
-					bool isApiGatewayEnabled = false;
+
+          bool isApiGatewayEnabled = false;
 
 
 					if (vaultEnabled)
@@ -145,11 +145,14 @@ namespace CcsSso.Core.JobScheduler
 								ApiGatewayDisabledUserUrl = wrapperApiSettings.ApiGatewayDisabledUserUrl,
 								ConfigApiKey = wrapperApiSettings.ConfigApiKey,
 								OrgApiKey = wrapperApiSettings.OrgApiKey,
-                                OrgDeleteApiKey = wrapperApiSettings.OrgDeleteApiKey,
-                                ApiGatewayDisabledConfigUrl = wrapperApiSettings.ApiGatewayDisabledConfigUrl,
+                OrgDeleteApiKey = wrapperApiSettings.OrgDeleteApiKey,
+								ContactApiKey = wrapperApiSettings.ContactApiKey,
+                ApiGatewayDisabledConfigUrl = wrapperApiSettings.ApiGatewayDisabledConfigUrl,
 								ApiGatewayDisabledOrgUrl = wrapperApiSettings.ApiGatewayDisabledOrgUrl,
 								ApiGatewayEnabledConfigUrl = wrapperApiSettings.ApiGatewayEnabledConfigUrl,
 								ApiGatewayEnabledOrgUrl = wrapperApiSettings.ApiGatewayEnabledOrgUrl,
+								ApiGatewayDisabledContactUrl = wrapperApiSettings.ApiGatewayDisabledContactUrl,
+								ApiGatewayEnabledContactUrl = wrapperApiSettings.ApiGatewayEnabledContactUrl,
 							},
 							SecurityApiSettings = new SecurityApiSettings()
 							{
@@ -177,9 +180,8 @@ namespace CcsSso.Core.JobScheduler
 							{
 								NotificationApiUrl = notificationApiSettings.NotificationApiUrl,
 								NotificationApiKey = notificationApiSettings.NotificationApiKey
-							},
-
-						};
+							}
+            };
 					});
 
 					services.AddHttpClient("default").ConfigurePrimaryHttpMessageHandler(() =>
@@ -258,6 +260,7 @@ namespace CcsSso.Core.JobScheduler
 					services.AddSingleton<IWrapperUserService, WrapperUserService>();
 					services.AddSingleton<IWrapperConfigurationService, WrapperConfigurationService>();
 					services.AddSingleton<IWrapperOrganisationService, WrapperOrganisationService>();
+          services.AddSingleton<IWrapperContactService, WrapperContactService>();
 
 					services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
 					services.AddHostedService<UnverifiedUserDeleteJob>();
@@ -292,13 +295,13 @@ namespace CcsSso.Core.JobScheduler
 				c.DefaultRequestHeaders.Add("x-api-key", _wrapperApiSettings.OrgApiKey);
 			});
 
-            services.AddHttpClient("OrgWrapperDeleteApi", c =>
-            {
-                c.BaseAddress = new Uri(isApiGatewayEnabled ? _wrapperApiSettings.ApiGatewayEnabledOrgUrl : _wrapperApiSettings.ApiGatewayDisabledOrgUrl);
-                c.DefaultRequestHeaders.Add("x-api-key", _wrapperApiSettings.OrgDeleteApiKey);
-            });
-            // Question about security wrapper api settings where to place these settings.
-            services.AddHttpClient("SecurityWrapperApi", c =>
+      services.AddHttpClient("OrgWrapperDeleteApi", c =>
+      {
+          c.BaseAddress = new Uri(isApiGatewayEnabled ? _wrapperApiSettings.ApiGatewayEnabledOrgUrl : _wrapperApiSettings.ApiGatewayDisabledOrgUrl);
+          c.DefaultRequestHeaders.Add("x-api-key", _wrapperApiSettings.OrgDeleteApiKey);
+      });
+      // Question about security wrapper api settings where to place these settings.
+      services.AddHttpClient("SecurityWrapperApi", c =>
 			{
 				c.BaseAddress = new Uri(_securityApiSettings.Url);
 				c.DefaultRequestHeaders.Add("x-api-key", _securityApiSettings.ApiKey);
@@ -315,7 +318,13 @@ namespace CcsSso.Core.JobScheduler
 				c.BaseAddress = new Uri(_notificationApiSettings.NotificationApiUrl);
 				c.DefaultRequestHeaders.Add("X-API-Key", _notificationApiSettings.NotificationApiKey);
 			});
-		}
+
+      services.AddHttpClient("ContactWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(isApiGatewayEnabled ? _wrapperApiSettings.ApiGatewayEnabledContactUrl : _wrapperApiSettings.ApiGatewayDisabledContactUrl);
+        c.DefaultRequestHeaders.Add("x-api-key", _wrapperApiSettings.ContactApiKey);
+      });
+    }
 		private static void ReadFromAppSecret(HostBuilderContext hostContext, out string dbConnection, out CiiSettings ciiSettings,
 			out List<UserDeleteJobSetting> userDeleteJobSettings, out SecurityApiSettings securityApiSettings, out WrapperApiSettings wrapperApiSettings,
 			out ScheduleJobSettings scheduleJobSettings, out BulkUploadSettings bulkUploadSettings, out RedisCacheSettingsVault redisCacheSettingsVault,
@@ -345,7 +354,7 @@ namespace CcsSso.Core.JobScheduler
 			serviceRoleGroupSettings = config.GetSection("ServiceRoleGroupSettings").Get<ServiceRoleGroupSettings>();
 			isApiGatewayEnabled = Convert.ToBoolean(config["IsApiGatewayEnabled"]);
 			notificationApiSettings = config.GetSection("NotificationApiSettings").Get<NotificationApiSettings>();
-		}
+    }
 		private static void ReadFromAppSecretActiveJobStatus(HostBuilderContext hostContext, out ActiveJobStatus activeJobStatus)
 		{
 			var config = hostContext.Configuration;
@@ -380,7 +389,7 @@ namespace CcsSso.Core.JobScheduler
 			isApiGatewayEnabled = Convert.ToBoolean(secrets["IsApiGatewayEnabled"].ToString());
 			serviceRoleGroupSettings = JsonConvert.DeserializeObject<ServiceRoleGroupSettings>(secrets["ServiceRoleGroupSettings"].ToString());
 			notificationApiSettings = JsonConvert.DeserializeObject<NotificationApiSettings>(secrets["NotificationApiSettings"].ToString());
-		}
+    }
 		private static void ReadFromHashicorpActiveJobStatus(out ActiveJobStatus activeJobStatus)
 		{
 			var secrets = _programHelpers.LoadSecretsAsync().Result;
@@ -412,7 +421,7 @@ namespace CcsSso.Core.JobScheduler
 			orgAutoValidationOneTimeJobEmail = (OrgAutoValidationOneTimeJobEmail)_programHelpers.FillAwsParamsValue(typeof(OrgAutoValidationOneTimeJobEmail), parameters);
 			serviceRoleGroupSettings = (ServiceRoleGroupSettings)_programHelpers.FillAwsParamsValue(typeof(ServiceRoleGroupSettings), parameters);
 			notificationApiSettings =(NotificationApiSettings)_programHelpers.FillAwsParamsValue(typeof(NotificationApiSettings), parameters);
-		}
+    }
 
 		private static void ReadFromAWSActiveJobStatus(out ActiveJobStatus activeJobStatus, List<Parameter> parameters)
 		{

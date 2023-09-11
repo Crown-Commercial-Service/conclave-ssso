@@ -40,7 +40,7 @@ namespace CcsSso.Core.JobScheduler.Jobs
 
         if (!enable)
         {
-          _logger.LogInformation($"Delete expired notification role job is disabled. Skipping this iteration");
+          _logger.LogInformation($"****** Delete expired notification role job is disabled. Skipping this iteration");
           await Task.Delay(interval, stoppingToken);
           continue;
         }
@@ -60,7 +60,7 @@ namespace CcsSso.Core.JobScheduler.Jobs
         UserAccessRolePendingFilterCriteria criteria = new UserAccessRolePendingFilterCriteria() { Status = UserPendingRoleStaus.Pending };
         var userPendingRole = await _wrapperUserService.GetUserAccessRolePendingDetails(criteria);
 
-        _logger.LogInformation($"Pending Role approval request: {userPendingRole.UserAccessRolePendingDetailsInfo.Count()}");
+        _logger.LogInformation($"****** Pending role approval request: {userPendingRole.UserAccessRolePendingDetailsInfo.Count()}");
 
         await _roleDeleteExpiredNotificationService.PerformJobAsync(userPendingRole.UserAccessRolePendingDetailsInfo);
 
@@ -71,7 +71,7 @@ namespace CcsSso.Core.JobScheduler.Jobs
       }
       catch (Exception e)
       {
-        _logger.LogError($"Error while deleting the expired user role notification: {e.Message}");
+        _logger.LogError($"****** Error while deleting the expired user role notification: {e.Message}");
       }
     }
   }
