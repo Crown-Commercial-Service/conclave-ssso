@@ -263,11 +263,11 @@ namespace CcsSso.Core.JobScheduler
           services.AddSingleton<IWrapperContactService, WrapperContactService>();
 
 					//services.AddHostedService<OrganisationDeleteForInactiveRegistrationJob>();
-					//services.AddHostedService<UnverifiedUserDeleteJob>();
+					services.AddHostedService<UnverifiedUserDeleteJob>();
 					//MS: As per the discussion with Ruban, this 2 jobs not required.
 					//services.AddHostedService<BulkUploadMigrationStatusCheckJob>();
 					//services.AddHostedService<OrganisationAutovalidationJob>();
-					services.AddHostedService<RoleApprovalLinkExpiredJob>();
+					//services.AddHostedService<RoleApprovalLinkExpiredJob>();
 
 					services.AddSingleton<IWrapperUserService, WrapperUserService>();
 					services.AddSingleton<IWrapperOrganisationService, WrapperOrganisationService>();
