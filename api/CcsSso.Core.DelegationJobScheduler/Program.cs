@@ -90,15 +90,16 @@ namespace CcsSso.Core.DelegationJobScheduler
     private static DelegationAppSettings GetConfigurationDetails(HostBuilderContext hostContext)
     {
       string dbConnection;
-      string conclaveLoginUrl;
-      DelegationJobSettings scheduleJob;
+      string conclaveLoginUrl;     
+			DelegationJobSettings scheduleJob;
       DelegationExpiryNotificationJobSettings expiryNotificationJob;
       EmailSettings emailSettings;
 			WrapperApiSettings wrapperApiSettings;
       NotificationApiSettings notificationApiSettings;
 
 			var config = hostContext.Configuration;
-      dbConnection = config["DbConnection"];
+			bool.TryParse(config["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
+			dbConnection = config["DbConnection"];
       conclaveLoginUrl = config["ConclaveLoginUrl"];
       scheduleJob = config.GetSection("DelegationJobSettings").Get<DelegationJobSettings>();
       expiryNotificationJob = config.GetSection("DelegationExpiryNotificationJobSettings").Get<DelegationExpiryNotificationJobSettings>();
@@ -108,7 +109,8 @@ namespace CcsSso.Core.DelegationJobScheduler
 
       var appSettings = new DelegationAppSettings()
       {
-        DbConnection = dbConnection,
+        IsApiGatewayEnabled = isApiGatewayEnabled,
+				DbConnection = dbConnection,
         ConclaveLoginUrl=conclaveLoginUrl,
         DelegationJobSettings = new DelegationJobSettings
         {
