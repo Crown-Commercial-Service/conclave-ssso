@@ -144,6 +144,10 @@ namespace CcsSso.Service
         var conflictResultContent = await response.Content.ReadAsStringAsync();
         throw new ResourceAlreadyExistsException(conflictResultContent);
       }
+      else if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+      {
+        throw new ServiceUnavailableException();
+      }
       else
       {
         throw new CcsSsoException("ERROR_RETRIEVING_IDENTIFIER_DETAILS");
@@ -178,6 +182,10 @@ namespace CcsSso.Service
       else if (response.StatusCode == HttpStatusCode.Conflict)
       {
         throw new ResourceAlreadyExistsException();
+      }
+      else if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+      {
+        throw new ServiceUnavailableException();
       }
       else
       {
