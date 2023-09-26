@@ -201,6 +201,7 @@ namespace CcsSso.Core.Service.External
           UserGroupName = Contstant.DefaultAdminUserGroupName,
           UserGroupNameKey = Contstant.DefaultAdminUserGroupNameKey,
           GroupType = (int)GroupType.Admin,
+          MfaEnabled = true,
           GroupEligibleRoles = new List<OrganisationGroupEligibleRole>
                     { new OrganisationGroupEligibleRole {OrganisationEligibleRoleId = addedRoleId}}
         };
@@ -987,7 +988,6 @@ namespace CcsSso.Core.Service.External
         var rolesAssigned = await AddNewOrgRoles(rolesToAdd, rolesToDelete, rolesToAutoValid, organisation, newOrgType, autoValidationSuccess);
         var rolesUnassigned = await RemoveOrgRoles(rolesToDelete, organisation);
         await AdminRoleAssignment(organisation, newOrgType, autoValidationSuccess);
-
         // No event log if org was supplier and changes in role only.
         if (isOrgTypeSwitched)
         {
@@ -1636,7 +1636,7 @@ namespace CcsSso.Core.Service.External
 
         var userAccessRolesForOrgUsers = await _dataContext.UserAccessRole.Where(uar => !uar.IsDeleted &&
                                            uar.OrganisationEligibleRole.OrganisationId == organisation.Id).ToListAsync();
-
+        
         var userAccessRolesWithDeletedRoles = userAccessRolesForOrgUsers
           .Where(uar => deletingRoleIds.Contains(uar.OrganisationEligibleRole.CcsAccessRoleId)).ToList();
 
