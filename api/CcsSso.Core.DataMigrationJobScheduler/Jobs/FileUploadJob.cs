@@ -49,7 +49,8 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Jobs
         }
         catch (Exception ex)
         {
-          isRunning = false;          
+          isRunning = false;
+          _logger.LogError("Error While Running a Job"+ex.Message);
         }
 
         await Task.Delay(interval, stoppingToken);

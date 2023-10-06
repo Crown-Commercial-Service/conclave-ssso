@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata;
-
+﻿
 namespace CcsSso.Core.DataMigrationJobScheduler.Model
 {
   public class DataMigrationAppSettings

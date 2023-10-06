@@ -1,13 +1,8 @@
 ﻿using Amazon.S3;
 using Amazon.S3.Model;
-using Amazon.SQS;
 using CcsSso.Core.DataMigrationJobScheduler.Contracts;
 using CcsSso.Core.DataMigrationJobScheduler.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace CcsSso.Core.DataMigrationJobScheduler.Services
 {
@@ -15,56 +10,17 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
     {
       private readonly IAmazonS3 _client;
       private readonly S3ConfigurationInfo _s3ConfigurationInfo;
+    private readonly ILogger<IAwsS3Service> _logger;
 
-      public AwsS3Service(S3ConfigurationInfo s3ConfigurationInfo)
+    public AwsS3Service(S3ConfigurationInfo s3ConfigurationInfo, ILogger<IAwsS3Service> logger)
       {
         _s3ConfigurationInfo = s3ConfigurationInfo;
         AmazonS3Config amazonS3Config = new AmazonS3Config
         {
           ServiceURL = _s3ConfigurationInfo.ServiceUrl
         };
-
-        _client = new AmazonS3Client(_s3ConfigurationInfo.AccessKeyId, _s3ConfigurationInfo.AccessSecretKey, amazonS3Config);
-      }
-
-      /// <summary>
-      /// Write a file
-      /// </summary>
-      /// <param name="fileKey"></param>
-      /// <param name="contentType"></param>
-      /// <param name="bucketName"></param>
-      /// <param name="fileContent"></param>
-      /// <returns></returns>
-      public async Task WritingAnObjectAsync(string fileKey, string contentType, string bucketName, Stream fileContent)
-      {
-        var putRequest1 = new PutObjectRequest
-        {
-          BucketName = bucketName,
-          Key = fileKey,
-          InputStream = fileContent,
-          ContentType = contentType
-        };
-
-        PutObjectResponse response = await _client.PutObjectAsync(putRequest1);
-      }
-
-      /// <summary>
-      /// Get the signed url for a file
-      /// </summary>
-      /// <param name="fileKey"></param>
-      /// <param name="bucketName"></param>
-      /// <param name="duration"></param>
-      /// <returns></returns>
-      public string GeneratePreSignedURL(string fileKey, string bucketName, int duration)
-      {
-        GetPreSignedUrlRequest preSignedUrlRequest = new GetPreSignedUrlRequest
-        {
-          BucketName = bucketName,
-          Key = fileKey,
-          Expires = DateTime.UtcNow.AddHours(duration)
-        };
-        var urlString = _client.GetPreSignedURL(preSignedUrlRequest);
-        return urlString;
+      _logger = logger;
+      _client = new AmazonS3Client(_s3ConfigurationInfo.AccessKeyId, _s3ConfigurationInfo.AccessSecretKey, amazonS3Config);
       }
 
       /// <summary>
@@ -74,6 +30,8 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
       /// <param name="bucketName"></param>
       /// <returns></returns>
       public async Task<string> ReadObjectDataStringAsync(string fileKey, string bucketName)
+      {
+      try
       {
         string responseBody = "";
         GetObjectRequest request = new GetObjectRequest
@@ -94,22 +52,36 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
         }
         return responseBody;
       }
+      catch(Exception ex)
+      {
+        _logger.LogError($"Error Reading File String Data from S3 -{ex.Message}");
+        throw ex;
+      }
+      }
 
     public async Task<byte[]> ReadObjectData(string fileKey, string bucketName)
     {
-      string responseBody = "";
-      GetObjectRequest request = new GetObjectRequest
+      try
       {
-        BucketName = bucketName,
-        Key = fileKey
-      };
-      using (GetObjectResponse response = await _client.GetObjectAsync(request))
-      using (Stream responseStream = response.ResponseStream)
-      using (StreamReader reader = new StreamReader(responseStream))
-      using (var memoryStream = new MemoryStream())
+        string responseBody = "";
+        GetObjectRequest request = new GetObjectRequest
+        {
+          BucketName = bucketName,
+          Key = fileKey
+        };
+        using (GetObjectResponse response = await _client.GetObjectAsync(request))
+        using (Stream responseStream = response.ResponseStream)
+        using (StreamReader reader = new StreamReader(responseStream))
+        using (var memoryStream = new MemoryStream())
+        {
+          await responseStream.CopyToAsync(memoryStream);
+          return memoryStream.ToArray();
+        }
+      }
+      catch (Exception ex)
       {
-        await responseStream.CopyToAsync(memoryStream);
-        return memoryStream.ToArray();
+        _logger.LogError($"Error Reading File Object Data from S3 -{ex.Message}");
+        throw ex;
       }
     }
     /// <summary>
@@ -122,15 +94,22 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
     /// <returns></returns>
     public async Task WritingAFileDataAsync(string fileKey, string contentType, string bucketName, string fileContent)
     {
-      var putRequest1 = new PutObjectRequest
+      try
       {
-        BucketName = bucketName,
-        Key = fileKey,
-        ContentBody = fileContent,
-        ContentType = contentType
-      };
+        var putRequest1 = new PutObjectRequest
+        {
+          BucketName = bucketName,
+          Key = fileKey,
+          ContentBody = fileContent,
+          ContentType = contentType
+        };
 
-      PutObjectResponse response = await _client.PutObjectAsync(putRequest1);
+        PutObjectResponse response = await _client.PutObjectAsync(putRequest1);
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError($"Error Writing File string Data to S3 -{ex.Message}");
+      }
     }
   }
   }

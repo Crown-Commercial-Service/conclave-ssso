@@ -1,47 +1,17 @@
-﻿using Amazon.S3;
-using Amazon.SimpleSystemsManagement.Model;
-using CcsSso.Core.DbModel.Constants;
-using CcsSso.Core.DbModel.Entity;
+﻿using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DataMigrationJobScheduler.Contracts;
 using CcsSso.Core.DataMigrationJobScheduler.Model;
-using CcsSso.Core.Domain.Contracts.External;
-using CcsSso.Core.Domain.Contracts.Wrapper;
-using CcsSso.Core.Domain.Dtos.Wrapper;
-using CcsSso.DbModel.Entity;
-using CcsSso.Domain.Constants;
-using CcsSso.Shared.Contracts;
-using CcsSso.Shared.Domain;
-using CcsSso.Shared.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Amazon.S3.Model;
 using S3ConfigurationInfo = CcsSso.Core.DataMigrationJobScheduler.Model.S3ConfigurationInfo;
 using IAwsS3Service = CcsSso.Core.DataMigrationJobScheduler.Contracts.IAwsS3Service;
-using CcsSso.Dtos.Domain.Models;
-using Newtonsoft.Json;
-using System.Net;
-using static System.Net.Mime.MediaTypeNames;
-using Microsoft.AspNetCore.Http.Internal;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using CcsSso.Domain.Contracts;
-using CcsSso.Core.DataMigrationJobScheduler.Wrapper.Contracts;
 using IWrapperOrganisationService = CcsSso.Core.DataMigrationJobScheduler.Wrapper.Contracts.IWrapperOrganisationService;
-using CcsSso.Domain.Dtos;
-using System.Xml.Linq;
 
 namespace CcsSso.Core.DataMigrationJobScheduler.Services
 {
   public class FileUploadJobService : IFileUploadJobService
   {
-    private readonly IDataContext _dataContext;
     private readonly ILogger<IFileUploadJobService> _logger;
     private readonly DataMigrationAppSettings _appSettings;
     private readonly IWrapperOrganisationService _wrapperOrganisationService;
@@ -54,7 +24,6 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
       ILogger<FileUploadJobService> logger,
        IWrapperOrganisationService wrapperOrganisationService, Model.S3ConfigurationInfo s3ConfigurationInfo, IHttpClientFactory httpClientFactory,IAwsS3Service awsS3Service)
     {
-      _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
       _appSettings = appSettings;
       _wrapperOrganisationService = wrapperOrganisationService;
       _logger = logger;
@@ -65,50 +34,65 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
 
     public async Task PerformFileUploadJobAsync()
     {
-      var files = await _wrapperOrganisationService.GetDataMigrationFilesList();
-
-      if (files.DataMigrationList.Any())
+      try
       {
-        _logger.LogInformation($"****** No of files found: {files.DataMigrationList.Count()}");
+        var files = await _wrapperOrganisationService.GetDataMigrationFilesList();
 
-        foreach (var file in files.DataMigrationList)
+        if (files.DataMigrationList.Any())
         {
-          var fileContentString = await _awsS3Service.ReadObjectDataStringAsync(file.FileKey, _s3ConfigurationInfo.DataMigrationBucketName);
-          var fileObject = await _awsS3Service.ReadObjectData(file.FileKey, _s3ConfigurationInfo.DataMigrationBucketName);
+          _logger.LogInformation($"****** No of files found: {files.DataMigrationList.Count()}");
 
-          var client = _httpClientFactory.CreateClient("DataMigrationApi");
-          using (var formData = new MultipartFormDataContent())
+          foreach (var file in files.DataMigrationList)
           {
-            using (var s3DataStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(fileContentString)))
+            _logger.LogInformation($"****** Reading File from S3: {file.FileKey} ***********");
+            var fileContentString = await _awsS3Service.ReadObjectDataStringAsync(file.FileKey, _s3ConfigurationInfo.DataMigrationBucketName);
+            _logger.LogInformation($"****** Downloaded File from S3 : {file.FileKey} ***********");
+
+            var client = _httpClientFactory.CreateClient("DataMigrationApi");
+            using (var formData = new MultipartFormDataContent())
             {
-              // Create a StreamContent from the S3 data stream
-              var streamContent = new StreamContent(s3DataStream);
-
-              // Add the StreamContent to the form data
-              formData.Add(streamContent, "file", "data.csv"); // You can specify the file name as needed
-
-
-              // Make a POST request to the CII API
-              var response = await client.PostAsync($"data-migration/migrate/format/csv", formData);
-              if (response.IsSuccessStatusCode)
+              _logger.LogInformation($"****** Converting File string Data to Memory Stream : {file.FileKey} ***********");
+              using (var s3DataStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(fileContentString)))
               {
-                var fileKey = GetUploadFileKey(file.FileKey, true);
-                await _awsS3Service.WritingAFileDataAsync(fileKey, "text/csv", _s3ConfigurationInfo.DataMigrationBucketName, fileContentString);
-                await _wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Completed });
+                // Create a StreamContent from the S3 data stream
+                var streamContent = new StreamContent(s3DataStream);
+
+                // Add the StreamContent to the form data
+                formData.Add(streamContent, "file", "data.csv"); // You can specify the file name as needed
+
+                _logger.LogInformation($"****** Uploading File to Data Migration API : {file.FileKey} ***********");
+                // Make a POST request to the CII API
+                var response = await client.PostAsync($"data-migration/migrate/format/csv", formData);
+                if (response.IsSuccessStatusCode)
+                {
+                  _logger.LogInformation($"****** File Uploaded Successfully to Data Migration API : {file.FileKey} ***********");
+                  var fileKey = GetUploadFileKey(file.FileKey, true);
+                  _logger.LogInformation($"****** Moving file to Success Folder : {fileKey} ***********");
+                  await _awsS3Service.WritingAFileDataAsync(fileKey, "text/csv", _s3ConfigurationInfo.DataMigrationBucketName, fileContentString);
+                  _logger.LogInformation($"****** Updating File Status as Completed : {file.Id} ***********");
+                  await _wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Completed });
+                }
+                else
+                {
+                  _logger.LogInformation($"****** File Upload to Data Migration API failed : {file.FileKey} ***********");
+                  var fileKey = GetUploadFileKey(file.FileKey, false);
+                  _logger.LogInformation($"****** Moving file to Failed Folder : {fileKey} ***********");
+                  await _awsS3Service.WritingAFileDataAsync(fileKey, "text/csv", _s3ConfigurationInfo.DataMigrationBucketName, fileContentString);
+                  _logger.LogInformation($"****** Updating File Status as Failed : {file.Id} ***********");
+                  await _wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Failed });
+                }
               }
-              else
-              {
-                var fileKey = GetUploadFileKey(file.FileKey, false);
-                await _awsS3Service.WritingAFileDataAsync(fileKey, "text/csv", _s3ConfigurationInfo.DataMigrationBucketName, fileContentString);
-                await _wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Failed });
-              }
-            }            
+            }
           }
         }
+        else
+        {
+          _logger.LogInformation($"****** No files found ******");
+        }
       }
-      else
+      catch(Exception ex)
       {
-        _logger.LogInformation($"****** No files found ******");
+        _logger.LogError("Error while executing a Job" + ex.Message);
       }
     }
 
@@ -120,6 +104,7 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
     /// <returns></returns>
     private string GetUploadFileKey(string fileKeyId,bool isSuccess)
     {
+      _logger.LogInformation($"****** Getting the full file Key : {fileKeyId} ***********");
       string fileKeyinfo= fileKeyId.Substring(fileKeyId.IndexOf('/') + 1);
       if (isSuccess)
       {

@@ -1,12 +1,6 @@
 ﻿using CcsSso.Core.DataMigrationJobScheduler.Constants;
 using CcsSso.Core.DataMigrationJobScheduler.Model;
 using CcsSso.Core.DataMigrationJobScheduler.Wrapper.Contracts;
-using CcsSso.Shared.Cache.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CcsSso.Core.DataMigrationJobScheduler.Wrapper
 {
