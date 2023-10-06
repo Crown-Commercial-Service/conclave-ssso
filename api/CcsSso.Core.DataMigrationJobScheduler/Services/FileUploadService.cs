@@ -65,16 +65,18 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
 
     public async Task PerformFileUploadJobAsync()
     {
-      var files =await _wrapperOrganisationService.GetDataMigrationFilesList();
+      var files = await _wrapperOrganisationService.GetDataMigrationFilesList();
+
       if (files.DataMigrationList.Any())
       {
-        List<Task> taskList = new List<Task>();
+        _logger.LogInformation($"****** No of files found: {files.DataMigrationList.Count()}");
+
         foreach (var file in files.DataMigrationList)
         {
           var fileContentString = await _awsS3Service.ReadObjectDataStringAsync(file.FileKey, _s3ConfigurationInfo.DataMigrationBucketName);
           var fileObject = await _awsS3Service.ReadObjectData(file.FileKey, _s3ConfigurationInfo.DataMigrationBucketName);
 
-          var client = _httpClientFactory.CreateClient("CiiApi");
+          var client = _httpClientFactory.CreateClient("DataMigrationApi");
           using (var formData = new MultipartFormDataContent())
           {
             using (var s3DataStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(fileContentString)))
@@ -92,22 +94,21 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
               {
                 var fileKey = GetUploadFileKey(file.FileKey, true);
                 await _awsS3Service.WritingAFileDataAsync(fileKey, "text/csv", _s3ConfigurationInfo.DataMigrationBucketName, fileContentString);
-                taskList.Add(_wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Completed }));
+                await _wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Completed });
               }
               else
               {
                 var fileKey = GetUploadFileKey(file.FileKey, false);
                 await _awsS3Service.WritingAFileDataAsync(fileKey, "text/csv", _s3ConfigurationInfo.DataMigrationBucketName, fileContentString);
-                taskList.Add(_wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Failed }));
+                await _wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Failed });
               }
-            }
-
-            if (taskList.Count > 0)
-            {
-              await Task.WhenAll(taskList);
-            }
+            }            
           }
         }
+      }
+      else
+      {
+        _logger.LogInformation($"****** No files found ******");
       }
     }
 
