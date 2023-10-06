@@ -11,7 +11,7 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Jobs
     private readonly DataMigrationAppSettings _appSettings;
     private readonly IFileUploadJobService _fileUploadJobService;
     private readonly ILogger _logger;
-    
+    private bool isRunning = false;
 
     public FileUploadJob(ILogger<FileUploadJob> logger, DataMigrationAppSettings appSettings, IServiceScopeFactory factory)
     {
@@ -26,15 +26,31 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Jobs
       {
         int interval = _appSettings.DataMigrationJobSettings.DataMigrationFileUploadJobFrequencyInMinutes * 60000;
 
-        _logger.LogInformation("*******************************************************************************************");
-        _logger.LogInformation("");
-        _logger.LogInformation("DataMigration File Upload Job started at: {time}", DateTimeOffset.Now);
+        _logger.LogInformation("Job is Running:", isRunning);
 
-        await _fileUploadJobService.PerformFileUploadJobAsync();
+        try
+        {
+          if (!isRunning)
+          {
+            isRunning = true;
 
-        _logger.LogInformation("DataMigration File Upload Job finished at: {time}", DateTimeOffset.Now);
-        _logger.LogInformation("");
-        _logger.LogInformation("*******************************************************************************************");
+            _logger.LogInformation("*******************************************************************************************");
+            _logger.LogInformation("");
+            _logger.LogInformation("DataMigration File Upload Job started at: {time}", DateTimeOffset.Now);
+
+            await _fileUploadJobService.PerformFileUploadJobAsync();
+
+            _logger.LogInformation("DataMigration File Upload Job finished at: {time}", DateTimeOffset.Now);
+            _logger.LogInformation("");
+            _logger.LogInformation("*******************************************************************************************");
+
+            isRunning = false;
+          }
+        }
+        catch (Exception ex)
+        {
+          isRunning = false;          
+        }
 
         await Task.Delay(interval, stoppingToken);
       }
