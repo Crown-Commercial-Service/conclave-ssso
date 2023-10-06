@@ -198,8 +198,7 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Wrapper
     {
       var clientName = wrapperApi switch
       {
-        WrapperApi.Organisation => "OrgWrapperApi",
-        WrapperApi.Contact => "ContactWrapperApi",
+        WrapperApi.Organisation => "OrgWrapperApi",        
         _ => "UserWrapperApi"
       };
       var client = _httpClientFactory.CreateClient(clientName);

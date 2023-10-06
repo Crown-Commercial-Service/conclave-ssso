@@ -26,7 +26,7 @@ using IAwsS3Service = CcsSso.Core.DataMigrationJobScheduler.Contracts.IAwsS3Serv
 using AwsS3Service = CcsSso.Core.DataMigrationJobScheduler.Services.AwsS3Service;
 using CcsSso.Core.DataMigrationJobScheduler.Wrapper.Contracts;
 
-using IWrapperApiService= CcsSso.Core.DataMigrationJobScheduler.Wrapper.Contracts.IWrapperApiService;
+using IWrapperApiService = CcsSso.Core.DataMigrationJobScheduler.Wrapper.Contracts.IWrapperApiService;
 using WrapperApiService = CcsSso.Core.DataMigrationJobScheduler.Wrapper.WrapperApiService;
 using IWrapperOrganisationService = CcsSso.Core.DataMigrationJobScheduler.Wrapper.Contracts.IWrapperOrganisationService;
 using WrapperOrganisationService = CcsSso.Core.DataMigrationJobScheduler.Wrapper.WrapperOrganisationService;
@@ -37,7 +37,7 @@ namespace CcsSso.Core.DataMigrationJobScheduler
   {
     private static bool vaultEnabled;
     private static string vaultSource;
-    private static string path = "/conclave-sso/delegation-job/";
+    private static string path = "/conclave-sso/data-migration-job/";
     private static IAwsParameterStoreService _awsParameterStoreService;
     private static ProgramHelpers _programHelpers;
 
@@ -68,8 +68,8 @@ namespace CcsSso.Core.DataMigrationJobScheduler
 
         ConfigureServices(services, appSettings);
         ConfigureContexts(services, appSettings);
-				ConfigureHttpClients(services, appSettings);
-				ConfigureJobs(services);
+        ConfigureHttpClients(services, appSettings);
+        ConfigureJobs(services);
       });
     }
 
@@ -92,7 +92,6 @@ namespace CcsSso.Core.DataMigrationJobScheduler
     private static void ConfigureContexts(IServiceCollection services, DataMigrationAppSettings appSettings)
     {
       services.AddScoped(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
-      services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(appSettings.DbConnection));
     }
 
     private static DataMigrationAppSettings GetConfigurationDetails(HostBuilderContext hostContext)
@@ -100,27 +99,21 @@ namespace CcsSso.Core.DataMigrationJobScheduler
       string dbConnection;
       string conclaveLoginUrl;
       DataMigrationJobSettings fileUploadJob;
-			WrapperApiSettings wrapperApiSettings;
-      CiiAPI ciiAPI;
+      WrapperApiSettings wrapperApiSettings;
+      DataMigrationAPI dataMigrationAPI;
       Model.S3ConfigurationInfo s3configInfo;
 
-			var config = hostContext.Configuration;
-      dbConnection = config["DbConnection"];
-      conclaveLoginUrl = config["ConclaveLoginUrl"];
+      var config = hostContext.Configuration;
       fileUploadJob = config.GetSection("DataMigrationJobSettings").Get<DataMigrationJobSettings>();
       wrapperApiSettings = config.GetSection("WrapperApiSettings").Get<WrapperApiSettings>();
-      ciiAPI=config.GetSection("Cii").Get<CiiAPI>();
+      dataMigrationAPI = config.GetSection("DataMigrationAPI").Get<DataMigrationAPI>();
       s3configInfo = config.GetSection("S3ConfigurationInfo").Get<Model.S3ConfigurationInfo>();
-
-
 
       var appSettings = new DataMigrationAppSettings()
       {
-        DbConnection = dbConnection,
-        ConclaveLoginUrl=conclaveLoginUrl,
-        DataMigrationJobSettings=new DataMigrationJobSettings
+        DataMigrationJobSettings = new DataMigrationJobSettings
         {
-          DataMigrationFileUploadJobFrequencyInMinutes=fileUploadJob.DataMigrationFileUploadJobFrequencyInMinutes
+          DataMigrationFileUploadJobFrequencyInMinutes = fileUploadJob.DataMigrationFileUploadJobFrequencyInMinutes
         },
         WrapperApiSettings = new WrapperApiSettings
         {
@@ -128,43 +121,43 @@ namespace CcsSso.Core.DataMigrationJobScheduler
           ApiGatewayEnabledOrgUrl = wrapperApiSettings.ApiGatewayEnabledOrgUrl,
           ApiGatewayDisabledOrgUrl = wrapperApiSettings.ApiGatewayDisabledOrgUrl
         },
-        CiiAPI=new CiiAPI
+        DataMigrationAPI = new DataMigrationAPI
         {
-          Url=ciiAPI.Url,
-          Token=ciiAPI.Token
+          Url = dataMigrationAPI.Url,
+          Token = dataMigrationAPI.Token
         },
-        S3configInfo=new Model.S3ConfigurationInfo
+        S3configInfo = new Model.S3ConfigurationInfo
         {
-         AccessKeyId=s3configInfo.AccessKeyId,
-          AccessSecretKey=s3configInfo.AccessSecretKey,
-          ServiceUrl=s3configInfo.ServiceUrl,
-          FileAccessExpirationInHours=s3configInfo.FileAccessExpirationInHours,
-          DataMigrationBucketName=s3configInfo.DataMigrationBucketName,
-          DataMigrationTemplateFolderName=s3configInfo.DataMigrationTemplateFolderName,
-          DataMigrationFolderName=s3configInfo.DataMigrationFolderName,
-          DataMigrationSuccessFolderName=s3configInfo.DataMigrationSuccessFolderName,
-          DataMigrationFailedFolderName=s3configInfo.DataMigrationFailedFolderName
+          AccessKeyId = s3configInfo.AccessKeyId,
+          AccessSecretKey = s3configInfo.AccessSecretKey,
+          ServiceUrl = s3configInfo.ServiceUrl,
+          FileAccessExpirationInHours = s3configInfo.FileAccessExpirationInHours,
+          DataMigrationBucketName = s3configInfo.DataMigrationBucketName,
+          DataMigrationTemplateFolderName = s3configInfo.DataMigrationTemplateFolderName,
+          DataMigrationFolderName = s3configInfo.DataMigrationFolderName,
+          DataMigrationSuccessFolderName = s3configInfo.DataMigrationSuccessFolderName,
+          DataMigrationFailedFolderName = s3configInfo.DataMigrationFailedFolderName
         }
-			};
+      };
       return appSettings;
     }
-		private static void ConfigureHttpClients(IServiceCollection services, DataMigrationAppSettings appSettings)
-		{
-			services.AddHttpClient("OrgWrapperApi", c =>
-			{
-				c.BaseAddress = new Uri(appSettings.IsApiGatewayEnabled ? appSettings.WrapperApiSettings.ApiGatewayEnabledOrgUrl : appSettings.WrapperApiSettings.ApiGatewayDisabledOrgUrl);
-				c.DefaultRequestHeaders.Add("X-API-Key", appSettings.WrapperApiSettings.OrgApiKey);
-			});
-      services.AddHttpClient("CiiApi", c =>
+    private static void ConfigureHttpClients(IServiceCollection services, DataMigrationAppSettings appSettings)
+    {
+      services.AddHttpClient("OrgWrapperApi", c =>
       {
-        c.BaseAddress = new Uri(appSettings.CiiAPI.Url);
-        c.DefaultRequestHeaders.Add("x-api-key", appSettings.CiiAPI.Token);
+        c.BaseAddress = new Uri(appSettings.IsApiGatewayEnabled ? appSettings.WrapperApiSettings.ApiGatewayEnabledOrgUrl : appSettings.WrapperApiSettings.ApiGatewayDisabledOrgUrl);
+        c.DefaultRequestHeaders.Add("X-API-Key", appSettings.WrapperApiSettings.OrgApiKey);
+      });
+      services.AddHttpClient("DataMigrationApi", c =>
+      {
+        c.BaseAddress = new Uri(appSettings.DataMigrationAPI.Url);
+        c.DefaultRequestHeaders.Add("x-api-key", appSettings.DataMigrationAPI.Token);
       });
     }
-		private static void ConfigureServices(IServiceCollection services, DataMigrationAppSettings appSettings)
+    private static void ConfigureServices(IServiceCollection services, DataMigrationAppSettings appSettings)
     {
       services.AddSingleton(s => appSettings);
-      
+
 
       services.AddSingleton<ApplicationConfigurationInfo, ApplicationConfigurationInfo>();
       services.AddHttpClient();
@@ -178,61 +171,44 @@ namespace CcsSso.Core.DataMigrationJobScheduler
       services.AddSingleton<IAwsS3Service, AwsS3Service>();
       services.AddSingleton(s =>
       {
-          var s3Configuration = new S3ConfigurationInfo
-          {
-            ServiceUrl = appSettings.S3configInfo.ServiceUrl,
-            AccessKeyId = appSettings.S3configInfo.AccessKeyId,
-            AccessSecretKey = appSettings.S3configInfo.AccessSecretKey,
-            FileAccessExpirationInHours = appSettings.S3configInfo.FileAccessExpirationInHours,
-            DataMigrationBucketName = appSettings.S3configInfo.DataMigrationBucketName,
-            DataMigrationTemplateFolderName = appSettings.S3configInfo.DataMigrationTemplateFolderName,
-            DataMigrationSuccessFolderName = appSettings.S3configInfo.DataMigrationSuccessFolderName,
-            DataMigrationFailedFolderName=appSettings.S3configInfo.DataMigrationFailedFolderName,
-            DataMigrationFolderName=appSettings.S3configInfo.DataMigrationFolderName
-          };
+        var s3Configuration = new S3ConfigurationInfo
+        {
+          ServiceUrl = appSettings.S3configInfo.ServiceUrl,
+          AccessKeyId = appSettings.S3configInfo.AccessKeyId,
+          AccessSecretKey = appSettings.S3configInfo.AccessSecretKey,
+          FileAccessExpirationInHours = appSettings.S3configInfo.FileAccessExpirationInHours,
+          DataMigrationBucketName = appSettings.S3configInfo.DataMigrationBucketName,
+          DataMigrationTemplateFolderName = appSettings.S3configInfo.DataMigrationTemplateFolderName,
+          DataMigrationSuccessFolderName = appSettings.S3configInfo.DataMigrationSuccessFolderName,
+          DataMigrationFailedFolderName = appSettings.S3configInfo.DataMigrationFailedFolderName,
+          DataMigrationFolderName = appSettings.S3configInfo.DataMigrationFolderName
+        };
 
-          return s3Configuration;
-        });
+        return s3Configuration;
+      });
     }
 
     private static DataMigrationAppSettings GetAWSConfiguration()
     {
-      string dbConnection;
       DataMigrationJobSettings dataMigrationJobSettings;
-			WrapperApiSettings wrapperApiSettings;
-      CiiAPI ciiAPI;
+      WrapperApiSettings wrapperApiSettings;
+      DataMigrationAPI dataMigrationAPI;
       Model.S3ConfigurationInfo s3configInfo;
-      
-			_programHelpers = new ProgramHelpers();
+
+      _programHelpers = new ProgramHelpers();
       _awsParameterStoreService = new AwsParameterStoreService();
 
       var parameters = _programHelpers.LoadAwsSecretsAsync(_awsParameterStoreService).Result;
 
-			var dbName = _awsParameterStoreService.FindParameterByName(parameters, path + "DbName");
-      var dbConnectionEndPoint = _awsParameterStoreService.FindParameterByName(parameters, path + "DbConnection");
-      var conclaveLoginUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "conclaveLoginUrl");
-			
-
-			if (!string.IsNullOrEmpty(dbName))
-      {
-        dbConnection = UtilityHelper.GetDatbaseConnectionString(dbName, dbConnectionEndPoint);
-      }
-      else
-      {
-        dbConnection = dbConnectionEndPoint;
-      }
-
       ReadFromAWS(out dataMigrationJobSettings, parameters);
       ReadFromAWS(out wrapperApiSettings, parameters);
-      ReadFromAWS(out ciiAPI, parameters);
+      ReadFromAWS(out dataMigrationAPI, parameters);
       ReadFromAWS(out s3configInfo, parameters);
 
-			return new DataMigrationAppSettings()
+      return new DataMigrationAppSettings()
       {
-        DbConnection = dbConnection,
-        ConclaveLoginUrl= conclaveLoginUrl,
-				WrapperApiSettings = wrapperApiSettings,
-        CiiAPI= ciiAPI
+        WrapperApiSettings = wrapperApiSettings,
+        DataMigrationAPI = dataMigrationAPI
       };
     }
     private static void ReadFromAWS(out DataMigrationJobSettings dataMigrationJobSettings, List<Parameter> parameters)
@@ -240,13 +216,13 @@ namespace CcsSso.Core.DataMigrationJobScheduler
       dataMigrationJobSettings = (DataMigrationJobSettings)_programHelpers.FillAwsParamsValue(typeof(DataMigrationJobSettings), parameters);
     }
 
-		private static void ReadFromAWS(out WrapperApiSettings wrapperApiSettings, List<Parameter> parameters)
-		{
-			wrapperApiSettings = (WrapperApiSettings)_programHelpers.FillWrapperApiSettingsAwsParamsValue(typeof(WrapperApiSettings), parameters);
-		}
-    private static void ReadFromAWS(out CiiAPI ciiAPI, List<Parameter> parameters)
+    private static void ReadFromAWS(out WrapperApiSettings wrapperApiSettings, List<Parameter> parameters)
     {
-      ciiAPI = (CiiAPI)_programHelpers.FillCiiApiAwsParamsValue(typeof(CiiAPI), parameters);
+      wrapperApiSettings = (WrapperApiSettings)_programHelpers.FillWrapperApiSettingsAwsParamsValue(typeof(WrapperApiSettings), parameters);
+    }
+    private static void ReadFromAWS(out DataMigrationAPI dataMigrationApi, List<Parameter> parameters)
+    {
+      dataMigrationApi = (DataMigrationAPI)_programHelpers.FillCiiApiAwsParamsValue(typeof(DataMigrationAPI), parameters);
     }
     private static void ReadFromAWS(out Model.S3ConfigurationInfo s3configInfo, List<Parameter> parameters)
     {

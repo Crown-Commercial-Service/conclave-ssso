@@ -13,7 +13,9 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Contracts
     string GeneratePreSignedURL(string fileKey, string bucketName, int duration);
 
     Task<string> ReadObjectDataStringAsync(string fileKey, string bucketName);
+
     Task<byte[]> ReadObjectData(string fileKey, string bucketName);
+    
     Task WritingAFileDataAsync(string fileKey, string contentType, string bucketName, string fileContent);
   }
 }

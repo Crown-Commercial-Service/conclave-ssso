@@ -4,12 +4,10 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Model
 {
   public class DataMigrationAppSettings
   {
-    public string DbConnection { get; set; }
-    public  string ConclaveLoginUrl { get; set; }
     public DataMigrationJobSettings DataMigrationJobSettings { get; set; }
     public WrapperApiSettings WrapperApiSettings { get; set; }
     public bool IsApiGatewayEnabled { get; set; }
-    public CiiAPI CiiAPI { get; set; }
+    public DataMigrationAPI DataMigrationAPI { get; set; }
     public S3ConfigurationInfo S3configInfo { get; set; }
 	}
 
@@ -24,11 +22,13 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Model
   {
     public int DataMigrationFileUploadJobFrequencyInMinutes { get; set; }
   }
-  public class CiiAPI
+
+  public class DataMigrationAPI
   {
     public string Url { get; set; }
     public string Token { get; set; }
   }
+
   public class S3ConfigurationInfo
   {
     public string ServiceUrl { get; set; }
@@ -40,8 +40,8 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Model
     public string DataMigrationBucketName { get; set; }
 
     public string DataMigrationTemplateFolderName { get; set; }
-    public string DataMigrationFolderName { get; set; }
 
+    public string DataMigrationFolderName { get; set; }
     public string DataMigrationSuccessFolderName { get; set; }
     public string DataMigrationFailedFolderName { get; set; }
 

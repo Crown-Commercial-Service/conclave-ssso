@@ -1,15 +1,8 @@
 ﻿using CcsSso.Core.DataMigrationJobScheduler.Contracts;
-using CcsSso.Core.DataMigrationJobScheduler.Contracts;
 using CcsSso.Core.DataMigrationJobScheduler.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CcsSso.Core.DataMigrationJobScheduler.Jobs
 {

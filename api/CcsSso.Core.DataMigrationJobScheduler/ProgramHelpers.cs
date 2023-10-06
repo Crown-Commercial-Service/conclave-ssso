@@ -8,7 +8,7 @@ namespace CcsSso.Core.DataMigrationJobScheduler
   public class ProgramHelpers
   {
     private readonly IAwsParameterStoreService _awsParameterStoreService;
-    private static string path = "/conclave-sso/datamigration-fileupload-job/";
+    private static string path = "/conclave-sso/data-migration-job/";
 
     public ProgramHelpers()
     {
@@ -49,16 +49,17 @@ namespace CcsSso.Core.DataMigrationJobScheduler
     {
       dynamic? returnParams = null;
 
-      if (objType == typeof(CiiAPI))
+      if (objType == typeof(DataMigrationAPI))
       {
-        returnParams = new CiiAPI()
+        returnParams = new DataMigrationAPI()
         {
-          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "Cii/Url"),
-          Token = _awsParameterStoreService.FindParameterByName(parameters, path + "Cii/Token"),
+          Url = _awsParameterStoreService.FindParameterByName(parameters, path + "DataMigrationAPI/Url"),
+          Token = _awsParameterStoreService.FindParameterByName(parameters, path + "DataMigrationAPI/Token"),
         };
       }
       return returnParams;
     }
+
     public dynamic FillS3ConfigInfo(Type objType, List<Parameter> parameters)
     {
       dynamic? returnParams = null;
@@ -80,6 +81,7 @@ namespace CcsSso.Core.DataMigrationJobScheduler
       }
       return returnParams;
     }
+
     public async Task<List<Parameter>> LoadAwsSecretsAsync(IAwsParameterStoreService _awsParameterStoreService)
     {
       return await _awsParameterStoreService.GetParameters(path);
