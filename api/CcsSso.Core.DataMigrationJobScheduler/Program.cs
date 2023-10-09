@@ -185,11 +185,14 @@ namespace CcsSso.Core.DataMigrationJobScheduler
       WrapperApiSettings wrapperApiSettings;
       DataMigrationAPI dataMigrationAPI;
       Model.S3ConfigurationInfo s3configInfo;
+      bool isApiGatewayEnabled = false;
 
       _programHelpers = new ProgramHelpers();
       _awsParameterStoreService = new AwsParameterStoreService();
 
       var parameters = _programHelpers.LoadAwsSecretsAsync(_awsParameterStoreService).Result;
+
+      isApiGatewayEnabled = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "IsApiGatewayEnabled"));
 
       ReadFromAWS(out dataMigrationJobSettings, parameters);
       ReadFromAWS(out wrapperApiSettings, parameters);
@@ -199,7 +202,11 @@ namespace CcsSso.Core.DataMigrationJobScheduler
       return new DataMigrationAppSettings()
       {
         WrapperApiSettings = wrapperApiSettings,
-        DataMigrationAPI = dataMigrationAPI
+        DataMigrationAPI = dataMigrationAPI,
+        S3configInfo=s3configInfo,
+        DataMigrationJobSettings = dataMigrationJobSettings,
+        IsApiGatewayEnabled=isApiGatewayEnabled
+        
       };
     }
     private static void ReadFromAWS(out DataMigrationJobSettings dataMigrationJobSettings, List<Parameter> parameters)

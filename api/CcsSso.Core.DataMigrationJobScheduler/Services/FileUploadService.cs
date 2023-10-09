@@ -7,6 +7,8 @@ using S3ConfigurationInfo = CcsSso.Core.DataMigrationJobScheduler.Model.S3Config
 using IAwsS3Service = CcsSso.Core.DataMigrationJobScheduler.Contracts.IAwsS3Service;
 using CcsSso.Domain.Contracts;
 using IWrapperOrganisationService = CcsSso.Core.DataMigrationJobScheduler.Wrapper.Contracts.IWrapperOrganisationService;
+using System.Net;
+using CcsSso.Domain.Exceptions;
 
 namespace CcsSso.Core.DataMigrationJobScheduler.Services
 {
@@ -72,6 +74,10 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
                   _logger.LogInformation($"****** Updating File Status as Completed : {file.Id} ***********");
                   await _wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Completed });
                 }
+                else if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+                {
+                  throw new CcsSsoException("CII_SERVICE_IS_TEMPORARILY_UNAVAILABLE");
+                }
                 else
                 {
                   _logger.LogInformation($"****** File Upload to Data Migration API failed : {file.FileKey} ***********");
@@ -92,7 +98,7 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
       }
       catch(Exception ex)
       {
-        _logger.LogError("Error while executing a Job" + ex.Message);
+        _logger.LogError($"Error While Running a Job. Error-{ex.Message}");
       }
     }
 
