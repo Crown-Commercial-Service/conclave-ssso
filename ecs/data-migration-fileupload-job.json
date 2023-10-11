@@ -14,7 +14,7 @@
     "containerDefinitions": [
         {
             "name": "%SPACE%-data-migration-fileupload-job",
-            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-data-migration-fileupload-job:latest",
+            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-data-migration-fileupload-job:%SPACE%-data-migration-fileupload-job-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
