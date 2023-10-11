@@ -16,14 +16,10 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
       {
       _logger = logger;
       _s3ConfigurationInfo = s3ConfigurationInfo;
-      _logger.LogInformation("Investigation issue : ServiceURL" + _s3ConfigurationInfo?.ServiceUrl);
-      _logger.LogInformation("Investigation issue : AccessKeyId" + _s3ConfigurationInfo?.AccessKeyId);
-      _logger.LogInformation("Investigation issue : AccessSecretKey" + _s3ConfigurationInfo?.AccessSecretKey);
-      AmazonS3Config amazonS3Config = new AmazonS3Config
-        {
+       AmazonS3Config amazonS3Config = new AmazonS3Config
+       {
           ServiceURL = _s3ConfigurationInfo.ServiceUrl
-        };
-      _logger.LogInformation("Investigation issue : S3configServiceUrl" + amazonS3Config.ServiceURL);
+       };
       _client = new AmazonS3Client(_s3ConfigurationInfo.AccessKeyId, _s3ConfigurationInfo.AccessSecretKey, amazonS3Config);
       }
 
