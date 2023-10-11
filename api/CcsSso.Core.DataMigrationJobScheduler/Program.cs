@@ -95,6 +95,7 @@ namespace CcsSso.Core.DataMigrationJobScheduler
       Model.S3ConfigurationInfo s3configInfo;
 
       var config = hostContext.Configuration;
+      bool.TryParse(config["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
       fileUploadJob = config.GetSection("DataMigrationJobSettings").Get<DataMigrationJobSettings>();
       wrapperApiSettings = config.GetSection("WrapperApiSettings").Get<WrapperApiSettings>();
       dataMigrationAPI = config.GetSection("DataMigrationAPI").Get<DataMigrationAPI>();
@@ -102,6 +103,7 @@ namespace CcsSso.Core.DataMigrationJobScheduler
 
       var appSettings = new DataMigrationAppSettings()
       {
+        IsApiGatewayEnabled = isApiGatewayEnabled,
         DataMigrationJobSettings = new DataMigrationJobSettings
         {
           DataMigrationFileUploadJobFrequencyInMinutes = fileUploadJob.DataMigrationFileUploadJobFrequencyInMinutes
