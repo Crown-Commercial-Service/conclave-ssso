@@ -15,7 +15,7 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Wrapper
 
     public async Task<DataMigrationFileListResponse> GetDataMigrationFilesList()
     {
-      return await _wrapperApiService.GetAsync<DataMigrationFileListResponse>(WrapperApi.Organisation, $"migrations/files/validated?PageSize=10&CurrentPage=1", "ERROR_RETRIEVING_DM_FILES",false);
+      return await _wrapperApiService.GetAsync<DataMigrationFileListResponse>(WrapperApi.Organisation, $"migrations/files?PageSize=10&CurrentPage=1&isProcessedFilesOnly=true", "ERROR_RETRIEVING_DM_FILES",false);
     }
 
     public async Task UpdateDataMigrationFileStatus(DataMigrationStatusRequest dataMigrationStatusRequest)

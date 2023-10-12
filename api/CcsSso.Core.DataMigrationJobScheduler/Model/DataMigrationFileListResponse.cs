@@ -9,10 +9,9 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Model
     public string FileKey { get; set; }
   }
 
-  public class DataMigrationFileListResponse
+  public class DataMigrationFileListResponse : PaginationInfo
   {
     public List<DataMigrationFileListInfo> DataMigrationList { get; set; }
-    public int filesCount { get; set; }
   }
 
   public class DataMigrationStatusRequest

@@ -38,9 +38,9 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
     {
       try
       {
-        int filesCount = 0;
+        int? filesCount = 0;
         var files = await _wrapperOrganisationService.GetDataMigrationFilesList();
-        filesCount = files.filesCount;
+        filesCount = files?.RowCount;
         _logger.LogInformation($"****** Total no of files:{filesCount} *******");
         if (filesCount>0)
         {
@@ -97,7 +97,7 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
                 }
               }
               files= await _wrapperOrganisationService.GetDataMigrationFilesList();
-              filesCount = files.filesCount;
+              filesCount = files?.RowCount;
               _logger.LogInformation($"****** Total no of files: {files.DataMigrationList.Count()} *******");
             }
             else
