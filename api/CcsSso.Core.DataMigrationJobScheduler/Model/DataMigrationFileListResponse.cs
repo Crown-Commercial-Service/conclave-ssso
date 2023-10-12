@@ -12,6 +12,7 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Model
   public class DataMigrationFileListResponse
   {
     public List<DataMigrationFileListInfo> DataMigrationList { get; set; }
+    public int filesCount { get; set; }
   }
 
   public class DataMigrationStatusRequest

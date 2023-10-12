@@ -38,65 +38,79 @@ namespace CcsSso.Core.DataMigrationJobScheduler.Services
     {
       try
       {
+        int filesCount = 0;
         var files = await _wrapperOrganisationService.GetDataMigrationFilesList();
-
-        if (files.DataMigrationList.Any())
+        filesCount = files.filesCount;
+        _logger.LogInformation($"****** Total no of files:{filesCount} *******");
+        if (filesCount>0)
         {
-          _logger.LogInformation($"****** No of files found: {files.DataMigrationList.Count()}");
-
-          foreach (var file in files.DataMigrationList)
+          do
           {
-            _logger.LogInformation($"****** Reading File from S3: {file.FileKey} ***********");
-            var fileContentString = await _awsS3Service.ReadObjectDataStringAsync(file.FileKey, _s3ConfigurationInfo.DataMigrationBucketName);
-            _logger.LogInformation($"****** Downloaded File from S3 : {file.FileKey} ***********");
-
-            var client = _httpClientFactory.CreateClient("DataMigrationApi");
-            using (var formData = new MultipartFormDataContent())
+            if (files.DataMigrationList.Any())
             {
-              _logger.LogInformation($"****** Converting File string Data to Memory Stream : {file.FileKey} ***********");
-              using (var s3DataStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(fileContentString)))
+              _logger.LogInformation($"****** No of files found: {files.DataMigrationList.Count()}");
+
+              foreach (var file in files.DataMigrationList)
               {
-                // Create a StreamContent from the S3 data stream
-                var streamContent = new StreamContent(s3DataStream);
+                _logger.LogInformation($"****** Reading File from S3: {file.FileKey} ***********");
+                var fileContentString = await _awsS3Service.ReadObjectDataStringAsync(file.FileKey, _s3ConfigurationInfo.DataMigrationBucketName);
+                _logger.LogInformation($"****** Downloaded File from S3 : {file.FileKey} ***********");
 
-                // Add the StreamContent to the form data
-                formData.Add(streamContent, "file", "data.csv"); // You can specify the file name as needed
+                var client = _httpClientFactory.CreateClient("DataMigrationApi");
+                using (var formData = new MultipartFormDataContent())
+                {
+                  _logger.LogInformation($"****** Converting File string Data to Memory Stream : {file.FileKey} ***********");
+                  using (var s3DataStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(fileContentString)))
+                  {
+                    // Create a StreamContent from the S3 data stream
+                    var streamContent = new StreamContent(s3DataStream);
 
-                _logger.LogInformation($"****** Uploading File to Data Migration API : {file.FileKey} ***********");
-                // Make a POST request to the CII API
-                var response = await client.PostAsync($"data-migration/migrate/format/csv", formData);
-                if (response.IsSuccessStatusCode)
-                {
-                  _logger.LogInformation($"****** File Uploaded Successfully to Data Migration API : {file.FileKey} ***********");
-                  var fileKey = GetUploadFileKey(file.FileKey, true);
-                  _logger.LogInformation($"****** Moving file to Success Folder : {fileKey} ***********");
-                  await _awsS3Service.WritingAFileDataAsync(fileKey, "text/csv", _s3ConfigurationInfo.DataMigrationBucketName, fileContentString);
-                  _logger.LogInformation($"****** Updating File Status as Completed : {file.Id} ***********");
-                  await _wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Completed });
-                }
-                else if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
-                {
-                  throw new CcsSsoException("CII_SERVICE_IS_TEMPORARILY_UNAVAILABLE");
-                }
-                else
-                {
-                  _logger.LogInformation($"****** File Upload to Data Migration API failed : {file.FileKey} ***********");
-                  var fileKey = GetUploadFileKey(file.FileKey, false);
-                  _logger.LogInformation($"****** Moving file to Failed Folder : {fileKey} ***********");
-                  await _awsS3Service.WritingAFileDataAsync(fileKey, "text/csv", _s3ConfigurationInfo.DataMigrationBucketName, fileContentString);
-                  _logger.LogInformation($"****** Updating File Status as Failed : {file.Id} ***********");
-                  await _wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Failed });
+                    // Add the StreamContent to the form data
+                    formData.Add(streamContent, "file", "data.csv"); // You can specify the file name as needed
+
+                    _logger.LogInformation($"****** Uploading File to Data Migration API : {file.FileKey} ***********");
+                    // Make a POST request to the CII API
+                    var response = await client.PostAsync($"data-migration/migrate/format/csv", formData);
+                    if (response.IsSuccessStatusCode)
+                    {
+                      _logger.LogInformation($"****** File Uploaded Successfully to Data Migration API : {file.FileKey} ***********");
+                      var fileKey = GetUploadFileKey(file.FileKey, true);
+                      _logger.LogInformation($"****** Moving file to Success Folder : {fileKey} ***********");
+                      await _awsS3Service.WritingAFileDataAsync(fileKey, "text/csv", _s3ConfigurationInfo.DataMigrationBucketName, fileContentString);
+                      _logger.LogInformation($"****** Updating File Status as Completed : {file.Id} ***********");
+                      await _wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Completed });
+                    }
+                    else if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+                    {
+                      throw new CcsSsoException("CII_SERVICE_IS_TEMPORARILY_UNAVAILABLE");
+                    }
+                    else
+                    {
+                      _logger.LogInformation($"****** File Upload to Data Migration API failed : {file.FileKey} ***********");
+                      var fileKey = GetUploadFileKey(file.FileKey, false);
+                      _logger.LogInformation($"****** Moving file to Failed Folder : {fileKey} ***********");
+                      await _awsS3Service.WritingAFileDataAsync(fileKey, "text/csv", _s3ConfigurationInfo.DataMigrationBucketName, fileContentString);
+                      _logger.LogInformation($"****** Updating File Status as Failed : {file.Id} ***********");
+                      await _wrapperOrganisationService.UpdateDataMigrationFileStatus(new DataMigrationStatusRequest { Id = file.Id, DataMigrationStatus = DataMigrationStatus.Failed });
+                    }
+                  }
                 }
               }
+              files= await _wrapperOrganisationService.GetDataMigrationFilesList();
+              filesCount = files.filesCount;
+              _logger.LogInformation($"****** Total no of files: {files.DataMigrationList.Count()} *******");
+            }
+            else
+            {
+              _logger.LogInformation($"****** No files found ******");
             }
           }
+          while ( filesCount>0 );
+          
+        
         }
-        else
-        {
-          _logger.LogInformation($"****** No files found ******");
         }
-      }
-      catch(Exception ex)
+      catch (Exception ex)
       {
         _logger.LogError($"Error While Running a Job. Error-{ex.Message}");
       }
