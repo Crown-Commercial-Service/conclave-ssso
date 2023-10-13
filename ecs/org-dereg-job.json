@@ -9,14 +9,14 @@
     "requiresCompatibilities": [
         "FARGATE"
     ],
-    "cpu": "512",
-    "memory": "1024",
+    "cpu": "1024",
+    "memory": "4096",
     "containerDefinitions": [
         {
             "name": "%SPACE%-org-dereg-job",
             "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-org-dereg-job:%SPACE%-org-dereg-job-%BUILD_NUMBER%",
             "cpu": 0,
-            "memoryReservation": 512,
+            "memoryReservation": 4096,
             "portMappings": [
                 {
                     "containerPort": 5000,
