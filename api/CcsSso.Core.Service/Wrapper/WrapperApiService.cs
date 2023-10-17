@@ -22,11 +22,8 @@ namespace CcsSso.Core.Service.Wrapper
 		public async Task<T> GetAsync<T>(WrapperApi wrapperApi, string url, string cacheKey, string errorMessage)
 		{
 			var client = GetHttpClient(wrapperApi);
-			Console.WriteLine($"Investigation-6775-URL-Response-client - {client.BaseAddress}");
-			Console.WriteLine($"Investigation-6775-URL-Response-url - {url}");
+
 			var response = await client.GetAsync(url);
-			var uri = response.RequestMessage.RequestUri.AbsoluteUri;
-			Console.WriteLine($"Investigation-6775-URL-response-statuscode - {response.StatusCode},{uri}");
 			var responseString = await response.Content.ReadAsStringAsync();
 			
 			if (response.IsSuccessStatusCode)
