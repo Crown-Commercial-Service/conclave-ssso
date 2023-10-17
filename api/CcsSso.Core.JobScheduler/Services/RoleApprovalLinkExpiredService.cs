@@ -100,12 +100,12 @@ namespace CcsSso.Core.JobScheduler.Services
 
       if (expiredUserAccessRolePendingList.Any())
       {
-        await RemoveExpiredApprovalPendingRolesAsync(expiredUserAccessRolePendingList);
-        _logger.LogInformation($"****** Successfully updated the expired roles.");
+				_logger.LogInformation($"****** Sending email if it is eligible.");
+				await SendEmail(expiredUserAccessRolePendingList, approvalRoleConfig);
+				_logger.LogInformation($"****** Finished sending email.");
 
-        _logger.LogInformation($"****** Sending email if it is eligible.");
-        await SendEmail(expiredUserAccessRolePendingList, approvalRoleConfig);
-        _logger.LogInformation($"****** Finished sending email.");
+				await RemoveExpiredApprovalPendingRolesAsync(expiredUserAccessRolePendingList);
+        _logger.LogInformation($"****** Successfully updated the expired roles.");
       }
     }
 
