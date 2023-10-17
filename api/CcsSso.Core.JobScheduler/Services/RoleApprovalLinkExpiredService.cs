@@ -136,7 +136,7 @@ namespace CcsSso.Core.JobScheduler.Services
         }
 
         var emailList = new List<string>() { pendingNotification.UserName };
-        if (pendingNotification.UserId != pendingNotification.CreatedUserId)
+        if (pendingNotification.UserName != pendingNotification.CreatedBy)
         {
           if (pendingNotification.CreatedBy != null)
           {
