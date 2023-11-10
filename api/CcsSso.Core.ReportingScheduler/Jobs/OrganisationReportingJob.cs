@@ -98,7 +98,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             catch (Exception ex)
             {
 
-              _logger.LogError($" XXXXXXXXXXXX Failed to retrieve organisation details from Wrapper Api. OrganisationId ={eachModifiedOrg.Item2} and Message - {ex.Message} XXXXXXXXXXXX");
+              _logger.LogError($" XXXXXXXXXXXX Failed to retrieve organisation details from Wrapper Api. OrganisationId ={eachModifiedOrg.Item1} and Message - {ex.Message} XXXXXXXXXXXX");
             }
 
             if (listOfAllModifiedOrg.Count != index && orgDetailList.Count < size)
@@ -177,31 +177,31 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       }
     }
 
-    private async Task<OrganisationProfileResponseInfo?> GetOrganisationDetails(Tuple<int, string> eachModifiedOrg, HttpClient client)
+    private async Task<OrganisationProfileResponseInfo?> GetOrganisationDetails(Tuple<string> eachModifiedOrg, HttpClient client)
     {
-      string url = $"organisation-profile/{eachModifiedOrg.Item2}";
+      string url = $"{eachModifiedOrg.Item1}";
       var response = await client.GetAsync(url);
 
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
-        _logger.LogInformation($"Retrived org details for orgId-{eachModifiedOrg.Item2}");
+        _logger.LogInformation($"Retrived org details for orgId-{eachModifiedOrg.Item1}");
 
         return JsonConvert.DeserializeObject<OrganisationProfileResponseInfo>(content);
       }
       else
       {
-        _logger.LogError($"No organisation retrived for orgId-{eachModifiedOrg.Item2}");
+        _logger.LogError($"No organisation retrived for orgId-{eachModifiedOrg.Item1}");
         return null;
       }
 
     }
 
-    public async Task<List<Tuple<int, string>>> GetModifiedOrganisationIds()
+    public async Task<List<Tuple<string>>> GetModifiedOrganisationIds()
     {
       var dataDuration = _appSettings.ReportDataDurations.OrganisationReportingDurationInMinutes;
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
-      List<Tuple<int, string>> modifiedOrgsList = new List<Tuple<int, string>>();
+      List<Tuple<string>> modifiedOrgsList = new List<Tuple<string>>();
 
       try
       {
@@ -211,12 +211,15 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         if (response.IsSuccessStatusCode)
         {
           var content = await response.Content.ReadAsStringAsync();
-          var orgsList = JsonConvert.DeserializeObject<OrganisationListResponse>(content);
+          var data = JsonConvert.DeserializeObject<OrganisationListResponse>(content);
+          if(data != null && data.OrgList != null && data.OrgList.Count > 0)
+          {
+            foreach ( var item in data.OrgList)
+            {
+              modifiedOrgsList.Add(new Tuple<string>(item.CiiOrganisationId));
+            }
+          }
         }
-        else
-        {
-          return null;
-        }          
       }
       catch (Exception ex)
       {
