@@ -58,6 +58,8 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     {
       try
       {
+        _logger.LogInformation("Log to check job");
+        
         var totalNumberOfItemsDuringThisSchedule = 0;
         var listOfAllModifiedOrg = await GetModifiedOrganisationIds();
 
