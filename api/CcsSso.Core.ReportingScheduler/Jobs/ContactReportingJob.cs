@@ -297,7 +297,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        string url = $"data/org-report?last-modified-date=" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+        string url = $"data/org-report?last-modified-date=" + untilDateTime.ToString("MM-dd-yyyy HH:mm:ss");
         var client = _httpClientFactory.CreateClient("ContactWrapperApi");
         var response = await client.GetAsync(url);
 
@@ -323,7 +323,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        string url = $"data/user-report?last-modified-date=" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+        string url = $"data/user-report?last-modified-date=" + untilDateTime.ToString("MM-dd-yyyy HH:mm:ss");
         var client = _httpClientFactory.CreateClient("ContactWrapperApi");
         var response = await client.GetAsync(url);
 
@@ -349,7 +349,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        string url = $"data/site-report?last-modified-date=" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+        string url = $"data/site-report?last-modified-date=" + untilDateTime.ToString("MM-dd-yyyy HH:mm:ss");
         var client = _httpClientFactory.CreateClient("ContactWrapperApi");
         var response = await client.GetAsync(url);
 
