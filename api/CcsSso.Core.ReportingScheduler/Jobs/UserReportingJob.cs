@@ -198,7 +198,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        var detectedUsers = _wrapperUserService.GetModifiedUsers(untilDateTime.ToString("dd-MM-yyyy HH:mm:ss")).Result;
+        var detectedUsers = _wrapperUserService.GetModifiedUsers(untilDateTime.ToString("MM-dd-yyyy HH:mm:ss")).Result;
         return detectedUsers;
       }
       catch (Exception ex)

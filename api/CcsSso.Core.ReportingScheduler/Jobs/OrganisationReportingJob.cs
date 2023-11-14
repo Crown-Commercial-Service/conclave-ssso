@@ -205,7 +205,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        string url = $"data?is-match-name=false&lastmodified-date-time=" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss") + "&IsPagination=" + false;
+        string url = $"data?is-match-name=false&lastmodified-date-time=" + untilDateTime.ToString("MM-dd-yyyy HH:mm:ss") + "&IsPagination=" + false;
         var client = _httpClientFactory.CreateClient("OrgWrapperApi");
         var response = await client.GetAsync(url);
         if (response.IsSuccessStatusCode)
