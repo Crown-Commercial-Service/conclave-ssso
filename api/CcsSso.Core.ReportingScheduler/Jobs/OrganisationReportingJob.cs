@@ -42,6 +42,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         int interval = _appSettings.ScheduleJobSettings.OrganisationReportingJobScheduleInMinutes * 60000; //15000;
 
         _logger.LogInformation("Organisation Reporting Job  started at: {time}", DateTimeOffset.Now);
+        _logger.LogInformation("Organisation Reporting Job  from p3sprint24");
         await PerformJob();
 
         _logger.LogInformation("Organisation Reporting Job  finished at: {time}", DateTimeOffset.Now);
