@@ -95,10 +95,10 @@ namespace CcsSso.Core.ReportingScheduler
 
             services.AddSingleton<ICSVConverter, CSVConverter>();
             services.AddSingleton<IFileUploadToCloud, FileUploadToCloud>();
-            //services.AddHostedService<OrganisationReportingJob>();
-            //services.AddHostedService<UserReportingJob>();
+            services.AddHostedService<OrganisationReportingJob>();
+            services.AddHostedService<UserReportingJob>();
             services.AddHostedService<ContactReportingJob>();
-            //services.AddHostedService<AuditReportingJob>();
+            services.AddHostedService<AuditReportingJob>();
           });
     }
 
