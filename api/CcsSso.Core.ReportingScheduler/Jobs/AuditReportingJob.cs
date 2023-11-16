@@ -57,6 +57,8 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     {
       try
       {
+        _logger.LogInformation("Audit Reporting Log - Testing");
+        
         var totalNumberOfItemsDuringThisSchedule = 0;
 
         var auditLogResponse = await GetModifiedAuditLog();
