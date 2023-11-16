@@ -88,7 +88,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             try
             {
               _logger.LogInformation("Calling wrapper API to get User Details");
-              var client = _httpClientFactory.CreateClient("WrapperApi");
+              var client = _httpClientFactory.CreateClient("UserWrapperApi");
               var userDetails = await GetUserDetails(eachModifiedUser, client);
               if (userDetails != null)
               {
@@ -172,7 +172,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
     private async Task<UserProfileResponseInfo?> GetUserDetails(UserReportDetail eachModifiedUser, HttpClient client)
     {
-      string url = $"user-profile/?user-id={HttpUtility.UrlEncode(eachModifiedUser.UserName)}"; // Send as Query String as expected in the Wrapper API - GetUser method
+      string url = $"?user-id={HttpUtility.UrlEncode(eachModifiedUser.UserName)}"; // Send as Query String as expected in the Wrapper API - GetUser method
 
       var response = await client.GetAsync(url);
 
@@ -198,7 +198,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        var detectedUsers = _wrapperUserService.GetModifiedUsers(untilDateTime.ToString("dd-MM-yyyy HH:mm:ss")).Result;
+        var detectedUsers = _wrapperUserService.GetModifiedUsers(untilDateTime.ToString("MM-dd-yyyy HH:mm:ss")).Result;
         return detectedUsers;
       }
       catch (Exception ex)
@@ -211,4 +211,3 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     }
   }
 }
-
