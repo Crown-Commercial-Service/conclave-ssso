@@ -23,4 +23,9 @@ namespace CcsSso.Domain.Constants
     Original,
     Assigned
   }
+  public enum DormantBy
+  {
+    Manual,
+    Job
+  }
 }

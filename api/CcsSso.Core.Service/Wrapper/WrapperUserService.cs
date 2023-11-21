@@ -96,5 +96,14 @@ namespace CcsSso.Core.Service.Wrapper
     {
       return await _wrapperApiService.DeleteAsync<bool>(WrapperApi.User, $"admin?user-id={userName}", "ERROR_DELETING_USER");
     }
+
+		public async Task DeactivateUserAsync(string userName, DormantBy dormantBy)
+		{
+       await _wrapperApiService.PutAsync(WrapperApi.User, $"deactivation?user-id={userName}&dormant-by={dormantBy}",null,"ERROR_DEACTIVATING_USER");
+    }
+    public async Task SendUserDormantNotification(UserDormantNotificationDetail userNotifyDetails)
+    {
+      await _wrapperApiService.PutAsync(WrapperApi.User, $"dormant-notification", userNotifyDetails, "ERROR_SENDING_DORMANT_NOTIFICATION");
+    }
   }
 }
