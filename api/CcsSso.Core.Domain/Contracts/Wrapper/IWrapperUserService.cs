@@ -36,7 +36,7 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
     Task DeleteUserAsync(string userName);
     Task<bool> DeleteAdminUserAsync(string userName);
 		Task DeactivateUserAsync(string userName, DormantBy dormantBy);
-		Task SendUserDormantNotification(UserDormantNotificationDetail userNotifyDetails);
+		Task<UserDetailsResponse> GetUserDetails(string userName);
 
   }
 }

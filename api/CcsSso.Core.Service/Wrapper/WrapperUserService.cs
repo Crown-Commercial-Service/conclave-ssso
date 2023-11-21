@@ -7,6 +7,7 @@ using CcsSso.Shared.Domain.Constants;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace CcsSso.Core.Service.Wrapper
 {
@@ -101,9 +102,10 @@ namespace CcsSso.Core.Service.Wrapper
 		{
        await _wrapperApiService.PutAsync(WrapperApi.User, $"deactivation?user-id={userName}&dormant-by={dormantBy}",null,"ERROR_DEACTIVATING_USER");
     }
-    public async Task SendUserDormantNotification(UserDormantNotificationDetail userNotifyDetails)
+    public async Task<UserDetailsResponse> GetUserDetails(string userName)
     {
-      await _wrapperApiService.PutAsync(WrapperApi.User, $"dormant-notification", userNotifyDetails, "ERROR_SENDING_DORMANT_NOTIFICATION");
+      userName = HttpUtility.UrlEncode(userName);
+      return await _wrapperApiService.GetAsync<UserDetailsResponse>(WrapperApi.User, $"?user-id={userName}", $"UserDetails-{userName}", "ERROR_GETTING_USER_DETAILS");
     }
   }
 }

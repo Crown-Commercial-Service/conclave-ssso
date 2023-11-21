@@ -62,6 +62,34 @@ namespace CcsSso.Core.DormancyJobScheduler
       }
       return returnParams;
     }
+    public dynamic FillEmailSettingsAwsParamsValue(Type objType, List<Parameter> parameters)
+    {
+      dynamic? returnParams = null;
+
+      if (objType == typeof(EmailSettings))
+      {
+        returnParams = new EmailSettings()
+        {
+          ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "EmailSettings/ApiKey"),
+          UserDormantNotificationTemplateId = _awsParameterStoreService.FindParameterByName(parameters, path + "EmailSettings/UserDormantNotificationTemplateId"),
+        };
+      }
+      return returnParams;
+    }
+    public dynamic FillNotificationApiSettingsAwsParamsValue(Type objType, List<Parameter> parameters)
+    {
+      dynamic? returnParams = null;
+
+      if (objType == typeof(NotificationApiSettings))
+      {
+        returnParams = new NotificationApiSettings()
+        {
+          NotificationApiUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiUrl"),
+          NotificationApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiKey"),
+        };
+      }
+      return returnParams;
+    }
     public async Task<List<Parameter>> LoadAwsSecretsAsync(IAwsParameterStoreService _awsParameterStoreService)
     {
       return await _awsParameterStoreService.GetParameters(path);

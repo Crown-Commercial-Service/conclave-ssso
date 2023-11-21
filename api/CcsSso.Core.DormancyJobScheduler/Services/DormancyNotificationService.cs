@@ -36,17 +36,19 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
     private readonly DormancyAppSettings _appSettings;
     private readonly IWrapperUserService _wrapperUserService;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IEmailProviderService _emaillProviderService;
 
     public DormancyNotificationService(IDateTimeService dateTimeService,
       DormancyAppSettings appSettings,
       ILogger<IDormancyNotificationService> logger,
-      IWrapperUserService wrapperUserService, IHttpClientFactory httpClientFactory)
+      IWrapperUserService wrapperUserService, IHttpClientFactory httpClientFactory, IEmailProviderService emaillProviderService)
     {
       _dateTimeService = dateTimeService;
       _appSettings = appSettings;
       _wrapperUserService = wrapperUserService;
       _logger = logger;
       _httpClientFactory = httpClientFactory;
+      _emaillProviderService = emaillProviderService;
     }
     public async Task PerformDormancyNotificationJobAsync()
     {
@@ -61,17 +63,41 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
       _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
       _logger.LogInformation($"User Dormant Notification list count: {usersWithinExpiredNotice.Count()}");
       _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-      UserDormantNotificationDetail userDetails = new UserDormantNotificationDetail();
-      userDetails.userNames = usersWithinExpiredNotice;
-
       try
       {
-        await _wrapperUserService.SendUserDormantNotification(userDetails);
+        foreach (var user in usersWithinExpiredNotice)
+        {
+          _logger.LogInformation($"User Detail to send Notification:{user}");
+          var userDetail = await _wrapperUserService.GetUserDetails(user);
+          if(userDetail==null)
+          {
+            throw new Exception("Error fetching user Details"+userDetail.UserName);
+          }
+          if (!userDetail.IsDormant)
+          {
+            var userEmailInfo = getDormantNotificationEmailInfo(user);
+            _emaillProviderService.SendEmailAsync(userEmailInfo);
+          }
+        }
       }
       catch (Exception ex)
       {
         _logger.LogInformation($"User Dormant Notification failed: {ex.Message}");
       }
+    }
+
+   
+    private EmailInfo getDormantNotificationEmailInfo(string toEmailId)
+    {
+      var emailTempalteId = _appSettings.EmailSettings.UserDormantNotificationTemplateId;
+
+      var emailInfo = new EmailInfo
+      {
+        To = toEmailId,
+        TemplateId = emailTempalteId,
+      };
+
+      return emailInfo;
     }
     private async Task<List<string>> GetUsersWithinExpiredNotice()
     {
