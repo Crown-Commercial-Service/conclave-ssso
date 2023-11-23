@@ -88,7 +88,7 @@ namespace CcsSso.Core.JobScheduler.Services
 
       if (relatedExpiredUserAccessRolePendingList.Any())
       {
-        await RemoveExpiredApprovalPendingRolesAsync(relatedExpiredUserAccessRolePendingList);
+        await DeleteAndNotifyForExpiredRoles(relatedExpiredUserAccessRolePendingList);
         _logger.LogInformation($"****** Successfully updated the related expired roles.");
       }
     }
@@ -99,47 +99,34 @@ namespace CcsSso.Core.JobScheduler.Services
 
       if (expiredUserAccessRolePendingList.Any())
       {
-        await RemoveExpiredApprovalPendingRolesAsync(expiredUserAccessRolePendingList, approvalRoleConfig);
+        await DeleteAndNotifyForExpiredRoles(expiredUserAccessRolePendingList, approvalRoleConfig);
         _logger.LogInformation($"****** Successfully updated the expired roles.");
       }
     }
 
-    private async Task RemoveExpiredApprovalPendingRolesAsync(List<UserAccessRolePendingDetailsInfo> expiredUserAccessRolePendingList, List<RoleApprovalConfigurationInfo> approvalRoleConfig = null)
-    {
-      var userAccessRolePendingExpiredList = PendingRolesList.UserAccessRolePendingDetailsInfo
-        .Where(pr => !pr.IsDeleted && expiredUserAccessRolePendingList.Select(x => x.Id).Contains(pr.Id)).ToList();
-
-      if (userAccessRolePendingExpiredList.Any())
-      {
-        await DeleteAndNotifyForExpiredRoles(expiredUserAccessRolePendingList, approvalRoleConfig, userAccessRolePendingExpiredList);
-      }
-    }
-
-    private async Task DeleteAndNotifyForExpiredRoles(List<UserAccessRolePendingDetailsInfo> expiredUserAccessRolePendingList, List<RoleApprovalConfigurationInfo> approvalRoleConfig, List<UserAccessRolePendingDetailsInfo> userAccessRolePendingExpiredList)
+    private async Task DeleteAndNotifyForExpiredRoles(List<UserAccessRolePendingDetailsInfo> expiredUserAccessRolePendingList, List<RoleApprovalConfigurationInfo> approvalRoleConfig = null)
     {
       foreach (var pr in PendingRolesList.UserAccessRolePendingDetailsInfo.Distinct())
       {
-        var orgEligibleRoleIds = userAccessRolePendingExpiredList.Select(r => r.OrganisationEligibleRoleId).ToList();
-
         if (approvalRoleConfig is not null)
         {
-          await _wrapperUserService.RemoveApprovalPendingRoles(pr.UserName, orgEligibleRoleIds, UserPendingRoleStaus.Expired).ContinueWith(async t =>
+          await _wrapperUserService.RemoveApprovalPendingRoles(pr.UserName, new List<int>() { pr.OrganisationEligibleRoleId }, UserPendingRoleStaus.Expired).ContinueWith(async t =>
           {
             if (t.IsCompletedSuccessfully)
             {
               _logger.LogInformation($"****** Sending email if it is eligible.");
               await SendEmail(new List<UserAccessRolePendingDetailsInfo>() { pr }, approvalRoleConfig);
-              _logger.LogInformation($"****** Finished sending email to {pr.UserName}.");
+              _logger.LogInformation($"****** Finished sending email to {pr.UserName} for role id: {pr.OrganisationEligibleRoleId}.");
             }
             else
             {
-              Console.WriteLine($"****** Error deleting role pending request for user {pr.UserName} and role {string.Join(",", orgEligibleRoleIds)}: {JsonConvert.SerializeObject(t.Exception)}");
+              Console.WriteLine($"****** Error deleting role pending request for user {pr.UserName} and role {pr.OrganisationEligibleRoleId}: {JsonConvert.SerializeObject(t.Exception)}");
             }
           });
         }
         else
         {
-          await _wrapperUserService.RemoveApprovalPendingRoles(pr.UserName, orgEligibleRoleIds, UserPendingRoleStaus.Expired);
+          await _wrapperUserService.RemoveApprovalPendingRoles(pr.UserName, new List<int>() { pr.OrganisationEligibleRoleId }, UserPendingRoleStaus.Expired);
         }
       };
     }
