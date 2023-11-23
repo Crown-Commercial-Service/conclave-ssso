@@ -26,7 +26,9 @@ namespace CcsSso.Core.DormancyJobScheduler
           DeactivationNotificationInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/DeactivationNotificationInMinutes")),
           DormancyNotificationJobFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/DormancyNotificationJobFrequencyInMinutes")),
           UserDeactivationDurationInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/UserDeactivationDurationInMinutes")),
-          UserDeactivationJobFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/UserDeactivationJobFrequencyInMinutes"))
+          UserDeactivationJobFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/UserDeactivationJobFrequencyInMinutes")),
+          DormancyNotificationJobEnable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/DormancyNotificationJobEnable")),
+          UserDeactivationJobEnable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/UserDeactivationJobEnable")),
 
         };
       }
@@ -86,6 +88,24 @@ namespace CcsSso.Core.DormancyJobScheduler
         {
           NotificationApiUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiUrl"),
           NotificationApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiKey"),
+        };
+      }
+      return returnParams;
+    }
+
+    public dynamic FillAuth0SettingsAwsParamsValue(Type objType, List<Parameter> parameters)
+    {
+      dynamic? returnParams = null;
+
+      if (objType == typeof(Auth0ConfigurationInfo))
+      {
+        returnParams = new Auth0ConfigurationInfo()
+        {
+          
+          ClientSecret = _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/ClientSecret"),
+          ClientId = _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/ClientId"),
+          ManagementApiBaseUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/ManagementApiBaseUrl"),
+          ManagementApiIdentifier = _awsParameterStoreService.FindParameterByName(parameters, path + "Auth0/ManagementApiIdentifier"),
         };
       }
       return returnParams;

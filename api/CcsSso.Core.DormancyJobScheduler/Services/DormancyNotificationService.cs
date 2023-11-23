@@ -37,11 +37,13 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
     private readonly IWrapperUserService _wrapperUserService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IEmailProviderService _emaillProviderService;
+    private readonly IAuth0Service _auth0Service;
 
     public DormancyNotificationService(IDateTimeService dateTimeService,
       DormancyAppSettings appSettings,
       ILogger<IDormancyNotificationService> logger,
-      IWrapperUserService wrapperUserService, IHttpClientFactory httpClientFactory, IEmailProviderService emaillProviderService)
+      IWrapperUserService wrapperUserService, IHttpClientFactory httpClientFactory, IEmailProviderService emaillProviderService,
+      IAuth0Service auth0Service)
     {
       _dateTimeService = dateTimeService;
       _appSettings = appSettings;
@@ -49,11 +51,57 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
       _logger = logger;
       _httpClientFactory = httpClientFactory;
       _emaillProviderService = emaillProviderService;
+      _auth0Service = auth0Service;
     }
     public async Task PerformDormancyNotificationJobAsync()
     {
-      var usersWithinExpiredNotice = await GetUsersWithinExpiredNotice();
-      if (!usersWithinExpiredNotice.Any())
+      //var usersWithinExpiredNotice = await GetUsersWithinExpiredNotice();
+      int page = 1;
+      int pageSize = 100;
+      decimal totalPages = 1;
+      decimal total = 0;
+      string fromDate = string.Empty, toDate = string.Empty;
+      DateTime currentDate = _dateTimeService.GetUTCNow();
+      //Get the notify duration
+      int notifyduration = _appSettings.DormancyJobSettings.DeactivationNotificationInMinutes;
+
+      if (_appSettings.DormancyJobSettings.UserDeactivationDurationInMinutes < 1440) //for testing purpose only
+      {
+        fromDate = currentDate.AddMinutes(-_appSettings.DormancyJobSettings.UserDeactivationDurationInMinutes).AddMinutes(-notifyduration)
+          .AddMinutes(-_appSettings.DormancyJobSettings.UserDeactivationDurationInMinutes).ToUniversalTime()
+                         .ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'");
+        toDate = currentDate.AddMinutes(-_appSettings.DormancyJobSettings.UserDeactivationDurationInMinutes).AddMinutes(-notifyduration).ToUniversalTime()
+                         .ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'");
+      }
+      else
+      {
+        // Calculate the date 12 months ago and add 7 days to send the user Notification        
+        fromDate = toDate = currentDate.AddMinutes(-_appSettings.DormancyJobSettings.UserDeactivationDurationInMinutes).AddMinutes(-notifyduration).ToString("yyyy-MM-dd");
+      }
+
+      _logger.LogInformation($"Dormant From Date: {fromDate}, To Date: {toDate}");
+      try
+      {
+        do
+        {
+          UserListDetails userDetails = await _auth0Service.GetUsersByLastLogin(fromDate, toDate, page - 1, pageSize);
+          total = userDetails.Total;
+          totalPages = Math.Ceiling(total / pageSize);
+          page++;
+          SendNotification(userDetails);
+
+        } while (page <= totalPages);
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError($"*****Error while getting users Deactivation Notice list, exception message =  {ex.Message}");
+      }
+
+    }
+
+    public async void SendNotification(UserListDetails userDetails)
+    {
+      if (userDetails == null)
       {
         _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         _logger.LogInformation("No users found for  dormant notification.");
@@ -61,21 +109,21 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
         return;
       }
       _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-      _logger.LogInformation($"User Dormant Notification list count: {usersWithinExpiredNotice.Count()}");
+      _logger.LogInformation($"User Dormant Notification list count: {userDetails.Users.Count()}");
       _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
       try
       {
-        foreach (var user in usersWithinExpiredNotice)
+        foreach (var user in userDetails.Users)
         {
-          _logger.LogInformation($"User Detail to send Notification:{user}");
-          var userDetail = await _wrapperUserService.GetUserDetails(user);
-          if(userDetail==null)
+          _logger.LogInformation($"User Detail to send Notification:{user.Email}");
+          var userDetail = await _wrapperUserService.GetUserDetails(user.Email);
+          if (userDetail == null)
           {
-            throw new Exception("Error fetching user Details"+userDetail.UserName);
+            throw new Exception("Error fetching user Details" + user.Email);
           }
           if (!userDetail.IsDormant)
           {
-            var userEmailInfo = getDormantNotificationEmailInfo(user);
+            var userEmailInfo = getDormantNotificationEmailInfo(user.Email);
             _emaillProviderService.SendEmailAsync(userEmailInfo);
           }
         }
@@ -86,7 +134,6 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
       }
     }
 
-   
     private EmailInfo getDormantNotificationEmailInfo(string toEmailId)
     {
       var emailTempalteId = _appSettings.EmailSettings.UserDormantNotificationTemplateId;
@@ -99,43 +146,5 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
 
       return emailInfo;
     }
-    private async Task<List<string>> GetUsersWithinExpiredNotice()
-    {
-      var usersNeedNotificationEmail = new List<string>();
-      try
-      {
-        DateTime currentDate =_dateTimeService.GetUTCNow();
-        //Get the notify duration
-        int notifyduration = _appSettings.DormancyJobSettings.DeactivationNotificationInMinutes;
-        // Calculate the date 12 months ago and add 7 days to send the user Notification
-        string dormantNotifyDuration = currentDate.AddMinutes(-_appSettings.DormancyJobSettings.UserDeactivationDurationInMinutes).AddMinutes(notifyduration).AddDays(-1).ToString("yyyy-MM-dd");
-        _logger.LogInformation($"User Dormant Notification Date: {dormantNotifyDuration}");
-        var client = _httpClientFactory.CreateClient();
-        client.BaseAddress = new Uri(_appSettings.SecurityApiSettings.Url);
-        client.DefaultRequestHeaders.Add("X-API-Key", _appSettings.SecurityApiSettings.ApiKey);
-        var url = "security/data/users?date=" + HttpUtility.UrlEncode(dormantNotifyDuration) + "&is-exact=true";
-        var response = await client.GetAsync(url);
-        if (response.IsSuccessStatusCode)
-        {
-          var content = await response.Content.ReadAsStringAsync();
-          var result = JsonConvert.DeserializeObject<List<string>>(content);
-          usersNeedNotificationEmail = result;
-        }
-        else if (response.StatusCode == HttpStatusCode.NotFound)
-        {
-          throw new ResourceNotFoundException();
-        }
-        else
-        {
-          throw new CcsSsoException("ERROR_RETRIEVING_USER_DETAILS_FOR_DORMANT_NOTIFICATION");
-        }
-      }
-      catch (Exception ex)
-      {
-        _logger.LogError($"*****Error while getting users Deactivation Notice list, exception message =  {ex.Message}");
-      }
-      return usersNeedNotificationEmail;
-    }
   }
-
 }

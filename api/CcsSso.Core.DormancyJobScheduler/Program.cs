@@ -22,6 +22,7 @@ using Microsoft.Extensions.Hosting;
 using CcsSso.Core.DormancyJobScheduler.Contracts;
 using CcsSso.Core.DormancyJobScheduler.Jobs;
 using CcsSso.Core.DormancyJobScheduler.Services;
+using CcsSso.Core.DormancyJobScheduler.Helper;
 
 namespace CcsSso.Core.DormancyJobScheduler
 {
@@ -60,8 +61,8 @@ namespace CcsSso.Core.DormancyJobScheduler
 
         ConfigureServices(services, appSettings);
         ConfigureContexts(services, appSettings);
-				ConfigureHttpClients(services, appSettings);
-				ConfigureJobs(services);
+        ConfigureHttpClients(services, appSettings);
+        ConfigureJobs(services, appSettings);
       });
     }
 
@@ -88,18 +89,20 @@ namespace CcsSso.Core.DormancyJobScheduler
 
     private static DormancyAppSettings GetConfigurationDetails(HostBuilderContext hostContext)
     {
-			DormancyJobSettings scheduleJob;
-			WrapperApiSettings wrapperApiSettings;
+      DormancyJobSettings scheduleJob;
+      WrapperApiSettings wrapperApiSettings;
       SecurityApiSettings securityApiSettings;
       EmailSettings emailSettings;
       NotificationApiSettings notificationApiSettings;
+      Auth0ConfigurationInfo auth0ConfigurationInfo;
       var config = hostContext.Configuration;
-			bool.TryParse(config["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
+      bool.TryParse(config["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
       scheduleJob = config.GetSection("DormancyJobSettings").Get<DormancyJobSettings>();
       wrapperApiSettings = config.GetSection("WrapperApiSettings").Get<WrapperApiSettings>();
       securityApiSettings = config.GetSection("SecurityApiSettings").Get<SecurityApiSettings>();
       emailSettings = config.GetSection("EmailSettings").Get<EmailSettings>();
       notificationApiSettings = config.GetSection("NotificationApiSettings").Get<NotificationApiSettings>();
+      auth0ConfigurationInfo = config.GetSection("Auth0").Get<Auth0ConfigurationInfo>();
 
       var appSettings = new DormancyAppSettings()
       {
@@ -108,8 +111,10 @@ namespace CcsSso.Core.DormancyJobScheduler
         {
           DormancyNotificationJobFrequencyInMinutes = scheduleJob.DormancyNotificationJobFrequencyInMinutes,
           DeactivationNotificationInMinutes = scheduleJob.DeactivationNotificationInMinutes,
-          UserDeactivationDurationInMinutes=scheduleJob.UserDeactivationDurationInMinutes,
-          UserDeactivationJobFrequencyInMinutes=scheduleJob.UserDeactivationJobFrequencyInMinutes
+          UserDeactivationDurationInMinutes = scheduleJob.UserDeactivationDurationInMinutes,
+          UserDeactivationJobFrequencyInMinutes = scheduleJob.UserDeactivationJobFrequencyInMinutes,
+          DormancyNotificationJobEnable = scheduleJob.DormancyNotificationJobEnable,
+          UserDeactivationJobEnable = scheduleJob.UserDeactivationJobEnable,
 
         },
         WrapperApiSettings = new WrapperApiSettings
@@ -118,32 +123,39 @@ namespace CcsSso.Core.DormancyJobScheduler
           ApiGatewayEnabledUserUrl = wrapperApiSettings.ApiGatewayEnabledUserUrl,
           ApiGatewayDisabledUserUrl = wrapperApiSettings.ApiGatewayDisabledUserUrl
         },
-        SecurityApiSettings=new SecurityApiSettings
+        SecurityApiSettings = new SecurityApiSettings
         {
-          Url=securityApiSettings.Url,
-          ApiKey=securityApiSettings.ApiKey
+          Url = securityApiSettings.Url,
+          ApiKey = securityApiSettings.ApiKey
         },
         EmailSettings = new EmailSettings
         {
           ApiKey = emailSettings.ApiKey,
-         UserDormantNotificationTemplateId=emailSettings.UserDormantNotificationTemplateId
+          UserDormantNotificationTemplateId = emailSettings.UserDormantNotificationTemplateId
         },
         NotificationApiSettings = new NotificationApiSettings
         {
           NotificationApiUrl = notificationApiSettings.NotificationApiUrl,
           NotificationApiKey = notificationApiSettings.NotificationApiKey
+        },
+        Auth0ConfigurationInfo = new Auth0ConfigurationInfo
+        {
+          ClientId = auth0ConfigurationInfo.ClientId,
+          ClientSecret = auth0ConfigurationInfo.ClientSecret,
+          ManagementApiBaseUrl = auth0ConfigurationInfo.ManagementApiBaseUrl,
+          ManagementApiIdentifier = auth0ConfigurationInfo.ManagementApiIdentifier,
         }
       };
 
       return appSettings;
     }
-		private static void ConfigureHttpClients(IServiceCollection services, DormancyAppSettings appSettings)
-		{
-			services.AddHttpClient("UserWrapperApi", c =>
-			{
-				c.BaseAddress = new Uri(appSettings.IsApiGatewayEnabled ? appSettings.WrapperApiSettings.ApiGatewayEnabledUserUrl : appSettings.WrapperApiSettings.ApiGatewayDisabledUserUrl);
-				c.DefaultRequestHeaders.Add("X-API-Key", appSettings.WrapperApiSettings.UserApiKey);
-			});
+    private static void ConfigureHttpClients(IServiceCollection services, DormancyAppSettings appSettings)
+    {
+      services.AddHttpClient("UserWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(appSettings.IsApiGatewayEnabled ? appSettings.WrapperApiSettings.ApiGatewayEnabledUserUrl : appSettings.WrapperApiSettings.ApiGatewayDisabledUserUrl);
+        c.DefaultRequestHeaders.Add("X-API-Key", appSettings.WrapperApiSettings.UserApiKey);
+      });
       services.AddHttpClient("SecurityWrapperApi", c =>
       {
         c.BaseAddress = new Uri(appSettings.SecurityApiSettings.Url);
@@ -155,7 +167,7 @@ namespace CcsSso.Core.DormancyJobScheduler
         c.DefaultRequestHeaders.Add("X-API-Key", appSettings.NotificationApiSettings.NotificationApiKey);
       });
     }
-		private static void ConfigureServices(IServiceCollection services, DormancyAppSettings appSettings)
+    private static void ConfigureServices(IServiceCollection services, DormancyAppSettings appSettings)
     {
       services.AddSingleton(s => appSettings);
       services.AddSingleton(s =>
@@ -168,8 +180,10 @@ namespace CcsSso.Core.DormancyJobScheduler
         return emailConfigurationInfo;
       });
       services.AddSingleton<ApplicationConfigurationInfo, ApplicationConfigurationInfo>();
+      services.AddSingleton<Auth0TokenHelper>();
       services.AddHttpClient();
       services.AddScoped<IDateTimeService, DateTimeService>();
+      services.AddScoped<IAuth0Service, Auth0Service>();
       services.AddScoped<IUserDeactivationService, UserDeactivationService>();
       services.AddScoped<IDormancyNotificationService, DormancyNotificationService>();
       services.AddScoped<IWrapperApiService, WrapperApiService>();
@@ -180,10 +194,11 @@ namespace CcsSso.Core.DormancyJobScheduler
     private static DormancyAppSettings GetAWSConfiguration()
     {
       DormancyJobSettings dormancyJobSettings;
-			WrapperApiSettings wrapperApiSettings;
+      WrapperApiSettings wrapperApiSettings;
       SecurityApiSettings securityApiSettings;
       EmailSettings emailSettings;
       NotificationApiSettings notificationApiSettings;
+      Auth0ConfigurationInfo auth0ConfigurationInfo;
 
       _programHelpers = new ProgramHelpers();
       _awsParameterStoreService = new AwsParameterStoreService();
@@ -195,17 +210,19 @@ namespace CcsSso.Core.DormancyJobScheduler
       ReadFromAWS(out securityApiSettings, parameters);
       ReadFromAWS(out emailSettings, parameters);
       ReadFromAWS(out notificationApiSettings, parameters);
+      ReadFromAWS(out auth0ConfigurationInfo, parameters);
 
       return new DormancyAppSettings()
       {
         DormancyJobSettings = dormancyJobSettings,
-				WrapperApiSettings = wrapperApiSettings,
-        SecurityApiSettings=securityApiSettings,
+        WrapperApiSettings = wrapperApiSettings,
+        SecurityApiSettings = securityApiSettings,
         EmailSettings = emailSettings,
-        NotificationApiSettings = notificationApiSettings
+        NotificationApiSettings = notificationApiSettings,
+        Auth0ConfigurationInfo = auth0ConfigurationInfo,
       };
     }
-		private static void ReadFromAWS(out DormancyJobSettings dormancyJobSettings, List<Parameter> parameters)
+    private static void ReadFromAWS(out DormancyJobSettings dormancyJobSettings, List<Parameter> parameters)
     {
       dormancyJobSettings = (DormancyJobSettings)_programHelpers.FillAwsParamsValue(typeof(DormancyJobSettings), parameters);
     }
@@ -226,10 +243,17 @@ namespace CcsSso.Core.DormancyJobScheduler
     {
       notificationApiSettings = (NotificationApiSettings)_programHelpers.FillNotificationApiSettingsAwsParamsValue(typeof(NotificationApiSettings), parameters);
     }
-    private static void ConfigureJobs(IServiceCollection services)
+    private static void ReadFromAWS(out Auth0ConfigurationInfo notificationApiSettings, List<Parameter> parameters)
     {
-      services.AddHostedService<DormancyNotificationJob>();
-      services.AddHostedService<UserDeactivationJob>();
+      notificationApiSettings = (Auth0ConfigurationInfo)_programHelpers.FillAuth0SettingsAwsParamsValue(typeof(Auth0ConfigurationInfo), parameters);
+    }
+    private static void ConfigureJobs(IServiceCollection services, DormancyAppSettings appSettings)
+    {
+      if (appSettings.DormancyJobSettings.DormancyNotificationJobEnable)
+        services.AddHostedService<DormancyNotificationJob>();
+
+      if (appSettings.DormancyJobSettings.UserDeactivationJobEnable)
+        services.AddHostedService<UserDeactivationJob>();
     }
   }
-  }
+}
