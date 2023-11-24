@@ -62,7 +62,14 @@ namespace CcsSso.Core.JobScheduler.Jobs
 
         _logger.LogInformation($"****** Pending role approval request: {userPendingRole.UserAccessRolePendingDetailsInfo.Count()}");
 
-        await _roleDeleteExpiredNotificationService.PerformJobAsync(userPendingRole.UserAccessRolePendingDetailsInfo);
+        if (userPendingRole.UserAccessRolePendingDetailsInfo.Any())
+        {
+          await _roleDeleteExpiredNotificationService.PerformJobAsync(userPendingRole.UserAccessRolePendingDetailsInfo);
+        }
+        else
+        {
+          _logger.LogInformation($"****** No Pending role approval request found.");
+        }
 
       }
       catch (CcsSsoException ex) 
