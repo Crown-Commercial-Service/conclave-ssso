@@ -35,13 +35,12 @@ namespace CcsSso.Core.JobScheduler.Services
       _wrapperConfigurationService = wrapperConfigurationService;
       _wrapperUserService = wrapperUserService;
       _wrapperOrganisationService = wrapperOrganisationService;
-      PendingRolesList = new UserAccessRolePendingRequestDetails();
     }
 
 
     public async Task PerformJobAsync(List<UserAccessRolePendingDetailsInfo> pendingRoles)
     {
-      PendingRolesList.UserAccessRolePendingDetailsInfo = pendingRoles;
+      PendingRolesList = new UserAccessRolePendingRequestDetails() { UserAccessRolePendingDetailsInfo = pendingRoles };
       var approvalRoleConfig = await _wrapperConfigurationService.GetRoleApprovalConfigurationsAsync();
 
       foreach (var approvalRole in approvalRoleConfig)
@@ -89,7 +88,7 @@ namespace CcsSso.Core.JobScheduler.Services
 
       if (relatedExpiredUserAccessRolePendingList.Any())
       {
-        await RemoveExpiredApprovalPendingRolesAsync(relatedExpiredUserAccessRolePendingList);
+        await DeleteAndNotifyForExpiredRoles(relatedExpiredUserAccessRolePendingList);
         _logger.LogInformation($"****** Successfully updated the related expired roles.");
       }
     }
@@ -100,29 +99,36 @@ namespace CcsSso.Core.JobScheduler.Services
 
       if (expiredUserAccessRolePendingList.Any())
       {
-				_logger.LogInformation($"****** Sending email if it is eligible.");
-				await SendEmail(expiredUserAccessRolePendingList, approvalRoleConfig);
-				_logger.LogInformation($"****** Finished sending email.");
-
-				await RemoveExpiredApprovalPendingRolesAsync(expiredUserAccessRolePendingList);
+        await DeleteAndNotifyForExpiredRoles(expiredUserAccessRolePendingList, approvalRoleConfig);
         _logger.LogInformation($"****** Successfully updated the expired roles.");
       }
     }
 
-    private async Task RemoveExpiredApprovalPendingRolesAsync(List<UserAccessRolePendingDetailsInfo> userAccessRolePending)
+    private async Task DeleteAndNotifyForExpiredRoles(List<UserAccessRolePendingDetailsInfo> expiredUserAccessRolePendingList, List<RoleApprovalConfigurationInfo> approvalRoleConfig = null)
     {
-      var userAccessRolePendingExpiredList = PendingRolesList.UserAccessRolePendingDetailsInfo
-        .Where(pr => !pr.IsDeleted && userAccessRolePending.Select(x => x.Id).Contains(pr.Id)).ToList();
-
-      if (userAccessRolePendingExpiredList.Any())
+      foreach (var pr in PendingRolesList.UserAccessRolePendingDetailsInfo.Distinct())
       {
-        PendingRolesList.UserAccessRolePendingDetailsInfo.ForEach(async pr =>
+        if (approvalRoleConfig is not null)
         {
-          var orgEligibleRoleIds = userAccessRolePendingExpiredList.Select(r => r.OrganisationEligibleRoleId).ToList();
-          await _wrapperUserService.RemoveApprovalPendingRoles(pr.UserName, orgEligibleRoleIds, UserPendingRoleStaus.Expired);
-        });
-
-      }
+          await _wrapperUserService.RemoveApprovalPendingRoles(pr.UserName, new List<int>() { pr.OrganisationEligibleRoleId }, UserPendingRoleStaus.Expired).ContinueWith(async t =>
+          {
+            if (t.IsCompletedSuccessfully)
+            {
+              _logger.LogInformation($"****** Sending email if it is eligible.");
+              await SendEmail(new List<UserAccessRolePendingDetailsInfo>() { pr }, approvalRoleConfig);
+              _logger.LogInformation($"****** Finished sending email to {pr.UserName} for role id: {pr.OrganisationEligibleRoleId}.");
+            }
+            else
+            {
+              Console.WriteLine($"****** Error deleting role pending request for user {pr.UserName} and role {pr.OrganisationEligibleRoleId}: {JsonConvert.SerializeObject(t.Exception)}");
+            }
+          });
+        }
+        else
+        {
+          await _wrapperUserService.RemoveApprovalPendingRoles(pr.UserName, new List<int>() { pr.OrganisationEligibleRoleId }, UserPendingRoleStaus.Expired);
+        }
+      };
     }
 
     private async Task SendEmail(List<UserAccessRolePendingDetailsInfo> userAccessRolePending, List<RoleApprovalConfigurationInfo> approvalRoleConfig)
@@ -159,6 +165,7 @@ namespace CcsSso.Core.JobScheduler.Services
 
         foreach (var email in emailList)
         {
+          _logger.LogInformation($"****** Sending email for role rejection to user :{email}");
           await _emailSupportService.SendRoleRejectedEmailAsync(email, pendingNotification.UserName, serviceName);
         }
       }
