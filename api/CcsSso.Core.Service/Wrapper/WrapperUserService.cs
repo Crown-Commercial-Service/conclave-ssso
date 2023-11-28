@@ -7,6 +7,7 @@ using CcsSso.Shared.Domain.Constants;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace CcsSso.Core.Service.Wrapper
 {
@@ -76,7 +77,7 @@ namespace CcsSso.Core.Service.Wrapper
     {
       var url = $"{CiiOrganisationId}/users?search-string={filter.searchString}" +
                 $"&delegated-only={filter.isDelegatedOnly}&delegated-expired-only={filter.isDelegatedExpiredOnly}" +
-                $"&isAdmin={filter.isAdmin}&include-unverified-admin={filter.includeUnverifiedAdmin}&include-self={filter.includeSelf}";
+                $"&isAdmin={filter.isAdmin}&include-unverified-admin={filter.includeUnverifiedAdmin}&include-self={filter.includeSelf}&exclude-inactive={filter.excludeInactive}";
 
       var result = await _wrapperApiService.GetAsync<UserListResponseInfo>(WrapperApi.Organisation, url, $"{CacheKeyConstant.OrganisationUsers}", "ERROR_RETRIEVING_ORGANISATION_USERS");
       return result;
@@ -95,6 +96,16 @@ namespace CcsSso.Core.Service.Wrapper
     public async Task<bool> DeleteAdminUserAsync(string userName)
     {
       return await _wrapperApiService.DeleteAsync<bool>(WrapperApi.User, $"admin?user-id={userName}", "ERROR_DELETING_USER");
+    }
+
+		public async Task DeactivateUserAsync(string userName, DormantBy dormantBy)
+		{
+       await _wrapperApiService.PutAsync(WrapperApi.User, $"deactivation?user-id={userName}&dormant-by={dormantBy}",null,"ERROR_DEACTIVATING_USER");
+    }
+    public async Task<UserDetailsResponse> GetUserDetails(string userName)
+    {
+      userName = HttpUtility.UrlEncode(userName);
+      return await _wrapperApiService.GetAsync<UserDetailsResponse>(WrapperApi.User, $"?user-id={userName}", $"UserDetails-{userName}", "ERROR_GETTING_USER_DETAILS");
     }
   }
 }

@@ -5,6 +5,7 @@ using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Dtos.Wrapper;
+using CcsSso.Domain.Constants;
 using CcsSso.Dtos.Domain.Models;
 
 
@@ -34,6 +35,8 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
     Task<List<UserToDeleteResponse>> GetInActiveUsers(string createdOnUtc);
     Task DeleteUserAsync(string userName);
     Task<bool> DeleteAdminUserAsync(string userName);
+		Task DeactivateUserAsync(string userName, DormantBy dormantBy);
+		Task<UserDetailsResponse> GetUserDetails(string userName);
 
   }
 }
