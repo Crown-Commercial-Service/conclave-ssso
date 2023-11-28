@@ -22,6 +22,8 @@ namespace CcsSso.Core.Domain.Dtos.External
 
     [FromQuery(Name = "include-self")]
     public bool includeSelf { get; set; } = false;
+    [FromQuery(Name = "exclude-inactive")]
+    public bool excludeInactive { get; set; } = false;
 
 
   }

@@ -111,7 +111,8 @@ namespace CcsSso.Core.JobScheduler
               includeUnverifiedAdmin = false,
               isDelegatedExpiredOnly = false,
               isDelegatedOnly = false,
-              searchString = String.Empty
+              searchString = String.Empty,
+              excludeInactive=true
             };
 
             var userDeleteJobSetting = _appSettings.UserDeleteJobSettings.FirstOrDefault(ud => ud.ServiceClientId == (user.ServiceClientId ?? ""));

@@ -77,7 +77,7 @@ namespace CcsSso.Core.Service.Wrapper
     {
       var url = $"{CiiOrganisationId}/users?search-string={filter.searchString}" +
                 $"&delegated-only={filter.isDelegatedOnly}&delegated-expired-only={filter.isDelegatedExpiredOnly}" +
-                $"&isAdmin={filter.isAdmin}&include-unverified-admin={filter.includeUnverifiedAdmin}&include-self={filter.includeSelf}";
+                $"&isAdmin={filter.isAdmin}&include-unverified-admin={filter.includeUnverifiedAdmin}&include-self={filter.includeSelf}&exclude-inactive={filter.excludeInactive}";
 
       var result = await _wrapperApiService.GetAsync<UserListResponseInfo>(WrapperApi.Organisation, url, $"{CacheKeyConstant.OrganisationUsers}", "ERROR_RETRIEVING_ORGANISATION_USERS");
       return result;
