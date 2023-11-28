@@ -107,7 +107,7 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
             _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
             _logger.LogInformation($"User to be dormanted: {user.Email}");
             _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-            await _wrapperUserService.DeactivateUserAsync(user.Email, CcsSso.Domain.Constants.DormantBy.Job);
+            //await _wrapperUserService.DeactivateUserAsync(user.Email, CcsSso.Domain.Constants.DormantBy.Job);
           }
           catch (Exception ex)
           {
