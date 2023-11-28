@@ -9,7 +9,6 @@ namespace CcsSso.Core.DormancyJobScheduler.Model
     public SecurityApiSettings SecurityApiSettings { get; set; }
     public EmailSettings EmailSettings { get; set; }
     public NotificationApiSettings NotificationApiSettings { get; set; }
-    public Auth0ConfigurationInfo Auth0ConfigurationInfo { get; set; }
     public bool IsApiGatewayEnabled { get; set; }
   }
 
@@ -44,12 +43,5 @@ namespace CcsSso.Core.DormancyJobScheduler.Model
   {
     public string NotificationApiUrl { get; set; }
     public string NotificationApiKey { get; set; }
-  }
-  public class Auth0ConfigurationInfo
-  {
-    public string ClientId { get; set; }
-    public string ClientSecret { get; set; }
-    public string ManagementApiIdentifier { get; set; }
-    public string ManagementApiBaseUrl { get; set; }
   }
 }

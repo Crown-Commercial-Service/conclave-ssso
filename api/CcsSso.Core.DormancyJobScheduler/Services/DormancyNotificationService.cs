@@ -111,9 +111,10 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
       _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
       _logger.LogInformation($"User Dormant Notification list count: {userDetails.Users.Count()}");
       _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-      try
-      {
+    
         foreach (var user in userDetails.Users)
+        {
+        try
         {
           _logger.LogInformation($"User Detail to send Notification:{user.Email}");
           var userDetail = await _wrapperUserService.GetUserDetails(user.Email);
@@ -127,11 +128,12 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
             _emaillProviderService.SendEmailAsync(userEmailInfo);
           }
         }
+        catch (Exception ex)
+        {
+          _logger.LogInformation($"User Dormant Notification failed: {ex.Message}");
+        }
       }
-      catch (Exception ex)
-      {
-        _logger.LogInformation($"User Dormant Notification failed: {ex.Message}");
-      }
+    
     }
 
     private EmailInfo getDormantNotificationEmailInfo(string toEmailId)

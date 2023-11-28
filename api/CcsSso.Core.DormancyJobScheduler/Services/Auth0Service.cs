@@ -1,5 +1,4 @@
 ﻿using CcsSso.Core.DormancyJobScheduler.Contracts;
-using CcsSso.Core.DormancyJobScheduler.Helper;
 using CcsSso.Core.DormancyJobScheduler.Model;
 using CcsSso.Domain.Exceptions;
 using Newtonsoft.Json;
@@ -15,12 +14,11 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
 {
   public class Auth0Service : IAuth0Service
   {
-    private readonly Auth0TokenHelper _tokenHelper;
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly DormancyAppSettings _settings;
-    public Auth0Service(Auth0TokenHelper tokenHelper, IHttpClientFactory httpClientFactory, DormancyAppSettings settings)
+    public Auth0Service(IHttpClientFactory httpClientFactory, DormancyAppSettings settings)
     {
-      _tokenHelper = tokenHelper;
       _httpClientFactory = httpClientFactory;
       _settings = settings;
     }
@@ -29,13 +27,11 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
     {
       try
       {
-        var managementApiToken = await _tokenHelper.GetAuth0ManagementApiTokenAsync();
         var client = _httpClientFactory.CreateClient();
-        client.DefaultRequestHeaders.Add("authorization", "Bearer " + managementApiToken);
-        string query = string.Empty;
-        query = HttpUtility.UrlEncode($"last_login:[{fromDate} TO {toDate}]");
-        
-        var response = await client.GetAsync(_settings.Auth0ConfigurationInfo.ManagementApiBaseUrl + $"/api/v2/users?q={query}&page={page}&per_page={perPage}&include_totals=true&search_engine=v3");
+        client.BaseAddress = new Uri(_settings.SecurityApiSettings.Url);
+        client.DefaultRequestHeaders.Add("X-API-Key", _settings.SecurityApiSettings.ApiKey);
+        var url = "security/data/user-search?from-date=" +fromDate+"&to-date="+toDate+"&page="+page+"&page-size="+perPage;
+        var response = await client.GetAsync(url);
         var responseString = await response.Content.ReadAsStringAsync();
         if (response.IsSuccessStatusCode)
         {
