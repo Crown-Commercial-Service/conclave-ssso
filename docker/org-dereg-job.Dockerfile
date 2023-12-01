@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS Orgderegjob
+FROM mcr.microsoft.com/dotnet/sdk:6.0.416-bookworm-slim AS Orgderegjob
 WORKDIR /app
 COPY . ./
 RUN dotnet restore ./api/CcsSso.Core.JobScheduler/CcsSso.Core.JobScheduler.csproj
