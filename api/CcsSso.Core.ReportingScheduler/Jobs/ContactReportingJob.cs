@@ -107,7 +107,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
               switch (eachModifiedOrg.ContactType)
               {
-                case "ORG":                  
+                case "ORG":
                   var contactDetails = await GetOrgContactDetails((ModifiedOrgContactInfo)eachModifiedOrg.DetectedContact, client);
                   if (contactDetails != null)
                   {
@@ -115,7 +115,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
                     contactDetailList.Add(new ContactDetailModel { ContactType = eachModifiedOrg.ContactType, ContactDetail = contactDetails });
                   }
                   break;
-                case "USER":                  
+                case "USER":
                   var contactUserDetails = await GetUserContactDetails((ModifiedUserContactInfo)eachModifiedOrg.DetectedContact, client);
                   if (contactUserDetails != null)
                   {
@@ -229,7 +229,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     private async Task<ContactSiteResponseInfo?> GetSiteContactDetails(ModifiedSiteContactInfo eachModifiedContact, HttpClient client)
     {
 
-      string url = $"contact-service/organisations/{eachModifiedContact.CiiOrgId}/sites/{eachModifiedContact.SiteContactId}/contacts/{eachModifiedContact.ContactPointId}";
+      string url = $"organisations/{eachModifiedContact.CiiOrgId}/sites/{eachModifiedContact.ContactPointId}/contacts/{eachModifiedContact.SiteContactId}";
 
       var response = await client.GetAsync(url);
 
@@ -250,7 +250,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     private async Task<ContactUserResponseInfo?> GetUserContactDetails(ModifiedUserContactInfo eachModifiedContact, HttpClient client)
     {
 
-      string url = $"contact-service/user/contacts/{eachModifiedContact.ContactPointId}?user-id={HttpUtility.UrlEncode(eachModifiedContact.UserName)}";
+      string url = $"user/contacts/{eachModifiedContact.ContactPointId}?user-id={HttpUtility.UrlEncode(eachModifiedContact.UserName)}";
 
       var response = await client.GetAsync(url);
 
@@ -272,7 +272,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
     private async Task<ContactOrgResponseInfo?> GetOrgContactDetails(ModifiedOrgContactInfo eachModifiedContact, HttpClient client)
     {
-      string url = $"contact-service/organisations/{eachModifiedContact.CiiOrgId}/contacts/{eachModifiedContact.ContactPointId}";
+      string url = $"organisations/{eachModifiedContact.CiiOrgId}/contacts/{eachModifiedContact.ContactPointId}";
       var response = await client.GetAsync(url);
 
       if (response.IsSuccessStatusCode)
@@ -297,7 +297,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        string url = $"contact-service/data/org-report?last-modified-date" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+        string url = $"data/org-report?last-modified-date=" + untilDateTime.ToString("MM-dd-yyyy HH:mm:ss");
         var client = _httpClientFactory.CreateClient("ContactWrapperApi");
         var response = await client.GetAsync(url);
 
@@ -323,7 +323,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        string url = $"contact-service/data/user-report?last-modified-date" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+        string url = $"data/user-report?last-modified-date=" + untilDateTime.ToString("MM-dd-yyyy HH:mm:ss");
         var client = _httpClientFactory.CreateClient("ContactWrapperApi");
         var response = await client.GetAsync(url);
 
@@ -349,7 +349,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
       try
       {
-        string url = $"contact-service/data/site-report?last-modified-date" + untilDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+        string url = $"data/site-report?last-modified-date=" + untilDateTime.ToString("MM-dd-yyyy HH:mm:ss");
         var client = _httpClientFactory.CreateClient("ContactWrapperApi");
         var response = await client.GetAsync(url);
 
@@ -364,7 +364,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         _logger.LogError(ex, "Error");
         throw;
       }
-      return ModifedSiteContacts;      
+      return ModifedSiteContacts;
     }
   }
 }
