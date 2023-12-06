@@ -14,7 +14,7 @@
     "containerDefinitions": [
         {
             "name": "%SPACE%-reporting-job",
-            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-reporting-job:latest",
+            "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-reporting-job:%SPACE%-reporting-job-%BUILD_NUMBER%",
             "cpu": 0,
             "memoryReservation": 512,
             "portMappings": [
