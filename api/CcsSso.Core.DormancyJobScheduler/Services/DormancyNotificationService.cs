@@ -169,10 +169,10 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
       //await ProcessUserNotification(queryNotLoginCase, false, false, "CREATED_AT");
       //}
 
-      string queryNormalDeactivateCase = $"last_login:{toDate} AND user_metadata.is_re_activated:false AND (user_metadata.is_dormant_notified: false OR NOT _exists_:user_metadata.is_dormant_notified)";
+      string queryNormalDeactivateCase = $"last_login:{toDate} AND (user_metadata.is_re_activated:false OR NOT _exists_:user_metadata.is_re_activated) AND (user_metadata.is_dormant_notified: false OR NOT _exists_:user_metadata.is_dormant_notified)";
       await ProcessUserNotification(queryNormalDeactivateCase, false, false, "LAST_LOGIN");
 
-      string queryNotLoginCase = $"created_at:{toDate} AND user_metadata.is_re_activated:false AND NOT _exists_:last_login AND (user_metadata.is_dormant_notified: false OR NOT _exists_:user_metadata.is_dormant_notified)";
+      string queryNotLoginCase = $"created_at:{toDate} AND (user_metadata.is_re_activated:false OR NOT _exists_:user_metadata.is_re_activated) AND NOT _exists_:last_login AND (user_metadata.is_dormant_notified: false OR NOT _exists_:user_metadata.is_dormant_notified)";
       await ProcessUserNotification(queryNotLoginCase, false, false, "CREATED_AT");
 
       string queryNormalDeactivateWithReactiveCase = $"last_login:[* TO {toDate}] AND user_metadata.is_re_activated:true AND (user_metadata.is_dormant_notified: false OR NOT _exists_:user_metadata.is_dormant_notified)";
