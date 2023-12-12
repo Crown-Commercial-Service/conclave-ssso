@@ -35,7 +35,8 @@ namespace CcsSso.Core.DormancyJobScheduler.Jobs
         _logger.LogInformation("");
         _logger.LogInformation("User Dormant notification job started at: {time}", DateTimeOffset.Now);
 
-        await _dormancyNotificationService.PerformDormancyNotificationJobAsync();
+        await _dormancyNotificationService.PerformDormancyResetNotificationJobAsync(); 
+        await _dormancyNotificationService.PerformDormancyNotificationJobAsync();        
 
         _logger.LogInformation("User Dormant notification finished at: {time}", DateTimeOffset.Now);
         _logger.LogInformation("");

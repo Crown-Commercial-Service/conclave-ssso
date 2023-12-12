@@ -29,7 +29,6 @@ namespace CcsSso.Core.DormancyJobScheduler
           UserDeactivationJobFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/UserDeactivationJobFrequencyInMinutes")),
           DormancyNotificationJobEnable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/DormancyNotificationJobEnable")),
           UserDeactivationJobEnable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/UserDeactivationJobEnable")),
-
         };
       }
       return returnParams;
@@ -88,6 +87,20 @@ namespace CcsSso.Core.DormancyJobScheduler
         {
           NotificationApiUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiUrl"),
           NotificationApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiKey"),
+        };
+      }
+      return returnParams;
+    }
+    public dynamic FillTestModeSettingsAwsParamsValue(Type objType, List<Parameter> parameters)
+    {
+      dynamic? returnParams = null;
+
+      if (objType == typeof(TestModeSettings))
+      {
+        returnParams = new TestModeSettings()
+        {
+          Enable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "TestModeSettings/Enable")),
+          Keyword = _awsParameterStoreService.FindParameterByName(parameters, path + "TestModeSettings/Keyword"),
         };
       }
       return returnParams;
