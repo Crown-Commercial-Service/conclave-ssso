@@ -29,7 +29,7 @@ namespace CcsSso.Core.DormancyJobScheduler.Jobs
     {
       while (!stoppingToken.IsCancellationRequested)
       {
-        int interval = _appSettings.DormancyJobSettings.UserDeactivationJobFrequencyInMinutes* 60000;
+        int interval = _appSettings.DormancyJobSettings.UserDeactivationJobFrequencyInMinutes * 60000;
 
         _logger.LogInformation("*******************************************************************************************");
         _logger.LogInformation("");

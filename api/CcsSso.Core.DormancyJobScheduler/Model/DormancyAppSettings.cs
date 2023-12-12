@@ -9,7 +9,8 @@ namespace CcsSso.Core.DormancyJobScheduler.Model
     public SecurityApiSettings SecurityApiSettings { get; set; }
     public EmailSettings EmailSettings { get; set; }
     public NotificationApiSettings NotificationApiSettings { get; set; }
-    public bool IsApiGatewayEnabled { get; set; }
+    public TestModeSettings TestModeSettings { get; set; }
+    public bool IsApiGatewayEnabled { get; set; }        
   }
 
   public class WrapperApiSettings
@@ -43,5 +44,11 @@ namespace CcsSso.Core.DormancyJobScheduler.Model
   {
     public string NotificationApiUrl { get; set; }
     public string NotificationApiKey { get; set; }
+  }
+
+  public class TestModeSettings
+  {
+    public bool Enable { get; set; }
+    public string Keyword { get; set; }
   }
 }

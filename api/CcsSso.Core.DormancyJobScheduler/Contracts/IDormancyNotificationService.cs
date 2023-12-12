@@ -8,6 +8,7 @@ namespace CcsSso.Core.DormancyJobScheduler.Contracts
 {
   public  interface IDormancyNotificationService
   {
+    Task PerformDormancyResetNotificationJobAsync();
     Task PerformDormancyNotificationJobAsync();
   }
 }

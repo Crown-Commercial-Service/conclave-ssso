@@ -93,13 +93,15 @@ namespace CcsSso.Core.DormancyJobScheduler
       SecurityApiSettings securityApiSettings;
       EmailSettings emailSettings;
       NotificationApiSettings notificationApiSettings;
+      TestModeSettings testModeSettings;
       var config = hostContext.Configuration;
-      bool.TryParse(config["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
+      bool.TryParse(config["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);      
       scheduleJob = config.GetSection("DormancyJobSettings").Get<DormancyJobSettings>();
       wrapperApiSettings = config.GetSection("WrapperApiSettings").Get<WrapperApiSettings>();
       securityApiSettings = config.GetSection("SecurityApiSettings").Get<SecurityApiSettings>();
       emailSettings = config.GetSection("EmailSettings").Get<EmailSettings>();
       notificationApiSettings = config.GetSection("NotificationApiSettings").Get<NotificationApiSettings>();
+      testModeSettings = config.GetSection("TestModeSettings").Get<TestModeSettings>();
 
       var appSettings = new DormancyAppSettings()
       {
@@ -112,7 +114,6 @@ namespace CcsSso.Core.DormancyJobScheduler
           UserDeactivationJobFrequencyInMinutes = scheduleJob.UserDeactivationJobFrequencyInMinutes,
           DormancyNotificationJobEnable = scheduleJob.DormancyNotificationJobEnable,
           UserDeactivationJobEnable = scheduleJob.UserDeactivationJobEnable,
-
         },
         WrapperApiSettings = new WrapperApiSettings
         {
@@ -134,6 +135,11 @@ namespace CcsSso.Core.DormancyJobScheduler
         {
           NotificationApiUrl = notificationApiSettings.NotificationApiUrl,
           NotificationApiKey = notificationApiSettings.NotificationApiKey
+        },
+        TestModeSettings = new TestModeSettings
+        {
+          Enable = testModeSettings.Enable,
+          Keyword = testModeSettings.Keyword
         },
       };
 
@@ -187,28 +193,33 @@ namespace CcsSso.Core.DormancyJobScheduler
       SecurityApiSettings securityApiSettings;
       EmailSettings emailSettings;
       NotificationApiSettings notificationApiSettings;
-    
+      TestModeSettings testModeSettings;
+      bool isApiGatewayEnabled = false;
 
       _programHelpers = new ProgramHelpers();
       _awsParameterStoreService = new AwsParameterStoreService();
 
       var parameters = _programHelpers.LoadAwsSecretsAsync(_awsParameterStoreService).Result;
 
+      isApiGatewayEnabled = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "IsApiGatewayEnabled"));
+
       ReadFromAWS(out dormancyJobSettings, parameters);
       ReadFromAWS(out wrapperApiSettings, parameters);
       ReadFromAWS(out securityApiSettings, parameters);
       ReadFromAWS(out emailSettings, parameters);
       ReadFromAWS(out notificationApiSettings, parameters);
-      
+      ReadFromAWS(out testModeSettings, parameters);
+
 
       return new DormancyAppSettings()
       {
+        IsApiGatewayEnabled = isApiGatewayEnabled,
         DormancyJobSettings = dormancyJobSettings,
         WrapperApiSettings = wrapperApiSettings,
         SecurityApiSettings = securityApiSettings,
         EmailSettings = emailSettings,
         NotificationApiSettings = notificationApiSettings,
-       
+        TestModeSettings = testModeSettings
       };
     }
     private static void ReadFromAWS(out DormancyJobSettings dormancyJobSettings, List<Parameter> parameters)
@@ -231,6 +242,10 @@ namespace CcsSso.Core.DormancyJobScheduler
     private static void ReadFromAWS(out NotificationApiSettings notificationApiSettings, List<Parameter> parameters)
     {
       notificationApiSettings = (NotificationApiSettings)_programHelpers.FillNotificationApiSettingsAwsParamsValue(typeof(NotificationApiSettings), parameters);
+    }
+    private static void ReadFromAWS(out TestModeSettings testModeSettings, List<Parameter> parameters)
+    {
+      testModeSettings = (TestModeSettings)_programHelpers.FillTestModeSettingsAwsParamsValue(typeof(TestModeSettings), parameters);
     }
     private static void ConfigureJobs(IServiceCollection services, DormancyAppSettings appSettings)
     {

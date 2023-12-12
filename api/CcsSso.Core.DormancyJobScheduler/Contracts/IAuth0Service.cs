@@ -9,6 +9,8 @@ namespace CcsSso.Core.DormancyJobScheduler.Contracts
 {
   public interface IAuth0Service
   {
-    Task<UserListDetails> GetUsersByLastLogin(string fromDate, string toDate, int page, int perPage);
+    Task<UserDataList> GetUsersDataAsync(string q, int page, int perPage);
+
+    Task UpdateUserStatusAsync(string userName, int status);
   }
 }
