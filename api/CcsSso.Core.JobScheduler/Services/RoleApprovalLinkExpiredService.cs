@@ -146,7 +146,11 @@ namespace CcsSso.Core.JobScheduler.Services
         {
           if (pendingNotification.CreatedBy != null)
           {
-            emailList.Add(pendingNotification.CreatedBy);
+            var user = await _wrapperUserService.GetUserDetails(pendingNotification.CreatedBy);
+            if (!user.IsDormant)
+            {
+              emailList.Add(pendingNotification.CreatedBy);
+            }
           }
         }
 
