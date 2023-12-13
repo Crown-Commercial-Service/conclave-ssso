@@ -39,14 +39,23 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
 
     public async Task PerformDormancyResetNotificationJobAsync()
     {
-      cDate = _dateTimeService.GetUTCNow();
-      string currentDate = cDate.ToString("yyyy-MM-dd");
+      string fromDate = string.Empty;
+      string toDate = string.Empty;
+
+      cDate = _dateTimeService.GetUTCNow();      
+      fDate = cDate.AddDays(-1).ToUniversalTime();
+      tDate = cDate.ToUniversalTime();
+
+      fromDate = fDate.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'");
+      toDate = tDate.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'");
 
       _logger.LogInformation($"Test Mode: {_appSettings.TestModeSettings.Enable}");
       _logger.LogInformation($"Test Keyword: {_appSettings.TestModeSettings.Keyword}");
-      _logger.LogInformation($"Current Date: {cDate}");
+      _logger.LogInformation($"Current Date: {cDate}");      
+      _logger.LogInformation($"From Date: {fDate}");
+      _logger.LogInformation($"To Date: {tDate}");
 
-      string q = $"last_login:{currentDate} AND user_metadata.is_dormant_notified: true";
+      string q = $"last_login:[{fromDate} TO {toDate}] AND user_metadata.is_dormant_notified: true";
 
       await ProcessUserNotificationReset(q);
 
