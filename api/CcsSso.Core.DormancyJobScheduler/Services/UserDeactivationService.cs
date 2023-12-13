@@ -158,8 +158,8 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
 
               if (lastActivityDate != null)
               {
-                if ((lastActivityDate < reactivatedOn && reactivatedOn < tDate)
-                  || (lastActivityDate > reactivatedOn && lastActivityDate < tDate))
+                if ((lastActivityDate.Value.Date <= reactivatedOn.Date && reactivatedOn.Date <= tDate.Date)
+                  || (lastActivityDate.Value.Date >= reactivatedOn.Date && lastActivityDate.Value.Date <= tDate.Date))
                 {
                   await DeactivateUser(user);
                 }
