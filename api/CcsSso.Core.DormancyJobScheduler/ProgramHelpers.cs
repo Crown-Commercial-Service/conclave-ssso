@@ -29,6 +29,10 @@ namespace CcsSso.Core.DormancyJobScheduler
           UserDeactivationJobFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/UserDeactivationJobFrequencyInMinutes")),
           DormancyNotificationJobEnable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/DormancyNotificationJobEnable")),
           UserDeactivationJobEnable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/UserDeactivationJobEnable")),
+          ArchivalJobFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/ArchivalJobFrequencyInMinutes")),
+          AdminDormantedUserArchivalDurationInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/AdminDormantedUserArchivalDurationInMinutes")),
+          JobDormantedUserArchivalDurationInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/JobDormantedUserArchivalDurationInMinutes")),
+          UserArchivalJobEnable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/UserArchivalJobEnable")),
         };
       }
       return returnParams;
