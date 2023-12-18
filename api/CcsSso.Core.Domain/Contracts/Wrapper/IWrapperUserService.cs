@@ -33,10 +33,10 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
     Task RemoveApprovalPendingRoles(string UserName, List<int> roleIds, UserPendingRoleStaus? status);
     Task<UserListResponseInfo> GetUserByOrganisation(string organisationId, UserFilterCriteria filter);
     Task<List<UserToDeleteResponse>> GetInActiveUsers(string createdOnUtc);
-    Task DeleteUserAsync(string userName);
+    Task DeleteUserAsync(string userName, bool removeUser = false);
     Task<bool> DeleteAdminUserAsync(string userName);
 		Task DeactivateUserAsync(string userName, DormantBy dormantBy);
 		Task<UserDetailsResponse> GetUserDetails(string userName);
-
+		Task<UserDataResponseInfo> GetUsersData(UserDataFilterCriteria userDataFilterCriteria);
   }
 }

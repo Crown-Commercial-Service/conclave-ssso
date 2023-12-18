@@ -114,6 +114,10 @@ namespace CcsSso.Core.DormancyJobScheduler
           UserDeactivationJobFrequencyInMinutes = scheduleJob.UserDeactivationJobFrequencyInMinutes,
           DormancyNotificationJobEnable = scheduleJob.DormancyNotificationJobEnable,
           UserDeactivationJobEnable = scheduleJob.UserDeactivationJobEnable,
+          ArchivalJobFrequencyInMinutes = scheduleJob.ArchivalJobFrequencyInMinutes,
+          AdminDormantedUserArchivalDurationInMinutes = scheduleJob.AdminDormantedUserArchivalDurationInMinutes,
+          JobDormantedUserArchivalDurationInMinutes = scheduleJob.JobDormantedUserArchivalDurationInMinutes,
+          UserArchivalJobEnable = scheduleJob.UserArchivalJobEnable,
         },
         WrapperApiSettings = new WrapperApiSettings
         {
@@ -183,6 +187,7 @@ namespace CcsSso.Core.DormancyJobScheduler
       services.AddScoped<IDormancyNotificationService, DormancyNotificationService>();
       services.AddScoped<IWrapperApiService, WrapperApiService>();
       services.AddScoped<IWrapperUserService, WrapperUserService>();
+      services.AddScoped<IUserArchivalService, UserArchivalService>();
       services.AddSingleton<IEmailProviderService, EmailProviderService>();
     }
 
@@ -254,6 +259,9 @@ namespace CcsSso.Core.DormancyJobScheduler
 
       if (appSettings.DormancyJobSettings.UserDeactivationJobEnable)
         services.AddHostedService<UserDeactivationJob>();
+      
+      if (appSettings.DormancyJobSettings.UserArchivalJobEnable)
+        services.AddHostedService<UserArchivalJob>();
     }
   }
 }

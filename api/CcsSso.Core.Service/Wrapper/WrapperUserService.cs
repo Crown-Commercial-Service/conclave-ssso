@@ -88,9 +88,9 @@ namespace CcsSso.Core.Service.Wrapper
       return await _wrapperApiService.GetAsync<List<UserToDeleteResponse>>(WrapperApi.User, $"in-active?created-on={createdOnUtc}", $"{CacheKeyConstant.User}-TO-DELETE-{createdOnUtc}", "ERROR_RETRIEVING_USERS_TO_DELETE");
     }
 
-    public async Task DeleteUserAsync(string userName)
+    public async Task DeleteUserAsync(string userName, bool removeUser = false)
     {
-      await _wrapperApiService.DeleteAsync(WrapperApi.User, $"?user-id={userName}", "ERROR_DELETING_USER");
+      await _wrapperApiService.DeleteAsync(WrapperApi.User, $"?user-id={userName}&is-remove={removeUser}", "ERROR_DELETING_USER");
     }
 
     public async Task<bool> DeleteAdminUserAsync(string userName)
@@ -106,6 +106,11 @@ namespace CcsSso.Core.Service.Wrapper
     {
       userName = HttpUtility.UrlEncode(userName);
       return await _wrapperApiService.GetAsync<UserDetailsResponse>(WrapperApi.User, $"?user-id={userName}", $"UserDetails-{userName}", "ERROR_GETTING_USER_DETAILS");
+    }
+
+    public async Task<UserDataResponseInfo> GetUsersData(UserDataFilterCriteria userDataFilterCriteria)
+    {
+      return await _wrapperApiService.PostAsync<UserDataResponseInfo>(WrapperApi.User, $"data", userDataFilterCriteria, "ERROR_RETRIEVING_DORMANTED_USERS");
     }
   }
 }

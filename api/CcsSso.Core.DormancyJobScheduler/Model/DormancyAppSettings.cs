@@ -28,6 +28,10 @@ namespace CcsSso.Core.DormancyJobScheduler.Model
     public int UserDeactivationDurationInMinutes { get; set; }
     public bool UserDeactivationJobEnable { get; set; }
     public bool DormancyNotificationJobEnable { get; set; }
+    public int ArchivalJobFrequencyInMinutes { get; set; }
+    public int AdminDormantedUserArchivalDurationInMinutes { get; set; }
+    public int JobDormantedUserArchivalDurationInMinutes { get; set; }
+    public bool UserArchivalJobEnable { get; set; }
   }
 
   public class SecurityApiSettings
