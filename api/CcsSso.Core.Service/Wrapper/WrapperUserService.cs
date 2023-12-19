@@ -51,7 +51,7 @@ namespace CcsSso.Core.Service.Wrapper
 		}
 		public async Task<List<string>> GetOrgAdminAsync(string ciiOrganisationId)
 		{
-			return await _wrapperApiService.GetAsync<List<string>>(WrapperApi.User, $"data/admin-email-ids?organisation-id={ciiOrganisationId}", $"{CacheKeyConstant.User}", "ERROR_RETRIEVING_ORGANISATION_ADMIN_USERS");
+			return await _wrapperApiService.GetAsync<List<string>>(WrapperApi.User, $"data/admin-email-ids?organisation-id={ciiOrganisationId}&exclude-inactive=true", $"{CacheKeyConstant.User}", "ERROR_RETRIEVING_ORGANISATION_ADMIN_USERS");
 		}
 
     public async Task<UserAccessRolePendingRequestDetails> GetUserAccessRolePendingDetails(UserAccessRolePendingFilterCriteria criteria)
