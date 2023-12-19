@@ -53,7 +53,7 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
       }
       catch (Exception e)
       {
-        throw new CcsSsoException("USER_NOT_FOUND");
+        throw new CcsSsoException("USER_NOT_FOUND" + e.Message);
       }
     }
 
