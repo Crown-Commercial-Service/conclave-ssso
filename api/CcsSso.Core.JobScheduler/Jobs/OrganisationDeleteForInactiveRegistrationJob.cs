@@ -178,8 +178,8 @@ namespace CcsSso.Core.JobScheduler
 
       // Deleting Organisation Contact points
 
-      var deleteContactSuccess =  await DeleteOrgContacts(ciiOrganisationId);
-      var deleteUsersSuccess =  await DeleteOrgUsers(ciiOrganisationId);
+       await DeleteOrgUsers(ciiOrganisationId);
+       await DeleteOrgContacts(ciiOrganisationId);
 
       await Task.Delay(1000);
 
@@ -236,66 +236,83 @@ namespace CcsSso.Core.JobScheduler
       return orgAdmins?.UserList;
     }
 
-    private async Task<bool> DeleteOrgUsers(string ciiOrgId)
+    private async Task DeleteOrgUsers(string ciiOrgId)
     {
-      Console.WriteLine($"********* Start Deleting org users ***********************");
-
-      var filter = new UserFilterCriteria
+      try
       {
-        isAdmin = false,
-        includeSelf = true,
-        includeUnverifiedAdmin = true,
-        isDelegatedExpiredOnly = false,
-        isDelegatedOnly = false,
-        searchString = String.Empty
-      };
+        Console.WriteLine($"********* Start Deleting org users ***********************");
 
-      var orgUsers = await _wrapperUserService.GetUserByOrganisation(ciiOrgId, filter);
-      Console.WriteLine($"********* Total org user found: {orgUsers?.UserList.Count()} ***********************");
+        var filter = new UserFilterCriteria
+        {
+          isAdmin = false,
+          includeSelf = true,
+          includeUnverifiedAdmin = true,
+          isDelegatedExpiredOnly = false,
+          isDelegatedOnly = false,
+          searchString = String.Empty
+        };
 
-      List<Task> usersToDelete = new();
-      List<Task> usersDeleteCache = new();
-      orgUsers.UserList.ForEach(user =>
+        var orgUsers = await _wrapperUserService.GetUserByOrganisation(ciiOrgId, filter);
+        Console.WriteLine($"********* Total org user found: {orgUsers?.UserList.Count()} ***********************");
+
+        List<Task> usersToDelete = new();
+        List<Task> usersDeleteCache = new();
+        var usersLists = orgUsers.UserList;
+        if (usersLists.Any())
+        {
+          foreach (var user in usersLists)
+          {
+            await _wrapperUserService.DeleteAdminUserAsync(user.UserName);
+            await _cacheInvalidateService.RemoveUserCacheValuesOnDeleteAsync(user.UserName, ciiOrgId, new List<int>());
+          }
+        }
+       
+        Console.WriteLine($"********* Deleting org users successful. ***********************");
+      }
+      catch(Exception ex)
       {
-        usersToDelete.Add(_wrapperUserService.DeleteAdminUserAsync(user.UserName));
-        usersDeleteCache.Add(_cacheInvalidateService.RemoveUserCacheValuesOnDeleteAsync(user.UserName, ciiOrgId, new List<int>()));
-      });
-
-      var deleteUserSuccess = Task.WhenAll(usersToDelete);
-      var deleteUserCacheSuccess = Task.WhenAll(usersDeleteCache);
-
-      Console.WriteLine($"********* Deleting org users successful. ***********************");
-
-      return deleteUserSuccess.IsCompletedSuccessfully;
+        Console.WriteLine($"********* Deleting org users fail Message{ex.Message}. ***********************");
+      }
+      //return deleteUserSuccess.IsCompletedSuccessfully;
     }
 
-    private async Task<bool> DeleteOrgContacts(string ciiOrgId)
+    private async Task DeleteOrgContacts(string ciiOrgId)
     {
-      Console.WriteLine($"********* Start Deleting org contacts ***********************");
-      var contactDetails = await _wrapperContactService.GetOrganisationContactListAsync(ciiOrgId);
-
-      if (contactDetails != null && contactDetails.ContactPoints.Any())
+      try
       {
-        Console.WriteLine($"********* Contacts found {contactDetails.ContactPoints.Count()} ***********************");
-        List<Task> deleteContactList = new();
-        contactDetails.ContactPoints.ForEach(cp =>
+        Console.WriteLine($"********* Start Deleting org contacts ***********************");
+        var contactDetails = await _wrapperContactService.GetOrganisationContactListAsync(ciiOrgId);
+
+        if (contactDetails != null && contactDetails.ContactPoints.Any())
         {
-          deleteContactList.Add(_wrapperContactService.DeleteOrganisationContactAsync(ciiOrgId, cp.ContactPointId));
-          //cp.Contacts.ForEach(async p =>
-          //{
-          //  deleteContactList.Add(_wrapperContactService.DeleteOrganisationContactAsync(ciiOrgId, p.ContactId));
-          //});
-        });
+          Console.WriteLine($"********* Contacts found {contactDetails.ContactPoints.Count()} ***********************");
+          var contacts = contactDetails.ContactPoints.OrderByDescending(item => item.ContactPointId).ToList();
+          if (contacts.Any())
+          {
+            foreach (var contact in contacts)
+            {
+              
+              if(contact.ContactPointReason != "REGISTRY")
+              {
+                await _wrapperContactService.DeleteOrganisationContactAsync(ciiOrgId, contact.ContactPointId);
+              }
+              else
+              {
+                await _wrapperContactService.DeleteOrganisationRegistryContactAsync(ciiOrgId);
+              }
+            }
+          }
 
-        var deleteContactSuccess = Task.WhenAll(deleteContactList);
-        var orgContactPointIds = contactDetails.ContactPoints.Select(cp => cp.ContactPointId).ToList<int>();
-        await _cacheInvalidateService.RemoveOrganisationCacheValuesOnDeleteAsync(ciiOrgId, orgContactPointIds, new Dictionary<string, List<int>>());
+          var orgContactPointIds = contactDetails.ContactPoints.Select(cp => cp.ContactPointId).ToList<int>();
+          await _cacheInvalidateService.RemoveOrganisationCacheValuesOnDeleteAsync(ciiOrgId, orgContactPointIds, new Dictionary<string, List<int>>());
 
-        Console.WriteLine($"********* Deleting org contacts successful. ***********************");
-        return deleteContactSuccess.IsCompletedSuccessfully;
+          Console.WriteLine($"********* Deleting org contacts successful. ***********************");
+        }
       }
-      
-      return true;
+      catch (Exception ex)
+      {
+        Console.WriteLine($"********* Deleting org contacts failed Message{ex.Message}. ***********************");
+      }
     }
   }
 }

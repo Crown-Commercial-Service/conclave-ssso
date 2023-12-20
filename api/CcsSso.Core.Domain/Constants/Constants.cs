@@ -215,6 +215,7 @@ namespace CcsSso.Domain.Constants
     Organisation,
     OrganisationDelete,
     Contact,
+    ContactDelete,
     Security,
     User,
     Cii
