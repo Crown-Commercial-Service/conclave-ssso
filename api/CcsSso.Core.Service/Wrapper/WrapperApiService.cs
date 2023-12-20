@@ -181,7 +181,8 @@ namespace CcsSso.Core.Service.Wrapper
                 WrapperApi.OrganisationDelete => "OrgWrapperDeleteApi",
                 WrapperApi.Configuration => "ConfigWrapperApi",
 				WrapperApi.Contact => "ContactWrapperApi",
-				WrapperApi.User => "UserWrapperApi",
+        WrapperApi.ContactDelete => "ContactWrapperDeleteApi",
+        WrapperApi.User => "UserWrapperApi",
 				_ => "SecurityWrapperApi"
 			};
 			var client = _httpClientFactory.CreateClient(clientName);

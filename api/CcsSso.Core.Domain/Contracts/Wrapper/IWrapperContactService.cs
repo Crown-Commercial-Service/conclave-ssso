@@ -8,6 +8,7 @@ namespace CcsSso.Core.Domain.Contracts.Wrapper
     #region Organisation Contact
     Task<bool> DeleteOrganisationContactAsync(string organisationId, int contactId);
     Task<OrganisationContactInfoList> GetOrganisationContactListAsync(string organisationId);
+    Task DeleteOrganisationRegistryContactAsync(string organisationId);
     #endregion
   }
 }

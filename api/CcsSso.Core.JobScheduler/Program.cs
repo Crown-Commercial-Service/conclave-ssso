@@ -147,6 +147,7 @@ namespace CcsSso.Core.JobScheduler
 								OrgApiKey = wrapperApiSettings.OrgApiKey,
                 OrgDeleteApiKey = wrapperApiSettings.OrgDeleteApiKey,
 								ContactApiKey = wrapperApiSettings.ContactApiKey,
+								RegistryContactDeleteApiKey = wrapperApiSettings.RegistryContactDeleteApiKey,
                 ApiGatewayDisabledConfigUrl = wrapperApiSettings.ApiGatewayDisabledConfigUrl,
 								ApiGatewayDisabledOrgUrl = wrapperApiSettings.ApiGatewayDisabledOrgUrl,
 								ApiGatewayEnabledConfigUrl = wrapperApiSettings.ApiGatewayEnabledConfigUrl,
@@ -299,6 +300,11 @@ namespace CcsSso.Core.JobScheduler
       {
           c.BaseAddress = new Uri(isApiGatewayEnabled ? _wrapperApiSettings.ApiGatewayEnabledOrgUrl : _wrapperApiSettings.ApiGatewayDisabledOrgUrl);
           c.DefaultRequestHeaders.Add("x-api-key", _wrapperApiSettings.OrgDeleteApiKey);
+      });
+      services.AddHttpClient("ContactWrapperDeleteApi", c =>
+      {
+        c.BaseAddress = new Uri(isApiGatewayEnabled ? _wrapperApiSettings.ApiGatewayEnabledContactUrl : _wrapperApiSettings.ApiGatewayDisabledContactUrl);
+        c.DefaultRequestHeaders.Add("x-api-key", _wrapperApiSettings.RegistryContactDeleteApiKey);
       });
       // Question about security wrapper api settings where to place these settings.
       services.AddHttpClient("SecurityWrapperApi", c =>
