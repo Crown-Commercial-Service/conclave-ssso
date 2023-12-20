@@ -108,6 +108,7 @@ namespace CcsSso.Core.DormancyJobScheduler
         IsApiGatewayEnabled = isApiGatewayEnabled,
         DormancyJobSettings = new DormancyJobSettings
         {
+          DelayInMilliSeconds = scheduleJob.DelayInMilliSeconds,
           DormancyNotificationJobFrequencyInMinutes = scheduleJob.DormancyNotificationJobFrequencyInMinutes,
           DeactivationNotificationInMinutes = scheduleJob.DeactivationNotificationInMinutes,
           UserDeactivationDurationInMinutes = scheduleJob.UserDeactivationDurationInMinutes,

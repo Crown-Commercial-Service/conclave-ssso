@@ -22,6 +22,7 @@ namespace CcsSso.Core.DormancyJobScheduler.Model
 
   public class DormancyJobSettings
   {
+    public int DelayInMilliSeconds { get; set; }
     public int DormancyNotificationJobFrequencyInMinutes { get; set; }
     public int UserDeactivationJobFrequencyInMinutes { get; set; }
     public int DeactivationNotificationInMinutes { get; set; }
