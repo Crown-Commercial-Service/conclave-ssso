@@ -108,7 +108,7 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
             totalPages = Math.Ceiling(total / pageSize);
             page++;
             await DeactivateUsers(userDetails, isReactivation, type);
-            await Task.Delay(60000);
+            await Task.Delay(_appSettings.DormancyJobSettings.DelayInMilliSeconds);
 
           } while (page <= totalPages);
 
