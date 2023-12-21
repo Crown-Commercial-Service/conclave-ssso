@@ -86,25 +86,33 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
             _logger.LogInformation($"User Dormanted By: {user.DormantBy}, User Dormanted on UTC: {user.DormantedOnUtc}, User IsDormanted: {user.IsDormant}");
             DateTime currentDate = _dateTimeService.GetUTCNow();
             DateTime dt = currentDate.AddMinutes(-(user.DormantBy == DormantBy.Manual ? _appSettings.DormancyJobSettings.AdminDormantedUserArchivalDurationInMinutes : _appSettings.DormancyJobSettings.JobDormantedUserArchivalDurationInMinutes));
-            _logger.LogInformation($"User dormanted date should be less than : {dt}");
+
+            _logger.LogInformation($"User dormanted date should be less than or equal to : {dt.Date}");
             _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-            if (user.IsDormant && user.DormantedOnUtc < dt)
+            if (user.IsDormant && user.DormantedOnUtc != null && user.DormantedOnUtc.Value.Date <= dt.Date)
             {
               _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
               _logger.LogInformation($"User to be archived: {user.UserName}");
               _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
-              if (_appSettings.TestModeSettings.Enable)
+              try
               {
-                if (user.UserName.Contains(_appSettings.TestModeSettings.Keyword))
+                if (_appSettings.TestModeSettings.Enable)
+                {
+                  if (user.UserName.Contains(_appSettings.TestModeSettings.Keyword))
+                  {
+                    await _wrapperUserService.DeleteUserAsync(user.UserName, true);
+                  }
+                }
+                else
                 {
                   await _wrapperUserService.DeleteUserAsync(user.UserName, true);
                 }
               }
-              else
+              catch (Exception ex)
               {
-                await _wrapperUserService.DeleteUserAsync(user.UserName, true);
-              }              
+                _logger.LogError($"*****Error while deleting the user {user.UserName}, exception message =  {ex.Message}");
+              }
             }
             else
             {
