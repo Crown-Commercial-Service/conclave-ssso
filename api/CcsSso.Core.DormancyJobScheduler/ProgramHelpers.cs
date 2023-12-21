@@ -23,6 +23,7 @@ namespace CcsSso.Core.DormancyJobScheduler
       {
         returnParams = new DormancyJobSettings()
         {
+          DelayInMilliSeconds = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/DelayInMilliSeconds")),
           DeactivationNotificationInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/DeactivationNotificationInMinutes")),
           DormancyNotificationJobFrequencyInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/DormancyNotificationJobFrequencyInMinutes")),
           UserDeactivationDurationInMinutes = Convert.ToInt32(_awsParameterStoreService.FindParameterByName(parameters, path + "DormancyJobSettings/UserDeactivationDurationInMinutes")),

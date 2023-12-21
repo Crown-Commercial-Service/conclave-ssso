@@ -97,18 +97,18 @@ namespace CcsSso.Core.DormancyJobScheduler.Services
 
               try
               {
-                if (_appSettings.TestModeSettings.Enable)
-                {
-                  if (user.UserName.Contains(_appSettings.TestModeSettings.Keyword))
-                  {
-                    await _wrapperUserService.DeleteUserAsync(user.UserName, true);
-                  }
-                }
-                else
+              if (_appSettings.TestModeSettings.Enable)
+              {
+                if (user.UserName.Contains(_appSettings.TestModeSettings.Keyword))
                 {
                   await _wrapperUserService.DeleteUserAsync(user.UserName, true);
                 }
               }
+              else
+              {
+                await _wrapperUserService.DeleteUserAsync(user.UserName, true);
+              }              
+            }
               catch (Exception ex)
               {
                 _logger.LogError($"*****Error while deleting the user {user.UserName}, exception message =  {ex.Message}");

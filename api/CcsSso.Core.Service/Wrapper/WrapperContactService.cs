@@ -25,7 +25,10 @@ namespace CcsSso.Core.Service.Wrapper
     {
       return await _wrapperApiService.GetAsync<OrganisationContactInfoList>(WrapperApi.Contact, $"organisations/{organisationId}/contacts", "", "ERROR_GETTING_ORGANISATION_CONTACTS");
     }
-
+    public async Task DeleteOrganisationRegistryContactAsync(string organisationId)
+    {
+       await _wrapperApiService.DeleteAsync(WrapperApi.ContactDelete, $"organisations/{organisationId}/registry-contact", "ERROR_DELETING_ORGANISATION_REGISTRY_CONTACT");
+    }
     #endregion
   }
 }

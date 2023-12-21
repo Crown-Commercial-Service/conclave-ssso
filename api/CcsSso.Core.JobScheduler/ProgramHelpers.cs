@@ -69,6 +69,7 @@ namespace CcsSso.Core.JobScheduler
           ConfigApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ConfigApiKey"),
           OrgApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/OrgApiKey"),
           OrgDeleteApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/OrgDeleteApiKey"),
+          RegistryContactDeleteApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/RegistryContactDeleteApiKey"),
           UserApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/UserApiKey"),
           ContactApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ContactApiKey"),
           ApiGatewayEnabledConfigUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledConfigUrl"),
