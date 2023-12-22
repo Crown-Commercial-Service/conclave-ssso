@@ -93,7 +93,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
               auditLog = new AuditLogResponseInfo();
               auditLog.Id = eachModifiedAuditLog.Id;
               auditLog.Event = eachModifiedAuditLog.Event;
-              auditLog.UserId = eachModifiedAuditLog.UserName;
+              auditLog.UserId = string.IsNullOrEmpty(eachModifiedAuditLog.UserName) ? "direct api call" : eachModifiedAuditLog.UserName;
               auditLog.Application = eachModifiedAuditLog.Application;
               auditLog.ReferenceData = eachModifiedAuditLog.ReferenceData;
               auditLog.IpAddress = eachModifiedAuditLog.IpAddress;
@@ -110,7 +110,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             _logger.LogInformation($"Total number of Audit Logs in this Batch => {auditLogList.Count()}");
             totalNumberOfItemsDuringThisSchedule += auditLogList.Count();
 
-
+            
             var fileByteArray = _csvConverter.ConvertToCSV(auditLogList, "audit");
 
             if (_appSettings.WriteCSVDataInLog)
@@ -254,7 +254,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       if (!auditLogResult.AuditLogDetail.Any())
         return;
 
-      var listOfUserIds = auditLogResult.AuditLogDetail.Select(x => x.UserId).ToList();
+      var listOfUserIds = auditLogResult.AuditLogDetail.Select(x => x.UserId).ToList().Distinct();
       var listOfUserNames = await _wrapperUserService.GetUserNames(string.Join(",", listOfUserIds));
 
       foreach (var item in auditLogResult.AuditLogDetail)
