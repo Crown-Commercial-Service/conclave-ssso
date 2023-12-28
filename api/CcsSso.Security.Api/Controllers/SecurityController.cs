@@ -455,6 +455,7 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(401)]
     public async Task<IActionResult> LogOut([FromQuery(Name = "client-id")] string clientId, [FromQuery(Name = "redirect-uri")] string redirecturi)
     {
+      Console.WriteLine("Log out start.");
       Console.WriteLine($"client-id: {clientId}, redirect-uri: {redirecturi}");
 
       var url = await _securityService.LogoutAsync(clientId, redirecturi);
@@ -490,7 +491,7 @@ namespace CcsSso.Security.Api.Controllers
           Console.WriteLine($"Cookie {visitedSiteCookie} deleted.");
         }
       }
-
+      Console.WriteLine("Log out end");
       return Redirect(url);
     }
 
@@ -592,15 +593,19 @@ namespace CcsSso.Security.Api.Controllers
         foreach (var opbsCookieOption in opbsCookieOptions)
         {
           Response.Cookies.Append(opbsCookieName, opbsValue, opbsCookieOption);
+          Console.WriteLine($"GenerateCookiesAsync cookie name:{opbsCookieName}, value: {opbsValue}, options: {JsonConvert.SerializeObject(opbsCookieOption)}");
         }
       }
       else
       {
         Request.Cookies.TryGetValue(opbsCookieName, out opbsValue);
         Response.Cookies.Delete(opbsCookieName);
+        Console.WriteLine($"GenerateCookiesAsync cookie deleted: {opbsCookieName}");
+
         foreach (var opbsCookieOption in opbsCookieOptions)
         {
           Response.Cookies.Append(opbsCookieName, opbsValue, opbsCookieOption);
+          Console.WriteLine($"GenerateCookiesAsync cookie added name: {opbsCookieName}, value: {opbsValue}, options: {JsonConvert.SerializeObject(opbsCookieOption)}");
         }
       }
 
@@ -617,6 +622,7 @@ namespace CcsSso.Security.Api.Controllers
         foreach (var httpCookieOption in httpCookieOptions)
         {
           Response.Cookies.Append(sessionCookieName, sidEncrypted, httpCookieOption);
+          Console.WriteLine($"GenerateCookiesAsync cookie added name: {sessionCookieName}, value: {sidEncrypted}, options: {JsonConvert.SerializeObject(httpCookieOption)}");
         }
       }
       else
@@ -637,9 +643,12 @@ namespace CcsSso.Security.Api.Controllers
 
         //Re-assign the same session id with new expiration time
         Response.Cookies.Delete(sessionCookieName);
+        Console.WriteLine($"GenerateCookiesAsync cookie deleted: {sessionCookieName}");
+
         foreach (var httpCookieOption in httpCookieOptions)
         {
           Response.Cookies.Append(sessionCookieName, sid, httpCookieOption);
+          Console.WriteLine($"GenerateCookiesAsync cookie added name: {sessionCookieName}, value: {sid}, options: {JsonConvert.SerializeObject(httpCookieOption)}");
         }
       }
 
@@ -647,6 +656,7 @@ namespace CcsSso.Security.Api.Controllers
       if (!Request.Cookies.ContainsKey(visitedSiteCookieName))
       {
         Response.Cookies.Append(visitedSiteCookieName, clientId, visitedSiteCookieOptions);
+        Console.WriteLine($"GenerateCookiesAsync cookie added name: {visitedSiteCookieName}, value: {clientId}, options: {JsonConvert.SerializeObject(visitedSiteCookieOptions)}");
       }
       else
       {
@@ -657,7 +667,9 @@ namespace CcsSso.Security.Api.Controllers
           visitedSiteList.Add(clientId);
           visitedSites = string.Join(",", visitedSiteList);
           Response.Cookies.Delete(visitedSiteCookieName);
+          Console.WriteLine($"GenerateCookiesAsync cookie deleted: {visitedSiteCookieName}");
           Response.Cookies.Append(visitedSiteCookieName, visitedSites, visitedSiteCookieOptions);
+          Console.WriteLine($"GenerateCookiesAsync cookie added name: {visitedSiteCookieName}, value: {visitedSites}, options: {JsonConvert.SerializeObject(visitedSiteCookieOptions)}");
         }
       }
       return (sid, opbsValue);
