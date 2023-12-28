@@ -9,14 +9,14 @@
     "requiresCompatibilities": [
         "FARGATE"
     ],
-    "cpu": "256",
-    "memory": "512",
+    "cpu": "2048",
+    "memory": "12288",
     "containerDefinitions": [
         {
             "name": "%SPACE%-reporting-job",
             "image": "%AWS_ACCOUNT_ID%.dkr.ecr.eu-west-2.amazonaws.com/%SPACE%-reporting-job:%SPACE%-reporting-job-%BUILD_NUMBER%",
             "cpu": 0,
-            "memoryReservation": 512,
+            "memoryReservation": 8192,
             "portMappings": [
                 {
                     "containerPort": 5000,
