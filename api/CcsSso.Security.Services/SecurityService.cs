@@ -184,6 +184,8 @@ namespace CcsSso.Security.Services
           var client = _httpClientFactory.CreateClient();
           client.BaseAddress = new Uri(rp.BackChannelLogoutUrl);
 
+          Console.WriteLine($"relying parties {rp.Name}. Back channel url: {rp.BackChannelLogoutUrl}");
+
           var list = new List<KeyValuePair<string, string>>();
           list.Add(new KeyValuePair<string, string>("logout_token", logoutToken));
           HttpContent codeContent = new FormUrlEncodedContent(list);

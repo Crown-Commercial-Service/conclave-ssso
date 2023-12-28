@@ -455,10 +455,13 @@ namespace CcsSso.Security.Api.Controllers
     [ProducesResponseType(401)]
     public async Task<IActionResult> LogOut([FromQuery(Name = "client-id")] string clientId, [FromQuery(Name = "redirect-uri")] string redirecturi)
     {
+      Console.WriteLine($"client-id: {clientId}, redirect-uri: {redirecturi}");
+
       var url = await _securityService.LogoutAsync(clientId, redirecturi);
       if (Request.Cookies.ContainsKey("opbs"))
       {
         Response.Cookies.Delete("opbs");
+        Console.WriteLine("Cookie opbs deleted.");
       }
       // delete the session cookie
       string sessionCookie = "ccs-sso";
@@ -466,6 +469,7 @@ namespace CcsSso.Security.Api.Controllers
       {
         Request.Cookies.TryGetValue(sessionCookie, out string sid);
         Response.Cookies.Delete(sessionCookie);
+        Console.WriteLine($"Cookie {sessionCookie} deleted.");
 
         if (!string.IsNullOrWhiteSpace(sid))
         {
@@ -476,10 +480,14 @@ namespace CcsSso.Security.Api.Controllers
         if (Request.Cookies.ContainsKey(visitedSiteCookie))
         {
           Request.Cookies.TryGetValue(visitedSiteCookie, out string visitedSites);
+          Console.WriteLine($"cookie name: {visitedSiteCookie}, visitedSites value: {visitedSites}");
+
           var visitedSiteList = visitedSites.Split(',').ToList();
           // Perform back chanel logout - This should be performed as a queue triggered background job
           await _securityService.PerformBackChannelLogoutAsync(clientId, sid, visitedSiteList);
           Response.Cookies.Delete(visitedSiteCookie);
+
+          Console.WriteLine($"Cookie {visitedSiteCookie} deleted.");
         }
       }
 
