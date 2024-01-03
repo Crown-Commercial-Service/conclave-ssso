@@ -21,7 +21,7 @@ namespace CcsSso.Core.ReportingScheduler.Wrapper
 
     public async Task<AuditLogResponse> GetUserAuditLog(DateTime startDate, int pageSize,int currentPage)
     {
-      return await _wrapperApiService.GetAsync<AuditLogResponse>(WrapperApi.User, $"data/audit?startDate={startDate}&page-size={pageSize}&current-page={currentPage}", "ERROR_GETTING_USER_AUDIT_LOG");
+      return await _wrapperApiService.GetAsync<AuditLogResponse>(WrapperApi.User, $"data/audit?startDate={startDate}&pageSize= {pageSize} &currentPage={currentPage}", "ERROR_GETTING_USER_AUDIT_LOG");
     }
 
     public async Task<List<UserReportDetail>> GetModifiedUsers(string modifiedDate)
