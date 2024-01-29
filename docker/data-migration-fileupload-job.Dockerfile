@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS FileuploadJob
+FROM mcr.microsoft.com/dotnet/sdk:6.0.416-bookworm-slim AS FileuploadJob
 WORKDIR /app
 COPY . ./
 RUN dotnet restore ./api/CcsSso.Core.DataMigrationJobScheduler/CcsSso.Core.DataMigrationJobScheduler.csproj
