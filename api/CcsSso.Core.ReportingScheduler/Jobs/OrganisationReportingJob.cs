@@ -1,10 +1,12 @@
 using CcsSso.Core.ReportingScheduler.Models;
 using CcsSso.Domain.Contracts;
+using CcsSso.Dtos.Domain.Models;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Dto;
 using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 using OrganisationProfileResponseInfo = CcsSso.Shared.Domain.Dto.OrganisationProfileResponseInfo;
 
 
@@ -20,9 +22,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     private readonly ICSVConverter _csvConverter;
     private readonly IFileUploadToCloud _fileUploadToCloud;
 
-
-
-
     public OrganisationReportingJob(IServiceScopeFactory factory, ILogger<OrganisationReportingJob> logger,
        IDateTimeService dataTimeService, AppSettings appSettings, IHttpClientFactory httpClientFactory,
        ICSVConverter csvConverter, IFileUploadToCloud fileUploadToCloud)
@@ -34,7 +33,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       _httpClientFactory = httpClientFactory;
       _csvConverter = csvConverter;
       _fileUploadToCloud = fileUploadToCloud;
-
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -51,7 +49,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
 
         await Task.Delay(interval, stoppingToken);
 
-        
+
 
       }
     }
@@ -75,7 +73,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
         int size = _appSettings.MaxNumbeOfRecordInAReport;
         _logger.LogInformation($"Max number of record in a report from configuartion settings => {_appSettings.MaxNumbeOfRecordInAReport}");
         var index = 0;
-        
+
         List<OrganisationProfileResponseInfo> orgDetailList = new List<OrganisationProfileResponseInfo>();
 
         foreach (var eachModifiedOrg in listOfAllModifiedOrg)
@@ -89,7 +87,7 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             try
             {
               _logger.LogInformation("Calling wrapper API to get Organisation Details");
-              var client = _httpClientFactory.CreateClient("WrapperApi");
+              var client = _httpClientFactory.CreateClient("OrgWrapperApi");
               var orgDetails = await GetOrganisationDetails(eachModifiedOrg, client);
               if (orgDetails != null)
               {
@@ -100,10 +98,10 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             catch (Exception ex)
             {
 
-              _logger.LogError($" XXXXXXXXXXXX Failed to retrieve organisation details from Wrapper Api. OrganisationId ={eachModifiedOrg.Item2} and Message - {ex.Message} XXXXXXXXXXXX");
+              _logger.LogError($" XXXXXXXXXXXX Failed to retrieve organisation details from Wrapper Api. OrganisationId ={eachModifiedOrg.Item1} and Message - {ex.Message} XXXXXXXXXXXX");
             }
 
-            if(listOfAllModifiedOrg.Count != index &&  orgDetailList.Count < size)
+            if (listOfAllModifiedOrg.Count != index && orgDetailList.Count < size)
             {
               continue;
             }
@@ -112,9 +110,14 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
             totalNumberOfItemsDuringThisSchedule += orgDetailList.Count();
 
 
-          _logger.LogInformation("After calling the wrapper API to get Organisation Details");
+            _logger.LogInformation("After calling the wrapper API to get Organisation Details");
 
             var fileByteArray = _csvConverter.ConvertToCSV(orgDetailList, "organisation");
+
+            //using (MemoryStream memStream = new MemoryStream(fileByteArray))
+            //{
+            //  File.WriteAllBytes($"org_{new Random().Next()}.csv", fileByteArray);
+            //}
 
             if (_appSettings.WriteCSVDataInLog)
             {
@@ -163,8 +166,8 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
           await Task.Delay(5000);
 
         }
-        
-          _logger.LogInformation($"Total number of organisation exported during this schedule => {totalNumberOfItemsDuringThisSchedule}");
+
+        _logger.LogInformation($"Total number of organisation exported during this schedule => {totalNumberOfItemsDuringThisSchedule}");
       }
       catch (Exception ex)
       {
@@ -174,46 +177,56 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
       }
     }
 
-    private async Task<OrganisationProfileResponseInfo?> GetOrganisationDetails(Tuple<int, string> eachModifiedOrg, HttpClient client)
+    private async Task<OrganisationProfileResponseInfo?> GetOrganisationDetails(Tuple<string> eachModifiedOrg, HttpClient client)
     {
-      string url = $"organisations/{eachModifiedOrg.Item2}";
+      string url = $"{eachModifiedOrg.Item1}";
       var response = await client.GetAsync(url);
 
       if (response.IsSuccessStatusCode)
       {
         var content = await response.Content.ReadAsStringAsync();
-        _logger.LogInformation($"Retrived org details for orgId-{eachModifiedOrg.Item2}");
+        _logger.LogInformation($"Retrived org details for orgId-{eachModifiedOrg.Item1}");
 
         return JsonConvert.DeserializeObject<OrganisationProfileResponseInfo>(content);
-
-
       }
       else
       {
-        _logger.LogError($"No organisation retrived for orgId-{eachModifiedOrg.Item2}");
+        _logger.LogError($"No organisation retrived for orgId-{eachModifiedOrg.Item1}");
         return null;
       }
 
     }
 
-    public async Task<List<Tuple<int, string>>> GetModifiedOrganisationIds()
+    public async Task<List<Tuple<string>>> GetModifiedOrganisationIds()
     {
       var dataDuration = _appSettings.ReportDataDurations.OrganisationReportingDurationInMinutes;
       var untilDateTime = _dataTimeService.GetUTCNow().AddMinutes(-dataDuration);
+      List<Tuple<string>> modifiedOrgsList = new List<Tuple<string>>();
 
       try
       {
-        var organisationIds = await _dataContext.Organisation.Where(
-                          org => !org.IsDeleted && org.LastUpdatedOnUtc > untilDateTime)
-                          .Select(o => new Tuple<int, string>(o.Id, o.CiiOrganisationId)).ToListAsync();
-        return organisationIds;
+        string url = $"data?is-match-name=false&lastmodified-date-time=" + untilDateTime.ToString("MM-dd-yyyy HH:mm:ss") + "&IsPagination=" + false;
+        var client = _httpClientFactory.CreateClient("OrgWrapperApi");
+        var response = await client.GetAsync(url);
+        if (response.IsSuccessStatusCode)
+        {
+          var content = await response.Content.ReadAsStringAsync();
+          var data = JsonConvert.DeserializeObject<OrganisationListResponse>(content);
+          if(data != null && data.OrgList != null && data.OrgList.Count > 0)
+          {
+            foreach ( var item in data.OrgList)
+            {
+              modifiedOrgsList.Add(new Tuple<string>(item.CiiOrganisationId));
+            }
+          }
+        }
       }
       catch (Exception ex)
       {
         _logger.LogError(ex, "Error");
         throw;
       }
-
+      return modifiedOrgsList;
 
     }
   }

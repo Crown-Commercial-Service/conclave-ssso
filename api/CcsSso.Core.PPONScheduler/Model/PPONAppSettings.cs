@@ -9,6 +9,8 @@ namespace CcsSso.Core.PPONScheduler.Model
 {
   public class PPONAppSettings
   {
+    public bool IsApiGatewayEnabled { get; set; }
+
     public string DbConnection { get; set; }
 
     public ApiSettings? PPONApiSettings { get; set; }
@@ -18,6 +20,8 @@ namespace CcsSso.Core.PPONScheduler.Model
     public ScheduleJob? ScheduleJobSettings { get; set; }
 
     public OneTimeJob? OneTimeJobSettings { get; set; }
+
+    public WrapperApiSettings? WrapperApiSettings { get; set; }
 
   }
   public class ApiSettings
@@ -47,5 +51,14 @@ namespace CcsSso.Core.PPONScheduler.Model
     public string StartDate { get; set; }
 
     public string EndDate { get; set; }
+  }
+
+  public class WrapperApiSettings
+  {
+    public string OrgApiKey { get; set; }
+
+    public string ApiGatewayEnabledOrgUrl { get; set; }
+
+    public string ApiGatewayDisabledOrgUrl { get; set; }
   }
 }

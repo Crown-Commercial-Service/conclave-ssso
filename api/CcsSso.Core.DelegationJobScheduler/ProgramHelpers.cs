@@ -61,7 +61,37 @@ namespace CcsSso.Core.DelegationJobScheduler
       return returnParams;
     }
 
-    public async Task<List<Parameter>> LoadAwsSecretsAsync(IAwsParameterStoreService _awsParameterStoreService)
+		public dynamic FillWrapperApiSettingsAwsParamsValue(Type objType, List<Parameter> parameters)
+		{
+			dynamic? returnParams = null;
+
+			if (objType == typeof(WrapperApiSettings))
+			{
+				returnParams = new WrapperApiSettings()
+				{
+					UserApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/UserApiKey"),
+					ApiGatewayEnabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledUserUrl"),
+					ApiGatewayDisabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledUserUrl"),
+				};
+			}
+			return returnParams;
+		}
+
+		public dynamic FillNotificationApiSettingsAwsParamsValue(Type objType, List<Parameter> parameters)
+		{
+			dynamic? returnParams = null;
+
+			if (objType == typeof(NotificationApiSettings))
+			{
+				returnParams = new NotificationApiSettings()
+				{
+					NotificationApiUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiUrl"),
+					NotificationApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiKey"),
+				};
+			}
+			return returnParams;
+		}
+		public async Task<List<Parameter>> LoadAwsSecretsAsync(IAwsParameterStoreService _awsParameterStoreService)
     {
       return await _awsParameterStoreService.GetParameters(path);
     }

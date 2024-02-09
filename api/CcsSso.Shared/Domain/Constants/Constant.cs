@@ -17,6 +17,10 @@ namespace CcsSso.Shared.Domain.Constants
     public const string ForceSignoutKey = "FORCE_SIGNOUT-";
     public const string BlockedListKey = "BLOCKED-LIST";
     public const string UserOrganisation = "USER_ORGANISATION"; // USER_ORGANISATION-{userName}
+    public const string OrganisationData = "WRAPPER_ORG_DATA";
+    public const string Configuration = "WRAPPER_CONFIGURATION";
+    public const string Security = "WRAPPER_SECURITY";
+
   }
 
   public static class Constants

@@ -1,9 +1,11 @@
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.ExternalApi.Authorisation;
 using CcsSso.Core.ExternalApi.Middleware;
 using CcsSso.Core.Service;
 using CcsSso.Core.Service.External;
+using CcsSso.Core.Service.Wrapper;
 using CcsSso.DbPersistence;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Contracts.External;

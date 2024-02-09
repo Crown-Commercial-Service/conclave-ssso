@@ -65,7 +65,19 @@ namespace CcsSso.Core.JobScheduler
           Url = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/Url"),
           ApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiKey"),
           ApiGatewayEnabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledUserUrl"),
-          ApiGatewayDisabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledUserUrl")
+          ApiGatewayDisabledUserUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledUserUrl"),
+          ConfigApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ConfigApiKey"),
+          OrgApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/OrgApiKey"),
+          OrgDeleteApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/OrgDeleteApiKey"),
+          RegistryContactDeleteApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/RegistryContactDeleteApiKey"),
+          UserApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/UserApiKey"),
+          ContactApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ContactApiKey"),
+          ApiGatewayEnabledConfigUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledConfigUrl"),
+          ApiGatewayEnabledOrgUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledOrgUrl"),
+          ApiGatewayEnabledContactUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayEnabledContactUrl"),
+          ApiGatewayDisabledConfigUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledConfigUrl"),
+          ApiGatewayDisabledOrgUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledOrgUrl"),
+          ApiGatewayDisabledContactUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "WrapperApiSettings/ApiGatewayDisabledContactUrl"),
         };
       }
       else if (objType == typeof(SecurityApiSettings))
@@ -196,8 +208,15 @@ namespace CcsSso.Core.JobScheduler
           Enable = Convert.ToBoolean(_awsParameterStoreService.FindParameterByName(parameters, path + "ServiceRoleGroupSettings/Enable"))
         };
       }
-
-      return returnParams;
+			else if (objType == typeof(NotificationApiSettings))
+			{
+				returnParams = new NotificationApiSettings()
+				{
+					NotificationApiUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiUrl"),
+				  NotificationApiKey = _awsParameterStoreService.FindParameterByName(parameters, path + "NotificationApiSettings/NotificationApiKey")	
+        };
+			}
+			return returnParams;
     }
 
     private List<UserDeleteJobSetting> FillUserDeleteJobSetting(string value)

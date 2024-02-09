@@ -1,40 +1,33 @@
 ﻿using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DelegationJobScheduler.Contracts;
-using CcsSso.Core.Domain.Contracts.External;
-using CcsSso.Core.Domain.Dtos.External;
+using CcsSso.Core.Domain.Dtos.Wrapper;
 using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using CcsSso.Core.Domain.Contracts.Wrapper;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
 namespace CcsSso.Core.DelegationJobScheduler.Services
 {
   public class DelegationService : IDelegationService
   {
-    private IDataContext _dataContext;
-    private IDelegationAuditEventService _delegationAuditEventService;
     private readonly IDateTimeService _dateTimeService;
     private readonly ILogger<IDelegationService> _logger;
-    private readonly IServiceProvider _serviceProvider;
+		private readonly IWrapperUserService _wrapperUserService;
 
-    public DelegationService(IServiceProvider serviceProvider, IDateTimeService dateTimeService, ILogger<IDelegationService> logger)
+		public DelegationService(IDateTimeService dateTimeService, ILogger<IDelegationService> logger, IWrapperUserService wrapperUserService)
     {
-      _serviceProvider = serviceProvider;
       _dateTimeService = dateTimeService;
+      _wrapperUserService = wrapperUserService;
       _logger = logger;
     }
-    public void InitiateScopedServices()
-    {
-      _dataContext = _serviceProvider.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
-      _delegationAuditEventService = _serviceProvider.CreateScope().ServiceProvider.GetRequiredService<IDelegationAuditEventService>();
-    }
-
+    
     #region Link expired job
     public async Task PerformLinkExpireJobAsync()
     {
-      InitiateScopedServices();
       var linkExpiredUsers = await GetDelegationLinkExpiredUsers();
 
       if (!linkExpiredUsers.Any())
@@ -49,109 +42,81 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
       _logger.LogInformation($"Number of users with expired delegated link: {linkExpiredUsers.Count()}");
       _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
-      var delegationAuditEventLogs = CreateAuditLogs(linkExpiredUsers, DelegationAuditEventType.ActivationLinkExpiry);
-      await _delegationAuditEventService.CreateDelegationAuditEventsAsync(delegationAuditEventLogs);
-    }
-
-    private async Task<List<User>> GetDelegationLinkExpiredUsers()
-    {
-      var usersWithExpiredLinkNoExpiredLog = new List<User>();
-      try
+      foreach (var expiredUser in linkExpiredUsers)
       {
-        var usersWithExpiredLink = await _dataContext.User.Where(u => !u.IsDeleted && u.UserType == UserType.Delegation && !u.DelegationAccepted && u.DelegationLinkExpiryOnUtc < _dateTimeService.GetUTCNow()).ToListAsync();
-
-        foreach (var user in usersWithExpiredLink)
-        {
-          var auditEventLogWithActivationLinkExpiry = await _dataContext.DelegationAuditEvent.Where(x => x.UserId == user.Id && x.ActionedOnUtc > user.DelegationLinkExpiryOnUtc && x.EventType == DelegationAuditEventType.ActivationLinkExpiry.ToString()).OrderByDescending(x => x.Id).ToListAsync();
-
-          if (!auditEventLogWithActivationLinkExpiry.Any())
-          {
-            usersWithExpiredLinkNoExpiredLog.Add(user);
-          }
-        }
+        var delegationAuditEventLog = CreateAuditLog(expiredUser, DelegationAuditEventType.ActivationLinkExpiry);
+				await _wrapperUserService.CreateDelegationAuditEvent(delegationAuditEventLog);
       }
+     
+    }
+		private async Task<List<DelegationUserDto>> GetDelegationLinkExpiredUsers()
+		{
+			var usersWithExpiredLinkNoExpiredLog = new List<DelegationUserDto>();
+			try
+      {
+         usersWithExpiredLinkNoExpiredLog = await _wrapperUserService.GetDelegationLinkExpiredUsersAsync();	
+			}
       catch (Exception ex)
       {
         _logger.LogError($"*****Error while getting delegation link expired users, exception message =  {ex.Message}");
       }
-      return usersWithExpiredLinkNoExpiredLog;
-    }
-    #endregion
+			return usersWithExpiredLinkNoExpiredLog;
+		}
+		#endregion
 
-    #region Delegation termination 
-    public async Task PerformDelegationTermissionJobAsync()
-    {
-      InitiateScopedServices();
-      var usersWithDelegationEndDatePassed = await GetDelegationTerminatedUsers();
+		#region Delegation termination 
+		public async Task PerformDelegationTermissionJobAsync()
+		{
+			var usersWithDelegationEndDatePassed = await GetDelegationTerminatedUsers();
 
-      if (!usersWithDelegationEndDatePassed.Any())
-      {
-        _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        _logger.LogInformation("No user with delegation end date passed found.");
-        _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        return;
-      }
+			if (!usersWithDelegationEndDatePassed.Any())
+			{
+				_logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+				_logger.LogInformation("No user with delegation end date passed found.");
+				_logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+				return;
+			}
 
-      _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-      _logger.LogInformation($"Number of users with delegation end date passed {usersWithDelegationEndDatePassed.Count()}");
-      _logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+			_logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+			_logger.LogInformation($"Number of users with delegation end date passed {usersWithDelegationEndDatePassed.Count()}");
+			_logger.LogInformation("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
-      var delegationAuditEventLogs = CreateAuditLogs(usersWithDelegationEndDatePassed, DelegationAuditEventType.ExpiryOfDelegationAccess);
-      await _delegationAuditEventService.CreateDelegationAuditEventsAsync(delegationAuditEventLogs);
-      //Delete delegated users
-      await DeleteDelegationTerminatedUsers(usersWithDelegationEndDatePassed);
-    }
+			foreach (var delegationEndDatePassedUser in usersWithDelegationEndDatePassed)
+			{
+				var delegationAuditEventLog = CreateAuditLog(delegationEndDatePassedUser, DelegationAuditEventType.ExpiryOfDelegationAccess);
+				await _wrapperUserService.CreateDelegationAuditEvent(delegationAuditEventLog);
+				//Delete delegated users
+				await _wrapperUserService.DeleteDelegatedUser(delegationEndDatePassedUser.UserName, delegationEndDatePassedUser.CiiOrganisationId);
+			}
+		}
 
-    private async Task<List<User>> GetDelegationTerminatedUsers()
-    {
-      var usersWithDelegationEndDatePassed = new List<User>();
-      try
-      {
-        usersWithDelegationEndDatePassed = await _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person).ThenInclude(p => p.Organisation).Include(u => u.UserAccessRoles)
-          .Where(u => !u.IsDeleted && u.UserType == UserType.Delegation && u.DelegationEndDate < _dateTimeService.GetUTCNow().Date).ToListAsync();
-      }
-      catch (Exception ex)
-      {
-        _logger.LogError($"*****Error while getting delegation end date passed users, exception message =  {ex.Message}");
-      }
-      return usersWithDelegationEndDatePassed;
-    }
+		private async Task<List<DelegationUserDto>> GetDelegationTerminatedUsers()
+		{
+			var usersWithDelegationEndDatePassed = new List<DelegationUserDto>();
+			try
+			{
+				usersWithDelegationEndDatePassed = await _wrapperUserService.GetDelegationTerminatedUsersAsync();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError($"*****Error while getting delegation end date passed users, exception message =  {ex.Message}");
+			}
+			return usersWithDelegationEndDatePassed;
+		}
 
-    private async Task DeleteDelegationTerminatedUsers(List<User> users)
-    {
-      foreach (var user in users)
-      {
-        user.Party.IsDeleted = true;
-        user.Party.Person.IsDeleted = true;
-        user.LastUpdatedOnUtc = _dateTimeService.GetUTCNow();
+		#endregion
 
-        if (user.UserAccessRoles != null)
-        {
-          user.UserAccessRoles.ForEach((userAccessRole) =>
-          {
-            userAccessRole.IsDeleted = true;
-          });
-        }
-        user.IsDeleted = true;
-      }
-      await _dataContext.SaveChangesAsync();
-    }
-    #endregion
+		#region common methods
 
-    #region common methods
-
-    private List<DelegationAuditEventInfo> CreateAuditLogs(List<User> linkExpiredUsers, DelegationAuditEventType eventType)
+		private DelegationAuditEventRequestInfo CreateAuditLog(DelegationUserDto linkExpiredUsers, DelegationAuditEventType eventType)
     {
       Guid groupId = Guid.NewGuid();
 
-      List<DelegationAuditEventInfo> delegationAuditEventInfoList = new();
-
-      foreach (var user in linkExpiredUsers)
-      {
-        var delegationAuditEvent = new DelegationAuditEventInfo
-        {
+        var delegationAuditEvent = new DelegationAuditEventRequestInfo
+				{
           GroupId = groupId,
-          UserId = user.Id,
+          UserName = linkExpiredUsers.UserName,
+					CiiOrganisationId = linkExpiredUsers.CiiOrganisationId,
           EventType = eventType.ToString(),
           ActionedOnUtc = _dateTimeService.GetUTCNow(),
           ActionedBy = DelegationAuditActionBy.Job.ToString()
@@ -159,17 +124,14 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
 
         if (eventType == DelegationAuditEventType.ActivationLinkExpiry)
         {
-          _logger.LogInformation($"Delegation link expired for user: {user.UserName}, delegation link expired time:{user.DelegationLinkExpiryOnUtc}");
+          _logger.LogInformation($"Delegation link expired for user: {linkExpiredUsers.UserName}, delegation link expired time:{linkExpiredUsers.DelegationLinkExpiryOnUtc}");
         }
         else
         {
-          _logger.LogInformation($"Delegation end date passed for user: {user.UserName}, delegation start date:{user.DelegationStartDate}, end date: {user.DelegationEndDate}");
+          _logger.LogInformation($"Delegation end date passed for user: {linkExpiredUsers.UserName}, delegation start date:{linkExpiredUsers.DelegationStartDate}, end date: {linkExpiredUsers.DelegationEndDate}");
         }
 
-        delegationAuditEventInfoList.Add(delegationAuditEvent);
-      }
-
-      return delegationAuditEventInfoList;
+      return delegationAuditEvent;
     }
     #endregion
 

@@ -128,7 +128,7 @@ namespace CcsSso.Core.JobScheduler.Services
 
         var updateRoles = new OrganisationRoleUpdate() { IsBuyer = (bool)orgDetail.RightToBuy, RolesToDelete = RolesToDelete };
 
-        var url = "/organisations/" + orgDetail.CiiOrganisationId + "/roles";
+        var url = "/organisation-profile/" + orgDetail.CiiOrganisationId + "/roles";
         HttpContent data = new StringContent(JsonConvert.SerializeObject(updateRoles, new JsonSerializerSettings
         { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
 
@@ -187,7 +187,7 @@ namespace CcsSso.Core.JobScheduler.Services
 
         var updateRoles = new OrganisationRoleUpdate() { IsBuyer = (bool)orgDetail.RightToBuy, RolesToAdd = RolesToAdd };
 
-        var url = "/organisations/" + orgDetail.CiiOrganisationId + "/roles";
+        var url = "/organisation-profile/" + orgDetail.CiiOrganisationId + "/roles";
         HttpContent data = new StringContent(JsonConvert.SerializeObject(updateRoles, new JsonSerializerSettings
         { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), Encoding.UTF8, "application/json");
 

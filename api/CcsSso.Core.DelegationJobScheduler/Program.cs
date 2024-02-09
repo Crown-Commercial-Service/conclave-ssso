@@ -5,8 +5,10 @@ using CcsSso.Core.DelegationJobScheduler.Model;
 using CcsSso.Core.DelegationJobScheduler.Services;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Service;
 using CcsSso.Core.Service.External;
+using CcsSso.Core.Service.Wrapper;
 using CcsSso.DbPersistence;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
@@ -19,6 +21,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 
 namespace CcsSso.Core.DelegationJobScheduler
 {
@@ -57,7 +60,8 @@ namespace CcsSso.Core.DelegationJobScheduler
 
         ConfigureServices(services, appSettings);
         ConfigureContexts(services, appSettings);
-        ConfigureJobs(services);
+				ConfigureHttpClients(services, appSettings);
+				ConfigureJobs(services);
       });
     }
 
@@ -86,21 +90,27 @@ namespace CcsSso.Core.DelegationJobScheduler
     private static DelegationAppSettings GetConfigurationDetails(HostBuilderContext hostContext)
     {
       string dbConnection;
-      string conclaveLoginUrl;
-      DelegationJobSettings scheduleJob;
+      string conclaveLoginUrl;     
+			DelegationJobSettings scheduleJob;
       DelegationExpiryNotificationJobSettings expiryNotificationJob;
       EmailSettings emailSettings;
+			WrapperApiSettings wrapperApiSettings;
+      NotificationApiSettings notificationApiSettings;
 
-      var config = hostContext.Configuration;
-      dbConnection = config["DbConnection"];
+			var config = hostContext.Configuration;
+			bool.TryParse(config["IsApiGatewayEnabled"], out bool isApiGatewayEnabled);
+			dbConnection = config["DbConnection"];
       conclaveLoginUrl = config["ConclaveLoginUrl"];
       scheduleJob = config.GetSection("DelegationJobSettings").Get<DelegationJobSettings>();
       expiryNotificationJob = config.GetSection("DelegationExpiryNotificationJobSettings").Get<DelegationExpiryNotificationJobSettings>();
       emailSettings = config.GetSection("EmailSettings").Get<EmailSettings>();
+      wrapperApiSettings = config.GetSection("WrapperApiSettings").Get<WrapperApiSettings>();
+      notificationApiSettings = config.GetSection("NotificationApiSettings").Get<NotificationApiSettings>();
 
       var appSettings = new DelegationAppSettings()
       {
-        DbConnection = dbConnection,
+        IsApiGatewayEnabled = isApiGatewayEnabled,
+				DbConnection = dbConnection,
         ConclaveLoginUrl=conclaveLoginUrl,
         DelegationJobSettings = new DelegationJobSettings
         {
@@ -118,13 +128,37 @@ namespace CcsSso.Core.DelegationJobScheduler
           ApiKey=emailSettings.ApiKey,
           DelegationExpiryNotificationToAdminTemplateId=emailSettings.DelegationExpiryNotificationToAdminTemplateId,
           DelegationExpiryNotificationToUserTemplateId=emailSettings.DelegationExpiryNotificationToUserTemplateId,
-        }
-      };
+        },
+        WrapperApiSettings = new WrapperApiSettings
+        {
+          UserApiKey = wrapperApiSettings.UserApiKey,
+          ApiGatewayEnabledUserUrl = wrapperApiSettings.ApiGatewayEnabledUserUrl,
+          ApiGatewayDisabledUserUrl = wrapperApiSettings.ApiGatewayDisabledUserUrl
+        },
+				NotificationApiSettings = new NotificationApiSettings
+				{
+					 NotificationApiUrl = notificationApiSettings.NotificationApiUrl,
+					NotificationApiKey = notificationApiSettings.NotificationApiKey
+				}
+
+			};
 
       return appSettings;
     }
-
-    private static void ConfigureServices(IServiceCollection services, DelegationAppSettings appSettings)
+		private static void ConfigureHttpClients(IServiceCollection services, DelegationAppSettings appSettings)
+		{
+			services.AddHttpClient("UserWrapperApi", c =>
+			{
+				c.BaseAddress = new Uri(appSettings.IsApiGatewayEnabled ? appSettings.WrapperApiSettings.ApiGatewayEnabledUserUrl : appSettings.WrapperApiSettings.ApiGatewayDisabledUserUrl);
+				c.DefaultRequestHeaders.Add("X-API-Key", appSettings.WrapperApiSettings.UserApiKey);
+			});
+			services.AddHttpClient("NotificationApi", c =>
+			{
+				c.BaseAddress = new Uri(appSettings.NotificationApiSettings.NotificationApiUrl);
+				c.DefaultRequestHeaders.Add("X-API-Key", appSettings.NotificationApiSettings.NotificationApiKey);
+			});
+		}
+		private static void ConfigureServices(IServiceCollection services, DelegationAppSettings appSettings)
     {
       services.AddSingleton(s => appSettings);
 
@@ -154,6 +188,8 @@ namespace CcsSso.Core.DelegationJobScheduler
       services.AddScoped<IDelegationAuditEventService, DelegationAuditEventService>();
       services.AddScoped<IDelegationService, DelegationService>();
       services.AddScoped<IDelegationExpiryNotificationService, DelegationExpiryNotificationService>();
+      services.AddScoped<IWrapperApiService, WrapperApiService>();
+      services.AddScoped<IWrapperUserService, WrapperUserService>();
     }
 
     private static DelegationAppSettings GetAWSConfiguration()
@@ -162,17 +198,20 @@ namespace CcsSso.Core.DelegationJobScheduler
       DelegationJobSettings delegationJobSettings;
       DelegationExpiryNotificationJobSettings delegationExpiryNotificationJobSettings;
       EmailSettings emailSettings;
-
-      _programHelpers = new ProgramHelpers();
+			WrapperApiSettings wrapperApiSettings;
+      NotificationApiSettings notificationApiSettings;
+      
+			_programHelpers = new ProgramHelpers();
       _awsParameterStoreService = new AwsParameterStoreService();
 
       var parameters = _programHelpers.LoadAwsSecretsAsync(_awsParameterStoreService).Result;
 
-      var dbName = _awsParameterStoreService.FindParameterByName(parameters, path + "DbName");
+			var dbName = _awsParameterStoreService.FindParameterByName(parameters, path + "DbName");
       var dbConnectionEndPoint = _awsParameterStoreService.FindParameterByName(parameters, path + "DbConnection");
       var conclaveLoginUrl = _awsParameterStoreService.FindParameterByName(parameters, path + "conclaveLoginUrl");
+			
 
-      if (!string.IsNullOrEmpty(dbName))
+			if (!string.IsNullOrEmpty(dbName))
       {
         dbConnection = UtilityHelper.GetDatbaseConnectionString(dbName, dbConnectionEndPoint);
       }
@@ -184,18 +223,21 @@ namespace CcsSso.Core.DelegationJobScheduler
       ReadFromAWS(out delegationJobSettings, parameters);
       ReadFromAWS(out delegationExpiryNotificationJobSettings, parameters);
       ReadFromAWS(out emailSettings, parameters);
+      ReadFromAWS(out wrapperApiSettings, parameters);
+      ReadFromAWS(out notificationApiSettings, parameters);
 
-      return new DelegationAppSettings()
+			return new DelegationAppSettings()
       {
         DbConnection = dbConnection,
         ConclaveLoginUrl= conclaveLoginUrl,
         DelegationJobSettings = delegationJobSettings,
         DelegationExpiryNotificationJobSettings = delegationExpiryNotificationJobSettings,
-        EmailSettings = emailSettings
-      };
+        EmailSettings = emailSettings, 
+				WrapperApiSettings = wrapperApiSettings,
+				NotificationApiSettings = notificationApiSettings
+			};
     }
-
-    private static void ReadFromAWS(out DelegationJobSettings delegationJobSettings, List<Parameter> parameters)
+		private static void ReadFromAWS(out DelegationJobSettings delegationJobSettings, List<Parameter> parameters)
     {
       delegationJobSettings = (DelegationJobSettings)_programHelpers.FillAwsParamsValue(typeof(DelegationJobSettings), parameters);
     }
@@ -210,7 +252,16 @@ namespace CcsSso.Core.DelegationJobScheduler
       emailSettings = (EmailSettings)_programHelpers.FillEmailSettingsAwsParamsValue(typeof(EmailSettings), parameters);
     }
 
-    private static void ConfigureJobs(IServiceCollection services)
+		private static void ReadFromAWS(out WrapperApiSettings wrapperApiSettings, List<Parameter> parameters)
+		{
+			wrapperApiSettings = (WrapperApiSettings)_programHelpers.FillWrapperApiSettingsAwsParamsValue(typeof(WrapperApiSettings), parameters);
+		}
+
+		private static void ReadFromAWS(out NotificationApiSettings notificationApiSettings, List<Parameter> parameters)
+		{
+			notificationApiSettings = (NotificationApiSettings)_programHelpers.FillNotificationApiSettingsAwsParamsValue(typeof(NotificationApiSettings), parameters);
+		}
+		private static void ConfigureJobs(IServiceCollection services)
     {
       services.AddHostedService<LinkExpiryJob>();
       services.AddHostedService<DelegationTerminationJob>();

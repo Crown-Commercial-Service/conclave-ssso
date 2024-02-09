@@ -16,6 +16,7 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string Actioned { get; set; }
 
     public string ActionedBy { get; set; }
+
   }
 
   public class OrganisationAuditResponseInfo

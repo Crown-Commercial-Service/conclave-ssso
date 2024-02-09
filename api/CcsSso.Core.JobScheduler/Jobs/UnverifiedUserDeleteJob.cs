@@ -1,18 +1,16 @@
 using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Contracts.Wrapper;
+using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
-using CcsSso.DbModel.Entity;
-using CcsSso.Domain.Constants;
 using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,9 +29,11 @@ namespace CcsSso.Core.JobScheduler
     private readonly IServiceProvider _serviceProvider;
     private IContactSupportService _contactSupportService;
     private readonly IHttpClientFactory _httpClientFactory;
-
+    private readonly IWrapperUserService _wrapperUserService;
+    private readonly IWrapperOrganisationService _wrapperOrganisationService;
     public UnverifiedUserDeleteJob(IServiceProvider serviceProvider, IDateTimeService dataTimeService,
-      AppSettings appSettings, IEmailSupportService emailSupportService, IIdamSupportService idamSupportService, IHttpClientFactory httpClientFactory)
+      AppSettings appSettings, IEmailSupportService emailSupportService, IIdamSupportService idamSupportService, 
+      IHttpClientFactory httpClientFactory, IWrapperUserService wrapperUserService, IWrapperOrganisationService wrapperOrganisationService)
     {
       _dataTimeService = dataTimeService;
       _appSettings = appSettings;
@@ -41,6 +41,8 @@ namespace CcsSso.Core.JobScheduler
       _idamSupportService = idamSupportService;
       _serviceProvider = serviceProvider;
       _httpClientFactory = httpClientFactory;
+      _wrapperUserService = wrapperUserService;
+      _wrapperOrganisationService = wrapperOrganisationService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -68,138 +70,52 @@ namespace CcsSso.Core.JobScheduler
 
     public async Task PerformJobAsync()
     {
-      Dictionary<int, List<string>> adminList = new Dictionary<int, List<string>>();
-      Dictionary<int, bool> orgSiteContactAvailabilityStatus = new Dictionary<int, bool>();
-      var client = _httpClientFactory.CreateClient();
-      client.DefaultRequestHeaders.Add("X-API-Key", _appSettings.WrapperApiSettings.ApiKey);
-      client.BaseAddress = new Uri(_appSettings.IsApiGatewayEnabled ? _appSettings.WrapperApiSettings.ApiGatewayEnabledUserUrl : _appSettings.WrapperApiSettings.ApiGatewayDisabledUserUrl);
+      Dictionary<string, List<string>> adminList = new Dictionary<string, List<string>>();
 
-      var users = await GetUsersToDeleteAsync();
+      var minimumThreshold = _appSettings.UserDeleteJobSettings.Min(udj => udj.UserDeleteThresholdInMinutes);
+      var createdOnUtc = DateTime.UtcNow.AddMinutes(-1 * minimumThreshold);
 
-      if (users != null)
-        Console.WriteLine($"{users.Count()} user(s) found");
+      Console.WriteLine($"Retrieving unverified users created before {createdOnUtc}.");
+      var inactiveUsers = await _wrapperUserService.GetInActiveUsers(createdOnUtc.ToString("yyyy-MM-dd HH:mm:ss"));
+
+      if (inactiveUsers != null && inactiveUsers.Any())
+        Console.WriteLine($"{inactiveUsers.Count()} user(s) found");
       else
         Console.WriteLine("No users found");
 
-      var usersPendingRoleInfo = await GetAllUserPendingRoleDetailsAsync(users.Select(x => x.Id).ToArray());
 
       var orgAdminList = new List<string>();
-      foreach (var orgByUsers in users.GroupBy(u => u.Party.Person.OrganisationId))
+      foreach (var orgByUsers in inactiveUsers.GroupBy(u => u.OrganisationId))
       {
         Console.WriteLine($"Unverified User Deletion Organisation: {orgByUsers.Key}");
         foreach (var user in orgByUsers.Select(ou => ou).ToList())
         {
-          Console.WriteLine($"Unverified User Deletion User: {user.UserName} Id:{user.Id}");
+          Console.WriteLine($"Unverified User Deletion User: {user.UserName}");
           try
           {
-            ContactPoint reassigningContactPoint = null;
-            bool shouldDeleteInIdam = false;
-            user.IsDeleted = true;
-            user.Party.IsDeleted = true;
-            user.Party.Person.IsDeleted = true;
+            await _wrapperUserService.DeleteUserAsync(user.UserName);
 
-            if (user.UserGroupMemberships != null)
+            //if (user.UserAccessRolePendings.Any())
+            //{
+            //  var userPendingRoles = user.UserAccessRolePendings.Where(x => x.User.UserName == user.UserName).ToList();
+            //  var roleIds = userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList();
+            //  await _wrapperUserService.RemoveApprovalPendingRoles(user.UserName, roleIds, DbModel.Constants.UserPendingRoleStaus.Expired);
+            //  Console.WriteLine($" **************** Unverified User pending role deletion success for user:{user.UserName} **************** ");
+            //}
+
+            Console.WriteLine($" **************** Retrieving admins for org :{user.OrganisationId} **************** ");
+            var filter = new UserFilterCriteria
             {
-              user.UserGroupMemberships.ForEach((userGroupMembership) =>
-              {
-                userGroupMembership.IsDeleted = true;
-              });
-            }
+              isAdmin = true,
+              includeSelf = true,
+              includeUnverifiedAdmin = false,
+              isDelegatedExpiredOnly = false,
+              isDelegatedOnly = false,
+              searchString = String.Empty,
+              excludeInactive=true
+            };
 
-            if (user.UserAccessRoles != null)
-            {
-              user.UserAccessRoles.ForEach((userAccessRole) =>
-              {
-                userAccessRole.IsDeleted = true;
-              });
-            }
-
-            if (user.UserIdentityProviders != null)
-            {
-              shouldDeleteInIdam = user.UserIdentityProviders.Any(ui => !ui.IsDeleted
-                && ui.OrganisationEligibleIdentityProvider.IdentityProvider.IdpConnectionName == Contstant.ConclaveIdamConnectionName);
-              user.UserIdentityProviders.ForEach((idp) => { idp.IsDeleted = true; });
-            }
-
-            if (user.Party.ContactPoints != null && user.Party.ContactPoints.Any(cp => !cp.IsDeleted))
-            {
-              if (!orgSiteContactAvailabilityStatus.ContainsKey(orgByUsers.Key))
-              {
-                Console.WriteLine($"Unverified User Deletion User: {user.UserName} Setting orgSiteContactAvailabilityStatus");
-                var orgSiteContactExists = await _contactSupportService.IsOrgSiteContactExistsAsync(user.Party.ContactPoints.Where(cp => !cp.IsDeleted).Select(cp => cp.Id).ToList(), orgByUsers.Key);
-                orgSiteContactAvailabilityStatus.Add(orgByUsers.Key, orgSiteContactExists);
-                Console.WriteLine($"Unverified User Deletion User: {user.UserName} orgSiteContactAvailabilityStatus: {orgSiteContactExists}");
-              }
-
-              if (!orgSiteContactAvailabilityStatus[orgByUsers.Key])
-              {
-                Console.WriteLine($"Unverified User Deletion User: {user.UserName} NoOrgSiteContacts: {true}");
-                // User contact check should run for every user since other user can be deleted in net execution
-                var otherUserContactExists = await _contactSupportService.IsOtherUserContactExistsAsync(user.UserName, orgByUsers.Key);
-                if (!otherUserContactExists)
-                {
-                  Console.WriteLine($"Unverified User Deletion User: {user.UserName} reassigningContactPoint: {true}");
-                  // This is the last user contact of organisation. This will only run once per an organisation
-                  reassigningContactPoint = user.Party.ContactPoints.Where(cp => !cp.IsDeleted).OrderByDescending(cp => cp.CreatedOnUtc).FirstOrDefault();
-                  var organisation = await _dataContext.Organisation.Include(o => o.Party).Where(o => o.Id == orgByUsers.Key).FirstOrDefaultAsync();
-                  ContactPoint newOrgContactPoint = new ContactPoint
-                  {
-                    ContactPointReasonId = reassigningContactPoint.ContactPointReasonId,
-                    ContactDetailId = reassigningContactPoint.ContactDetailId,
-                    PartyId = organisation.PartyId,
-                    PartyTypeId = organisation.Party.PartyTypeId
-                  };
-                  _dataContext.ContactPoint.Add(newOrgContactPoint);
-                  orgSiteContactAvailabilityStatus[orgByUsers.Key] = false; // Set only user contact unavailability (false) for orgcontact status (Cannot set true because the user might get deleted in next round)
-                }
-              }
-
-              // Delete assigned contact points
-              var contactDetialsIds = user.Party.ContactPoints.Where(cp => !cp.IsDeleted).Select(cp => cp.ContactDetailId).ToList();
-              var assignedContactPoints = await _dataContext.ContactPoint
-                .Where(cd => !cd.IsDeleted && contactDetialsIds.Contains(cd.ContactDetailId) && cd.OriginalContactPointId != 0)
-                .ToListAsync();
-              Console.WriteLine($"Unverified User Deletion User: {user.UserName} assignedContactPoints: {JsonConvert.SerializeObject(assignedContactPoints.Select(c => c.Id).ToList())}");
-
-              assignedContactPoints.ForEach(assignedContactPoint => assignedContactPoint.IsDeleted = true);
-
-              user.Party.ContactPoints.Where(cp => !cp.IsDeleted).ToList().ForEach((cp) =>
-              {
-                cp.IsDeleted = true;
-                if (reassigningContactPoint == null || cp.Id != reassigningContactPoint.Id) // Delete the contact details and virtual address of not reassigning contact point
-                {
-                  cp.ContactDetail.IsDeleted = true;
-                  cp.ContactDetail.VirtualAddresses.ForEach((va) => { va.IsDeleted = true; });
-                }
-              });
-            }
-
-            // Delete user roles pending for approval
-            var userPendingRoles = usersPendingRoleInfo.Where(x => x.UserId == user.Id).ToList();
-            if (userPendingRoles.Any())
-            {
-              var deleteResult = await client.DeleteAsync($"approve/roles?user-id={HttpUtility.UrlEncode(user.UserName)}&roles=" + String.Join(",", userPendingRoles.Select(x => x.OrganisationEligibleRoleId).ToList()));
-              if (deleteResult.StatusCode != HttpStatusCode.OK)
-              {
-                Console.WriteLine($" **************** Unverified User pending role deletion failed for user:{user.UserName} **************** ");
-              }
-              else
-              {
-                Console.WriteLine($" **************** Unverified User pending role deletion success for user:{user.UserName} **************** ");
-              }
-            }
-
-            await _dataContext.SaveChangesAsync();
-
-            Console.WriteLine($"Unverified User Deletion User: {user.UserName} reassigningContactPoint: {reassigningContactPoint?.Id}");
-
-
-            if (shouldDeleteInIdam)
-            {
-              await _idamSupportService.DeleteUserInIdamAsync(user.UserName);
-              Console.WriteLine($"Unverified User Deletion User in Auth0: {user.UserName}");
-            }
-            var userDeleteJobSetting = _appSettings.UserDeleteJobSettings.FirstOrDefault(ud => ud.ServiceClientId == user.CcsService?.ServiceClientId);
+            var userDeleteJobSetting = _appSettings.UserDeleteJobSettings.FirstOrDefault(ud => ud.ServiceClientId == (user.ServiceClientId ?? ""));
 
             if (userDeleteJobSetting == null)
             {
@@ -208,16 +124,17 @@ namespace CcsSso.Core.JobScheduler
 
             if (userDeleteJobSetting.NotifyOrgAdmin)
             {
-              Console.WriteLine($"Unverified User Notify Admin for: {user.UserName}");
-              if (!adminList.ContainsKey(orgByUsers.Key))
+              if (!adminList.Any(x => x.Key == user.OrganisationId))
               {
-                var adminUsers = await _organisationSupportService.GetAdminUsersAsync(orgByUsers.Key);
-                adminList.Add(orgByUsers.Key, adminUsers.Where(au => au.AccountVerified).Select(au => au.UserName).ToList());
+                var orgUsers = await _wrapperUserService.GetUserByOrganisation(user.OrganisationId, filter);
+                adminList.Add(orgByUsers.Key, orgUsers.UserList.Select(au => au.UserName).ToList());
+                Console.WriteLine($" **************** {orgUsers.UserList.Count()} admins found for the org:{user.OrganisationId} **************** ");
               }
-              await _emailSupportService.SendUnVerifiedUserDeletionEmailToAdminAsync($"{user.Party.Person.FirstName} {user.Party.Person.LastName}",
-              user.UserName, adminList[orgByUsers.Key]);
+
+              await _emailSupportService.SendUnVerifiedUserDeletionEmailToAdminAsync($"{user.FirstName} {user.LastName}", user.UserName, adminList[orgByUsers.Key]);
               Console.WriteLine($"Unverified User Notify Admin Success for: {user.UserName}");
             }
+
           }
           catch (Exception ex)
           {
@@ -225,34 +142,6 @@ namespace CcsSso.Core.JobScheduler
           }
         }
       }
-
-    }
-
-    private async Task<List<User>> GetUsersToDeleteAsync()
-    {
-      var minimumThreshold = _appSettings.UserDeleteJobSettings.Min(udj => udj.UserDeleteThresholdInMinutes);
-
-      var users = await _dataContext.User.Include(u => u.Party).ThenInclude(p => p.Person)
-                          .Include(u => u.UserGroupMemberships)
-                          .Include(u => u.UserAccessRoles)
-                          .Include(u => u.CcsService)
-                          .Include(u => u.UserIdentityProviders).ThenInclude(ui => ui.OrganisationEligibleIdentityProvider).ThenInclude(ui => ui.IdentityProvider)
-                          .Include(u => u.Party).ThenInclude(p => p.ContactPoints).ThenInclude(cp => cp.ContactDetail).ThenInclude(cd => cd.VirtualAddresses)
-                          .Where(u => !u.AccountVerified && !u.IsDeleted
-                          && (!u.UserGroupMemberships.Any(ugm => !ugm.IsDeleted
-                          && ugm.OrganisationUserGroup.GroupEligibleRoles.Any(ga => !ga.IsDeleted
-                          && ga.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey))
-                          && (!u.UserAccessRoles.Any(ur => !ur.IsDeleted
-                          && ur.OrganisationEligibleRole.CcsAccessRole.CcsAccessRoleNameKey == Contstant.OrgAdminRoleNameKey)))
-                          && u.CreatedOnUtc < _dataTimeService.GetUTCNow().AddMinutes(-minimumThreshold))
-                          .Select(u => u).ToListAsync();
-
-      return users;
-    }
-
-    private async Task<List<UserAccessRolePending>> GetAllUserPendingRoleDetailsAsync(int[] users)
-    {
-      return await _dataContext.UserAccessRolePending.Where(u => !u.IsDeleted && users.Contains(u.UserId)).ToListAsync();
     }
   }
 }

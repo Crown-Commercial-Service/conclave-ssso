@@ -1,4 +1,5 @@
 using CcsSso.Core.DbModel.Entity;
+using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler;
 using CcsSso.Core.JobScheduler.Contracts;
@@ -123,11 +124,15 @@ namespace CcsSso.Core.Tests.Jobs
           emailSupportServiceMock = new Mock<IEmailSupportService>();
         }
 
+        var mockWrapperUserService = new Mock<IWrapperUserService>();
+        var mockWrapperOrganisationService = new Mock<IWrapperOrganisationService>();
+
         serviceProvider
     .Setup(x => x.GetService(typeof(IServiceScopeFactory)))
     .Returns(serviceScopeFactory.Object);
         var jb = new UnverifiedUserDeleteJob(serviceProvider.Object, dateTimeService, appSettings,
-          emailSupportServiceMock.Object, mockIdamSupportService.Object, mockHttpClientFactory.Object);
+          emailSupportServiceMock.Object, mockIdamSupportService.Object, mockHttpClientFactory.Object,
+          mockWrapperUserService.Object, mockWrapperOrganisationService.Object);
         jb.InitiateScopedServices(dataContext, mockOrganisationSupportService.Object);
         return jb;
       }

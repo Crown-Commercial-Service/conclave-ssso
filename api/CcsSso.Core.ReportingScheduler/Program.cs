@@ -2,6 +2,8 @@
 using Amazon.SimpleSystemsManagement.Model;
 using CcsSso.Core.ReportingScheduler.Jobs;
 using CcsSso.Core.ReportingScheduler.Models;
+using CcsSso.Core.ReportingScheduler.Wrapper;
+using CcsSso.Core.ReportingScheduler.Wrapper.Contracts;
 using CcsSso.DbPersistence;
 using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
@@ -86,6 +88,11 @@ namespace CcsSso.Core.ReportingScheduler
             services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(appSettings.DbConnection));
 
             services.AddSingleton<IDateTimeService, DateTimeService>();
+            services.AddSingleton<IWrapperApiService, WrapperApiService>();
+            services.AddSingleton<IWrapperOrganisationService, WrapperOrganisationService>();
+            services.AddSingleton<IWrapperUserService, WrapperUserService>();
+            services.AddSingleton<IWrapperContactService, WrapperContactService>();
+
             services.AddSingleton<ICSVConverter, CSVConverter>();
             services.AddSingleton<IFileUploadToCloud, FileUploadToCloud>();
             services.AddHostedService<OrganisationReportingJob>();
@@ -107,11 +114,26 @@ namespace CcsSso.Core.ReportingScheduler
         c.BaseAddress = new Uri(appSettings.SecurityApiSettings.Url);
         c.DefaultRequestHeaders.Add("X-API-Key", appSettings.SecurityApiSettings.ApiKey);
       });
+      services.AddHttpClient("OrgWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(appSettings.OrgWrapperApiSettings.Url);
+        c.DefaultRequestHeaders.Add("X-API-Key", appSettings.OrgWrapperApiSettings.ApiKey);
+      });
+      services.AddHttpClient("UserWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(appSettings.UserWrapperApiSettings.Url);
+        c.DefaultRequestHeaders.Add("X-API-Key", appSettings.UserWrapperApiSettings.ApiKey);
+      });
+      services.AddHttpClient("ContactWrapperApi", c =>
+      {
+        c.BaseAddress = new Uri(appSettings.ContactWrapperApiSettings.Url);
+        c.DefaultRequestHeaders.Add("X-API-Key", appSettings.ContactWrapperApiSettings.ApiKey);
+      });
     }
 
     private static AppSettings GetConfigurationDetails(HostBuilderContext hostContext)
     {
-      ApiConfig SecurityApi, WrapperApi;
+      ApiConfig SecurityApi, WrapperApi, UserWrapperApi, ContactWrapperApi, OrgWrapperApi;
       ScheduleJob ScheduleJob;
       ReportDataDuration ReportDataDurations;
       S3Configuration S3Configuration;
@@ -141,6 +163,10 @@ namespace CcsSso.Core.ReportingScheduler
 
           SecurityApi = (ApiConfig)FillAwsParamsValue(typeof(ApiConfig), parameters, "SecurityApi");
           WrapperApi = (ApiConfig)FillAwsParamsValue(typeof(ApiConfig), parameters, "WrapperApi");
+          OrgWrapperApi = (ApiConfig)FillAwsParamsValue(typeof(ApiConfig), parameters, "OrgWrapperApi");
+          UserWrapperApi = (ApiConfig)FillAwsParamsValue(typeof(ApiConfig), parameters, "UserWrapperApi");
+          ContactWrapperApi = (ApiConfig)FillAwsParamsValue(typeof(ApiConfig), parameters, "ContactWrapperApi");
+
           ScheduleJob = (ScheduleJob)FillAwsParamsValue(typeof(ScheduleJob), parameters);
           ReportDataDurations = (ReportDataDuration)FillAwsParamsValue(typeof(ReportDataDuration), parameters);
           S3Configuration = (S3Configuration)FillAwsParamsValue(typeof(S3Configuration), parameters);
@@ -154,6 +180,9 @@ namespace CcsSso.Core.ReportingScheduler
           dbConnection = secrets["DbConnection"].ToString();
           SecurityApi = JsonConvert.DeserializeObject<ApiConfig>(secrets["SecurityApi"].ToString());
           WrapperApi = JsonConvert.DeserializeObject<ApiConfig>(secrets["WrapperApi"].ToString());
+          OrgWrapperApi = JsonConvert.DeserializeObject<ApiConfig>(secrets["OrgWrapperApi"].ToString());
+          UserWrapperApi = JsonConvert.DeserializeObject<ApiConfig>(secrets["UserWrapperApi"].ToString());
+          ContactWrapperApi = JsonConvert.DeserializeObject<ApiConfig>(secrets["ContactWrapperApi"].ToString());
           ScheduleJob = JsonConvert.DeserializeObject<ScheduleJob>(secrets["ScheduleJob"].ToString());
           ReportDataDurations = JsonConvert.DeserializeObject<ReportDataDuration>(secrets["ReportDataDuration"].ToString());
           S3Configuration = JsonConvert.DeserializeObject<S3Configuration>(secrets["S3Configuration"].ToString());
@@ -168,6 +197,9 @@ namespace CcsSso.Core.ReportingScheduler
         dbConnection = config["DbConnection"];
         SecurityApi = config.GetSection("SecurityApi").Get<ApiConfig>();
         WrapperApi = config.GetSection("WrapperApi").Get<ApiConfig>();
+        OrgWrapperApi = config.GetSection("OrgWrapperApi").Get<ApiConfig>();
+        UserWrapperApi = config.GetSection("UserWrapperApi").Get<ApiConfig>();
+        ContactWrapperApi = config.GetSection("ContactWrapperApi").Get<ApiConfig>();
         ScheduleJob = config.GetSection("ScheduleJob").Get<ScheduleJob>();
         ReportDataDurations = config.GetSection("ReportDataDuration").Get<ReportDataDuration>();
         S3Configuration = config.GetSection("S3Configuration").Get<S3Configuration>();
@@ -182,6 +214,9 @@ namespace CcsSso.Core.ReportingScheduler
         ReportDataDurations = ReportDataDurations,
         ScheduleJobSettings = ScheduleJob,
         SecurityApiSettings = SecurityApi,
+        OrgWrapperApiSettings =OrgWrapperApi,
+        UserWrapperApiSettings=UserWrapperApi,
+        ContactWrapperApiSettings=ContactWrapperApi,
         WrapperApiSettings = WrapperApi,
         S3Configuration =S3Configuration,
         AzureBlobConfiguration = azureBlobConfiguration,

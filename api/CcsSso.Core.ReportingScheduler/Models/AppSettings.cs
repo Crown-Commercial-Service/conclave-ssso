@@ -7,6 +7,10 @@ namespace CcsSso.Core.ReportingScheduler.Models
     public string? DbConnection { get; set; }
     public ApiConfig? SecurityApiSettings { get; set; }
     public ApiConfig? WrapperApiSettings { get; set; }
+    public ApiConfig? OrgWrapperApiSettings { get; set; }
+    public ApiConfig? UserWrapperApiSettings { get; set; }
+    public ApiConfig? ContactWrapperApiSettings { get; set; }
+
     public ScheduleJob? ScheduleJobSettings { get; set; }
     public ReportDataDuration? ReportDataDurations { get; set; }
     public S3Configuration? S3Configuration { get; set; }

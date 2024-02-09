@@ -2,6 +2,7 @@ using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Contracts.External;
+using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Domain.Dtos.Exceptions;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.DbModel.Entity;
@@ -317,7 +318,7 @@ namespace CcsSso.Core.Service.External
             CompanyHouseId = userProfileRequestInfo.CompanyHouseId
           };
 
-          isAutovalidationSuccess = await _wrapperApiService.PostAsync<bool>($"{userProfileRequestInfo.OrganisationId}/registration", autoValidationDetails, "ERROR_ORGANISATION_AUTOVALIDATION");
+          isAutovalidationSuccess = await _wrapperApiService.PostAsync<bool>(WrapperApi.Organisation, $"{userProfileRequestInfo.OrganisationId}/registration", autoValidationDetails, "ERROR_ORGANISATION_AUTOVALIDATION");
         }
 
         if (isConclaveConnectionIncluded && isNonUserNamePwdConnectionIncluded)
