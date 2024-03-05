@@ -7,6 +7,7 @@ using CcsSso.Domain.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Threading;
@@ -61,6 +62,7 @@ namespace CcsSso.Core.JobScheduler.Jobs
         var userPendingRole = await _wrapperUserService.GetUserAccessRolePendingDetails(criteria);
 
         _logger.LogInformation($"****** Pending role approval request: {userPendingRole.UserAccessRolePendingDetailsInfo.Count()}");
+        _logger.LogInformation($"****** Pending roles:" + JsonConvert.SerializeObject(userPendingRole));
 
         if (userPendingRole.UserAccessRolePendingDetailsInfo.Any())
         {

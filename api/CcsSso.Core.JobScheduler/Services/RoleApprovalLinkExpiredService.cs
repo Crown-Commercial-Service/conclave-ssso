@@ -3,7 +3,6 @@ using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
@@ -43,6 +42,8 @@ namespace CcsSso.Core.JobScheduler.Services
       PendingRolesList = new UserAccessRolePendingRequestDetails() { UserAccessRolePendingDetailsInfo = pendingRoles };
       var approvalRoleConfig = await _wrapperConfigurationService.GetRoleApprovalConfigurationsAsync();
 
+      _logger.LogInformation($"****** approval Roles:" + JsonConvert.SerializeObject(approvalRoleConfig));
+
       foreach (var approvalRole in approvalRoleConfig)
       {
         _logger.LogInformation($"****** Approval role config role id: {approvalRole.CcsAccessRoleId}, expired duration: {approvalRole.LinkExpiryDurationInMinute}, " +
@@ -60,12 +61,19 @@ namespace CcsSso.Core.JobScheduler.Services
         if (roleConfig == null)
           continue;
 
+        _logger.LogInformation($"****** role Config found for org: {role.OrganisationId}:" + JsonConvert.SerializeObject(roleConfig));
+
         _logger.LogInformation($"****** Found role config matching org role: {roleConfig.CcsAccessRoleId}, expired minutes: {roleConfig.LinkExpiryDurationInMinute}");
 
+        _logger.LogInformation($"****** role last update date before add minutes: {role.LastUpdatedOnUtc}:");
+
         var roleExpireTime = role.LastUpdatedOnUtc.AddMinutes(roleConfig.LinkExpiryDurationInMinute);
+        
+        _logger.LogInformation($"****** role last update date after add minutes: {roleExpireTime}");
 
         if (roleExpireTime < DateTime.UtcNow)
         {
+          _logger.LogInformation("Inside role exp.");
           var isExistInRelatedList = relatedExpiredUserAccessRolePendingList.Any(x => x.Id == role.Id);
 
           if (!isExistInRelatedList)
@@ -96,6 +104,7 @@ namespace CcsSso.Core.JobScheduler.Services
     private async Task ProcessExpiredUserAccessRolePending(List<UserAccessRolePendingDetailsInfo> expiredUserAccessRolePendingList, List<RoleApprovalConfigurationInfo> approvalRoleConfig)
     {
       _logger.LogInformation($"****** Total number of expired roles: {expiredUserAccessRolePendingList.Count()}");
+      _logger.LogInformation($"****** expired role list: " + JsonConvert.SerializeObject(expiredUserAccessRolePendingList));
 
       if (expiredUserAccessRolePendingList.Any())
       {
