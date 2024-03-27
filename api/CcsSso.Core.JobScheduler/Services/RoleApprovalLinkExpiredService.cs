@@ -106,7 +106,7 @@ namespace CcsSso.Core.JobScheduler.Services
 
     private async Task DeleteAndNotifyForExpiredRoles(List<UserAccessRolePendingDetailsInfo> expiredUserAccessRolePendingList, List<RoleApprovalConfigurationInfo> approvalRoleConfig = null)
     {
-      foreach (var pr in PendingRolesList.UserAccessRolePendingDetailsInfo.Distinct())
+      foreach (var pr in expiredUserAccessRolePendingList.Distinct())
       {
         if (approvalRoleConfig is not null)
         {
