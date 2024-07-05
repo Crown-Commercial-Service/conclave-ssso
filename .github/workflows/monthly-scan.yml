@@ -20,7 +20,7 @@ jobs:
         
         #Configure the correct git url of the repo to be scanned
         run: |
-          trufflehog https://github.com/Crown-Commercial-Service/conclave-ssso.git --regex --entropy=FALSE
+          trufflehog https://github.com/Crown-Commercial-Service/conclave-ssso.git --regex --entropy=TRUE
       
       - name: Send email notification
         uses: 
