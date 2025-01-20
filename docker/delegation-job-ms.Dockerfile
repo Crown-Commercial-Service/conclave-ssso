@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS Delegationjob
+FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS Delegationjob
 WORKDIR /app
 COPY . ./
 RUN dotnet restore ./api/CcsSso.Core.DelegationJobScheduler/CcsSso.Core.DelegationJobScheduler.csproj
