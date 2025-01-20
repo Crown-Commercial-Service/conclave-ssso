@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS FileuploadJob
+FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS FileuploadJob
 WORKDIR /app
 COPY . ./
 RUN dotnet restore ./api/CcsSso.Core.DormancyJobScheduler/CcsSso.Core.DormancyJobScheduler.csproj
