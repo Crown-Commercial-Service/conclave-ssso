@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS SecurityAPI
+FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS SecurityAPI
 WORKDIR /app
 COPY . ./
 RUN dotnet restore ./api/CcsSso.Core.ReportingScheduler/CcsSso.Core.ReportingScheduler.csproj

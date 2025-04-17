@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS Orgderegjob
+FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS Orgderegjob
 WORKDIR /app
 COPY . ./
 RUN dotnet restore ./api/CcsSso.Core.JobScheduler/CcsSso.Core.JobScheduler.csproj
