@@ -81,3 +81,25 @@ testem.log
 .DS_Store
 Thumbs.db
 /api/SecurityApi/CcsSso.Security.Api/CcsSso.Security.Api.xml
+
+# Rider IDE files
+/shelf/
+/workspace.xml
+# Rider ignored files
+.idea
+/modules.xml
+/projectSettingsUpdater.xml
+/contentModel.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+# Local secrets
+api/CcsSso.Core.DataMigrationJobScheduler/appsecrets.json
+api/CcsSso.Core.DelegationJobScheduler/appsecrets.json
+api/CcsSso.Core.DormancyJobScheduler/appsecrets.json
+api/CcsSso.Core.JobScheduler/appsecrets.json
+api/CcsSso.Core.PPONScheduler/appsecrets.json
+api/CcsSso.Core.ReportingScheduler/appsecrets.json
