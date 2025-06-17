@@ -1,7 +1,9 @@
 version: 2
 updates:
-- package-ecosystem: nuget
-  directory: "/api"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 100
+  # Maintain dependencies for NuGet
+  - package-ecosystem: "nuget"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+    open-pull-requests-limit: 25
