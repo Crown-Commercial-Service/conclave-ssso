@@ -38,8 +38,16 @@ namespace CcsSso.Core.ReportingScheduler
       return Host.CreateDefaultBuilder(args)
           .ConfigureAppConfiguration((hostingContext, config) =>
           {
+            String envName = "";
+
+            if (!String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")))
+            {
+              envName = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+            }
+            
             var configBuilder = new ConfigurationBuilder()
                            .AddJsonFile("appsettings.json", optional: false)
+                           .AddJsonFile($"appsettings.{envName}.json", optional: true)
                            .Build();
             var builtConfig = config.Build();
             vaultEnabled = configBuilder.GetValue<bool>("VaultEnabled");
