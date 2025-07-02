@@ -34,7 +34,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CcsSso.Core.DbPersistence\CcsSso.Core.DbPersistence.csproj" />
     <ProjectReference Include="..\CcsSso.Core.Service\CcsSso.Core.Service.csproj" />
     <ProjectReference Include="..\CcsSso.Shared\CcsSso.Shared.csproj" />
   </ItemGroup>

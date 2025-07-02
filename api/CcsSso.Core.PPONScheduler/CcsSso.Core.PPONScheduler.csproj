@@ -12,7 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CcsSso.Core.DbPersistence\CcsSso.Core.DbPersistence.csproj" />
     <ProjectReference Include="..\CcsSso.Core.Domain\CcsSso.Core.Domain.csproj" />
     <ProjectReference Include="..\CcsSso.Core.Service\CcsSso.Core.Service.csproj" />
   </ItemGroup>

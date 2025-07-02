@@ -4,9 +4,7 @@ using CcsSso.Core.DataMigrationJobScheduler.Services;
 using CcsSso.Core.DataMigrationJobScheduler.Jobs;
 using CcsSso.Core.DataMigrationJobScheduler.Model;
 using CcsSso.Core.Domain.Contracts;
-using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Service;
-using CcsSso.Core.Service.External;
 using CcsSso.Domain.Dtos;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Contexts;
@@ -155,10 +153,8 @@ namespace CcsSso.Core.DataMigrationJobScheduler
       services.AddSingleton<ApplicationConfigurationInfo, ApplicationConfigurationInfo>();
       services.AddHttpClient();
       services.AddSingleton<IFileUploadJobService, FileUploadJobService>();
-
-      services.AddScoped<IAuditLoginService, AuditLoginService>();
+               
       services.AddScoped<IDateTimeService, DateTimeService>();
-      services.AddScoped<IServiceRoleGroupMapperService, ServiceRoleGroupMapperService>();
       services.AddScoped<IWrapperApiService, WrapperApiService>();
       services.AddScoped<IWrapperOrganisationService, WrapperOrganisationService>();
       services.AddSingleton<IAwsS3Service, AwsS3Service>();

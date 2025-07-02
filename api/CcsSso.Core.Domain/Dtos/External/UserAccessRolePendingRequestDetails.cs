@@ -44,11 +44,4 @@ namespace CcsSso.Core.Domain.Dtos.External
     [FromQuery(Name = "status")]
     public UserPendingRoleStaus? Status { get; set; }
   }
-
-  public class UserResponse
-  {
-    public int Id { get; set; }
-    public string UserName { get; set; }
-  }
-
 }

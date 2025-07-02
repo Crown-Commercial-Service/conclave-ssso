@@ -2,13 +2,9 @@
 using CcsSso.Core.DormancyJobScheduler.Model;
 using CcsSso.Core.DormancyJobScheduler.Services;
 using CcsSso.Core.Domain.Contracts;
-using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Service;
-using CcsSso.Core.Service.External;
 using CcsSso.Core.Service.Wrapper;
-using CcsSso.DbPersistence;
-using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;

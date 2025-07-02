@@ -22,11 +22,6 @@ namespace CcsSso.Domain.Dtos.External
     public string ContactPointName { get; set; }
   }
 
-  public class ContactRequestInfo : ContactPointInfo
-  {
-    public List<ContactRequestDetail> Contacts { get; set; }
-  }
-
   public class ContactResponseInfo : ContactPointInfo
   {
     public int ContactPointId { get; set; }
@@ -43,59 +38,11 @@ namespace CcsSso.Domain.Dtos.External
     public string OrganisationId { get; set; }
   }
 
-  public class OrganisationContactInfo : ContactResponseInfo
-  {
-    public OrganisationDetailInfo Detail { get; set; }
-  }
 
   public class OrganisationContactInfoList
   {
     public OrganisationDetailInfo Detail { get; set; }
 
     public List<ContactResponseInfo> ContactPoints { get; set; }
-  }
-
-  public class UserDetailInfo
-  {
-    public string UserId { get; set; }
-
-    public string OrganisationId { get; set; }
-  }
-
-  public class UserContactInfo : ContactResponseInfo
-  {
-    public UserDetailInfo Detail { get; set; }
-  }
-
-  public class UserContactInfoList
-  {
-    public UserDetailInfo Detail { get; set; }
-
-    public List<ContactResponseInfo> ContactPoints { get; set; }
-  }
-
-  public class SiteDetailInfo
-  {
-    public int SiteId { get; set; }
-
-    public string OrganisationId { get; set; }
-  }
-
-  public class OrganisationSiteContactInfo : ContactResponseInfo
-  {
-    public SiteDetailInfo Detail { get; set; }
-  }
-
-  public class OrganisationSiteContactInfoList
-  {
-    public SiteDetailInfo Detail { get; set; }
-
-    public List<ContactResponseInfo> ContactPoints { get; set; }
-  }
-
-  public class ContactReasonInfo
-  {
-    public string Key { get; set; }
-    public string Value { get; set; }
   }
 }
