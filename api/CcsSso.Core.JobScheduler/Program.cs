@@ -232,8 +232,8 @@ namespace CcsSso.Core.JobScheduler
 					services.AddSingleton<IEmailProviderService, EmailProviderService>();
 					services.AddSingleton<RequestContext>(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
 					services.AddSingleton<IRemoteCacheService, RedisCacheService>();
-					
-					services.AddSingleton<RedisConnectionPoolService>(_ =>
+               services.AddSingleton<ICacheInvalidateService, CacheInvalidateService>();
+               services.AddSingleton<RedisConnectionPoolService>(_ =>
 						new RedisConnectionPoolService(redisCacheSettingsVault.ConnectionString)
 					);
 					services.AddSingleton<IAwsS3Service, AwsS3Service>();

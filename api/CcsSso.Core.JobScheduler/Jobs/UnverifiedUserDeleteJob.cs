@@ -20,7 +20,6 @@ namespace CcsSso.Core.JobScheduler
 {
   public class UnverifiedUserDeleteJob : BackgroundService
   {
-    private IDataContext _dataContext;
     private readonly IDateTimeService _dataTimeService;
     private readonly AppSettings _appSettings;
     private readonly IEmailSupportService _emailSupportService;    
@@ -50,17 +49,11 @@ namespace CcsSso.Core.JobScheduler
         while (!stoppingToken.IsCancellationRequested)
         {
           Console.WriteLine($" **************** Unverified User Deletion job started ***********");
-          _dataContext = scope.ServiceProvider.GetRequiredService<IDataContext>();          
           await PerformJobAsync();
           await Task.Delay(_appSettings.ScheduleJobSettings.UnverifiedUserDeletionJobExecutionFrequencyInMinutes * 60000, stoppingToken);
           Console.WriteLine($"****************** Unverified User Deletion job ended ***********");
         }
       }
-    }
-
-    public void InitiateScopedServices(IDataContext dataContext)
-    {
-      _dataContext = dataContext;      
     }
 
     public async Task PerformJobAsync()

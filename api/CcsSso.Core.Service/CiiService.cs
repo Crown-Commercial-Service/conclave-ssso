@@ -24,13 +24,11 @@ namespace CcsSso.Service
   {
     private readonly CiiConfig _config;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IDataContext _dataContext;
 
-    public CiiService(CiiConfig config, IHttpClientFactory httpClientFactory, IDataContext dataContext)
+    public CiiService(CiiConfig config, IHttpClientFactory httpClientFactory)
     {
       _config = config;
       _httpClientFactory = httpClientFactory;
-      _dataContext = dataContext;
     }
 
     /// <summary>
