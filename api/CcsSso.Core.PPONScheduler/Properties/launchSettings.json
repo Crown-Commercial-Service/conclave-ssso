@@ -1,6 +1,6 @@
 ﻿{
   "profiles": {
-    "CcsSso.Core.ServiceOnboardingScheduler": {
+    "CcsSso.Core.PPONScheduler": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "environmentVariables": {

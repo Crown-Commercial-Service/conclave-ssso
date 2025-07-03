@@ -9,7 +9,6 @@ namespace CcsSso.Core.PPONScheduler.Jobs
   public class PPONJob : BackgroundService
   {
     private readonly PPONAppSettings _appSettings;
-    private readonly IDataContext _dataContext;
     private readonly IPPONService _pPONService;
     private readonly ILogger<PPONJob> _logger;
     private DateTime startDate;
@@ -22,7 +21,6 @@ namespace CcsSso.Core.PPONScheduler.Jobs
       _logger = logger;
       _appSettings = appSettings;
       _pPONService = factory.CreateScope().ServiceProvider.GetRequiredService<IPPONService>();
-      _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

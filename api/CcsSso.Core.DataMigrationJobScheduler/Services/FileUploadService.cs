@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using S3ConfigurationInfo = CcsSso.Core.DataMigrationJobScheduler.Model.S3ConfigurationInfo;
 using IAwsS3Service = CcsSso.Core.DataMigrationJobScheduler.Contracts.IAwsS3Service;
-using CcsSso.Domain.Contracts;
 using IWrapperOrganisationService = CcsSso.Core.DataMigrationJobScheduler.Wrapper.Contracts.IWrapperOrganisationService;
 using System.Net;
 using CcsSso.Domain.Exceptions;

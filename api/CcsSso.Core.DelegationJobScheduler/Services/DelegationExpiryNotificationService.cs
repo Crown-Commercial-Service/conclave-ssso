@@ -1,15 +1,11 @@
 ﻿using Amazon.S3;
 using Amazon.SimpleSystemsManagement.Model;
 using CcsSso.Core.DbModel.Constants;
-using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.DelegationJobScheduler.Contracts;
 using CcsSso.Core.DelegationJobScheduler.Model;
-using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Domain.Dtos.Wrapper;
-using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Constants;
-using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
 using CcsSso.Shared.Services;
@@ -27,7 +23,6 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
 {
   public class DelegationExpiryNotificationService : IDelegationExpiryNotificationService
   {
-    private readonly IDataContext _dataContext;
     private readonly IDateTimeService _dateTimeService;
     private readonly ILogger<IDelegationExpiryNotificationService> _logger;
     private readonly DelegationAppSettings _appSettings;
@@ -40,7 +35,6 @@ namespace CcsSso.Core.DelegationJobScheduler.Services
       ILogger<IDelegationExpiryNotificationService> logger,
       IEmailProviderService emaillProviderService, IWrapperUserService  wrapperUserService )
     {
-      _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
       _dateTimeService = dateTimeService;
       _appSettings = appSettings;
       _emaillProviderService = emaillProviderService;

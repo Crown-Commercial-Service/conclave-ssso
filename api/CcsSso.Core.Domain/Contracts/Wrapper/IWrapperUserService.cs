@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CcsSso.Core.DbModel.Constants;
-using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Dtos.Wrapper;
 using CcsSso.Domain.Constants;

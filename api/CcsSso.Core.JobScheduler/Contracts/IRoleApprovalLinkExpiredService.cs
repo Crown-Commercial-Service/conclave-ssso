@@ -1,5 +1,4 @@
 ﻿using CcsSso.Core.Domain.Dtos.External;
-using CcsSso.DbModel.Entity;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

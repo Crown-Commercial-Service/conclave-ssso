@@ -24,7 +24,6 @@ namespace CcsSso.Core.PPONScheduler.Jobs
       _appSettings = appSettings;
       ranOnce = false;
       _pPONService = factory.CreateScope().ServiceProvider.GetRequiredService<IPPONService>();
-      _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

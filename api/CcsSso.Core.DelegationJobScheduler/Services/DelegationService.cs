@@ -1,8 +1,6 @@
 ﻿using CcsSso.Core.DbModel.Constants;
 using CcsSso.Core.DelegationJobScheduler.Contracts;
 using CcsSso.Core.Domain.Dtos.Wrapper;
-using CcsSso.DbModel.Entity;
-using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
