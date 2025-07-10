@@ -1,5 +1,4 @@
 using CcsSso.Core.DbModel.Constants;
-using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
@@ -59,52 +58,52 @@ namespace CcsSso.Core.JobScheduler
 
     public async Task PerformJobAsync()
     {
-      var bulkUploads = await _dataContext.BulkUploadDetail.Where(b => !b.IsDeleted &&
-        b.BulkUploadStatus == BulkUploadStatus.Validating).ToListAsync();
+      //var bulkUploads = await _dataContext.BulkUploadDetail.Where(b => !b.IsDeleted &&
+      //  b.BulkUploadStatus == BulkUploadStatus.Validating).ToListAsync();
 
-      await ValidateAndPushForMigrationAsync(bulkUploads);
+      //await ValidateAndPushForMigrationAsync(bulkUploads);
 
-      await _dataContext.SaveChangesAsync();
+      //await _dataContext.SaveChangesAsync();
 
     }
 
-    private async Task ValidateAndPushForMigrationAsync(List<BulkUploadDetail> bulkUploadDetailsList)
-    {
-      var errorDetails = new List<KeyValuePair<string, string>>();
-      foreach (var bulkUploadDetail in bulkUploadDetailsList)
-      {
-        var errors = await ValidateUploadedFileAsync(bulkUploadDetail.FileKey);
-        if (!errors.Any()) // No errors
-        {
-          // TODO Push to DM
-          bulkUploadDetail.MigrationStartedOnUtc = DateTime.UtcNow;
-          bulkUploadDetail.BulkUploadStatus = BulkUploadStatus.Migrating;
-          bulkUploadDetail.ValidationErrorDetails = JsonConvert.SerializeObject(errorDetails);
-        }
-        else
-        {
-          errorDetails.AddRange(errors);
-          bulkUploadDetail.BulkUploadStatus = BulkUploadStatus.ValidationFail;
-          bulkUploadDetail.ValidationErrorDetails = JsonConvert.SerializeObject(errorDetails);
-          // Notify via email to the created user
-          var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.Id == bulkUploadDetail.CreatedUserId);
-          var reportUrl = $"{_appSettings.BulkUploadSettings.BulkUploadReportUrl}/{bulkUploadDetail.FileKeyId}";
-          var bulkUploadResultString = "File validation Failed";
-          if (user != null)
-          {
-            try
-            {
-              await _emailSupportService.SendBulUploadResultEmailAsync(user.UserName, bulkUploadResultString, reportUrl);
-            }
-            catch (Exception ex)
-            {
-              Console.Error.WriteLine($"Error Sending email for Bulk Upload validation id: {bulkUploadDetail.FileKeyId}, error: {ex.Message}");
-              Console.Error.WriteLine(JsonConvert.SerializeObject(ex));
-            }
-          }
-        }
-      }
-    }
+    //private async Task ValidateAndPushForMigrationAsync(List<BulkUploadDetail> bulkUploadDetailsList)
+    //{
+    //  var errorDetails = new List<KeyValuePair<string, string>>();
+    //  foreach (var bulkUploadDetail in bulkUploadDetailsList)
+    //  {
+    //    var errors = await ValidateUploadedFileAsync(bulkUploadDetail.FileKey);
+    //    if (!errors.Any()) // No errors
+    //    {
+    //      // TODO Push to DM
+    //      bulkUploadDetail.MigrationStartedOnUtc = DateTime.UtcNow;
+    //      bulkUploadDetail.BulkUploadStatus = BulkUploadStatus.Migrating;
+    //      bulkUploadDetail.ValidationErrorDetails = JsonConvert.SerializeObject(errorDetails);
+    //    }
+    //    else
+    //    {
+    //      errorDetails.AddRange(errors);
+    //      bulkUploadDetail.BulkUploadStatus = BulkUploadStatus.ValidationFail;
+    //      bulkUploadDetail.ValidationErrorDetails = JsonConvert.SerializeObject(errorDetails);
+    //      // Notify via email to the created user
+    //      var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.Id == bulkUploadDetail.CreatedUserId);
+    //      var reportUrl = $"{_appSettings.BulkUploadSettings.BulkUploadReportUrl}/{bulkUploadDetail.FileKeyId}";
+    //      var bulkUploadResultString = "File validation Failed";
+    //      if (user != null)
+    //      {
+    //        try
+    //        {
+    //          await _emailSupportService.SendBulUploadResultEmailAsync(user.UserName, bulkUploadResultString, reportUrl);
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //          Console.Error.WriteLine($"Error Sending email for Bulk Upload validation id: {bulkUploadDetail.FileKeyId}, error: {ex.Message}");
+    //          Console.Error.WriteLine(JsonConvert.SerializeObject(ex));
+    //        }
+    //      }
+    //    }
+    //  }
+    //}
 
     /// <summary>
     /// Validate the file locally

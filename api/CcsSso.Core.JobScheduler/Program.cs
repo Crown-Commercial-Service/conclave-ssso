@@ -1,20 +1,16 @@
 using Amazon.Runtime;
 using Amazon.SimpleSystemsManagement.Model;
 using CcsSso.Core.Domain.Contracts;
-using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
 using CcsSso.Core.JobScheduler.Jobs;
 using CcsSso.Core.JobScheduler.Services;
 using CcsSso.Core.Service;
-using CcsSso.Core.Service.External;
 using CcsSso.Core.Service.Wrapper;
-using CcsSso.DbPersistence;
 using CcsSso.Domain.Contracts;
 using CcsSso.Domain.Dtos;
 using CcsSso.Dtos.Domain.Models;
-using CcsSso.Service;
 using CcsSso.Shared.Cache.Contracts;
 using CcsSso.Shared.Cache.Services;
 using CcsSso.Shared.Contracts;
@@ -244,27 +240,18 @@ namespace CcsSso.Core.JobScheduler
 					services.AddSingleton<IEmailProviderService, EmailProviderService>();
 					services.AddSingleton<RequestContext>(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
 					services.AddSingleton<IRemoteCacheService, RedisCacheService>();
-					services.AddSingleton<ICacheInvalidateService, CacheInvalidateService>();
-					services.AddSingleton<RedisConnectionPoolService>(_ =>
+               services.AddSingleton<ICacheInvalidateService, CacheInvalidateService>();
+               services.AddSingleton<RedisConnectionPoolService>(_ =>
 						new RedisConnectionPoolService(redisCacheSettingsVault.ConnectionString)
 					);
 					services.AddSingleton<IAwsS3Service, AwsS3Service>();
 					services.AddSingleton<ApplicationConfigurationInfo, ApplicationConfigurationInfo>();
 
-					services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(dbConnection));
-
-					services.AddScoped<IOrganisationSupportService, OrganisationSupportService>();
-					services.AddScoped<IContactSupportService, ContactSupportService>();
-					services.AddScoped<IBulkUploadFileContentService, BulkUploadFileContentService>();
-					services.AddScoped<IUserProfileHelperService, UserProfileHelperService>();
-					services.AddScoped<IServiceRoleGroupMapperService, ServiceRoleGroupMapperService>();
+					
 					services.AddScoped<IRoleApprovalLinkExpiredService, RoleApprovalLinkExpiredService>();
-					// #Auto validation
-					services.AddScoped<IOrganisationAuditService, OrganisationAuditService>();
-					services.AddScoped<IExternalHelperService, ExternalHelperService>();
-					services.AddScoped<IOrganisationAuditEventService, OrganisationAuditEventService>();
-					services.AddSingleton<IAutoValidationService, AutoValidationService>();
-					services.AddSingleton<IAutoValidationOneTimeService, AutoValidationOneTimeService>();
+					// #Auto validation					
+					
+					services.AddSingleton<IAutoValidationService, AutoValidationService>();					
 					services.AddSingleton<IWrapperApiService, WrapperApiService>();
 					services.AddSingleton<IWrapperUserService, WrapperUserService>();
 					services.AddSingleton<IWrapperConfigurationService, WrapperConfigurationService>();

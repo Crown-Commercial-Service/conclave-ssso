@@ -1,6 +1,4 @@
 using CcsSso.Core.ReportingScheduler.Models;
-using CcsSso.DbModel.Entity;
-using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Dto;
 using CcsSso.Shared.Services;
@@ -20,7 +18,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
   {
     private readonly ILogger<ContactReportingJob> _logger;
     private readonly AppSettings _appSettings;
-    private readonly IDataContext _dataContext;
     private readonly IDateTimeService _dataTimeService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ICSVConverter _csvConverter;
@@ -32,7 +29,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     {
       _logger = logger;
       _appSettings = appSettings;
-      _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
       _dataTimeService = dataTimeService;
       _httpClientFactory = httpClientFactory;
       _csvConverter = csvConverter;

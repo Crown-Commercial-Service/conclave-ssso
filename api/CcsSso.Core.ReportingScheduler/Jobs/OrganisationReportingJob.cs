@@ -1,5 +1,4 @@
 using CcsSso.Core.ReportingScheduler.Models;
-using CcsSso.Domain.Contracts;
 using CcsSso.Dtos.Domain.Models;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain.Dto;
@@ -16,7 +15,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
   {
     private readonly ILogger<OrganisationReportingJob> _logger;
     private readonly AppSettings _appSettings;
-    private readonly IDataContext _dataContext;
     private readonly IDateTimeService _dataTimeService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ICSVConverter _csvConverter;
@@ -28,7 +26,6 @@ namespace CcsSso.Core.ReportingScheduler.Jobs
     {
       _logger = logger;
       _appSettings = appSettings;
-      _dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
       _dataTimeService = dataTimeService;
       _httpClientFactory = httpClientFactory;
       _csvConverter = csvConverter;

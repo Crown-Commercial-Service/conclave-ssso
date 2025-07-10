@@ -20,14 +20,11 @@ namespace CcsSso.Core.JobScheduler
 {
   public class UnverifiedUserDeleteJob : BackgroundService
   {
-    private IDataContext _dataContext;
     private readonly IDateTimeService _dataTimeService;
     private readonly AppSettings _appSettings;
-    private readonly IEmailSupportService _emailSupportService;
-    private IOrganisationSupportService _organisationSupportService;
+    private readonly IEmailSupportService _emailSupportService;    
     private readonly IIdamSupportService _idamSupportService;
     private readonly IServiceProvider _serviceProvider;
-    private IContactSupportService _contactSupportService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IWrapperUserService _wrapperUserService;
     private readonly IWrapperOrganisationService _wrapperOrganisationService;
@@ -52,20 +49,11 @@ namespace CcsSso.Core.JobScheduler
         while (!stoppingToken.IsCancellationRequested)
         {
           Console.WriteLine($" **************** Unverified User Deletion job started ***********");
-          _dataContext = scope.ServiceProvider.GetRequiredService<IDataContext>();
-          _organisationSupportService = scope.ServiceProvider.GetRequiredService<IOrganisationSupportService>();
-          _contactSupportService = scope.ServiceProvider.GetRequiredService<IContactSupportService>();
           await PerformJobAsync();
           await Task.Delay(_appSettings.ScheduleJobSettings.UnverifiedUserDeletionJobExecutionFrequencyInMinutes * 60000, stoppingToken);
           Console.WriteLine($"****************** Unverified User Deletion job ended ***********");
         }
       }
-    }
-
-    public void InitiateScopedServices(IDataContext dataContext, IOrganisationSupportService organisationSupportService)
-    {
-      _dataContext = dataContext;
-      _organisationSupportService = organisationSupportService;
     }
 
     public async Task PerformJobAsync()
