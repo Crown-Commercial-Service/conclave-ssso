@@ -95,19 +95,6 @@ namespace CcsSso.Core.DbModel.Constants
     ManualPending,
   }
 
-  public enum ManualValidateOrganisationStatus
-  {
-    Approve,
-    Decline,
-    Remove
-  }
-
-  public enum RoleApprovalRequiredStatus
-  {
-    ApprovalNotRequired,
-    ApprovalRequired
-  }
-
   public enum UserPendingRoleStaus
   {
     Pending,
@@ -135,11 +122,5 @@ namespace CcsSso.Core.DbModel.Constants
     ResendActivationLink,
     ExpiryOfDelegationAccess,
     TerminationOfDelegatedAccess
-  }
-
-  public enum GroupType
-  {
-    Other,
-    Admin
   }
 }

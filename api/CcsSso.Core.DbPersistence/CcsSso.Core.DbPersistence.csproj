@@ -9,7 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CcsSso.Core.DbModel\CcsSso.Core.DbModel.csproj" />
     <ProjectReference Include="..\CcsSso.Core.Domain\CcsSso.Core.Domain.csproj" />
     <ProjectReference Include="..\CcsSso.Shared\CcsSso.Shared.csproj" />
   </ItemGroup>

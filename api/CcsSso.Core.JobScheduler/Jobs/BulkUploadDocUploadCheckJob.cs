@@ -1,5 +1,4 @@
 using CcsSso.Core.DbModel.Constants;
-using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
@@ -55,55 +54,55 @@ namespace CcsSso.Core.JobScheduler
 
     public async Task PerformJobAsync()
     {
-      var bulkUploads = await _dataContext.BulkUploadDetail.Where(b => !b.IsDeleted &&
-        b.BulkUploadStatus == BulkUploadStatus.Processing).ToListAsync();
+      //var bulkUploads = await _dataContext.BulkUploadDetail.Where(b => !b.IsDeleted &&
+      //  b.BulkUploadStatus == BulkUploadStatus.Processing).ToListAsync();
 
-      await VerifyFromDocUploadAsync(bulkUploads);
+      //await VerifyFromDocUploadAsync(bulkUploads);
 
-      await _dataContext.SaveChangesAsync();
+      //await _dataContext.SaveChangesAsync();
 
     }
 
-    private async Task VerifyFromDocUploadAsync(List<BulkUploadDetail> bulkUploadDetailsList)
-    {
-      foreach (var bulkUploadDetail in bulkUploadDetailsList)
-      {
-        var errorDetails = new List<KeyValuePair<string, string>>();
-        var docUploadDetails = await _docUploadService.GetFileStatusAsync(bulkUploadDetail.DocUploadId);
-        if (docUploadDetails.State == "processing")
-        {
-          continue;
-        }
-        else if (docUploadDetails.State == "safe")
-        {
-          bulkUploadDetail.BulkUploadStatus = BulkUploadStatus.Validating;
-          bulkUploadDetail.ValidationErrorDetails = JsonConvert.SerializeObject(errorDetails);          
-        }
-        else // Not safe may be virus in file
-        {
-          errorDetails.Add(new KeyValuePair<string, string>("File validation failed", "Unsafe file"));
-          bulkUploadDetail.BulkUploadStatus = BulkUploadStatus.DocUploadValidationFail;
-          bulkUploadDetail.ValidationErrorDetails = JsonConvert.SerializeObject(errorDetails);
-          // TODO Delete the file
-          // Notify via email to the created user
-          var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.Id == bulkUploadDetail.CreatedUserId);
-          var reportUrl = $"{_appSettings.BulkUploadSettings.BulkUploadReportUrl}/{bulkUploadDetail.FileKeyId}";
-          var bulkUploadResultString = "File validation Failed";
-          if (user != null)
-          {
-            try
-            {
-              await _emailSupportService.SendBulUploadResultEmailAsync(user.UserName, bulkUploadResultString, reportUrl);
-            }
-            catch (Exception ex)
-            {
-              Console.Error.WriteLine($"Error Sending email for Bulk Upload DocUpload id: {bulkUploadDetail.FileKeyId}, error: {ex.Message}");
-              Console.Error.WriteLine(JsonConvert.SerializeObject(ex));
-            }
-          }
-        }
-      }
-    }
+    //private async Task VerifyFromDocUploadAsync(List<BulkUploadDetail> bulkUploadDetailsList)
+    //{
+    //  foreach (var bulkUploadDetail in bulkUploadDetailsList)
+    //  {
+    //    var errorDetails = new List<KeyValuePair<string, string>>();
+    //    var docUploadDetails = await _docUploadService.GetFileStatusAsync(bulkUploadDetail.DocUploadId);
+    //    if (docUploadDetails.State == "processing")
+    //    {
+    //      continue;
+    //    }
+    //    else if (docUploadDetails.State == "safe")
+    //    {
+    //      bulkUploadDetail.BulkUploadStatus = BulkUploadStatus.Validating;
+    //      bulkUploadDetail.ValidationErrorDetails = JsonConvert.SerializeObject(errorDetails);          
+    //    }
+    //    else // Not safe may be virus in file
+    //    {
+    //      errorDetails.Add(new KeyValuePair<string, string>("File validation failed", "Unsafe file"));
+    //      bulkUploadDetail.BulkUploadStatus = BulkUploadStatus.DocUploadValidationFail;
+    //      bulkUploadDetail.ValidationErrorDetails = JsonConvert.SerializeObject(errorDetails);
+    //      // TODO Delete the file
+    //      // Notify via email to the created user
+    //      var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.Id == bulkUploadDetail.CreatedUserId);
+    //      var reportUrl = $"{_appSettings.BulkUploadSettings.BulkUploadReportUrl}/{bulkUploadDetail.FileKeyId}";
+    //      var bulkUploadResultString = "File validation Failed";
+    //      if (user != null)
+    //      {
+    //        try
+    //        {
+    //          await _emailSupportService.SendBulUploadResultEmailAsync(user.UserName, bulkUploadResultString, reportUrl);
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //          Console.Error.WriteLine($"Error Sending email for Bulk Upload DocUpload id: {bulkUploadDetail.FileKeyId}, error: {ex.Message}");
+    //          Console.Error.WriteLine(JsonConvert.SerializeObject(ex));
+    //        }
+    //      }
+    //    }
+    //  }
+    //}
 
   }
 }

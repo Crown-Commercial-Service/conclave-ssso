@@ -4,8 +4,6 @@ using CcsSso.Core.ReportingScheduler.Jobs;
 using CcsSso.Core.ReportingScheduler.Models;
 using CcsSso.Core.ReportingScheduler.Wrapper;
 using CcsSso.Core.ReportingScheduler.Wrapper.Contracts;
-using CcsSso.DbPersistence;
-using CcsSso.Domain.Contracts;
 using CcsSso.Shared.Contracts;
 using CcsSso.Shared.Domain;
 using CcsSso.Shared.Domain.Contexts;
@@ -91,9 +89,6 @@ namespace CcsSso.Core.ReportingScheduler
                 FilePathPrefix = appSettings.AzureBlobConfiguration.FilePathPrefix
               };
             });
-
-            services.AddSingleton<RequestContext>(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
-            services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(appSettings.DbConnection));
 
             services.AddSingleton<IDateTimeService, DateTimeService>();
             services.AddSingleton<IWrapperApiService, WrapperApiService>();

@@ -1,5 +1,4 @@
 using CcsSso.Core.DbModel.Constants;
-using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Dtos;
 using CcsSso.Domain.Contracts;
@@ -62,17 +61,17 @@ namespace CcsSso.Core.Service
       var signedFileUrl = _awsS3Service.GeneratePreSignedURL(fileKey, _s3ConfigurationInfo.BulkUploadBucketName, _s3ConfigurationInfo.FileAccessExpirationInHours);
       var docUploadResult = await _docUploadService.UploadFileAsync(_docUploadConfig.DefaultTypeValidationValue, _docUploadConfig.DefaultSizeValidationValue, null, signedFileUrl);
 
-      BulkUploadDetail bulkUploadDetail = new BulkUploadDetail
-      {
-        OrganisationId = organisationId,
-        FileKeyId = fileKeyId,
-        FileKey = fileKey,
-        DocUploadId = docUploadResult.Id,
-        BulkUploadStatus = BulkUploadStatus.Processing,
-        ValidationErrorDetails = JsonConvert.SerializeObject(new List<KeyValuePair<string, string>>())
-      };
+      //BulkUploadDetail bulkUploadDetail = new BulkUploadDetail
+      //{
+      //  OrganisationId = organisationId,
+      //  FileKeyId = fileKeyId,
+      //  FileKey = fileKey,
+      //  DocUploadId = docUploadResult.Id,
+      //  BulkUploadStatus = BulkUploadStatus.Processing,
+      //  ValidationErrorDetails = JsonConvert.SerializeObject(new List<KeyValuePair<string, string>>())
+      //};
 
-      _dataContext.BulkUploadDetail.Add(bulkUploadDetail);
+      //_dataContext.BulkUploadDetail.Add(bulkUploadDetail);
       await _dataContext.SaveChangesAsync();
       bulkUploadStatusResponse.Id = fileKeyId;
       bulkUploadStatusResponse.BulkUploadStatus = BulkUploadStatus.Processing;
@@ -128,39 +127,39 @@ namespace CcsSso.Core.Service
     {
       var bulkUploadStatusResponse = new BulkUploadStatusResponse { Id = fileKeyId, ErrorDetails = new List<KeyValuePair<string, string>>() };
 
-      var bulkUploadDetail = await _dataContext.BulkUploadDetail.FirstOrDefaultAsync(b => !b.IsDeleted && b.FileKeyId == fileKeyId && b.OrganisationId == organisationId);
+      //var bulkUploadDetail = await _dataContext.BulkUploadDetail.FirstOrDefaultAsync(b => !b.IsDeleted && b.FileKeyId == fileKeyId && b.OrganisationId == organisationId);
 
-      if (bulkUploadDetail == null)
-      {
-        throw new ResourceNotFoundException();
-      }
+      //if (bulkUploadDetail == null)
+      //{
+      //  throw new ResourceNotFoundException();
+      //}
 
-      if (bulkUploadDetail.BulkUploadStatus == BulkUploadStatus.Processing)
-      {
-        var validationStatus = await GetValidationProcessingStatusAsync(bulkUploadDetail.FileKey, bulkUploadDetail);
-        bulkUploadStatusResponse.BulkUploadStatus = validationStatus.bulkUploadStatus;
-        bulkUploadStatusResponse.ErrorDetails = validationStatus.errorDetails;
-      }
-      else if (bulkUploadDetail.BulkUploadStatus == BulkUploadStatus.MigrationCompleted)
-      {
-        BulkUploadMigrationReportDetails bulkUploadMigrationReportDetails = new()
-        {
-          TotalOrganisationCount = bulkUploadDetail.TotalOrganisationCount,
-          TotalUserCount = bulkUploadDetail.TotalUserCount,
-          ProcessedUserCount = bulkUploadDetail.ProcessedUserCount,
-          FailedUserCount = bulkUploadDetail.FailedUserCount,
-          MigrationStartedTime = bulkUploadDetail.MigrationStartedOnUtc,
-          MigrationEndTime = bulkUploadDetail.MigrationEndedOnUtc,
-          BulkUploadFileContentRowList = _bulkUploadFileValidatorService.GetFileContentObject(bulkUploadDetail.MigrationStringContent),
-        };
-        bulkUploadStatusResponse.BulkUploadStatus = bulkUploadDetail.BulkUploadStatus;
-        bulkUploadStatusResponse.BulkUploadMigrationReportDetails = bulkUploadMigrationReportDetails;
-      }
-      else
-      {
-        bulkUploadStatusResponse.BulkUploadStatus = bulkUploadDetail.BulkUploadStatus;
-        bulkUploadStatusResponse.ErrorDetails = JsonConvert.DeserializeObject<List<KeyValuePair<string, string>>>(bulkUploadDetail.ValidationErrorDetails);
-      }
+      //if (bulkUploadDetail.BulkUploadStatus == BulkUploadStatus.Processing)
+      //{
+      //  var validationStatus = await GetValidationProcessingStatusAsync(bulkUploadDetail.FileKey, bulkUploadDetail);
+      //  bulkUploadStatusResponse.BulkUploadStatus = validationStatus.bulkUploadStatus;
+      //  bulkUploadStatusResponse.ErrorDetails = validationStatus.errorDetails;
+      //}
+      //else if (bulkUploadDetail.BulkUploadStatus == BulkUploadStatus.MigrationCompleted)
+      //{
+      //  BulkUploadMigrationReportDetails bulkUploadMigrationReportDetails = new()
+      //  {
+      //    TotalOrganisationCount = bulkUploadDetail.TotalOrganisationCount,
+      //    TotalUserCount = bulkUploadDetail.TotalUserCount,
+      //    ProcessedUserCount = bulkUploadDetail.ProcessedUserCount,
+      //    FailedUserCount = bulkUploadDetail.FailedUserCount,
+      //    MigrationStartedTime = bulkUploadDetail.MigrationStartedOnUtc,
+      //    MigrationEndTime = bulkUploadDetail.MigrationEndedOnUtc,
+      //    BulkUploadFileContentRowList = _bulkUploadFileValidatorService.GetFileContentObject(bulkUploadDetail.MigrationStringContent),
+      //  };
+      //  bulkUploadStatusResponse.BulkUploadStatus = bulkUploadDetail.BulkUploadStatus;
+      //  bulkUploadStatusResponse.BulkUploadMigrationReportDetails = bulkUploadMigrationReportDetails;
+      //}
+      //else
+      //{
+      //  bulkUploadStatusResponse.BulkUploadStatus = bulkUploadDetail.BulkUploadStatus;
+      //  bulkUploadStatusResponse.ErrorDetails = JsonConvert.DeserializeObject<List<KeyValuePair<string, string>>>(bulkUploadDetail.ValidationErrorDetails);
+      //}
       return bulkUploadStatusResponse;
     }
 
@@ -170,45 +169,45 @@ namespace CcsSso.Core.Service
     /// <param name="fileKey"></param>
     /// <param name="bulkUploadDetail"></param>
     /// <returns></returns>
-    private async Task<(BulkUploadStatus bulkUploadStatus, List<KeyValuePair<string, string>> errorDetails)> GetValidationProcessingStatusAsync(string fileKey, BulkUploadDetail bulkUploadDetail)
-    {
-      BulkUploadStatus bulkUploadStatus;
-      var errorDetails = new List<KeyValuePair<string, string>>();
-      var docUploadDetails = await _docUploadService.GetFileStatusAsync(bulkUploadDetail.DocUploadId);
-      //errorDetails.Add(new KeyValuePair<string, string>("File validation failed", "Unsafe file"));
-      //errorDetails.Add(new KeyValuePair<string, string>("Invalid Value", "Email in row 1"));
-      if (docUploadDetails.State == "processing")
-      {
-        bulkUploadStatus = BulkUploadStatus.Processing;
-      }
-      else if (docUploadDetails.State == "safe")
-      {
-        await SaveValidationStatusAsync(BulkUploadStatus.Validating, bulkUploadDetail, errorDetails);
+    //private async Task<(BulkUploadStatus bulkUploadStatus, List<KeyValuePair<string, string>> errorDetails)> GetValidationProcessingStatusAsync(string fileKey, BulkUploadDetail bulkUploadDetail)
+    //{
+    //  BulkUploadStatus bulkUploadStatus;
+    //  var errorDetails = new List<KeyValuePair<string, string>>();
+    //  var docUploadDetails = await _docUploadService.GetFileStatusAsync(bulkUploadDetail.DocUploadId);
+    //  //errorDetails.Add(new KeyValuePair<string, string>("File validation failed", "Unsafe file"));
+    //  //errorDetails.Add(new KeyValuePair<string, string>("Invalid Value", "Email in row 1"));
+    //  if (docUploadDetails.State == "processing")
+    //  {
+    //    bulkUploadStatus = BulkUploadStatus.Processing;
+    //  }
+    //  else if (docUploadDetails.State == "safe")
+    //  {
+    //    await SaveValidationStatusAsync(BulkUploadStatus.Validating, bulkUploadDetail, errorDetails);
 
-        // At the moment validation is done in the same time (without handing overto a background job). Beacuse of that there will be a max file size.
-        var errors = await ValidateUploadedFileAsync(fileKey);
-        if (!errors.Any()) // No errors
-        {
-          // TODO Push to DM
-          await SaveValidationStatusAsync(BulkUploadStatus.Migrating, bulkUploadDetail, errorDetails, DateTime.UtcNow);
-          bulkUploadStatus = BulkUploadStatus.Migrating;
-        }
-        else
-        {
-          errorDetails.AddRange(errors);
-          await SaveValidationStatusAsync(BulkUploadStatus.ValidationFail, bulkUploadDetail, errorDetails);
-          bulkUploadStatus = BulkUploadStatus.ValidationFail;
-        }
-      }
-      else // Not safe may be virus in file
-      {
-        errorDetails.Add(new KeyValuePair<string, string>("File validation failed", "Unsafe file"));
-        await SaveValidationStatusAsync(BulkUploadStatus.DocUploadValidationFail, bulkUploadDetail, errorDetails);
-        // TODO Delete the file
-        bulkUploadStatus = BulkUploadStatus.DocUploadValidationFail;
-      }
-      return (bulkUploadStatus: bulkUploadStatus, errorDetails: errorDetails);
-    }
+    //    // At the moment validation is done in the same time (without handing overto a background job). Beacuse of that there will be a max file size.
+    //    var errors = await ValidateUploadedFileAsync(fileKey);
+    //    if (!errors.Any()) // No errors
+    //    {
+    //      // TODO Push to DM
+    //      await SaveValidationStatusAsync(BulkUploadStatus.Migrating, bulkUploadDetail, errorDetails, DateTime.UtcNow);
+    //      bulkUploadStatus = BulkUploadStatus.Migrating;
+    //    }
+    //    else
+    //    {
+    //      errorDetails.AddRange(errors);
+    //      await SaveValidationStatusAsync(BulkUploadStatus.ValidationFail, bulkUploadDetail, errorDetails);
+    //      bulkUploadStatus = BulkUploadStatus.ValidationFail;
+    //    }
+    //  }
+    //  else // Not safe may be virus in file
+    //  {
+    //    errorDetails.Add(new KeyValuePair<string, string>("File validation failed", "Unsafe file"));
+    //    await SaveValidationStatusAsync(BulkUploadStatus.DocUploadValidationFail, bulkUploadDetail, errorDetails);
+    //    // TODO Delete the file
+    //    bulkUploadStatus = BulkUploadStatus.DocUploadValidationFail;
+    //  }
+    //  return (bulkUploadStatus: bulkUploadStatus, errorDetails: errorDetails);
+    //}
 
     /// <summary>
     /// During the status check update the db with inetermediate status
@@ -217,16 +216,16 @@ namespace CcsSso.Core.Service
     /// <param name="bulkUploadDetail"></param>
     /// <param name="errorDetails"></param>
     /// <returns></returns>
-    private async Task SaveValidationStatusAsync(BulkUploadStatus status, BulkUploadDetail bulkUploadDetail, List<KeyValuePair<string, string>> errorDetails, DateTime? migrationStartedTime = null)
-    {
-      bulkUploadDetail.BulkUploadStatus = status;
-      bulkUploadDetail.ValidationErrorDetails = JsonConvert.SerializeObject(errorDetails);
-      if (migrationStartedTime != null)
-      {
-        bulkUploadDetail.MigrationStartedOnUtc = migrationStartedTime.Value;
-      }
-      await _dataContext.SaveChangesAsync();
-    }
+    //private async Task SaveValidationStatusAsync(BulkUploadStatus status, BulkUploadDetail bulkUploadDetail, List<KeyValuePair<string, string>> errorDetails, DateTime? migrationStartedTime = null)
+    //{
+    //  bulkUploadDetail.BulkUploadStatus = status;
+    //  bulkUploadDetail.ValidationErrorDetails = JsonConvert.SerializeObject(errorDetails);
+    //  if (migrationStartedTime != null)
+    //  {
+    //    bulkUploadDetail.MigrationStartedOnUtc = migrationStartedTime.Value;
+    //  }
+    //  await _dataContext.SaveChangesAsync();
+    //}
 
     /// <summary>
     /// Validate the file locally

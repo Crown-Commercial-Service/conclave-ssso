@@ -9,14 +9,10 @@ namespace CcsSso.Domain.Contracts
 
     Task DeleteOrgAsync(string ciiOrganisationId);
 
-    Task DeleteSchemeAsync(string ciiOrganisationId, string scheme, string identifier, string token);
-
-    Task<CiiDto> GetIdentifierDetailsAsync(string scheme, string identifier);
+    Task DeleteSchemeAsync(string ciiOrganisationId, string scheme, string identifier, string token);    
 
     Task<CiiDto> GetOrganisationIdentifierDetailsAsync(string ciiOrganisationId, string scheme, string identifier, string token);
-
-    Task<CiiDto> GetOrgDetailsAsync(string ciiOrganisationId, string token = null, bool includeHiddenIdentifiers = false);
-
+          
     Task<CiiSchemeDto[]> GetSchemesAsync();
 
     Task<string> PostAsync(CiiDto model);

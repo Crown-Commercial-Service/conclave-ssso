@@ -1,5 +1,4 @@
 using CcsSso.Core.DbModel.Constants;
-using CcsSso.DbModel.Entity;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
@@ -130,25 +129,11 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string Key { get; set; }
   }
 
-  public class UserProfileEditRequestInfo : UserDetail
-  {
-    public UserRequestDetail Detail { get; set; }
-  }
-
-  public class UserProfileServiceRoleGroupEditRequestInfo : UserDetail
-  {
-    public UserServiceRoleGroupRequestDetail Detail { get; set; }
-  }
-
   public class UserProfileResponseInfo : UserDetail
   {
     public UserResponseDetail Detail { get; set; }
   }
 
-  public class UserProfileServiceRoleGroupResponseInfo : UserDetail
-  {
-    public UserServiceRoleGroupResponseDetail Detail { get; set; }
-  }
 
   public class UserList
   {
@@ -193,26 +178,6 @@ namespace CcsSso.Core.Domain.Dtos.External
     public string Role { get; set; }
   }
 
-  public class UserListResponse : PaginationInfo
-  {
-    public string OrganisationId { get; set; }
-
-    public List<UserListInfo> UserList { get; set; }
-  }
-
-  public class UserListWithServiceGroupRoleResponse : PaginationInfo
-  {
-    public string OrganisationId { get; set; }
-    public List<UserListWithServiceRoleGroupInfo> UserList { get; set; }
-  }
-
-  public class AdminUserListResponse : PaginationInfo
-  {
-    public string OrganisationId { get; set; }
-
-    public List<AdminUserListInfo> AdminUserList { get; set; }
-  }
-
   public class GroupAccessRole
   {
     public int GroupId { get; set; }
@@ -245,50 +210,6 @@ namespace CcsSso.Core.Domain.Dtos.External
     public int ApprovalStatus { get; set; }
   }
 
-
-  public class UserEditResponseInfo
-  {
-    public string UserId { get; set; }
-
-    public bool IsRegisteredInIdam { get; set; }
-  }
-  // #Delegated
-  public class DelegatedUserProfileRequestInfo
-  {
-    public string UserName { get; set; }
-    public DelegatedUserRequestDetail Detail { get; set; }
-  }
-
-  public class DelegatedUserProfileServiceRoleGroupRequestInfo
-  {
-    public string UserName { get; set; }
-    public DelegatedUserServiceRoleGroupRequestDetail Detail { get; set; }
-  }
-
-
-  // #Delegated
-  public class DelegatedUserRequestDetail
-  {
-    public string DelegatedOrgId { get; set; }
-
-    public List<int> RoleIds { get; set; }
-
-    public DateTime StartDate { get; set; }
-
-    public DateTime EndDate { get; set; }
-  }
-  public class DelegatedUserServiceRoleGroupRequestDetail
-  {
-    public string DelegatedOrgId { get; set; }
-
-    public List<int> ServiceRoleGroupIds { get; set; }
-
-    public DateTime StartDate { get; set; }
-
-    public DateTime EndDate { get; set; }
-  }
-
-
   public class UserAccessRolePendingDetails
   {
     public int RoleId { get; set; }
@@ -300,21 +221,6 @@ namespace CcsSso.Core.Domain.Dtos.External
 
   }
 
-  public class UserAccessRolePendingTokenDetails : UserAccessRolePendingDetails
-  {
-    public int Id { get; set; }
-    public string UserName { get; set; }
-  }
-
-  public class UserRoleApprovalEditRequest
-  {
-
-    //TODO: check datatype
-    public int[] PendingRoleIds { get; set; }
-
-    // TODO: Check enum type for status
-    public UserPendingRoleStaus Status { get; set; }
-  }
 
   public class UserServiceRoleGroupPendingDetails
   {
@@ -327,25 +233,11 @@ namespace CcsSso.Core.Domain.Dtos.External
     public int Status { get; set; }
   }
 
-  public class UserAccessServiceRoleGroupPendingTokenDetails : UserServiceRoleGroupPendingDetails
-  {
-    public string UserName { get; set; }
-  }
-  public class UserListForOrganisationInfo : UserListInfo
-  {
-    public bool IsDeleted { get; set; } = false;
-    public bool AccountVerified { get; set; } = false;
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public UserType UserType { get; set; }
-    public string UserName { get; set; }
-  }
   public class UserToDeleteResponse
   {
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string UserName { get; set; }
-    public List<UserAccessRolePending> UserAccessRolePendings { get; set; }
     public string OrganisationId { get; set; }
     public string ServiceClientId { get; set; }
   }

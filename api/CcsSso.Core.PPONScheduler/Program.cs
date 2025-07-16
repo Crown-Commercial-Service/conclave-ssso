@@ -1,18 +1,17 @@
+using CcsSso.Core.Domain.Contracts;
+using CcsSso.Core.Domain.Contracts.Wrapper;
 using CcsSso.Core.PPONScheduler.Jobs;
 using CcsSso.Core.PPONScheduler.Model;
-using CcsSso.DbPersistence;
+using CcsSso.Core.PPONScheduler.Service;
+using CcsSso.Core.PPONScheduler.Service.Contracts;
+using CcsSso.Core.Service;
+using CcsSso.Core.Service.Wrapper;
 using CcsSso.Domain.Contracts;
+using CcsSso.Service;
 using CcsSso.Shared.Contracts;
+using CcsSso.Shared.Domain.Contexts;
 using CcsSso.Shared.Services;
 using Microsoft.EntityFrameworkCore;
-using CcsSso.Shared.Domain.Contexts;
-using CcsSso.Core.PPONScheduler.Service.Contracts;
-using CcsSso.Core.PPONScheduler.Service;
-using CcsSso.Service;
-using CcsSso.Core.Service;
-using CcsSso.Core.Domain.Contracts;
-using CcsSso.Core.Service.Wrapper;
-using CcsSso.Core.Domain.Contracts.Wrapper;
 
 namespace CcsSso.Core.PPONScheduler
 {
@@ -39,7 +38,6 @@ namespace CcsSso.Core.PPONScheduler
         ConfigureHttpClients(services, appSettings);
         ConfigureModels(services, appSettings);
         ConfigureServices(services, appSettings);
-        ConfigureContexts(services, appSettings);
         ConfigureJobs(services);
       });
     }
@@ -78,17 +76,10 @@ namespace CcsSso.Core.PPONScheduler
       services.AddHostedService<PPONJob>();
     }
 
-    private static void ConfigureContexts(IServiceCollection services, PPONAppSettings appSettings)
-    {
-      services.AddScoped(s => new RequestContext { UserId = -1 }); // Set context user id to -1 to identify the updates done by the job
-      services.AddDbContext<IDataContext, DataContext>(options => options.UseNpgsql(appSettings.DbConnection));
-    }
-
     private static void ConfigureServices(IServiceCollection services, PPONAppSettings appSettings)
     {
       services.AddSingleton(s => appSettings);
 
-      services.AddScoped<IAuditLoginService, AuditLoginService>();
       services.AddScoped<ICiiService, CiiService>();
       services.AddScoped<IDateTimeService, DateTimeService>();
       services.AddScoped<IPPONService, PPONService>();

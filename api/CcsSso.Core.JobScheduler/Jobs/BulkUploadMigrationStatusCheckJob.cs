@@ -1,5 +1,4 @@
 using CcsSso.Core.DbModel.Constants;
-using CcsSso.Core.DbModel.Entity;
 using CcsSso.Core.Domain.Contracts;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Contracts;
@@ -59,55 +58,55 @@ namespace CcsSso.Core.JobScheduler
 
     public async Task PerformJobAsync()
     {
-      var bulkUploads = await _dataContext.BulkUploadDetail.Where(b => !b.IsDeleted &&
-        b.BulkUploadStatus == BulkUploadStatus.Migrating).ToListAsync();
+      //var bulkUploads = await _dataContext.BulkUploadDetail.Where(b => !b.IsDeleted &&
+      //  b.BulkUploadStatus == BulkUploadStatus.Migrating).ToListAsync();
 
-      await CheckMigratingStatusAsync(bulkUploads);
+      //await CheckMigratingStatusAsync(bulkUploads);
 
-      await _dataContext.SaveChangesAsync();
+      //await _dataContext.SaveChangesAsync();
 
     }
 
-    private async Task CheckMigratingStatusAsync(List<BulkUploadDetail> bulkUploadDetailsList)
-    {
-      List<Task> emailTaskList = new();
+    //private async Task CheckMigratingStatusAsync(List<BulkUploadDetail> bulkUploadDetailsList)
+    //{
+    //  List<Task> emailTaskList = new();
 
-      foreach (var bulkUploadDetail in bulkUploadDetailsList)
-      {
-        Console.WriteLine($"Checking migration status for bulk upload id: {bulkUploadDetail.FileKeyId}");
-        var fileContentString = await _awsS3Service.ReadObjectDataStringAsync(bulkUploadDetail.FileKey, _s3ConfigurationInfo.BulkUploadBucketName);
-        var migrationResult = _bulkUploadFileValidatorService.CheckMigrationStatus(fileContentString);
-        if (migrationResult.IsCompleted)
-        {
-          bulkUploadDetail.MigrationEndedOnUtc = DateTime.UtcNow;
-          bulkUploadDetail.BulkUploadStatus = BulkUploadStatus.MigrationCompleted;
-          bulkUploadDetail.MigrationStringContent = fileContentString;
-          bulkUploadDetail.TotalOrganisationCount = migrationResult.TotalOrganisationCount;
-          bulkUploadDetail.TotalUserCount = migrationResult.TotalUserCount;
-          bulkUploadDetail.ProcessedUserCount = migrationResult.ProceededUserCount;
-          bulkUploadDetail.FailedUserCount = migrationResult.FailedUserCount;
+    //  foreach (var bulkUploadDetail in bulkUploadDetailsList)
+    //  {
+    //    Console.WriteLine($"Checking migration status for bulk upload id: {bulkUploadDetail.FileKeyId}");
+    //    var fileContentString = await _awsS3Service.ReadObjectDataStringAsync(bulkUploadDetail.FileKey, _s3ConfigurationInfo.BulkUploadBucketName);
+    //    var migrationResult = _bulkUploadFileValidatorService.CheckMigrationStatus(fileContentString);
+    //    if (migrationResult.IsCompleted)
+    //    {
+    //      bulkUploadDetail.MigrationEndedOnUtc = DateTime.UtcNow;
+    //      bulkUploadDetail.BulkUploadStatus = BulkUploadStatus.MigrationCompleted;
+    //      bulkUploadDetail.MigrationStringContent = fileContentString;
+    //      bulkUploadDetail.TotalOrganisationCount = migrationResult.TotalOrganisationCount;
+    //      bulkUploadDetail.TotalUserCount = migrationResult.TotalUserCount;
+    //      bulkUploadDetail.ProcessedUserCount = migrationResult.ProceededUserCount;
+    //      bulkUploadDetail.FailedUserCount = migrationResult.FailedUserCount;
 
-          // Notify via email to the created user
-          var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.Id == bulkUploadDetail.CreatedUserId);
-          var reportUrl = $"{_appSettings.BulkUploadSettings.BulkUploadReportUrl}/{bulkUploadDetail.FileKeyId}";
-          var bulkUploadResultString = migrationResult.FailedUserCount == 0 ?
-            "Migration Completed without errors" : "Migration Completed with errors";
-          if (user != null)
-          {
-            try
-            {
-              await _emailSupportService.SendBulUploadResultEmailAsync(user.UserName, bulkUploadResultString, reportUrl);
-            }
-            catch (Exception ex)
-            {
-              Console.Error.WriteLine($"Error Sending email for Bulk Upload Migration id: {bulkUploadDetail.FileKeyId}, error: {ex.Message}");
-              Console.Error.WriteLine(JsonConvert.SerializeObject(ex));
-            }
-          }
+    //      // Notify via email to the created user
+    //      var user = await _dataContext.User.FirstOrDefaultAsync(u => !u.IsDeleted && u.Id == bulkUploadDetail.CreatedUserId);
+    //      var reportUrl = $"{_appSettings.BulkUploadSettings.BulkUploadReportUrl}/{bulkUploadDetail.FileKeyId}";
+    //      var bulkUploadResultString = migrationResult.FailedUserCount == 0 ?
+    //        "Migration Completed without errors" : "Migration Completed with errors";
+    //      if (user != null)
+    //      {
+    //        try
+    //        {
+    //          await _emailSupportService.SendBulUploadResultEmailAsync(user.UserName, bulkUploadResultString, reportUrl);
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //          Console.Error.WriteLine($"Error Sending email for Bulk Upload Migration id: {bulkUploadDetail.FileKeyId}, error: {ex.Message}");
+    //          Console.Error.WriteLine(JsonConvert.SerializeObject(ex));
+    //        }
+    //      }
 
-        }
-      }
-    }
+    //    }
+    //  }
+    //}
 
   }
 }

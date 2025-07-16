@@ -1,5 +1,4 @@
 using CcsSso.Core.Domain.Contracts;
-using CcsSso.Core.Domain.Contracts.External;
 using CcsSso.Core.Domain.Dtos;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Domain.Dtos;
@@ -13,16 +12,15 @@ namespace CcsSso.Core.Service
 {
   public class BulkUploadFileContentService : IBulkUploadFileContentService
   {
-    private readonly IUserProfileHelperService _userProfileHelperService;
+    
     private readonly ApplicationConfigurationInfo _applicationConfigurationInfo;
     private IReadOnlyList<string> validHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "title", "firstName", "lastName", "Role", "contactEmail", "contactMobile", "contactPhone", "contactFax", "contactSocial" };
     private IReadOnlyList<string> requiredHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "firstName", "lastName", "Role" };
     private IReadOnlyList<string> reportHeaders = new List<string> { "identifier-id", "scheme-id", "rightToBuy", "email", "title", "firstName", "lastName", "Role", "Status", "Status description" };
     private const int migrationFileHeaderCount = 15;
     private const int headerTitleRowCount = 2;
-    public BulkUploadFileContentService(IUserProfileHelperService userProfileHelperService, ApplicationConfigurationInfo applicationConfigurationInfo)
+    public BulkUploadFileContentService(ApplicationConfigurationInfo applicationConfigurationInfo)
     {
-      _userProfileHelperService = userProfileHelperService;
       _applicationConfigurationInfo = applicationConfigurationInfo;
     }
 

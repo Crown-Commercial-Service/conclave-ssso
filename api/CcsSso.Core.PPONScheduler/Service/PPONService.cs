@@ -15,7 +15,6 @@ namespace CcsSso.Core.PPONScheduler.Service
 {
     public class PPONService : IPPONService
 	{
-		private readonly IDataContext _dataContext;
 		private readonly IHttpClientFactory _httpClientFactory;
 		private readonly PPONAppSettings _appSettings;
 		private readonly IDateTimeService _dataTimeService;
@@ -32,7 +31,6 @@ namespace CcsSso.Core.PPONScheduler.Service
 			_dataTimeService = dataTimeService;
 			_httpClientFactory = httpClientFactory;
 			_ciiService = factory.CreateScope().ServiceProvider.GetRequiredService<ICiiService>();
-			_dataContext = factory.CreateScope().ServiceProvider.GetRequiredService<IDataContext>();
 			_wrapperOrganisationService = wrapperOrganisationService;
 		}
 

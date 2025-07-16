@@ -5,7 +5,6 @@ using CcsSso.Core.Domain.Dtos.External;
 using CcsSso.Core.Domain.Dtos.Wrapper;
 using CcsSso.Core.Domain.Jobs;
 using CcsSso.Core.JobScheduler.Enum;
-using CcsSso.DbModel.Entity;
 using CcsSso.Domain.Contracts;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
