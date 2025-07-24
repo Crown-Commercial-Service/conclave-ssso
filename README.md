@@ -12,7 +12,7 @@ The project is implemented as a .NET Core web application, implemented using NuG
 
 The core technologies for the project are:
 
-* .NET Core 8
+* .NET Core 9
 * NuGet for package management
 * XUnit for unit testing
 
