@@ -16,7 +16,7 @@
 
     <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.7" />
 
-    <PackageReference Include="Microsoft.Net.Http.Headers" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Net.Http.Headers" Version="9.0.8" />
     <ProjectReference Include="..\CcsSso.Core.DbModel\CcsSso.Core.DbModel.csproj" />
     <ProjectReference Include="..\CcsSso.Shared\CcsSso.Shared.csproj" />
   </ItemGroup>
