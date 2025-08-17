@@ -6,7 +6,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="AWSSDK.S3" Version="4.0.6.2" />
-		<PackageReference Include="AWSSDK.SimpleSystemsManagement" Version="4.0.2.5" />
+		<PackageReference Include="AWSSDK.SimpleSystemsManagement" Version="4.0.2.9" />
 		<PackageReference Include="AWSSDK.SQS" Version="4.0.0.17" />
 		<PackageReference Include="Azure.Storage.Blobs" Version="12.25.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
