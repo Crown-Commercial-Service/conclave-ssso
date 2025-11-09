@@ -14,7 +14,7 @@
 
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.10" />
 
-    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.10" />
 
     <PackageReference Include="Microsoft.Net.Http.Headers" Version="9.0.9" />
     <ProjectReference Include="..\CcsSso.Core.DbModel\CcsSso.Core.DbModel.csproj" />
