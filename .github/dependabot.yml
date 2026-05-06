@@ -2,37 +2,37 @@ version: 2
 updates:
   # Maintain dependencies for NuGet
   - package-ecosystem: "nuget"
-    directory: "api/CcsSso.Core.DataMigrationJobScheduler"
+    directory: "/api/CcsSso.Core.DataMigrationJobScheduler"
     schedule:
       interval: "monthly"
       day: "sunday"
     open-pull-requests-limit: 25
   - package-ecosystem: "nuget"
-    directory: "api/CcsSso.Core.DelegationJobScheduler"
+    directory: "/api/CcsSso.Core.DelegationJobScheduler"
     schedule:
       interval: "monthly"
       day: "sunday"
     open-pull-requests-limit: 25
   - package-ecosystem: "nuget"
-    directory: "api/CcsSso.Core.DormancyJobScheduler"
+    directory: "/api/CcsSso.Core.DormancyJobScheduler"
     schedule:
       interval: "monthly"
       day: "sunday"
     open-pull-requests-limit: 25
   - package-ecosystem: "nuget"
-    directory: "api/CcsSso.Core.JobScheduler"
+    directory: "/api/CcsSso.Core.JobScheduler"
     schedule:
       interval: "monthly"
       day: "sunday"
     open-pull-requests-limit: 25
   - package-ecosystem: "nuget"
-    directory: "api/CcsSso.Core.PPONScheduler"
+    directory: "/api/CcsSso.Core.PPONScheduler"
     schedule:
       interval: "monthly"
       day: "sunday"
     open-pull-requests-limit: 25
   - package-ecosystem: "nuget"
-    directory: "api/CcsSso.Core.ReportingScheduler"
+    directory: "/api/CcsSso.Core.ReportingScheduler"
     schedule:
       interval: "monthly"
       day: "sunday"
