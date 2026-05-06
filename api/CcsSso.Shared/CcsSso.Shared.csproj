@@ -11,7 +11,7 @@
 		<PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.9" />
 
-		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
 		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.18.0" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
 		<PackageReference Include="System.Text.Encodings.Web" Version="10.0.7" />
