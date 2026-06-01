@@ -8,7 +8,7 @@
 		<PackageReference Include="AWSSDK.S3" Version="4.0.22.2" />
 		<PackageReference Include="AWSSDK.SimpleSystemsManagement" Version="4.0.7.14" />
 		<PackageReference Include="AWSSDK.SQS" Version="4.0.2.28" />
-		<PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
+		<PackageReference Include="Azure.Storage.Blobs" Version="12.28.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.9" />
 
 		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
