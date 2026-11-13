@@ -1,9 +1,9 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS FileuploadJob
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS FileuploadJob
 WORKDIR /app
 COPY . ./
 RUN dotnet restore ./api/CcsSso.Core.DataMigrationJobScheduler/CcsSso.Core.DataMigrationJobScheduler.csproj
 COPY api/CcsSso.Core.DataMigrationJobScheduler/appsecrets-template.json /app/appsecrets.json
 COPY api/CcsSso.Core.DataMigrationJobScheduler/appsettings.json /app/appsettings.json
 RUN dotnet build --configuration Release ./api/CcsSso.Core.DataMigrationJobScheduler/CcsSso.Core.DataMigrationJobScheduler.csproj
-EXPOSE 5000
-ENTRYPOINT ["dotnet","api/CcsSso.Core.DataMigrationJobScheduler/bin/Release/net9.0/CcsSso.Core.DataMigrationJobScheduler.dll"]
+EXPOSE 8080
+ENTRYPOINT ["dotnet","api/CcsSso.Core.DataMigrationJobScheduler/bin/Release/net10.0/CcsSso.Core.DataMigrationJobScheduler.dll"]
